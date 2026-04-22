@@ -14,189 +14,246 @@ class ActiveDeliveryScreen extends StatefulWidget {
 }
 
 class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen> {
-  Order? activeOrder;
-  bool isLoading = true;
+  Order? _activeOrder;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadActiveDelivery();
-    _initAbly();
+    _initAblyListener();
   }
+
+  // ─── Data ────────────────────────────────────────────────────────────────
 
   Future<void> _loadActiveDelivery() async {
     try {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
-      final orders = await orderRepository.getRiderOrders(auth.user?.id ?? "");
-      
-      // Filter for orders that are not delivered or cancelled
-      final active = orders.where((o) => 
-        o.status != OrderStatus.delivered && 
-        o.status != OrderStatus.cancelled
-      ).toList();
+      final userId = _currentUserId;
+      final orders = await orderRepository.getRiderOrders(userId);
+      final active = orders.where(_isActiveOrder).toList();
 
       setState(() {
-        if (active.isNotEmpty) {
-          activeOrder = active.first;
-        }
-        isLoading = false;
+        _activeOrder = active.isNotEmpty ? active.first : null;
+        _isLoading = false;
       });
-    } catch (e) {
-      setState(() => isLoading = false);
+    } catch (_) {
+      setState(() => _isLoading = false);
     }
   }
 
-  void _initAbly() {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    if (auth.user?.id != null) {
-      ablyService.addOrderListener((orderId, status) {
-        if (activeOrder?.id == orderId) {
-          setState(() {
-            activeOrder = activeOrder!.copyWith(status: status);
-          });
-        } else if (status == OrderStatus.pickingUp || status == OrderStatus.readyForPickup) {
-          // Might be a new assignment
-          _loadActiveDelivery();
-        }
-      });
-    }
+  void _initAblyListener() {
+    if (_currentUserId.isEmpty) return;
+
+    ablyService.addOrderListener((orderId, status) {
+      if (_activeOrder?.id == orderId) {
+        setState(() => _activeOrder = _activeOrder!.copyWith(status: status));
+      } else if (_isIncomingAssignment(status)) {
+        _loadActiveDelivery();
+      }
+    });
   }
 
   Future<void> _updateStatus(OrderStatus newStatus) async {
-    if (activeOrder == null) return;
-    
+    if (_activeOrder == null) return;
+
     try {
-      final updated = await orderRepository.updateOrderStatus(activeOrder!.id, newStatus.name.toUpperCase());
+      final updated = await orderRepository.updateOrderStatus(
+        _activeOrder!.id,
+        newStatus.name.toUpperCase(),
+      );
       setState(() {
-        activeOrder = updated;
-        if (newStatus == OrderStatus.delivered) {
-          activeOrder = null;
-        }
+        _activeOrder = newStatus == OrderStatus.delivered ? null : updated;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to update status: $e")),
-      );
+      _showError("Failed to update status: $e");
     }
   }
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+
+  String get _currentUserId {
+    return context.read<AuthProvider>().user?.id ?? '';
+  }
+
+  bool _isActiveOrder(Order o) =>
+      o.status != OrderStatus.delivered && o.status != OrderStatus.cancelled;
+
+  bool _isIncomingAssignment(OrderStatus status) =>
+      status == OrderStatus.pickingUp || status == OrderStatus.readyForPickup;
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       appBar: AppBar(
-        title: const Text("Active Delivery"),
+        title: const Text('Active Delivery'),
         backgroundColor: AppColors.lightBackground,
         foregroundColor: AppColors.lightText,
         elevation: 0,
       ),
-      body: isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : activeOrder == null 
-          ? const Center(child: Text("No active delivery right now."))
-          : Padding(
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_activeOrder == null) {
+      return const Center(child: Text('No active delivery right now.'));
+    }
+    return _ActiveDeliveryContent(
+      order: _activeOrder!,
+      onUpdateStatus: _updateStatus,
+    );
+  }
+}
+
+// ─── Content ───────────────────────────────────────────────────────────────
+
+class _ActiveDeliveryContent extends StatelessWidget {
+  const _ActiveDeliveryContent({
+    required this.order,
+    required this.onUpdateStatus,
+  });
+
+  final Order order;
+  final ValueChanged<OrderStatus> onUpdateStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _OrderSummaryCard(order: order),
+          const SizedBox(height: 24),
+          _DeliveryStepActions(
+            status: order.status,
+            onUpdateStatus: onUpdateStatus,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Order Summary Card ────────────────────────────────────────────────────
+
+class _OrderSummaryCard extends StatelessWidget {
+  const _OrderSummaryCard({required this.order});
+
+  final Order order;
+
+  String get _shortId => order.id.substring(order.id.length - 6);
+  String get _statusLabel =>
+      order.status.name.toUpperCase().replaceAll('_', ' ');
+  String get _restaurantName =>
+      order.stores.isNotEmpty ? order.stores.first.name : 'Unknown';
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.lightBorder),
+      ),
+      child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: AppColors.lightBorder),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Order #${activeOrder!.id.substring(activeOrder!.id.length - 6)}", 
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(activeOrder!.status.name.toUpperCase().replaceAll('_', ' '),
-                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12)),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 24),
-                    _buildInfoRow(Icons.store, "Restaurant", activeOrder!.stores.isNotEmpty ? activeOrder!.stores.first.name : "Unknown"),
-                    const SizedBox(height: 12),
-                    _buildInfoRow(Icons.person, "Customer", activeOrder!.user?.name ?? "Unknown"),
-                    const SizedBox(height: 12),
-                    _buildInfoRow(Icons.location_on, "Delivery to", activeOrder!.user?.phone ?? "No phone"),
-                  ],
-                ),
-              ),
+            _OrderHeader(shortId: _shortId, statusLabel: _statusLabel),
+            const Divider(height: 24),
+            _OrderInfoRow(
+              icon: Icons.store,
+              label: 'Restaurant',
+              value: _restaurantName,
             ),
-            const SizedBox(height: 24),
-
-            /// STEP VIEW
-            if (activeOrder!.status == OrderStatus.pickingUp) ...[
-              const Center(child: Text("Navigate to Restaurant", style: TextStyle(fontWeight: FontWeight.bold))),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.all(16),
-                  ),
-                  onPressed: () => _updateStatus(OrderStatus.readyForPickup), // Or a custom status like 'ARRIVED_AT_STORE'
-                  child: const Text("Arrived at Restaurant"),
-                ),
-              )
-            ],
-
-            if (activeOrder!.status == OrderStatus.readyForPickup) ...[
-              const Center(child: Text("Pickup Order", style: TextStyle(fontWeight: FontWeight.bold))),
-              const SizedBox(height: 10),
-              const Center(child: Text("Verify items with the restaurant.")),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.all(16),
-                  ),
-                  onPressed: () => _updateStatus(OrderStatus.onTheWay),
-                  child: const Text("Order Picked Up"),
-                ),
-              )
-            ],
-
-            if (activeOrder!.status == OrderStatus.onTheWay) ...[
-              const Center(child: Text("Navigate to Customer", style: TextStyle(fontWeight: FontWeight.bold))),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.all(16),
-                  ),
-                  onPressed: () => _updateStatus(OrderStatus.delivered),
-                  child: const Text("Mark as Delivered"),
-                ),
-              )
-            ],
+            const SizedBox(height: 12),
+            _OrderInfoRow(
+              icon: Icons.person,
+              label: 'Customer',
+              value: order.user?.name ?? 'Unknown',
+            ),
+            const SizedBox(height: 12),
+            _OrderInfoRow(
+              icon: Icons.location_on,
+              label: 'Delivery to',
+              value: order.user?.phone ?? 'No phone',
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+class _OrderHeader extends StatelessWidget {
+  const _OrderHeader({required this.shortId, required this.statusLabel});
+
+  final String shortId;
+  final String statusLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Order #$shortId',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        _StatusBadge(label: statusLabel),
+      ],
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.primary,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _OrderInfoRow extends StatelessWidget {
+  const _OrderInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
         Icon(icon, size: 20, color: AppColors.lightMuted),
@@ -204,9 +261,92 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(color: AppColors.lightMuted, fontSize: 12)),
+            Text(
+              label,
+              style:
+                  const TextStyle(color: AppColors.lightMuted, fontSize: 12),
+            ),
             Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Step Actions ──────────────────────────────────────────────────────────
+
+class _DeliveryStepActions extends StatelessWidget {
+  const _DeliveryStepActions({
+    required this.status,
+    required this.onUpdateStatus,
+  });
+
+  final OrderStatus status;
+  final ValueChanged<OrderStatus> onUpdateStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (status) {
+      OrderStatus.pickingUp => _DeliveryStep(
+          heading: 'Navigate to Restaurant',
+          buttonLabel: 'Arrived at Restaurant',
+          onPressed: () => onUpdateStatus(OrderStatus.readyForPickup),
+        ),
+      OrderStatus.readyForPickup => _DeliveryStep(
+          heading: 'Pickup Order',
+          subtitle: 'Verify items with the restaurant.',
+          buttonLabel: 'Order Picked Up',
+          onPressed: () => onUpdateStatus(OrderStatus.onTheWay),
+        ),
+      OrderStatus.onTheWay => _DeliveryStep(
+          heading: 'Navigate to Customer',
+          buttonLabel: 'Mark as Delivered',
+          onPressed: () => onUpdateStatus(OrderStatus.delivered),
+        ),
+      _ => const SizedBox.shrink(),
+    };
+  }
+}
+
+class _DeliveryStep extends StatelessWidget {
+  const _DeliveryStep({
+    required this.heading,
+    required this.buttonLabel,
+    required this.onPressed,
+    this.subtitle,
+  });
+
+  final String heading;
+  final String? subtitle;
+  final String buttonLabel;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          heading,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 8),
+          Text(subtitle!, textAlign: TextAlign.center),
+        ],
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.all(16),
+            ),
+            onPressed: onPressed,
+            child: Text(buttonLabel),
+          ),
         ),
       ],
     );

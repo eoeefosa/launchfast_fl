@@ -659,7 +659,7 @@ class _MenuItemCard extends StatelessWidget {
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha:0.03),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -676,12 +676,12 @@ class _MenuItemCard extends StatelessWidget {
               child: Container(
                 width: 70,
                 height: 70,
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha:0.1),
                 child: item.image.isNotEmpty && item.image.startsWith('http')
                     ? Image.network(
                         item.image,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(
+                        errorBuilder: (_, _, _) => const Icon(
                           Icons.fastfood,
                           color: AppColors.primary,
                         ),
@@ -714,7 +714,7 @@ class _MenuItemCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: (item.isReady ? Colors.green : Colors.red)
-                              .withOpacity(0.12),
+                              .withValues(alpha:0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -755,7 +755,7 @@ class _MenuItemCard extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(

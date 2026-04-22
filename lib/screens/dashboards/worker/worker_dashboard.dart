@@ -23,7 +23,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
   int _pendingCount = 0;
   int _preparingCount = 0;
   int _readyCount = 0;
-  
+
   List<dynamic> _recentOrders = [];
   bool _isLoading = true;
   String? _storeId;
@@ -45,12 +45,12 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
   Future<void> _loadStoreInfo() async {
     final auth = context.read<AuthProvider>();
     final storeProvider = context.read<StoreProvider>();
-    
+
     // For a worker, we use their adminStore field
     final assignedStoreId = auth.user?.adminStore;
-    
+
     if (storeProvider.stores.isEmpty) await storeProvider.refreshData();
-    
+
     final stores = storeProvider.stores;
     if (assignedStoreId != null) {
       try {
@@ -80,7 +80,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
     try {
       final res = await apiService.dio.get('/orders');
       final List orders = res.data ?? [];
-      
+
       final storeOrders = _storeId != null
           ? orders.where((o) {
               final sIds = (o['storeIds'] as List?) ?? [];
@@ -91,9 +91,15 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
       if (mounted) {
         setState(() {
           _totalOrders = storeOrders.length;
-          _pendingCount = storeOrders.where((o) => o['status'] == 'PENDING').length;
-          _preparingCount = storeOrders.where((o) => o['status'] == 'PREPARING').length;
-          _readyCount = storeOrders.where((o) => o['status'] == 'READY_FOR_PICKUP').length;
+          _pendingCount = storeOrders
+              .where((o) => o['status'] == 'PENDING')
+              .length;
+          _preparingCount = storeOrders
+              .where((o) => o['status'] == 'PREPARING')
+              .length;
+          _readyCount = storeOrders
+              .where((o) => o['status'] == 'READY_FOR_PICKUP')
+              .length;
         });
       }
     } catch (_) {}
@@ -104,7 +110,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
     try {
       final res = await apiService.dio.get('/orders');
       final List orders = res.data ?? [];
-      
+
       final filtered = _storeId != null
           ? orders.where((o) {
               final sIds = (o['storeIds'] as List?) ?? [];
@@ -128,7 +134,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
       _loadStats();
       _loadRecentOrders();
     });
-    
+
     ablyService.addStoreListener((storeId, isOpen) {
       if (storeId == _storeId && mounted) {
         setState(() => _isOpen = isOpen);
@@ -216,7 +222,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
               end: Alignment.bottomCenter,
               colors: [
                 AppColors.primary,
-                AppColors.primary.withOpacity(0.8),
+                AppColors.primary.withValues(alpha: 0.8),
               ],
             ),
           ),
@@ -241,7 +247,9 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: (_isOpen ? Colors.green : Colors.red).withOpacity(0.1),
+              color: (_isOpen ? Colors.green : Colors.red).withValues(
+                alpha: 0.1,
+              ),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -283,15 +291,40 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
       crossAxisSpacing: 16,
       childAspectRatio: 1.4,
       children: [
-        _buildStatCard('Pending', '$_pendingCount', Icons.hourglass_top, Colors.orange),
-        _buildStatCard('Preparing', '$_preparingCount', Icons.restaurant, Colors.blue),
-        _buildStatCard('Ready', '$_readyCount', Icons.check_circle, Colors.green),
-        _buildStatCard('Total Today', '$_totalOrders', Icons.list_alt, Colors.purple),
+        _buildStatCard(
+          'Pending',
+          '$_pendingCount',
+          Icons.hourglass_top,
+          Colors.orange,
+        ),
+        _buildStatCard(
+          'Preparing',
+          '$_preparingCount',
+          Icons.restaurant,
+          Colors.blue,
+        ),
+        _buildStatCard(
+          'Ready',
+          '$_readyCount',
+          Icons.check_circle,
+          Colors.green,
+        ),
+        _buildStatCard(
+          'Total Today',
+          '$_totalOrders',
+          Icons.list_alt,
+          Colors.purple,
+        ),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -315,10 +348,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(
-            title,
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
-          ),
+          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
         ],
       ),
     );
@@ -365,10 +395,14 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.receipt_rounded, color: AppColors.primary, size: 20),
+                child: const Icon(
+                  Icons.receipt_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -377,7 +411,10 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
                   children: [
                     Text(
                       'Order #${o['id'].toString().substring(o['id'].toString().length - 5)}',
-                      style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       DateFormat('hh:mm a').format(date),
@@ -387,9 +424,12 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: _getStatusColor(o['status']).withOpacity(0.1),
+                  color: _getStatusColor(o['status']).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -410,12 +450,18 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'PENDING': return Colors.orange;
-      case 'PREPARING': return Colors.blue;
-      case 'READY_FOR_PICKUP': return Colors.green;
-      case 'DELIVERED': return Colors.grey;
-      case 'CANCELLED': return Colors.red;
-      default: return Colors.blue;
+      case 'PENDING':
+        return Colors.orange;
+      case 'PREPARING':
+        return Colors.blue;
+      case 'READY_FOR_PICKUP':
+        return Colors.green;
+      case 'DELIVERED':
+        return Colors.grey;
+      case 'CANCELLED':
+        return Colors.red;
+      default:
+        return Colors.blue;
     }
   }
 }

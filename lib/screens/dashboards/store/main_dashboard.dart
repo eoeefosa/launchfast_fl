@@ -48,9 +48,10 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
-    _pulse = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
+    _pulse = Tween<double>(
+      begin: 0.95,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _init();
@@ -166,9 +167,13 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
               value ? '✅ Store is now OPEN' : '🔴 Store is now CLOSED',
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
-            backgroundColor: value ? Colors.green.shade700 : Colors.red.shade700,
+            backgroundColor: value
+                ? Colors.green.shade700
+                : Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -242,7 +247,7 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
                       Text(
                         'Welcome back,',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 14,
                         ),
                       ),
@@ -264,8 +269,10 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
                   icon: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      const Icon(Icons.notifications_outlined,
-                          color: Colors.white),
+                      const Icon(
+                        Icons.notifications_outlined,
+                        color: Colors.white,
+                      ),
                       if (_hasNewOrder)
                         Positioned(
                           top: -2,
@@ -335,7 +342,13 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
                       ],
                     ),
                     const SizedBox(height: 8),
-                    _buildRecentOrders(isDark, surface, border, muted, textColor),
+                    _buildRecentOrders(
+                      isDark,
+                      surface,
+                      border,
+                      muted,
+                      textColor,
+                    ),
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -348,7 +361,12 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
   }
 
   // ─── Store Status Toggle Card ─────────────────────────────────────
-  Widget _buildStatusCard(bool isDark, Color surface, Color border, Color muted) {
+  Widget _buildStatusCard(
+    bool isDark,
+    Color surface,
+    Color border,
+    Color muted,
+  ) {
     final open = _isOpen ?? false;
     final statusColor = open ? Colors.green.shade600 : Colors.red.shade500;
 
@@ -365,7 +383,7 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: statusColor.withOpacity(0.4),
+            color: statusColor.withValues(alpha: 0.4),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -378,7 +396,7 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -402,11 +420,9 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  open
-                      ? 'Accepting orders right now'
-                      : 'Not accepting orders',
+                  open ? 'Accepting orders right now' : 'Not accepting orders',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 13,
                   ),
                 ),
@@ -418,23 +434,27 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
                   width: 24,
                   height: 24,
                   child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2),
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
                 )
               : _toggling
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2),
-                    )
-                  : Switch(
-                      value: open,
-                      onChanged: _toggleStore,
-                      activeColor: Colors.white,
-                      activeTrackColor: Colors.white.withOpacity(0.4),
-                      inactiveThumbColor: Colors.white,
-                      inactiveTrackColor: Colors.white.withOpacity(0.3),
-                    ),
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Switch(
+                  value: open,
+                  onChanged: _toggleStore,
+                  activeThumbColor: Colors.white,
+                  activeTrackColor: Colors.white.withValues(alpha: 0.4),
+                  inactiveThumbColor: Colors.white,
+                  inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
+                ),
         ],
       ),
     );
@@ -494,7 +514,9 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       childAspectRatio: 1.55,
-      children: stats.map((s) => _statCard(s, surface, border, textColor, muted)).toList(),
+      children: stats
+          .map((s) => _statCard(s, surface, border, textColor, muted))
+          .toList(),
     );
   }
 
@@ -520,7 +542,7 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: item.color.withOpacity(0.15),
+              color: item.color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(item.icon, color: item.color, size: 18),
@@ -536,10 +558,7 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                item.label,
-                style: TextStyle(color: muted, fontSize: 12),
-              ),
+              Text(item.label, style: TextStyle(color: muted, fontSize: 12)),
             ],
           ),
         ],
@@ -614,13 +633,15 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
             border: Border.all(color: border),
           ),
           child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 6,
+            ),
             leading: Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -644,7 +665,7 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.15),
+                color: statusColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

@@ -65,9 +65,13 @@ class ProfileScreen extends StatelessWidget {
             /// STATS
             const Row(
               children: [
-                Expanded(child: _StatCard(title: "Deliveries", value: "120")),
+                Expanded(
+                  child: _StatCard(title: "Deliveries", value: "120"),
+                ),
                 SizedBox(width: 12),
-                Expanded(child: _StatCard(title: "Rating", value: "4.8 ⭐")),
+                Expanded(
+                  child: _StatCard(title: "Rating", value: "4.8 ⭐"),
+                ),
               ],
             ),
 
@@ -78,14 +82,18 @@ class ProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                ),
               ),
               child: Column(
                 children: [
-                  Text("Total Earnings",
-                      style: TextStyle(color: AppColors.lightMuted)),
+                  Text(
+                    "Total Earnings",
+                    style: TextStyle(color: AppColors.lightMuted),
+                  ),
                   const SizedBox(height: 6),
                   Text(
                     "₦120,000",
@@ -115,8 +123,12 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _menuItem(IconData icon, String title, VoidCallback onTap,
-      {bool isDanger = false}) {
+  Widget _menuItem(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    bool isDanger = false,
+  }) {
     return ListTile(
       leading: Icon(icon, color: isDanger ? Colors.red : AppColors.primary),
       title: Text(
@@ -152,10 +164,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ],
       ),

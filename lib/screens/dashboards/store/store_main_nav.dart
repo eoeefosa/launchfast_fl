@@ -142,7 +142,7 @@ class _StoreMainNavState extends State<StoreMainNav>
           border: Border(top: BorderSide(color: navBorder, width: 0.8)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
               blurRadius: 20,
               offset: const Offset(0, -4),
             ),
@@ -172,7 +172,7 @@ class _StoreMainNavState extends State<StoreMainNav>
                       ),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? AppColors.primary.withOpacity(0.1)
+                            ? AppColors.primary.withValues(alpha: 0.1)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(16),
                       ),

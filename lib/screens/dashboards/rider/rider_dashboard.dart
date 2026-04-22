@@ -15,90 +15,100 @@ class RiderDashboard extends StatefulWidget {
 }
 
 class _RiderDashboardState extends State<RiderDashboard> {
-  bool isOnline = false;
-  int activeOrdersCount = 0;
-  List<Order> availableJobs = [];
-  bool isLoading = true;
+  bool _isOnline = false;
+  int _activeOrdersCount = 0;
+  List<Order> _availableJobs = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadDashboardData();
-    _initAbly();
+    _initAblyListener();
   }
+
+  // ─── Data ────────────────────────────────────────────────────────────────
 
   Future<void> _loadDashboardData() async {
     try {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final userId = _currentUserId;
       final jobs = await orderRepository.getAvailableJobs();
-      final active = await orderRepository.getRiderOrders(auth.user?.id ?? "");
-      
+      final riderOrders = await orderRepository.getRiderOrders(userId);
+
       setState(() {
-        availableJobs = jobs;
-        activeOrdersCount = active.where((o) => o.status != OrderStatus.delivered && o.status != OrderStatus.cancelled).length;
-        isLoading = false;
+        _availableJobs = jobs;
+        _activeOrdersCount = riderOrders.where(_isActiveOrder).length;
+        _isLoading = false;
       });
-    } catch (e) {
-      setState(() => isLoading = false);
+    } catch (_) {
+      setState(() => _isLoading = false);
     }
   }
 
-  void _initAbly() {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    if (auth.user?.id != null) {
-      ablyService.initAbly(auth.user!.id);
-      ablyService.subscribeToRiderChannel(
-        auth.user!.id,
-        onNewJob: (data) {
-          final newOrder = Order.fromJson(Map<String, dynamic>.from(data));
-          setState(() {
-            if (!availableJobs.any((o) => o.id == newOrder.id)) {
-              availableJobs.insert(0, newOrder);
-            }
-          });
-        },
-        onOrderUpdate: (data) {
-          final orderId = data['orderId'];
-          final status = data['status'];
-          if (status != 'READY_FOR_PICKUP') {
-            setState(() {
-              availableJobs.removeWhere((o) => o.id == orderId);
-            });
-          }
-        },
-      );
+  void _initAblyListener() {
+    final user = context.read<AuthProvider>().user;
+    if (user == null) return;
+
+    ablyService.initAbly(user.id);
+    ablyService.subscribeToRiderChannel(
+      user.id,
+      onNewJob: _handleNewJob,
+      onOrderUpdate: _handleOrderUpdate,
+    );
+  }
+
+  void _handleNewJob(dynamic data) {
+    final newOrder = Order.fromJson(Map<String, dynamic>.from(data));
+    final alreadyExists = _availableJobs.any((o) => o.id == newOrder.id);
+    if (!alreadyExists) {
+      setState(() => _availableJobs.insert(0, newOrder));
+    }
+  }
+
+  void _handleOrderUpdate(dynamic data) {
+    final orderId = data['orderId'] as String?;
+    final status = data['status'] as String?;
+    if (orderId != null && status != 'READY_FOR_PICKUP') {
+      setState(() => _availableJobs.removeWhere((o) => o.id == orderId));
     }
   }
 
   Future<void> _acceptJob(Order order) async {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final userId = _currentUserId;
     try {
       await orderRepository.updateOrder(order.id, {
-        'riderId': auth.user!.id,
+        'riderId': userId,
         'status': 'PICKING_UP',
       });
-      
       setState(() {
-        availableJobs.removeWhere((o) => o.id == order.id);
-        activeOrdersCount++;
+        _availableJobs.removeWhere((o) => o.id == order.id);
+        _activeOrdersCount++;
       });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Job accepted! Go to Delivery tab to see details.")),
-      );
+      _showSnackBar('Job accepted! Go to Delivery tab to see details.');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to accept job: $e")),
-      );
+      _showSnackBar('Failed to accept job: $e');
     }
   }
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+
+  String get _currentUserId => context.read<AuthProvider>().user?.id ?? '';
+
+  bool _isActiveOrder(Order o) =>
+      o.status != OrderStatus.delivered && o.status != OrderStatus.cancelled;
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       appBar: AppBar(
-        title: const Text("Rider Dashboard"),
+        title: const Text('Rider Dashboard'),
         backgroundColor: AppColors.lightBackground,
         foregroundColor: AppColors.lightText,
         elevation: 0,
@@ -106,91 +116,179 @@ class _RiderDashboardState extends State<RiderDashboard> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// STATUS
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isOnline ? AppColors.primary : AppColors.lightMuted,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    isOnline ? "ONLINE" : "OFFLINE",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Switch(
-                    value: isOnline,
-                    activeThumbColor: Colors.white,
-                    activeTrackColor: Colors.white24,
-                    onChanged: (v) => setState(() => isOnline = v),
-                  ),
-                ],
-              ),
+            _OnlineStatusBanner(
+              isOnline: _isOnline,
+              onToggle: (value) => setState(() => _isOnline = value),
             ),
-
             const SizedBox(height: 16),
-
-            /// EARNINGS
-            Row(
-              children: const [
-                Expanded(
-                  child: EarningsCard(title: "Today", amount: "₦5,400"),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: EarningsCard(title: "Week", amount: "₦28,000"),
-                ),
-              ],
-            ),
-
+            const _EarningsRow(),
             const SizedBox(height: 16),
-
-            /// ACTIVE ORDERS
-            Text("Active Orders: $activeOrdersCount"),
-
+            _ActiveOrdersBadge(count: _activeOrdersCount),
             const SizedBox(height: 20),
-
-            /// AVAILABLE ORDERS
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Available Orders",
-                style: TextStyle(fontWeight: FontWeight.bold),
+            const _SectionLabel('Available Orders'),
+            const SizedBox(height: 10),
+            Expanded(
+              child: _AvailableJobsList(
+                isLoading: _isLoading,
+                jobs: _availableJobs,
+                onAccept: _acceptJob,
               ),
             ),
-
-            const SizedBox(height: 10),
-
-            if (isLoading)
-              const Center(child: CircularProgressIndicator())
-            else if (availableJobs.isEmpty)
-              const Center(child: Text("No jobs available right now."))
-            else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: availableJobs.length,
-                  itemBuilder: (context, index) {
-                    final job = availableJobs[index];
-                    return JobCard(
-                      id: "Order #${job.id.length > 6 ? job.id.substring(job.id.length - 6) : job.id}",
-                      route: job.stores.isNotEmpty 
-                        ? "${job.stores.first.name} → ${job.user?.name ?? 'Customer'}"
-                        : "Unknown Route",
-                      pay: "₦${job.total.toStringAsFixed(0)}",
-                      onAccept: () => _acceptJob(job),
-                    );
-                  },
-                ),
-              ),
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Online Status Banner ─────────────────────────────────────────────────
+
+class _OnlineStatusBanner extends StatelessWidget {
+  const _OnlineStatusBanner({
+    required this.isOnline,
+    required this.onToggle,
+  });
+
+  final bool isOnline;
+  final ValueChanged<bool> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isOnline ? AppColors.primary : AppColors.lightMuted,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            isOnline ? 'ONLINE' : 'OFFLINE',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Switch(
+            value: isOnline,
+            activeThumbColor: Colors.white,
+            activeTrackColor: Colors.white24,
+            onChanged: onToggle,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Earnings Row ─────────────────────────────────────────────────────────
+
+class _EarningsRow extends StatelessWidget {
+  const _EarningsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        Expanded(child: EarningsCard(title: 'Today', amount: '₦5,400')),
+        SizedBox(width: 10),
+        Expanded(child: EarningsCard(title: 'Week', amount: '₦28,000')),
+      ],
+    );
+  }
+}
+
+// ─── Active Orders Badge ──────────────────────────────────────────────────
+
+class _ActiveOrdersBadge extends StatelessWidget {
+  const _ActiveOrdersBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'Active Orders: $count',
+      style: const TextStyle(fontWeight: FontWeight.w500),
+    );
+  }
+}
+
+// ─── Section Label ────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.bold),
+    );
+  }
+}
+
+// ─── Available Jobs List ──────────────────────────────────────────────────
+
+class _AvailableJobsList extends StatelessWidget {
+  const _AvailableJobsList({
+    required this.isLoading,
+    required this.jobs,
+    required this.onAccept,
+  });
+
+  final bool isLoading;
+  final List<Order> jobs;
+  final ValueChanged<Order> onAccept;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) return const Center(child: CircularProgressIndicator());
+    if (jobs.isEmpty) return const Center(child: Text('No jobs available right now.'));
+
+    return ListView.builder(
+      itemCount: jobs.length,
+      itemBuilder: (context, index) => _JobListItem(
+        job: jobs[index],
+        onAccept: onAccept,
+      ),
+    );
+  }
+}
+
+// ─── Job List Item ────────────────────────────────────────────────────────
+
+class _JobListItem extends StatelessWidget {
+  const _JobListItem({required this.job, required this.onAccept});
+
+  final Order job;
+  final ValueChanged<Order> onAccept;
+
+  String get _shortId {
+    final id = job.id;
+    return 'Order #${id.length > 6 ? id.substring(id.length - 6) : id}';
+  }
+
+  String get _route {
+    if (job.stores.isEmpty) return 'Unknown Route';
+    return '${job.stores.first.name} → ${job.user?.name ?? 'Customer'}';
+  }
+
+  String get _pay => '₦${job.total.toStringAsFixed(0)}';
+
+  @override
+  Widget build(BuildContext context) {
+    return JobCard(
+      id: _shortId,
+      route: _route,
+      pay: _pay,
+      onAccept: () => onAccept(job),
     );
   }
 }
