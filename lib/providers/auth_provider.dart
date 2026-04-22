@@ -138,19 +138,19 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  bool loginAdmin(String username, String password) {
-    try {
-      final store = StaticData.stores.firstWhere(
-        (s) => s.adminUsername == username && s.adminPassword == password,
-      );
-      _adminStoreId = store.id;
-      storage.write(key: 'launch-fast-admin', value: store.id);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
+  // bool loginAdmin(String username, String password) {
+  //   try {
+  //     final store = StaticData.stores.firstWhere(
+  //       (s) => s.adminUsername == username && s.adminPassword == password,
+  //     );
+  //     _adminStoreId = store.id;
+  //     storage.write(key: 'launch-fast-admin', value: store.id);
+  //     notifyListeners();
+  //     return true;
+  //   } catch (e) {
+  //     return false;
+  //   }
+  // }
 
   Future<void> logout() async {
     _user = null;

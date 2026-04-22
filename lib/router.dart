@@ -9,7 +9,6 @@ import 'screens/tabs/cart_screen.dart';
 import 'screens/store/store_detail_screen.dart';
 import 'screens/store/item_detail_screen.dart';
 import 'screens/checkout_screen.dart';
-import 'screens/admin/admin_login_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/admin/admin_menu_screen.dart';
 import 'screens/admin/user_management_screen.dart';
@@ -72,10 +71,6 @@ final router = GoRouter(
     GoRoute(
       path: '/checkout',
       builder: (context, state) => const CheckoutScreen(),
-    ),
-    GoRoute(
-      path: '/admin-login',
-      builder: (context, state) => const AdminLoginScreen(),
     ),
     GoRoute(
       path: '/admin/dashboard',

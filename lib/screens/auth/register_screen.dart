@@ -1,211 +1,202 @@
 import 'package:flutter/material.dart';
+import 'package:launchfast_fl/screens/auth/widgets/apptextfield.dart';
+import 'package:launchfast_fl/screens/auth/widgets/constants.dart';
+import 'package:launchfast_fl/screens/auth/widgets/custom_button.dart';
+import 'package:launchfast_fl/screens/auth/widgets/password_toggle.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends StatelessWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          child: RegisterForm(),
+        ),
+      ),
+    );
+  }
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+// ---------------------------------------------------------------------------
+// Form (owns all mutable state + controllers)
+// ---------------------------------------------------------------------------
+
+class RegisterForm extends StatefulWidget {
+  const RegisterForm({super.key});
+
+  @override
+  State<RegisterForm> createState() => _RegisterFormState();
+}
+
+class _RegisterFormState extends State<RegisterForm> {
+  final _formKey = GlobalKey<FormState>();
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+
   bool _showPassword = false;
 
   @override
-  Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _addressController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: Column(
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  void _togglePasswordVisibility() =>
+      setState(() => _showPassword = !_showPassword);
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final authProvider = context.read<AuthProvider>();
+    final orderProvider = context.read<OrderProvider>();
+
+    // Capture context-dependent objects BEFORE the await.
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+
+    try {
+      await authProvider.register({
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'address': _addressController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'password': _passwordController.text,
+      });
+
+      orderProvider.refreshOrders();
+      router.go('/');
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
+    final primaryColor = Theme.of(context).primaryColor;
+
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          BackButton(),
+          const SizedBox(height: 32),
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back),
-                style: IconButton.styleFrom(backgroundColor: Colors.grey[100]),
-              ),
-              const SizedBox(height: 32),
               const Text(
                 'Create Account',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                'Join Launch Fast carefully crafted for your campus needs',
+                'Join Launch Fast — carefully crafted for your campus needs.',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[600],
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 32),
-              _buildTextField(
-                controller: _nameController,
-                hint: 'Full Name',
-                icon: Icons.person_outline,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _emailController,
-                hint: 'Email',
-                icon: Icons.mail_outline,
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _addressController,
-                hint: 'Default Delivery Address',
-                icon: Icons.location_on_outlined,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _phoneController,
-                hint: 'Phone Number',
-                icon: Icons.call_outlined,
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _passwordController,
-                hint: 'Password',
-                icon: Icons.lock_outline,
-                obscure: !_showPassword,
-                suffixIcon: IconButton(
-                  onPressed: () =>
-                      setState(() => _showPassword = !_showPassword),
-                  icon: Icon(
-                    _showPassword ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.grey,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: authProvider.isLoading
-                    ? null
-                    : () async {
-                        try {
-                          await authProvider.register({
-                            'name': _nameController.text,
-                            'email': _emailController.text,
-                            'address': _addressController.text,
-                            'phone': _phoneController.text,
-                            'password': _passwordController.text,
-                          });
-                          if (mounted) {
-                            context.read<OrderProvider>().refreshOrders();
-                            context.go('/');
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(e.toString())),
-                            );
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  elevation: 5,
-                  shadowColor: Theme.of(
-                    context,
-                  ).primaryColor.withValues(alpha: 0.3),
-                ),
-                child: authProvider.isLoading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Sign Up',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Already have an account? ",
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                  GestureDetector(
-                    onTap: () => context.push('/login'),
-                    child: Text(
-                      'Sign In',
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
-        ),
+          const SizedBox(height: 32),
+          AppTextField(
+            controller: _nameController,
+            hint: 'Full Name',
+            icon: Icons.person_outline,
+            validator: Validators.required('Full name'),
+          ),
+          const SizedBox(height: 16),
+          AppTextField(
+            controller: _emailController,
+            hint: 'Email',
+            icon: Icons.mail_outline,
+            keyboardType: TextInputType.emailAddress,
+            validator: Validators.email,
+          ),
+          const SizedBox(height: 16),
+          AppTextField(
+            controller: _addressController,
+            hint: 'Default Delivery Address',
+            icon: Icons.location_on_outlined,
+            validator: Validators.required('Delivery address'),
+          ),
+          const SizedBox(height: 16),
+          AppTextField(
+            controller: _phoneController,
+            hint: 'Phone Number',
+            icon: Icons.call_outlined,
+            keyboardType: TextInputType.phone,
+            validator: Validators.phone,
+          ),
+          const SizedBox(height: 16),
+          AppTextField(
+            controller: _passwordController,
+            hint: 'Password',
+            icon: Icons.lock_outline,
+            obscureText: !_showPassword,
+            validator: Validators.password,
+            suffixIcon: PasswordToggleIcon(
+              isVisible: _showPassword,
+              onToggle: _togglePasswordVisibility,
+            ),
+          ),
+          const SizedBox(height: 32),
+          CustomButton(
+            label: 'Sign Up',
+            isLoading: isLoading,
+            onPressed: _submit,
+            primaryColor: primaryColor,
+          ),
+          const SizedBox(height: 32),
+          const _SignInPrompt(),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    bool obscure = false,
-    Widget? suffixIcon,
-    TextInputType? keyboardType,
-  }) {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.grey[500], size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              obscureText: obscure,
-              keyboardType: keyboardType,
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                border: InputBorder.none,
-              ),
+class _SignInPrompt extends StatelessWidget {
+  const _SignInPrompt();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Already have an account? ',
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+        GestureDetector(
+          onTap: () => GoRouter.of(context).push('/login'),
+          child: Text(
+            'Sign In',
+            style: TextStyle(
+              color: Theme.of(context).primaryColor,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          ?suffixIcon,
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

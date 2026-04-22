@@ -77,13 +77,21 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         Text(
                           user.email,
-                          style: const TextStyle(color: Colors.grey, fontSize: 14),
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 14,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -131,26 +139,14 @@ class ProfileScreen extends StatelessWidget {
             ),
             _buildSettingRow(
               context,
-              Icons.business,
-              'Store Management',
-              () => context.push('/admin-login'),
-            ),
-            _buildSettingRow(
-              context,
               Icons.help_outline,
               'Help & Support',
               () => _launchWhatsApp(),
             ),
-            _buildSettingRow(
-              context,
-              Icons.logout,
-              'Logout',
-              () {
-                authProvider.logout();
-                context.read<OrderProvider>().clearOrders();
-              },
-              color: Colors.red,
-            ),
+            _buildSettingRow(context, Icons.logout, 'Logout', () {
+              authProvider.logout();
+              context.read<OrderProvider>().clearOrders();
+            }, color: Colors.red),
           ],
         ),
       ),
