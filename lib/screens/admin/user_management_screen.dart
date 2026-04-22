@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../models/user.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -13,17 +10,35 @@ class UserManagementScreen extends StatefulWidget {
 class _UserManagementScreenState extends State<UserManagementScreen> {
   // In a real app, this would come from an API
   final List<Map<String, dynamic>> _mockUsers = [
-    {'id': '1', 'name': 'John Doe', 'email': 'john@example.com', 'role': 'user'},
-    {'id': '2', 'name': 'Jane Store', 'email': 'jane@store.com', 'role': 'store_owner'},
+    {
+      'id': '1',
+      'name': 'John Doe',
+      'email': 'john@example.com',
+      'role': 'user',
+    },
+    {
+      'id': '2',
+      'name': 'Jane Store',
+      'email': 'jane@store.com',
+      'role': 'store_owner',
+    },
     {'id': '3', 'name': 'Bob Rider', 'email': 'bob@rider.com', 'role': 'rider'},
-    {'id': '4', 'name': 'Admin User', 'email': 'admin@lauchfast.com', 'role': 'admin'},
+    {
+      'id': '4',
+      'name': 'Admin User',
+      'email': 'admin@lauchfast.com',
+      'role': 'admin',
+    },
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('User Management', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'User Management',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -53,13 +68,22 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
           backgroundColor: roleColor.withValues(alpha: 0.1),
-          child: Text(user['name'][0], style: TextStyle(color: roleColor, fontWeight: FontWeight.bold)),
+          child: Text(
+            user['name'][0],
+            style: TextStyle(color: roleColor, fontWeight: FontWeight.bold),
+          ),
         ),
-        title: Text(user['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          user['name'],
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(user['email'], style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+            Text(
+              user['email'],
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -69,7 +93,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               ),
               child: Text(
                 user['role'].toString().toUpperCase().replaceAll('_', ' '),
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: roleColor),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: roleColor,
+                ),
               ),
             ),
           ],
@@ -86,7 +114,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           },
           itemBuilder: (context) => [
             const PopupMenuItem(value: 'user', child: Text('Set as User')),
-            const PopupMenuItem(value: 'store_owner', child: Text('Set as Store Owner')),
+            const PopupMenuItem(
+              value: 'store_owner',
+              child: Text('Set as Store Owner'),
+            ),
             const PopupMenuItem(value: 'rider', child: Text('Set as Rider')),
             const PopupMenuItem(value: 'admin', child: Text('Set as Admin')),
           ],

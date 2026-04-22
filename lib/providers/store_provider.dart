@@ -33,10 +33,10 @@ class StoreProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    // Note: In many Flutter architectures, providers are rarely disposed 
-    // unless they are scoped. If you use a scoped provider, you'd want to 
+    // Note: In many Flutter architectures, providers are rarely disposed
+    // unless they are scoped. If you use a scoped provider, you'd want to
     // remove the listener here.
-    // ablyService.removeStoreListener(_onStoreUpdate); 
+    // ablyService.removeStoreListener(_onStoreUpdate);
     super.dispose();
   }
 
@@ -47,12 +47,12 @@ class StoreProvider with ChangeNotifier {
     try {
       final fetchedStores = await menuRepository.getStores();
       final fetchedMenu = await menuRepository.getMenuItems();
-      
+
       if (fetchedStores.isNotEmpty) _stores = fetchedStores;
       if (fetchedMenu.isNotEmpty) _menuItems = fetchedMenu;
     } catch (e) {
       _error = 'Failed to fetch data from API';
-      print('Fetch error: $e');
+      // print('Fetch error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -65,7 +65,7 @@ class StoreProvider with ChangeNotifier {
       _menuItems.add(newItem);
       notifyListeners();
     } catch (e) {
-      print('Add item error: $e');
+      // print('Add item error: $e');
     }
   }
 
@@ -78,7 +78,7 @@ class StoreProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Update item error: $e');
+      // print('Update item error: $e');
     }
   }
 
@@ -88,7 +88,7 @@ class StoreProvider with ChangeNotifier {
       _menuItems.removeWhere((item) => item.id == id);
       notifyListeners();
     } catch (e) {
-      print('Delete item error: $e');
+      // print('Delete item error: $e');
     }
   }
 }

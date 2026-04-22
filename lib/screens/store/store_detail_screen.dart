@@ -127,8 +127,8 @@ class StoreDetailScreen extends StatelessWidget {
                           ),
                         ),
                     ],
+                  ),
                 ),
-              ),
               ),
               SliverToBoxAdapter(
                 child: Container(
@@ -275,7 +275,7 @@ class StoreDetailScreen extends StatelessWidget {
                       color: Colors.white,
                       size: 28,
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(
                       child: Text(
                         'This store is currently not taking orders.',

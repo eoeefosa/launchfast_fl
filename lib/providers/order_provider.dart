@@ -33,7 +33,7 @@ class OrderProvider with ChangeNotifier {
       _orders = ordersList.map((i) => Order.fromJson(i)).toList();
       notifyListeners();
     }
-    
+
     // Initialize Ably if user is logged in
     const storage = FlutterSecureStorage();
     final userStr = await storage.read(key: 'launch-fast-user');
@@ -45,7 +45,7 @@ class OrderProvider with ChangeNotifier {
           initializeAbly(userId);
         }
       } catch (e) {
-        print('Error initializing Ably from stored user: $e');
+        // print('Error initializing Ably from stored user: $e');
       }
     }
   }
@@ -57,8 +57,11 @@ class OrderProvider with ChangeNotifier {
       final fetchedOrders = await orderRepository.getMyOrders();
       _orders = fetchedOrders;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('launch-fast-orders', jsonEncode(_orders.map((o) => o.toJson()).toList()));
-      
+      await prefs.setString(
+        'launch-fast-orders',
+        jsonEncode(_orders.map((o) => o.toJson()).toList()),
+      );
+
       const storage = FlutterSecureStorage();
       final userStr = await storage.read(key: 'launch-fast-user');
       if (userStr != null) {
@@ -67,7 +70,7 @@ class OrderProvider with ChangeNotifier {
         if (userId != null) initializeAbly(userId);
       }
     } catch (e) {
-      print('Failed to refresh orders: $e');
+      // print('Failed to refresh orders: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -81,10 +84,13 @@ class OrderProvider with ChangeNotifier {
       final newOrder = await orderRepository.placeOrder(orderData);
       _orders.insert(0, newOrder);
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('launch-fast-orders', jsonEncode(_orders.map((o) => o.toJson()).toList()));
+      await prefs.setString(
+        'launch-fast-orders',
+        jsonEncode(_orders.map((o) => o.toJson()).toList()),
+      );
       return newOrder;
     } catch (e) {
-      print('Place order error: $e');
+      // print('Place order error: $e');
       return null;
     } finally {
       _isLoading = false;
@@ -102,10 +108,13 @@ class OrderProvider with ChangeNotifier {
         _orders[index] = updatedOrder;
       }
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('launch-fast-orders', jsonEncode(_orders.map((o) => o.toJson()).toList()));
+      await prefs.setString(
+        'launch-fast-orders',
+        jsonEncode(_orders.map((o) => o.toJson()).toList()),
+      );
       return updatedOrder;
     } catch (e) {
-      print('Update order error: $e');
+      // print('Update order error: $e');
       return null;
     } finally {
       _isLoading = false;

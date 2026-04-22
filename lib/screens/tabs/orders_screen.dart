@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast_fl/models/cart_item.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -287,8 +286,9 @@ class OrdersScreen extends StatelessWidget {
   Widget _buildAnimatedIcon(BuildContext context, OrderStatus status) {
     IconData icon = Icons.timer_rounded;
     if (status == OrderStatus.preparing) icon = Icons.restaurant_rounded;
-    if (status == OrderStatus.outForDelivery)
+    if (status == OrderStatus.outForDelivery) {
       icon = Icons.delivery_dining_rounded;
+    }
     if (status == OrderStatus.delivered) icon = Icons.check_circle_rounded;
 
     return Container(
@@ -572,15 +572,17 @@ class OrdersScreen extends StatelessWidget {
 
   Widget _buildDetailItem(CartItem i) {
     final addons = [];
-    if (i.selectedMeats != null)
+    if (i.selectedMeats != null) {
       i.selectedMeats!.forEach((k, v) {
         if (v > 0) addons.add('${v}x $k Meat');
       });
+    }
     if (i.hasSalad) addons.add('Salad');
-    if (i.selectedAddons != null)
+    if (i.selectedAddons != null) {
       i.selectedAddons!.forEach((k, v) {
         if (v > 0) addons.add('${v}x $k');
       });
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),

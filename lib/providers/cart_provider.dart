@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/order.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/cart_item.dart';
 import '../models/menu_item.dart';
 import '../constants/static_data.dart';
 
@@ -32,7 +31,7 @@ class CartProvider with ChangeNotifier {
         final List<dynamic> cartList = jsonDecode(cartStr);
         _items = cartList.map((i) => CartItem.fromJson(i)).toList();
       } catch (e) {
-        print('Failed to load cart: $e');
+        // print('Failed to load cart: $e');
       }
     }
     _isLoaded = true;

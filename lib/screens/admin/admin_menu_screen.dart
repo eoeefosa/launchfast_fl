@@ -141,7 +141,7 @@ class AdminMenuScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(
-              value: category,
+              initialValue: category,
               items: [
                 'Rice',
                 'Swallow',

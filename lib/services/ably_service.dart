@@ -18,7 +18,7 @@ class AblyService {
 
   // Listener registry for order updates
   final List<Function(String orderId, OrderStatus status)> _orderListeners = [];
-  
+
   // Listener registry for store updates
   final List<Function(String storeId, bool isOpen)> _storeListeners = [];
 
@@ -44,7 +44,7 @@ class AblyService {
               response.data as Map<String, dynamic>,
             );
           } catch (e) {
-            print('Ably Auth Error: $e');
+            // print('Ably Auth Error: $e');
             throw Exception('Failed to get Ably token');
           }
         }
@@ -56,7 +56,7 @@ class AblyService {
       _connectionSubscription = _realtime!.connection.on().listen((
         ably.ConnectionStateChange stateChange,
       ) {
-        print('Ably connection state: ${stateChange.current}');
+        // print('Ably connection state: ${stateChange.current}');
         if (stateChange.current == ably.ConnectionState.connected) {
           _subscribeChannel(userId);
         }
@@ -74,47 +74,47 @@ class AblyService {
     _channelSubscription = null;
 
     _userChannel = _realtime!.channels.get('user:$userId');
-    _channelSubscription = _userChannel!.subscribe(name: 'order-update').listen((
-      ably.Message message,
-    ) {
-      try {
-        final data = message.data as Map;
-        final orderId = data['orderId'] as String;
-        final statusStr = data['status'] as String;
-        final status = OrderStatusExtension.fromString(statusStr);
+    _channelSubscription = _userChannel!.subscribe(name: 'order-update').listen(
+      (ably.Message message) {
+        try {
+          final data = message.data as Map;
+          final orderId = data['orderId'] as String;
+          final statusStr = data['status'] as String;
+          final status = OrderStatusExtension.fromString(statusStr);
 
-        print('Ably received order update: $orderId => $statusStr');
+          // print('Ably received order update: $orderId => $statusStr');
 
-        // Notify order listeners
-        for (final cb in _orderListeners) {
-          cb(orderId, status);
+          // Notify order listeners
+          for (final cb in _orderListeners) {
+            cb(orderId, status);
+          }
+        } catch (e) {
+          // print('Error processing order update message: $e');
         }
-      } catch (e) {
-        print('Error processing order update message: $e');
-      }
-    });
+      },
+    );
 
     // Subscribe to public stores channel
     _storesSubscription?.cancel();
     _storesChannel = _realtime!.channels.get('public:stores');
-    _storesSubscription = _storesChannel!.subscribe(name: 'store-toggle').listen((
-      ably.Message message,
-    ) {
-      try {
-        final data = message.data as Map;
-        final storeId = data['storeId'] as String;
-        final isOpen = data['isOpen'] as bool;
+    _storesSubscription = _storesChannel!
+        .subscribe(name: 'store-toggle')
+        .listen((ably.Message message) {
+          try {
+            final data = message.data as Map;
+            final storeId = data['storeId'] as String;
+            final isOpen = data['isOpen'] as bool;
 
-        print('Ably received store toggle: $storeId => isOpen: $isOpen');
+            // print('Ably received store toggle: $storeId => isOpen: $isOpen');
 
-        // Notify store listeners
-        for (final cb in _storeListeners) {
-          cb(storeId, isOpen);
-        }
-      } catch (e) {
-        print('Error processing store toggle message: $e');
-      }
-    });
+            // Notify store listeners
+            for (final cb in _storeListeners) {
+              cb(storeId, isOpen);
+            }
+          } catch (e) {
+            // print('Error processing store toggle message: $e');
+          }
+        });
   }
 
   // Order listeners
@@ -124,7 +124,9 @@ class AblyService {
     }
   }
 
-  void removeOrderListener(Function(String orderId, OrderStatus status) listener) {
+  void removeOrderListener(
+    Function(String orderId, OrderStatus status) listener,
+  ) {
     _orderListeners.remove(listener);
   }
 
@@ -165,7 +167,7 @@ class AblyService {
     _orderListeners.clear();
     _storeListeners.clear();
     _isConnecting = false;
-    print('Ably disconnected and listeners cleared');
+    // print('Ably disconnected and listeners cleared');
   }
 }
 

@@ -31,23 +31,23 @@ class ApiService {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-          print(
-            '🚀 [API Request] ${options.method.toUpperCase()} ${options.path}',
-          );
+          // print(
+          //   '🚀 [API Request] ${options.method.toUpperCase()} ${options.path}',
+          // );
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print(
-            '✅ [API Response] ${response.statusCode} ${response.requestOptions.path}',
-          );
+          // print(
+          //   '✅ [API Response] ${response.statusCode} ${response.requestOptions.path}',
+          // );
           return handler.next(response);
         },
         onError: (DioException e, handler) {
-          print(
-            '❌ [API Error] ${e.response?.statusCode ?? 'Timeout'} ${e.requestOptions.path}',
-          );
-          print('Message: ${e.response?.data?['error'] ?? e.message}');
-          return handler.next(e);
+          // print(
+          //   '❌ [API Error] ${e.response?.statusCode ?? 'Timeout'} ${e.requestOptions.path}',
+          // );
+          // print('Message: ${e.response?.data?['error'] ?? e.message}');
+          // return handler.next(e);
         },
       ),
     );

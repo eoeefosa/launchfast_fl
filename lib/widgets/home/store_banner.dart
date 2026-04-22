@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/store.dart';
 
 class StoreBanner extends StatelessWidget {
@@ -55,7 +54,11 @@ class StoreBanner extends StatelessWidget {
                     children: [
                       _buildInfo(Icons.timer_outlined, store.deliveryTime),
                       const SizedBox(width: 12),
-                      _buildInfo(Icons.star, '${store.rating}', color: Colors.amber),
+                      _buildInfo(
+                        Icons.star,
+                        '${store.rating}',
+                        color: Colors.amber,
+                      ),
                       const SizedBox(width: 12),
                       _buildStatus(store.isOpen),
                     ],
@@ -104,4 +107,3 @@ class StoreBanner extends StatelessWidget {
     );
   }
 }
-

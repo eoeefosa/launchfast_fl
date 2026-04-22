@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/store_provider.dart';
 import '../models/store.dart';
 
@@ -56,7 +55,9 @@ class StoresScreen extends StatelessWidget {
               child: Container(
                 height: 160,
                 width: double.infinity,
-                color: Color(int.parse(store.accentColor.replaceFirst('#', '0xFF'))),
+                color: Color(
+                  int.parse(store.accentColor.replaceFirst('#', '0xFF')),
+                ),
                 child: Stack(
                   children: [
                     Center(
@@ -70,14 +71,20 @@ class StoresScreen extends StatelessWidget {
                       bottom: 12,
                       right: 12,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           store.deliveryTime,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
