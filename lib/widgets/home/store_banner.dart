@@ -1,0 +1,137 @@
+import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../models/store.dart';
+
+class StoreBanner extends StatelessWidget {
+  final Store store;
+
+  const StoreBanner({super.key, required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: 140,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -20,
+              top: -20,
+              bottom: -20,
+              width: 180,
+              child: Opacity(
+                opacity: 0.8,
+                child: Hero(
+                  tag: 'store-bg-${store.id}',
+                  child: CachedNetworkImage(
+                    imageUrl: store.image,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white,
+                      Colors.white.withValues(alpha: 0.9),
+                      Colors.white.withValues(alpha: 0.0),
+                    ],
+                    stops: const [0.5, 0.7, 1.0],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    store.name,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    store.tagline,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _buildInfo(Icons.timer_outlined, store.deliveryTime),
+                      const SizedBox(width: 12),
+                      _buildInfo(Icons.star, '${store.rating}', color: Colors.amber),
+                      const SizedBox(width: 12),
+                      _buildStatus(store.isOpen),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfo(IconData icon, String text, {Color? color}) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: color ?? Colors.grey[600]),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: color != null ? Colors.black87 : Colors.grey[600],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatus(bool isOpen) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isOpen ? Colors.green[50] : Colors.red[50],
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        isOpen ? 'OPEN' : 'CLOSED',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          color: isOpen ? Colors.green[700] : Colors.red[700],
+        ),
+      ),
+    );
+  }
+}
+
