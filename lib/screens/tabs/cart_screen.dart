@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../providers/cart_provider.dart';
 import '../../constants/static_data.dart';
 import '../../models/cart_item.dart';
@@ -11,102 +12,44 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cartProvider = context.watch<CartProvider>();
-    final items = cartProvider.items;
+    final cart = context.watch<CartProvider>();
 
-    if (items.isEmpty) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey[300]),
-              const SizedBox(height: 20),
-              const Text(
-                'Your cart is empty',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Looks like you haven't added anything yet.",
-                style: TextStyle(fontSize: 16, color: Colors.grey[500]),
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () => context.go('/'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                ),
-                child: const Text('Browse Stores', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    if (cart.items.isEmpty) return const _EmptyCartView();
 
-    final currentStore = StaticData.stores.firstWhere((s) => s.id == cartProvider.currentStoreId);
-    final accentColor = Color(int.parse(currentStore.accentColor.replaceFirst('#', '0xFF')));
+    final store = StaticData.stores.firstWhere(
+      (s) => s.id == cart.currentStoreId,
+    );
+
+    final accentColor = Color(
+      int.parse(store.accentColor.replaceFirst('#', '0xFF')),
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your Cart', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Your Cart'),
         actions: [
-          TextButton(
-            onPressed: () => cartProvider.clearCart(),
-            child: Text('Clear', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.w500)),
-          ),
-          const SizedBox(width: 8),
+          TextButton(onPressed: cart.clearCart, child: const Text('Clear')),
         ],
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(cartProvider.editingOrderId != null ? 80 : 40),
+          preferredSize: Size.fromHeight(
+            cart.editingOrderId != null ? 140 : 100,
+          ),
           child: Column(
             children: [
-              if (cartProvider.editingOrderId != null)
-                Container(
-                  width: double.infinity,
-                  color: Colors.orange[50],
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.edit_outlined, size: 16, color: Colors.orange),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Editing Order',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange,
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => cartProvider.stopEditing(),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text('Cancel', style: TextStyle(fontSize: 12)),
-                      ),
-                    ],
-                  ),
-                ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                alignment: Alignment.centerLeft,
+              if (cart.editingOrderId != null) const _EditingBanner(),
+              Padding(
+                padding: const EdgeInsets.all(12),
                 child: RichText(
                   text: TextSpan(
-                    style: const TextStyle(color: Colors.black, fontSize: 16),
+                    style: const TextStyle(color: Colors.black),
                     children: [
                       const TextSpan(text: 'Ordering from '),
                       TextSpan(
-                        text: currentStore.name,
-                        style: TextStyle(fontWeight: FontWeight.bold, color: accentColor),
+                        text: store.name,
+                        style: TextStyle(
+                          color: accentColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -116,88 +59,120 @@ class CartScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+      body: _CartBody(cart: cart),
+      bottomSheet: _CheckoutBar(total: cart.cartTotal),
+    );
+  }
+}
+
+// ================= EMPTY VIEW =================
+class _EmptyCartView extends StatelessWidget {
+  const _EmptyCartView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ...items.map((item) => _buildCartItem(context, cartProvider, item)),
+            Icon(
+              Icons.shopping_cart_outlined,
+              size: 80,
+              color: Colors.grey[300],
+            ),
             const SizedBox(height: 20),
             const Text(
-              'Order Summary',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              'Your cart is empty',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            _buildSummaryRow('Subtotal', cartProvider.subTotal),
-            _buildSummaryRow('Delivery Fees', cartProvider.deliveryFees),
-            _buildSummaryRow('Service Charges', cartProvider.serviceFees),
-            const Divider(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(
-                  '₦${cartProvider.cartTotal.toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
-                ),
-              ],
+            const SizedBox(height: 8),
+            Text(
+              "Looks like you haven't added anything yet.",
+              style: TextStyle(fontSize: 16, color: Colors.grey[500]),
             ),
-            const SizedBox(height: 100),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              onPressed: () => context.go('/'),
+              child: const Text('Browse Stores'),
+            ),
           ],
-        ),
-      ),
-      bottomSheet: Container(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).padding.bottom + 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Colors.grey[200]!)),
-        ),
-        child: ElevatedButton(
-          onPressed: () => context.push('/checkout'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).primaryColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-            minimumSize: const Size(double.infinity, 0),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SizedBox(width: 48),
-              const Text('Proceed to Checkout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              Padding(
-                padding: const EdgeInsets.only(right: 24),
-                child: Text('₦${cartProvider.cartTotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildCartItem(BuildContext context, CartProvider cartProvider, CartItem item) {
-    final meatDesc = item.selectedMeats != null 
-        ? item.selectedMeats!.entries
-            .where((e) => e.value > 0)
-            .map((e) => '${e.value}x ${e.key}')
-            .join(', ')
-        : '';
+class _EditingBanner extends StatelessWidget {
+  const _EditingBanner();
 
-    double itemTotalPrice = item.menuItem.price;
-    if (item.selectedMeats != null) {
-      item.selectedMeats!.forEach((type, count) {
-        itemTotalPrice += (StaticData.meatPrices[type] ?? 0) * count;
-      });
-    }
-    if (item.hasSalad) itemTotalPrice += StaticData.saladPrice;
-    if (item.selectedAddons != null) {
-        item.selectedAddons!.forEach((addonId, count) {
-          final addonItem = StaticData.menuItems.firstWhere((m) => m.id == addonId);
-          itemTotalPrice += addonItem.price * count;
-        });
-      }
+  @override
+  Widget build(BuildContext context) {
+    final cart = context.read<CartProvider>();
+
+    return Container(
+      width: double.infinity,
+      color: Colors.orange[50],
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        children: [
+          const Icon(Icons.edit, size: 16, color: Colors.orange),
+          const SizedBox(width: 8),
+          const Expanded(child: Text('Editing Order')),
+          TextButton(onPressed: cart.stopEditing, child: const Text('Cancel')),
+        ],
+      ),
+    );
+  }
+}
+
+// ================= BODY =================
+class _CartBody extends StatelessWidget {
+  final CartProvider cart;
+
+  const _CartBody({required this.cart});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          ...cart.items.map((item) => CartItemTile(item: item)),
+          const SizedBox(height: 20),
+          const _SummarySection(),
+        ],
+      ),
+    );
+  }
+}
+
+// ================= ITEM TILE =================
+class CartItemTile extends StatelessWidget {
+  final CartItem item;
+
+  const CartItemTile({super.key, required this.item});
+
+  double _calculatePrice() {
+    double total = item.menuItem.price;
+
+    item.selectedMeats?.forEach((type, count) {
+      total += (StaticData.meatPrices[type] ?? 0) * count;
+    });
+
+    if (item.hasSalad) total += StaticData.saladPrice;
+
+    item.selectedAddons?.forEach((id, count) {
+      final addon = StaticData.menuItems.firstWhere((m) => m.id == id);
+      total += addon.price * count;
+    });
+
+    return total;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cart = context.read<CartProvider>();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -222,64 +197,83 @@ class CartScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.menuItem.name,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (meatDesc.isNotEmpty)
-                  Text('🍖 $meatDesc', style: TextStyle(fontSize: 12, color: Theme.of(context).primaryColor)),
-                if (item.hasSalad)
-                  Text('🥗 Includes Fresh Salad', style: TextStyle(fontSize: 12, color: Theme.of(context).primaryColor)),
-                Text(
-                  '₦${itemTotalPrice.toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
-                ),
+                Text(item.menuItem.name),
+                Text('₦${_calculatePrice().toStringAsFixed(2)}'),
               ],
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () => cartProvider.updateQuantity(item.menuItem.id, item.quantity - 1, selectedMeats: item.selectedMeats),
-                  icon: Icon(
-                    item.quantity == 1 ? Icons.delete_outline : Icons.remove,
-                    size: 16,
-                    color: item.quantity == 1 ? Colors.red : Colors.black,
-                  ),
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  padding: EdgeInsets.zero,
-                ),
-                Text('${item.quantity}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                IconButton(
-                  onPressed: () => cartProvider.updateQuantity(item.menuItem.id, item.quantity + 1, selectedMeats: item.selectedMeats),
-                  icon: const Icon(Icons.add, size: 16),
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  padding: EdgeInsets.zero,
-                ),
-              ],
-            ),
+          Row(
+            children: [
+              IconButton(
+                onPressed: () =>
+                    cart.updateQuantity(item.menuItem.id, item.quantity - 1),
+                icon: const Icon(Icons.remove),
+              ),
+              Text('${item.quantity}'),
+              IconButton(
+                onPressed: () =>
+                    cart.updateQuantity(item.menuItem.id, item.quantity + 1),
+                icon: const Icon(Icons.add),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSummaryRow(String label, double value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(fontSize: 15, color: Colors.grey[600])),
-          Text('₦${value.toStringAsFixed(2)}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-        ],
+// ================= SUMMARY =================
+class _SummarySection extends StatelessWidget {
+  const _SummarySection();
+
+  @override
+  Widget build(BuildContext context) {
+    final cart = context.watch<CartProvider>();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Order Summary'),
+        const SizedBox(height: 10),
+        _row('Subtotal', cart.subTotal),
+        _row('Delivery', cart.deliveryFees),
+        _row('Service', cart.serviceFees),
+        const Divider(),
+        _row('Total', cart.cartTotal, isBold: true),
+      ],
+    );
+  }
+
+  Widget _row(String label, double value, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label),
+        Text(
+          '₦${value.toStringAsFixed(2)}',
+          style: TextStyle(
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ================= CHECKOUT =================
+class _CheckoutBar extends StatelessWidget {
+  final double total;
+
+  const _CheckoutBar({required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: ElevatedButton(
+        onPressed: () => context.push('/checkout'),
+        child: Text('Checkout • ₦${total.toStringAsFixed(2)}'),
       ),
     );
   }

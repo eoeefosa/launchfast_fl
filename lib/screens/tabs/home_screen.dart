@@ -14,7 +14,7 @@ import '../../widgets/home/cart_bar.dart';
 import '../../providers/auth_provider.dart';
 import '../admin/admin_dashboard.dart';
 import '../dashboards/store_owner_dashboard.dart';
-import '../dashboards/rider_dashboard.dart';
+import '../dashboards/rider/rider_dashboard.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
