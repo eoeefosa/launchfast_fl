@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:launchfast_fl/screens/auth/login_screen.dart';
 import 'package:launchfast_fl/screens/auth/register_screen.dart';
 import 'package:launchfast_fl/screens/dashboards/rider/main_rider.dart';
+import 'package:launchfast_fl/screens/dashboards/store/store_main_nav.dart';
 import 'package:launchfast_fl/screens/tabs/home_screen.dart';
 import 'package:launchfast_fl/screens/tabs/orders_screen.dart';
 import 'package:launchfast_fl/screens/tabs/profile_screen.dart';
@@ -16,8 +17,7 @@ import 'screens/admin/user_management_screen.dart';
 import 'screens/stores_screen.dart';
 
 final router = GoRouter(
-  // initialLocation: '/',
-  initialLocation: '/rider',
+  initialLocation: '/',
   routes: [
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
@@ -90,5 +90,6 @@ final router = GoRouter(
       path: '/rider',
       builder: (context, state) => const MainNavigation(),
     ),
+    GoRoute(path: '/store', builder: (context, state) => const StoreMainNav()),
   ],
 );

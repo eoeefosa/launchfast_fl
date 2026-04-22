@@ -13,7 +13,7 @@ import '../../widgets/home/cart_bar.dart';
 
 import '../../providers/auth_provider.dart';
 import '../admin/admin_dashboard.dart';
-import '../dashboards/store_owner_dashboard.dart';
+import '../dashboards/store/store_main_nav.dart';
 import '../dashboards/rider/rider_dashboard.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Role-based UI redirection
     if (user?.role == 'admin') return const AdminDashboard();
-    if (user?.role == 'store_owner') return const StoreOwnerDashboard();
+    if (user?.role == 'store_owner') return const StoreMainNav();
     if (user?.role == 'rider') return const RiderDashboard();
 
     if (storeProvider.isLoading && storeProvider.stores.isEmpty) {
