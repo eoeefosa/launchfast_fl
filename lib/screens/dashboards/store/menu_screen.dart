@@ -53,11 +53,15 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
     // Find store owned by the user
     final ownedStore = storeProvider.stores.firstWhere(
       (s) => s.ownerId == userId,
-      orElse: () => storeProvider.stores.isNotEmpty ? storeProvider.stores.first : StaticData.stores.first,
+      orElse: () => storeProvider.stores.isNotEmpty
+          ? storeProvider.stores.first
+          : StaticData.stores.first,
     );
     final storeId = ownedStore.id;
 
-    final allItems = storeProvider.menuItems.where((i) => i.storeId == storeId).toList();
+    final allItems = storeProvider.menuItems
+        .where((i) => i.storeId == storeId)
+        .toList();
     final filtered = _getFiltered(allItems);
 
     return Scaffold(
@@ -79,7 +83,8 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: () => _showAddEditDialog(context, storeProvider, storeId, null),
+            onPressed: () =>
+                _showAddEditDialog(context, storeProvider, storeId, null),
           ),
         ],
       ),
@@ -102,7 +107,9 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
                     filled: true,
                     fillColor: bg,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide(color: border),
@@ -124,7 +131,7 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _categories.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
                     itemBuilder: (_, i) {
                       final cat = _categories[i];
                       final selected = _selectedCategory == cat;
@@ -133,11 +140,11 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 6),
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: selected
-                                ? AppColors.primary
-                                : surface,
+                            color: selected ? AppColors.primary : surface,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: selected ? AppColors.primary : border,
@@ -182,49 +189,60 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
                     child: CircularProgressIndicator(color: AppColors.primary),
                   )
                 : filtered.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.restaurant_menu_outlined,
-                                size: 64, color: muted),
-                            const SizedBox(height: 12),
-                            Text(
-                              allItems.isEmpty
-                                  ? 'No menu items yet.\nTap + to add one.'
-                                  : 'No items match your search.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: muted, fontSize: 15),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.restaurant_menu_outlined,
+                          size: 64,
+                          color: muted,
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                        itemCount: filtered.length,
-                        itemBuilder: (_, i) => _MenuItemCard(
-                          item: filtered[i],
-                          textColor: textColor,
-                          muted: muted,
-                          surface: surface,
-                          border: border,
-                          onEdit: () => _showAddEditDialog(
-                              context, storeProvider, storeId, filtered[i]),
-                          onDelete: () =>
-                              _confirmDelete(context, storeProvider, filtered[i]),
-                          onToggleReady: () => _toggleItemReady(
-                              context, storeProvider, filtered[i]),
+                        const SizedBox(height: 12),
+                        Text(
+                          allItems.isEmpty
+                              ? 'No menu items yet.\nTap + to add one.'
+                              : 'No items match your search.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: muted, fontSize: 15),
                         ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                    itemCount: filtered.length,
+                    itemBuilder: (_, i) => _MenuItemCard(
+                      item: filtered[i],
+                      textColor: textColor,
+                      muted: muted,
+                      surface: surface,
+                      border: border,
+                      onEdit: () => _showAddEditDialog(
+                        context,
+                        storeProvider,
+                        storeId,
+                        filtered[i],
                       ),
+                      onDelete: () =>
+                          _confirmDelete(context, storeProvider, filtered[i]),
+                      onToggleReady: () =>
+                          _toggleItemReady(context, storeProvider, filtered[i]),
+                    ),
+                  ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddEditDialog(context, storeProvider, storeId, null),
+        onPressed: () =>
+            _showAddEditDialog(context, storeProvider, storeId, null),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('Add Item', style: TextStyle(fontWeight: FontWeight.w600)),
+        label: const Text(
+          'Add Item',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
       ),
     );
   }
@@ -260,19 +278,23 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             onPressed: () async {
               Navigator.pop(context);
               await provider.deleteMenuItem(item.id);
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('"${item.name}" deleted'),
-                  backgroundColor: Colors.red.shade700,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('"${item.name}" deleted'),
+                    backgroundColor: Colors.red.shade700,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                );
               }
             },
             child: const Text('Delete'),
@@ -293,15 +315,16 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
     final isEdit = item != null;
     final nameCtrl = TextEditingController(text: item?.name ?? '');
     final descCtrl = TextEditingController(text: item?.description ?? '');
-    final priceCtrl =
-        TextEditingController(text: item != null ? '${item.price}' : '');
+    final priceCtrl = TextEditingController(
+      text: item != null ? '${item.price}' : '',
+    );
     final imageCtrl = TextEditingController(text: item?.image ?? '');
     String selectedCat = item?.category ?? 'Rice';
     bool isReady = item?.isReady ?? true;
     bool popular = item?.popular ?? false;
 
     // Auth: get storeId from owned store (best effort)
-    final auth = context.read<AuthProvider>();
+    // final auth = context.read<AuthProvider>();
     final stores = provider.stores;
     String? storeId;
     if (stores.isNotEmpty) storeId = stores.first.id;
@@ -315,17 +338,22 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
           initialChildSize: 0.88,
           minChildSize: 0.5,
           maxChildSize: 0.95,
-          builder: (__, scrollCtrl) {
-            final bg = isDark ? AppColors.darkSurface : AppColors.lightBackground;
+          builder: (_, scrollCtrl) {
+            final bg = isDark
+                ? AppColors.darkSurface
+                : AppColors.lightBackground;
             final textColor = isDark ? AppColors.darkText : AppColors.lightText;
             final muted = isDark ? AppColors.darkMuted : AppColors.lightMuted;
-            final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+            final border = isDark
+                ? AppColors.darkBorder
+                : AppColors.lightBorder;
 
             return Container(
               decoration: BoxDecoration(
                 color: bg,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
               ),
               child: ListView(
                 controller: scrollCtrl,
@@ -354,64 +382,110 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  _buildField('Item Name', nameCtrl, textColor, muted, border, bg),
+                  _buildField(
+                    'Item Name',
+                    nameCtrl,
+                    textColor,
+                    muted,
+                    border,
+                    bg,
+                  ),
                   const SizedBox(height: 14),
-                  _buildField('Description', descCtrl, textColor, muted, border, bg,
-                      maxLines: 2),
+                  _buildField(
+                    'Description',
+                    descCtrl,
+                    textColor,
+                    muted,
+                    border,
+                    bg,
+                    maxLines: 2,
+                  ),
                   const SizedBox(height: 14),
-                  _buildField('Price (₦)', priceCtrl, textColor, muted, border, bg,
-                      keyboardType: TextInputType.number),
+                  _buildField(
+                    'Price (₦)',
+                    priceCtrl,
+                    textColor,
+                    muted,
+                    border,
+                    bg,
+                    keyboardType: TextInputType.number,
+                  ),
                   const SizedBox(height: 14),
-                  _buildField('Image URL', imageCtrl, textColor, muted, border, bg),
+                  _buildField(
+                    'Image URL',
+                    imageCtrl,
+                    textColor,
+                    muted,
+                    border,
+                    bg,
+                  ),
                   const SizedBox(height: 16),
 
                   // Category
-                  Text('Category',
-                      style: TextStyle(color: muted, fontSize: 13)),
+                  Text(
+                    'Category',
+                    style: TextStyle(color: muted, fontSize: 13),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     children: ['Rice', 'Swallow', 'Soup', 'Others']
-                        .map((c) => GestureDetector(
-                              onTap: () => setModalState(() => selectedCat = c),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
+                        .map(
+                          (c) => GestureDetector(
+                            onTap: () => setModalState(() => selectedCat = c),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: selectedCat == c
+                                    ? AppColors.primary
+                                    : bg,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
                                   color: selectedCat == c
                                       ? AppColors.primary
-                                      : bg,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: selectedCat == c
-                                        ? AppColors.primary
-                                        : border,
-                                  ),
-                                ),
-                                child: Text(
-                                  c,
-                                  style: TextStyle(
-                                    color: selectedCat == c
-                                        ? Colors.white
-                                        : muted,
-                                    fontWeight: selectedCat == c
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
-                                  ),
+                                      : border,
                                 ),
                               ),
-                            ))
+                              child: Text(
+                                c,
+                                style: TextStyle(
+                                  color: selectedCat == c
+                                      ? Colors.white
+                                      : muted,
+                                  fontWeight: selectedCat == c
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
                         .toList(),
                   ),
                   const SizedBox(height: 16),
 
                   // Toggles
-                  _toggleRow('Available Now', isReady, muted, textColor, border,
-                      (v) => setModalState(() => isReady = v)),
+                  _toggleRow(
+                    'Available Now',
+                    isReady,
+                    muted,
+                    textColor,
+                    border,
+                    (v) => setModalState(() => isReady = v),
+                  ),
                   const SizedBox(height: 8),
-                  _toggleRow('Mark as Popular', popular, muted, textColor, border,
-                      (v) => setModalState(() => popular = v)),
+                  _toggleRow(
+                    'Mark as Popular',
+                    popular,
+                    muted,
+                    textColor,
+                    border,
+                    (v) => setModalState(() => popular = v),
+                  ),
                   const SizedBox(height: 24),
 
                   ElevatedButton(
@@ -420,9 +494,11 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
                       final desc = descCtrl.text.trim();
                       final price = double.tryParse(priceCtrl.text.trim()) ?? 0;
                       if (name.isEmpty || price <= 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Please fill all required fields'),
-                        ));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please fill all required fields'),
+                          ),
+                        );
                         return;
                       }
                       final data = {
@@ -439,20 +515,25 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
                       };
                       Navigator.pop(ctx);
                       if (isEdit) {
-                        await provider.updateMenuItem(item!.id, data);
+                        await provider.updateMenuItem(item.id, data);
                       } else {
                         await provider.addMenuItem(data);
                       }
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(isEdit
-                              ? 'Item updated successfully'
-                              : 'Item added successfully'),
-                          backgroundColor: Colors.green.shade700,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isEdit
+                                  ? 'Item updated successfully'
+                                  : 'Item added successfully',
+                            ),
+                            backgroundColor: Colors.green.shade700,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        );
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -460,13 +541,16 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
                       foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(52),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       elevation: 0,
                     ),
                     child: Text(
                       isEdit ? 'Save Changes' : 'Add Item',
                       style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -535,7 +619,7 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
           ),
         ],
       ),
@@ -598,8 +682,9 @@ class _MenuItemCard extends StatelessWidget {
                         item.image,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => const Icon(
-                            Icons.fastfood,
-                            color: AppColors.primary),
+                          Icons.fastfood,
+                          color: AppColors.primary,
+                        ),
                       )
                     : const Icon(Icons.fastfood, color: AppColors.primary),
               ),
@@ -624,7 +709,9 @@ class _MenuItemCard extends StatelessWidget {
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: (item.isReady ? Colors.green : Colors.red)
                               .withOpacity(0.12),
@@ -664,7 +751,9 @@ class _MenuItemCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -679,8 +768,11 @@ class _MenuItemCard extends StatelessWidget {
                       ),
                       if (item.popular) ...[
                         const SizedBox(width: 6),
-                        const Icon(Icons.star,
-                            size: 14, color: Color(0xFFF59E0B)),
+                        const Icon(
+                          Icons.star,
+                          size: 14,
+                          color: Color(0xFFF59E0B),
+                        ),
                       ],
                     ],
                   ),
@@ -692,8 +784,11 @@ class _MenuItemCard extends StatelessWidget {
               children: [
                 IconButton(
                   onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined,
-                      color: AppColors.primary, size: 20),
+                  icon: const Icon(
+                    Icons.edit_outlined,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -713,8 +808,11 @@ class _MenuItemCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 IconButton(
                   onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline,
-                      color: Colors.red, size: 20),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                    size: 20,
+                  ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),

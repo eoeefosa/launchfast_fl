@@ -12,9 +12,10 @@ import '../../widgets/home/menu_item_card.dart';
 import '../../widgets/home/cart_bar.dart';
 
 import '../../providers/auth_provider.dart';
-import '../admin/admin_dashboard.dart';
+import '../dashboards/admin/admin_main_nav.dart';
 import '../dashboards/store/store_main_nav.dart';
 import '../dashboards/rider/rider_dashboard.dart';
+import '../dashboards/worker/worker_main_nav.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -59,9 +60,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = authProvider.user;
 
     // Role-based UI redirection
-    if (user?.role == 'admin') return const AdminDashboard();
-    if (user?.role == 'store_owner') return const StoreMainNav();
-    if (user?.role == 'rider') return const RiderDashboard();
+    if (user?.role == 'SUPER_ADMIN') return const AdminMainNav();
+    if (user?.role == 'STORE_OWNER') return const StoreMainNav();
+    if (user?.role == 'STORE_WORKER') return const WorkerMainNav();
+    if (user?.role == 'RIDER') return const RiderDashboard();
 
     if (storeProvider.isLoading && storeProvider.stores.isEmpty) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));

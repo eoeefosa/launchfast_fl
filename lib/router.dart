@@ -1,8 +1,12 @@
 import 'package:go_router/go_router.dart';
+import 'package:launchfast_fl/screens/admin/admin_menu_screen.dart';
+import 'package:launchfast_fl/screens/admin/user_management_screen.dart';
 import 'package:launchfast_fl/screens/auth/login_screen.dart';
 import 'package:launchfast_fl/screens/auth/register_screen.dart';
 import 'package:launchfast_fl/screens/dashboards/rider/main_rider.dart';
 import 'package:launchfast_fl/screens/dashboards/store/store_main_nav.dart';
+import 'package:launchfast_fl/screens/dashboards/worker/worker_main_nav.dart';
+import 'package:launchfast_fl/screens/stores_screen.dart';
 import 'package:launchfast_fl/screens/tabs/home_screen.dart';
 import 'package:launchfast_fl/screens/tabs/orders_screen.dart';
 import 'package:launchfast_fl/screens/tabs/profile_screen.dart';
@@ -11,10 +15,7 @@ import 'screens/tabs/cart_screen.dart';
 import 'screens/store/store_detail_screen.dart';
 import 'screens/store/item_detail_screen.dart';
 import 'screens/checkout_screen.dart';
-import 'screens/admin/admin_dashboard.dart';
-import 'screens/admin/admin_menu_screen.dart';
-import 'screens/admin/user_management_screen.dart';
-import 'screens/stores_screen.dart';
+import 'package:launchfast_fl/screens/dashboards/admin/admin_main_nav.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -76,7 +77,7 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/admin/dashboard',
-      builder: (context, state) => const AdminDashboard(),
+      builder: (context, state) => const AdminMainNav(),
     ),
     GoRoute(
       path: '/admin/menu',
@@ -91,5 +92,9 @@ final router = GoRouter(
       builder: (context, state) => const MainNavigation(),
     ),
     GoRoute(path: '/store', builder: (context, state) => const StoreMainNav()),
+    GoRoute(
+      path: '/worker',
+      builder: (context, state) => const WorkerMainNav(),
+    ),
   ],
 );

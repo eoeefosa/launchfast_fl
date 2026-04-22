@@ -47,8 +47,10 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       vsync: this,
       duration: const Duration(milliseconds: 700),
     )..repeat(reverse: true);
-    _badgeScale = Tween<double>(begin: 0.85, end: 1.15)
-        .animate(CurvedAnimation(parent: _badgePulse, curve: Curves.easeInOut));
+    _badgeScale = Tween<double>(
+      begin: 0.85,
+      end: 1.15,
+    ).animate(CurvedAnimation(parent: _badgePulse, curve: Curves.easeInOut));
 
     _loadOrders();
     _subscribeAbly();
@@ -78,7 +80,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
   List<Order> get _filtered {
     if (_filter == 'ALL') return _orders;
     return _orders.where((o) {
-      final s = o.status.name.toUpperCase().replaceAll(' ', '_');
+      final _ = o.status.name.toUpperCase().replaceAll(' ', '_');
       switch (_filter) {
         case 'PENDING':
           return o.status == OrderStatus.pending;
@@ -101,20 +103,26 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       await orderRepository.updateOrderStatus(orderId, newStatus);
       await _loadOrders();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Order updated to ${newStatus.toLowerCase()}'),
-          backgroundColor: Colors.green.shade700,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Order updated to ${newStatus.toLowerCase()}'),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Failed to update order'),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to update order'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -154,8 +162,10 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
               ScaleTransition(
                 scale: _badgeScale,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.redAccent,
                     borderRadius: BorderRadius.circular(20),
@@ -187,10 +197,11 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-          tabs: _filters
-              .map((f) => Tab(text: _tabLabel(f)))
-              .toList(),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+          tabs: _filters.map((f) => Tab(text: _tabLabel(f))).toList(),
         ),
       ),
       body: _isLoading
@@ -236,8 +247,10 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
         children: [
           Icon(Icons.receipt_long_outlined, size: 64, color: muted),
           const SizedBox(height: 12),
-          Text('No orders in this category',
-              style: TextStyle(color: muted, fontSize: 15)),
+          Text(
+            'No orders in this category',
+            style: TextStyle(color: muted, fontSize: 15),
+          ),
         ],
       ),
     );
@@ -289,16 +302,31 @@ class _OrderCard extends StatelessWidget {
     switch (order.status) {
       case OrderStatus.pending:
         return [
-          _ActionBtn('Accept', 'ACCEPTED', Colors.green, Icons.check_circle_outline),
+          _ActionBtn(
+            'Accept',
+            'ACCEPTED',
+            Colors.green,
+            Icons.check_circle_outline,
+          ),
           _ActionBtn('Reject', 'CANCELLED', Colors.red, Icons.cancel_outlined),
         ];
       case OrderStatus.accepted:
         return [
-          _ActionBtn('Start Preparing', 'PREPARING', const Color(0xFF06B6D4), Icons.soup_kitchen_outlined),
+          _ActionBtn(
+            'Start Preparing',
+            'PREPARING',
+            const Color(0xFF06B6D4),
+            Icons.soup_kitchen_outlined,
+          ),
         ];
       case OrderStatus.preparing:
         return [
-          _ActionBtn('Mark Ready', 'READY_FOR_PICKUP', const Color(0xFF8B5CF6), Icons.done_all),
+          _ActionBtn(
+            'Mark Ready',
+            'READY_FOR_PICKUP',
+            const Color(0xFF8B5CF6),
+            Icons.done_all,
+          ),
         ];
       default:
         return [];
@@ -370,8 +398,10 @@ class _OrderCard extends StatelessWidget {
                   ],
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _statusColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(10),
@@ -393,25 +423,26 @@ class _OrderCard extends StatelessWidget {
             const SizedBox(height: 12),
 
             // ── Items ──
-            ...order.items.take(3).map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${item.quantity}× ${item.menuItem?.name ?? 'Item'}',
-                        style: TextStyle(color: textColor, fontSize: 13),
-                      ),
-                      Text(
-                        '₦${((item.menuItem?.price ?? 0) * item.quantity).toStringAsFixed(0)}',
-                        style: TextStyle(
-                          color: muted,
-                          fontSize: 13,
+            ...order.items
+                .take(3)
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${item.quantity}× ${item.menuItem.name}',
+                          style: TextStyle(color: textColor, fontSize: 13),
                         ),
-                      ),
-                    ],
+                        Text(
+                          '₦${((item.menuItem.price) * item.quantity).toStringAsFixed(0)}',
+                          style: TextStyle(color: muted, fontSize: 13),
+                        ),
+                      ],
+                    ),
                   ),
-                )),
+                ),
 
             if (order.items.length > 3)
               Text(
@@ -427,17 +458,16 @@ class _OrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Total',
-                  style: TextStyle(color: muted, fontSize: 13),
-                ),
+                Text('Total', style: TextStyle(color: muted, fontSize: 13)),
                 Row(
                   children: [
                     if (order.isPriority)
                       Container(
                         margin: const EdgeInsets.only(right: 8),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.orange.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),

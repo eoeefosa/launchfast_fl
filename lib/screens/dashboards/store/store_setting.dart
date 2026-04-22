@@ -22,11 +22,55 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   final _deliveryTimeCtrl = TextEditingController();
   final _deliveryFeeCtrl = TextEditingController();
   String? _storeId;
+  List<dynamic> _workers = [];
+  bool _isLoadingStaff = false;
 
   @override
   void initState() {
     super.initState();
-    _loadStore();
+    _loadStore().then((_) => _loadStaff());
+  }
+
+  Future<void> _loadStaff() async {
+    if (_storeId == null) return;
+    setState(() => _isLoadingStaff = true);
+    try {
+      final res = await apiService.dio.get('/stores/$_storeId/staff');
+      if (mounted) {
+        setState(() {
+          _workers = res.data ?? [];
+        });
+      }
+    } catch (_) {} finally {
+      if (mounted) setState(() => _isLoadingStaff = false);
+    }
+  }
+
+  Future<void> _addStaff(String email) async {
+    if (_storeId == null) return;
+    try {
+      await apiService.dio.post('/stores/$_storeId/staff', data: {'email': email});
+      _loadStaff();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Staff added successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to add staff. Ensure the user exists.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _removeStaff(String workerId) async {
+    if (_storeId == null) return;
+    try {
+      await apiService.dio.delete('/stores/$_storeId/staff/$workerId');
+      _loadStaff();
+    } catch (_) {}
   }
 
   Future<void> _loadStore() async {
@@ -274,7 +318,90 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                     border: border,
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
+                  _sectionTitle('Staff Management', textColor),
+                  const SizedBox(height: 12),
+                  _sectionCard(
+                    surface: surface,
+                    border: border,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_isLoadingStaff)
+                          const Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                          )
+                        else if (_workers.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Text('No staff members added yet.', style: TextStyle(color: muted, fontSize: 13)),
+                          )
+                        else
+                          ..._workers.map((w) => Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                                      child: Text(w['name'][0].toUpperCase(),
+                                          style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(w['name'], style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 14)),
+                                          Text(w['email'], style: TextStyle(color: muted, fontSize: 12)),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20),
+                                      onPressed: () => _removeStaff(w['id']),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                        const Divider(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              final emailCtrl = TextEditingController();
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Add Staff'),
+                                  content: TextField(
+                                    controller: emailCtrl,
+                                    decoration: const InputDecoration(labelText: 'User Email'),
+                                  ),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        _addStaff(emailCtrl.text.trim());
+                                        Navigator.pop(ctx);
+                                      },
+                                      child: const Text('Add'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Add Staff Member'),
+                            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
                   _sectionTitle('Account', textColor),
                   const SizedBox(height: 12),
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:launchfast_fl/providers/store_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:launchfast_fl/constants/app_colors.dart';
 import 'package:launchfast_fl/providers/auth_provider.dart';
@@ -28,26 +29,26 @@ class _StoreMainNavState extends State<StoreMainNav>
   late Animation<double> _badgeScale;
 
   static const List<({String label, IconData icon, IconData activeIcon})>
-      _navItems = [
+  _navItems = [
     (
       label: 'Dashboard',
       icon: Icons.dashboard_outlined,
-      activeIcon: Icons.dashboard_rounded
+      activeIcon: Icons.dashboard_rounded,
     ),
     (
       label: 'Orders',
       icon: Icons.receipt_long_outlined,
-      activeIcon: Icons.receipt_long_rounded
+      activeIcon: Icons.receipt_long_rounded,
     ),
     (
       label: 'Menu',
       icon: Icons.restaurant_menu_outlined,
-      activeIcon: Icons.restaurant_menu_rounded
+      activeIcon: Icons.restaurant_menu_rounded,
     ),
     (
       label: 'Settings',
       icon: Icons.settings_outlined,
-      activeIcon: Icons.settings_rounded
+      activeIcon: Icons.settings_rounded,
     ),
   ];
 
@@ -58,9 +59,10 @@ class _StoreMainNavState extends State<StoreMainNav>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     )..repeat(reverse: true);
-    _badgeScale = Tween<double>(begin: 0.85, end: 1.2).animate(
-      CurvedAnimation(parent: _badgeCtrl, curve: Curves.elasticOut),
-    );
+    _badgeScale = Tween<double>(
+      begin: 0.85,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: _badgeCtrl, curve: Curves.elasticOut));
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _initAbly());
   }
@@ -165,7 +167,9 @@ class _StoreMainNavState extends State<StoreMainNav>
                       duration: const Duration(milliseconds: 250),
                       curve: Curves.easeInOut,
                       padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 4),
+                        vertical: 8,
+                        horizontal: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: isActive
                             ? AppColors.primary.withOpacity(0.1)
@@ -189,8 +193,8 @@ class _StoreMainNavState extends State<StoreMainNav>
                                   color: isActive
                                       ? AppColors.primary
                                       : isDark
-                                          ? AppColors.darkMuted
-                                          : AppColors.lightMuted,
+                                      ? AppColors.darkMuted
+                                      : AppColors.lightMuted,
                                 ),
                               ),
                               if (hasBadge)
@@ -234,8 +238,8 @@ class _StoreMainNavState extends State<StoreMainNav>
                               color: isActive
                                   ? AppColors.primary
                                   : isDark
-                                      ? AppColors.darkMuted
-                                      : AppColors.lightMuted,
+                                  ? AppColors.darkMuted
+                                  : AppColors.lightMuted,
                               fontSize: 11,
                               fontWeight: isActive
                                   ? FontWeight.w700
