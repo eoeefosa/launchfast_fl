@@ -166,7 +166,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const Text(
               'Delivery Options',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
             ),
             const SizedBox(height: 16),
             Row(
@@ -186,7 +190,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     icon: Icons.calendar_today_rounded,
                     title: 'Schedule',
                     subtitle: 'Later today',
-                    isActive: _isPriority, // Using priority as a proxy for scheduled for now
+                    isActive:
+                        _isPriority, // Using priority as a proxy for scheduled for now
                     onTap: () => setState(() => _isPriority = true),
                   ),
                 ),
@@ -196,7 +201,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             const Text(
               'Payment Method',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
             ),
             const SizedBox(height: 16),
             _buildPaymentCard(
@@ -338,6 +347,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       'Hall 7',
       'Hall 8',
       'Faculty',
+      'Admin',
     ];
 
     showModalBottomSheet(
@@ -355,7 +365,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           children: [
             const Text(
               'Select Delivery Location',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
             ),
             const SizedBox(height: 20),
             Flexible(
@@ -366,7 +380,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   final loc = locations[index];
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(loc, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    title: Text(
+                      loc,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     onTap: () {
                       _addressController.text = loc;
                       Navigator.pop(context);
@@ -445,11 +462,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              color: isActive ? Colors.white : Colors.black,
-              size: 24,
-            ),
+            Icon(icon, color: isActive ? Colors.white : Colors.black, size: 24),
             const SizedBox(height: 12),
             Text(
               title,

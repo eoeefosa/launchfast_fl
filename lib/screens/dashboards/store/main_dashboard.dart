@@ -76,7 +76,8 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
     if (stores.isNotEmpty && userId != null) {
       try {
         final owned = stores.firstWhere(
-          (s) => true, // fallback: use first store
+          (s) => s.ownerId == userId,
+          orElse: () => stores.first, // fallback if ownerId not set yet
         );
         if (mounted) {
           setState(() {

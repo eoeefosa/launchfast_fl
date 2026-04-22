@@ -150,6 +150,40 @@ class AblyService {
     });
   }
 
+  void subscribeToStoreOrders(String storeId) {
+    if (_realtime == null) return;
+
+    final channelName = 'store:$storeId:orders';
+    final channel = _realtime!.channels.get(channelName);
+
+    // Listen for new orders
+    channel.subscribe(name: 'new-order').listen((message) {
+      try {
+        final data = message.data as Map;
+        final orderId = data['id'] as String;
+        // Notify order listeners
+        for (final cb in _orderListeners) {
+          cb(orderId, OrderStatus.pending);
+        }
+      } catch (_) {}
+    });
+
+    // Listen for status updates
+    channel.subscribe(name: 'order-update').listen((message) {
+      try {
+        final data = message.data as Map;
+        final orderId = data['orderId'] as String;
+        final statusStr = data['status'] as String;
+        final status = OrderStatusExtension.fromString(statusStr);
+
+        // Notify order listeners
+        for (final cb in _orderListeners) {
+          cb(orderId, status);
+        }
+      } catch (_) {}
+    });
+  }
+
   // Order listeners
   void addOrderListener(Function(String orderId, OrderStatus status) listener) {
     if (!_orderListeners.contains(listener)) {

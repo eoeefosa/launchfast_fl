@@ -10,6 +10,7 @@ class Store {
   final String? adminPassword;
   final double deliveryFee;
   final String image;
+  final String? ownerId;
 
   Store({
     required this.id,
@@ -23,6 +24,7 @@ class Store {
     this.adminPassword,
     required this.deliveryFee,
     required this.image,
+    this.ownerId,
   });
 
   factory Store.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class Store {
       adminPassword: json['adminPassword'],
       deliveryFee: (json['deliveryFee'] as num).toDouble(),
       image: json['image'],
+      ownerId: json['ownerId'],
     );
   }
 
@@ -54,6 +57,7 @@ class Store {
       'adminPassword': adminPassword,
       'deliveryFee': deliveryFee,
       'image': image,
+      'ownerId': ownerId,
     };
   }
 
@@ -69,6 +73,7 @@ class Store {
     String? adminPassword,
     double? deliveryFee,
     String? image,
+    String? ownerId,
   }) {
     return Store(
       id: id ?? this.id,
@@ -82,6 +87,7 @@ class Store {
       adminPassword: adminPassword ?? this.adminPassword,
       deliveryFee: deliveryFee ?? this.deliveryFee,
       image: image ?? this.image,
+      ownerId: ownerId ?? this.ownerId,
     );
   }
 }

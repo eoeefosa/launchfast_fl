@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:launchfast_fl/constants/static_data.dart';
 import 'package:provider/provider.dart';
 import 'package:launchfast_fl/constants/app_colors.dart';
 import 'package:launchfast_fl/providers/store_provider.dart';
@@ -46,7 +47,17 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
     final storeProvider = context.watch<StoreProvider>();
-    final allItems = storeProvider.menuItems;
+    final auth = context.read<AuthProvider>();
+    final userId = auth.user?.id;
+
+    // Find store owned by the user
+    final ownedStore = storeProvider.stores.firstWhere(
+      (s) => s.ownerId == userId,
+      orElse: () => storeProvider.stores.isNotEmpty ? storeProvider.stores.first : StaticData.stores.first,
+    );
+    final storeId = ownedStore.id;
+
+    final allItems = storeProvider.menuItems.where((i) => i.storeId == storeId).toList();
     final filtered = _getFiltered(allItems);
 
     return Scaffold(
@@ -68,7 +79,7 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: () => _showAddEditDialog(context, storeProvider, null),
+            onPressed: () => _showAddEditDialog(context, storeProvider, storeId, null),
           ),
         ],
       ),
@@ -198,7 +209,7 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
                           surface: surface,
                           border: border,
                           onEdit: () => _showAddEditDialog(
-                              context, storeProvider, filtered[i]),
+                              context, storeProvider, storeId, filtered[i]),
                           onDelete: () =>
                               _confirmDelete(context, storeProvider, filtered[i]),
                           onToggleReady: () => _toggleItemReady(
@@ -209,7 +220,7 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddEditDialog(context, storeProvider, null),
+        onPressed: () => _showAddEditDialog(context, storeProvider, storeId, null),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
@@ -275,6 +286,7 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
   void _showAddEditDialog(
     BuildContext context,
     StoreProvider provider,
+    String? storeId,
     MenuItem? item,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

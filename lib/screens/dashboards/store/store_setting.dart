@@ -32,16 +32,21 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   Future<void> _loadStore() async {
     setState(() => _isLoading = true);
     try {
+      final auth = context.read<AuthProvider>();
+      final userId = auth.user?.id;
       final res = await apiService.dio.get('/stores');
       final List stores = res.data ?? [];
       if (stores.isNotEmpty) {
-        final store = stores.first as Map<String, dynamic>;
-        _storeData = store;
-        _storeId = store['id']?.toString();
-        _nameCtrl.text = store['name']?.toString() ?? '';
-        _taglineCtrl.text = store['tagline']?.toString() ?? '';
-        _deliveryTimeCtrl.text = store['deliveryTime']?.toString() ?? '';
-        _deliveryFeeCtrl.text = store['deliveryFee']?.toString() ?? '';
+        final storeMap = stores.firstWhere(
+          (s) => s['ownerId'] == userId,
+          orElse: () => stores.first,
+        );
+        _storeData = storeMap;
+        _storeId = storeMap['id']?.toString();
+        _nameCtrl.text = storeMap['name']?.toString() ?? '';
+        _taglineCtrl.text = storeMap['tagline']?.toString() ?? '';
+        _deliveryTimeCtrl.text = storeMap['deliveryTime']?.toString() ?? '';
+        _deliveryFeeCtrl.text = storeMap['deliveryFee']?.toString() ?? '';
       }
     } catch (_) {
     } finally {

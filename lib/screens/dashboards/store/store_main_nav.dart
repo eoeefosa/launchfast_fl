@@ -68,6 +68,7 @@ class _StoreMainNavState extends State<StoreMainNav>
   Future<void> _initAbly() async {
     if (_ablyInitialized) return;
     final auth = context.read<AuthProvider>();
+    final storeProvider = context.read<StoreProvider>();
     final userId = auth.user?.id;
     if (userId == null) return;
 
@@ -82,6 +83,14 @@ class _StoreMainNavState extends State<StoreMainNav>
           _badgeCtrl.repeat(reverse: true);
         }
       });
+
+      // Find owned store and subscribe to its specific orders channel
+      if (storeProvider.stores.isEmpty) await storeProvider.refreshData();
+      final owned = storeProvider.stores.firstWhere(
+        (s) => s.ownerId == userId,
+        orElse: () => storeProvider.stores.first,
+      );
+      ablyService.subscribeToStoreOrders(owned.id);
 
       _ablyInitialized = true;
     } catch (_) {}
