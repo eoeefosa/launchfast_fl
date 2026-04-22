@@ -26,6 +26,16 @@ class OrderRepository {
     final response = await apiService.dio.patch('/orders/$id', data: orderData);
     return Order.fromJson(response.data);
   }
+
+  Future<List<Order>> getAvailableJobs() async {
+    final response = await apiService.dio.get('/orders', queryParameters: {'status': 'READY_FOR_PICKUP'});
+    return (response.data as List).map((i) => Order.fromJson(i)).toList();
+  }
+
+  Future<List<Order>> getRiderOrders(String riderId) async {
+    final response = await apiService.dio.get('/orders', queryParameters: {'riderId': riderId});
+    return (response.data as List).map((i) => Order.fromJson(i)).toList();
+  }
 }
 
 final orderRepository = OrderRepository();

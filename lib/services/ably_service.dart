@@ -11,8 +11,12 @@ class AblyService {
   ably.Realtime? _realtime;
   ably.RealtimeChannel? _userChannel;
   ably.RealtimeChannel? _storesChannel;
+  ably.RealtimeChannel? _riderChannel;
+  ably.RealtimeChannel? _jobsChannel;
   StreamSubscription? _connectionSubscription;
   StreamSubscription? _channelSubscription;
+  StreamSubscription? _riderSubscription;
+  StreamSubscription? _jobsSubscription;
   StreamSubscription? _storesSubscription;
   bool _isConnecting = false;
 
@@ -100,21 +104,50 @@ class AblyService {
     _storesSubscription = _storesChannel!
         .subscribe(name: 'store-toggle')
         .listen((ably.Message message) {
-          try {
-            final data = message.data as Map;
-            final storeId = data['storeId'] as String;
-            final isOpen = data['isOpen'] as bool;
+      try {
+        final data = message.data as Map;
+        final storeId = data['storeId'] as String;
+        final isOpen = data['isOpen'] as bool;
 
-            // print('Ably received store toggle: $storeId => isOpen: $isOpen');
+        // Notify store listeners
+        for (final cb in _storeListeners) {
+          cb(storeId, isOpen);
+        }
+      } catch (e) {
+        // print('Error processing store toggle message: $e');
+      }
+    });
 
-            // Notify store listeners
-            for (final cb in _storeListeners) {
-              cb(storeId, isOpen);
-            }
-          } catch (e) {
-            // print('Error processing store toggle message: $e');
-          }
-        });
+    // Subscribe to rider channel if role is rider
+    // This is handled via explicit calls to subscribeToRiderChannel
+  }
+
+  void subscribeToRiderChannel(
+    String riderId, {
+    Function(Map data)? onOrderUpdate,
+    Function(Map data)? onNewJob,
+  }) {
+    if (_realtime == null) return;
+
+    // 1. Specific Rider Updates (e.g. status changes of assigned orders)
+    _riderSubscription?.cancel();
+    _riderChannel = _realtime!.channels.get('rider:$riderId');
+    _riderSubscription =
+        _riderChannel!.subscribe(name: 'order-update').listen((message) {
+      if (onOrderUpdate != null) {
+        onOrderUpdate(message.data as Map);
+      }
+    });
+
+    // 2. Global Available Jobs
+    _jobsSubscription?.cancel();
+    _jobsChannel = _realtime!.channels.get('riders:available');
+    _jobsSubscription =
+        _jobsChannel!.subscribe(name: 'new-job').listen((message) {
+      if (onNewJob != null) {
+        onNewJob(message.data as Map);
+      }
+    });
   }
 
   // Order listeners
@@ -156,11 +189,17 @@ class AblyService {
   void disconnect() {
     _channelSubscription?.cancel();
     _channelSubscription = null;
+    _riderSubscription?.cancel();
+    _riderSubscription = null;
+    _jobsSubscription?.cancel();
+    _jobsSubscription = null;
     _storesSubscription?.cancel();
     _storesSubscription = null;
     _connectionSubscription?.cancel();
     _connectionSubscription = null;
     _userChannel = null;
+    _riderChannel = null;
+    _jobsChannel = null;
     _storesChannel = null;
     _realtime?.close();
     _realtime = null;

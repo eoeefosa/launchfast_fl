@@ -2,7 +2,6 @@ import 'package:go_router/go_router.dart';
 import 'package:launchfast_fl/screens/auth/login_screen.dart';
 import 'package:launchfast_fl/screens/auth/register_screen.dart';
 import 'package:launchfast_fl/screens/dashboards/rider/main_rider.dart';
-import 'package:launchfast_fl/screens/dashboards/rider/rider_dashboard.dart';
 import 'package:launchfast_fl/screens/tabs/home_screen.dart';
 import 'package:launchfast_fl/screens/tabs/orders_screen.dart';
 import 'package:launchfast_fl/screens/tabs/profile_screen.dart';
