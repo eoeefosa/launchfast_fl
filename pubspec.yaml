@@ -43,6 +43,7 @@ dependencies:
   google_sign_in: ^6.2.1
   flutter_secure_storage: ^9.0.0
   ably_flutter: ^1.2.18
+  font_awesome_flutter: ^11.0.0
 
 dev_dependencies:
   flutter_test:
