@@ -159,8 +159,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             const SizedBox(height: 12),
             _buildInputField(
               controller: _addressController,
-              hint: 'Room Number / Location',
+              hint: 'Select Location',
               icon: Icons.location_on_outlined,
+              readOnly: true,
+              onTap: () => _showLocationPicker(context),
             ),
             const Text(
               'Delivery Options',
@@ -325,10 +327,66 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  void _showLocationPicker(BuildContext context) {
+    final locations = [
+      'Hall 1',
+      'Hall 2',
+      'Hall 3',
+      'Hall 4',
+      'Hall 5',
+      'Hall 6',
+      'Hall 7',
+      'Hall 8',
+      'Faculty',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Select Delivery Location',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+            ),
+            const SizedBox(height: 20),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: locations.length,
+                itemBuilder: (context, index) {
+                  final loc = locations[index];
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(loc, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    onTap: () {
+                      _addressController.text = loc;
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildInputField({
     required TextEditingController controller,
     required String hint,
     required IconData icon,
+    bool readOnly = false,
+    VoidCallback? onTap,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -343,6 +401,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Expanded(
             child: TextField(
               controller: controller,
+              readOnly: readOnly,
+              onTap: onTap,
               decoration: InputDecoration(
                 hintText: hint,
                 border: InputBorder.none,

@@ -10,16 +10,19 @@ class AdminDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final store = authProvider.adminStore;
+    final user = authProvider.user;
 
-    if (!authProvider.isAdmin || store == null) {
+    if (!authProvider.isAdmin && user?.role != 'admin') {
       return const Scaffold(body: Center(child: Text('Unauthorized')));
     }
+
+    final String title = store?.name != null ? '${store!.name} Admin' : 'Global Admin';
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(
-          '${store.name} Admin',
+          title,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
@@ -37,6 +40,14 @@ class AdminDashboard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 24),
+            _buildAdminCard(
+              context,
+              icon: Icons.people,
+              title: 'Manage Users',
+              subtitle: 'Update user roles and permissions',
+              color: Colors.purple,
+              onTap: () => context.push('/admin/users'),
+            ),
             _buildAdminCard(
               context,
               icon: Icons.fastfood,

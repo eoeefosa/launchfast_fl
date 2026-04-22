@@ -14,13 +14,14 @@ class AuthProvider with ChangeNotifier {
   UserProfile? _user;
   String? _token;
   bool _isLoading = false;
-  bool _isAdmin = false;
   String? _adminStoreId;
 
   UserProfile? get user => _user;
   String? get token => _token;
   bool get isLoading => _isLoading;
-  bool get isAdmin => _isAdmin;
+  bool get isAdmin => _user?.role == 'admin';
+  bool get isStoreOwner => _user?.role == 'store_owner';
+  bool get isRider => _user?.role == 'rider';
   bool get isAuthenticated => _token != null;
   Store? get adminStore => _adminStoreId != null
       ? StaticData.stores.firstWhere((s) => s.id == _adminStoreId)
@@ -52,7 +53,6 @@ class AuthProvider with ChangeNotifier {
         _user = UserProfile.fromJson(jsonDecode(userStr));
       }
       if (adminId != null) {
-        _isAdmin = true;
         _adminStoreId = adminId;
       }
     } catch (e) {
@@ -143,7 +143,6 @@ class AuthProvider with ChangeNotifier {
       final store = StaticData.stores.firstWhere(
         (s) => s.adminUsername == username && s.adminPassword == password,
       );
-      _isAdmin = true;
       _adminStoreId = store.id;
       storage.write(key: 'launch-fast-admin', value: store.id);
       notifyListeners();
@@ -156,7 +155,6 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     _user = null;
     _token = null;
-    _isAdmin = false;
     _adminStoreId = null;
     await storage.deleteAll();
     try {

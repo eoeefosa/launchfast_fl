@@ -12,6 +12,7 @@ import 'screens/checkout_screen.dart';
 import 'screens/admin/admin_login_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/admin/admin_menu_screen.dart';
+import 'screens/admin/user_management_screen.dart';
 import 'screens/stores_screen.dart';
 
 final router = GoRouter(
@@ -83,6 +84,10 @@ final router = GoRouter(
     GoRoute(
       path: '/admin/menu',
       builder: (context, state) => const AdminMenuScreen(),
+    ),
+    GoRoute(
+      path: '/admin/users',
+      builder: (context, state) => const UserManagementScreen(),
     ),
   ],
 );

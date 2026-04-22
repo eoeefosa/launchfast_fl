@@ -5,6 +5,7 @@ class UserProfile {
   final String? address;
   final String? phone;
   final double walletBalance;
+  final String role; // 'user', 'store_owner', 'rider', 'admin'
 
   UserProfile({
     required this.id,
@@ -13,16 +14,18 @@ class UserProfile {
     this.address,
     this.phone,
     required this.walletBalance,
+    required this.role,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
       address: json['address'],
       phone: json['phone'],
-      walletBalance: (json['walletBalance'] as num).toDouble(),
+      walletBalance: (json['walletBalance'] as num?)?.toDouble() ?? 0.0,
+      role: json['role'] ?? 'user',
     );
   }
 
@@ -34,6 +37,7 @@ class UserProfile {
       'address': address,
       'phone': phone,
       'walletBalance': walletBalance,
+      'role': role,
     };
   }
 }

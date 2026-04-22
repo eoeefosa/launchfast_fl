@@ -91,23 +91,13 @@ class StoreDetailScreen extends StatelessWidget {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Hero(
-                        tag: 'store-${store.id}',
-                        child: CachedNetworkImage(
-                          imageUrl: store.image,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
                       Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.black.withValues(alpha: 0.3),
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.7),
-                            ],
+                        color: accentColor,
+                        child: Center(
+                          child: Icon(
+                            Icons.storefront_rounded,
+                            size: 80,
+                            color: Colors.white.withValues(alpha: 0.3),
                           ),
                         ),
                       ),
@@ -137,8 +127,8 @@ class StoreDetailScreen extends StatelessWidget {
                           ),
                         ),
                     ],
-                  ),
                 ),
+              ),
               ),
               SliverToBoxAdapter(
                 child: Container(

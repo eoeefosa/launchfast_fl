@@ -27,36 +27,6 @@ class StoreBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: Stack(
           children: [
-            Positioned(
-              right: -20,
-              top: -20,
-              bottom: -20,
-              width: 180,
-              child: Opacity(
-                opacity: 0.8,
-                child: Hero(
-                  tag: 'store-bg-${store.id}',
-                  child: CachedNetworkImage(
-                    imageUrl: store.image,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.white,
-                      Colors.white.withValues(alpha: 0.9),
-                      Colors.white.withValues(alpha: 0.0),
-                    ],
-                    stops: const [0.5, 0.7, 1.0],
-                  ),
-                ),
-              ),
-            ),
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(

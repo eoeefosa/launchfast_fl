@@ -102,6 +102,7 @@ class AdminMenuScreen extends StatelessWidget {
   }) {
     final nameController = TextEditingController(text: item?.name);
     final priceController = TextEditingController(text: item?.price.toString());
+    final imageController = TextEditingController(text: item?.image);
     String category = item?.category ?? 'Rice';
 
     showModalBottomSheet(
@@ -134,9 +135,13 @@ class AdminMenuScreen extends StatelessWidget {
               decoration: const InputDecoration(labelText: 'Price (₦)'),
               keyboardType: TextInputType.number,
             ),
+            TextField(
+              controller: imageController,
+              decoration: const InputDecoration(labelText: 'Image URL'),
+            ),
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(
-              initialValue: category,
+              value: category,
               items: [
                 'Rice',
                 'Swallow',
@@ -154,9 +159,9 @@ class AdminMenuScreen extends StatelessWidget {
                   'price': double.parse(priceController.text),
                   'category': category,
                   'storeId': storeId ?? item!.storeId,
-                  'image':
-                      item?.image ??
-                      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=300',
+                  'image': imageController.text.isNotEmpty
+                      ? imageController.text
+                      : 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=300',
                   'description': 'Delicious food',
                 };
                 if (item == null) {

@@ -77,9 +77,22 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         Text(
                           user.email,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
+                          style: const TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            user.role.toUpperCase().replaceAll('_', ' '),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
+                            ),
                           ),
                         ),
                       ],
