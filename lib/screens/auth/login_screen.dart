@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:launchfast_fl/screens/auth/widgets/apptextfield.dart';
+import 'package:launchfast_fl/screens/auth/widgets/auth_prompt.dart';
 import 'package:launchfast_fl/screens/auth/widgets/constants.dart';
 import 'package:launchfast_fl/screens/auth/widgets/custom_button.dart';
 import 'package:launchfast_fl/screens/auth/widgets/password_toggle.dart';
@@ -154,7 +155,7 @@ class _LoginFormState extends State<_LoginForm> {
             onPressed: _submitGoogleLogin,
           ),
           const SizedBox(height: 40),
-          const _SignUpPrompt(),
+          const AuthPrompt(isLogin: true),
         ],
       ),
     );
@@ -241,33 +242,6 @@ class _GoogleSignInButton extends StatelessWidget {
                 ),
               ],
             ),
-    );
-  }
-}
-
-class _SignUpPrompt extends StatelessWidget {
-  const _SignUpPrompt();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          "Don't have an account? ",
-          style: TextStyle(color: Colors.grey[600]),
-        ),
-        GestureDetector(
-          onTap: () => GoRouter.of(context).push('/register'),
-          child: Text(
-            'Sign Up',
-            style: TextStyle(
-              color: Theme.of(context).primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

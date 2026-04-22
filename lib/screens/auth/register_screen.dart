@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:launchfast_fl/screens/auth/widgets/apptextfield.dart';
+import 'package:launchfast_fl/screens/auth/widgets/auth_prompt.dart';
 import 'package:launchfast_fl/screens/auth/widgets/constants.dart';
 import 'package:launchfast_fl/screens/auth/widgets/custom_button.dart';
 import 'package:launchfast_fl/screens/auth/widgets/password_toggle.dart';
@@ -23,10 +24,6 @@ class RegisterScreen extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Form (owns all mutable state + controllers)
-// ---------------------------------------------------------------------------
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -167,36 +164,9 @@ class _RegisterFormState extends State<RegisterForm> {
             primaryColor: primaryColor,
           ),
           const SizedBox(height: 32),
-          const _SignInPrompt(),
+          const AuthPrompt(isLogin: false),
         ],
       ),
-    );
-  }
-}
-
-class _SignInPrompt extends StatelessWidget {
-  const _SignInPrompt();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'Already have an account? ',
-          style: TextStyle(color: Colors.grey[600]),
-        ),
-        GestureDetector(
-          onTap: () => GoRouter.of(context).push('/login'),
-          child: Text(
-            'Sign In',
-            style: TextStyle(
-              color: Theme.of(context).primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
