@@ -16,10 +16,14 @@ class AuthProvider with ChangeNotifier {
   String? _token;
   bool _isLoading = false;
   String? _adminStoreId;
+  String? _guestAddress;
 
   UserProfile? get user => _user;
   String? get token => _token;
   bool get isLoading => _isLoading;
+  String? get guestAddress => _guestAddress;
+  String? get currentAddress => _user?.address ?? _guestAddress;
+  
   bool get isAdmin => _user?.role == 'admin';
   bool get isStoreOwner => _user?.role == 'store_owner';
   bool get isRider => _user?.role == 'rider';
@@ -139,19 +143,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // bool loginAdmin(String username, String password) {
-  //   try {
-  //     final store = StaticData.stores.firstWhere(
-  //       (s) => s.adminUsername == username && s.adminPassword == password,
-  //     );
-  //     _adminStoreId = store.id;
-  //     storage.write(key: 'launch-fast-admin', value: store.id);
-  //     notifyListeners();
-  //     return true;
-  //   } catch (e) {
-  //     return false;
-  //   }
-  // }
 
   Future<void> logout() async {
     _user = null;
@@ -164,6 +155,33 @@ class AuthProvider with ChangeNotifier {
       // print('Google sign out error: $e');
     }
     notifyListeners();
+  }
+
+  Future<void> updateProfile(Map<String, dynamic> updates) async {
+    // Optimistic Update: Update local state immediately for better UX
+    final oldUser = _user;
+    if (_user != null) {
+      final updatedJson = {..._user!.toJson(), ...updates};
+      _user = UserProfile.fromJson(updatedJson);
+      notifyListeners();
+    }
+
+    try {
+      final data = await authRepository.updateProfile(updates);
+      if (data['user'] != null) {
+        _user = UserProfile.fromJson(data['user']);
+        await storage.write(
+          key: 'launch-fast-user',
+          value: jsonEncode(_user!.toJson()),
+        );
+      }
+    } catch (e) {
+      // Revert on error
+      _user = oldUser;
+      rethrow;
+    } finally {
+      notifyListeners();
+    }
   }
 
   void updateUser(Map<String, dynamic> updates) {
@@ -200,6 +218,11 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (_) {}
+  }
+
+  void setGuestAddress(String address) {
+    _guestAddress = address;
+    notifyListeners();
   }
 
   void topUpWallet(double amount) {

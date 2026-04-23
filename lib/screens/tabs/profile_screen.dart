@@ -385,7 +385,6 @@ class _EditProfileSheet extends StatefulWidget {
 class _EditProfileSheetState extends State<_EditProfileSheet> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _emailCtrl;
-  late final TextEditingController _addressCtrl;
 
   @override
   void initState() {
@@ -393,28 +392,26 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     final user = widget.auth.user!;
     _nameCtrl = TextEditingController(text: user.name);
     _emailCtrl = TextEditingController(text: user.email);
-    _addressCtrl = TextEditingController(text: user.address);
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
-    _addressCtrl.dispose();
     super.dispose();
   }
 
   void _save() {
-    widget.auth.updateUser({
+    widget.auth.updateProfile({
       'name': _nameCtrl.text.trim(),
       'email': _emailCtrl.text.trim(),
-      'address': _addressCtrl.text.trim(),
     });
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    context.watch<AuthProvider>();
     return _BottomSheetScaffold(
       title: 'Edit Profile',
       child: Column(

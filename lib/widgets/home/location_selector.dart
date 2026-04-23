@@ -8,42 +8,42 @@ class LocationSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    final user = authProvider.user;
 
-    return GestureDetector(
-      onTap: () => _showLocationPicker(context, authProvider),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[100]!),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.location_on_rounded,
-              size: 20,
-              color: Theme.of(context).primaryColor,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                user?.address ?? 'Set delivery location...',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showLocationPicker(context, authProvider),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[100]!),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.location_on_rounded,
+                size: 20,
+                color: Theme.of(context).primaryColor,
               ),
-            ),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: Colors.grey[400],
-            ),
-          ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  authProvider.currentAddress ?? 'Set delivery location...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey[400]),
+            ],
+          ),
         ),
       ),
     );
@@ -90,7 +90,7 @@ class LocationSelector extends StatelessWidget {
                 itemCount: locations.length,
                 itemBuilder: (context, index) {
                   final loc = locations[index];
-                  final isSelected = authProvider.user?.address == loc;
+                  final isSelected = authProvider.currentAddress == loc;
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Container(
@@ -108,15 +108,24 @@ class LocationSelector extends StatelessWidget {
                     title: Text(
                       loc,
                       style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
                         color: isSelected ? Colors.black : Colors.grey[700],
                       ),
                     ),
                     trailing: isSelected
-                        ? const Icon(Icons.check_circle_rounded, color: Colors.black)
+                        ? const Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.black,
+                          )
                         : null,
                     onTap: () {
-                      authProvider.updateUser({'address': loc});
+                      if (authProvider.user != null) {
+                        authProvider.updateProfile({'address': loc});
+                      } else {
+                        authProvider.setGuestAddress(loc);
+                      }
                       Navigator.pop(context);
                     },
                   );

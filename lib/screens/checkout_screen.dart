@@ -5,6 +5,7 @@ import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../models/order.dart';
+import '../widgets/home/location_selector.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -17,7 +18,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isPriority = false;
   bool _isSuccess = false;
   final _nameController = TextEditingController();
-  final _addressController = TextEditingController();
 
   @override
   void initState() {
@@ -25,7 +25,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final user = context.read<AuthProvider>().user;
     if (user != null) {
       _nameController.text = user.name;
-      _addressController.text = user.address ?? '';
     }
   }
 
@@ -157,13 +156,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               icon: Icons.person_outline,
             ),
             const SizedBox(height: 12),
-            _buildInputField(
-              controller: _addressController,
-              hint: 'Select Location',
-              icon: Icons.location_on_outlined,
-              readOnly: true,
-              onTap: () => _showLocationPicker(context),
-            ),
+            const LocationSelector(),
+            const SizedBox(height: 24),
             const Text(
               'Delivery Options',
               style: TextStyle(
@@ -293,6 +287,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         .toList(),
                     'isPriority': _isPriority,
                     'userId': authProvider.user!.id,
+                    'address': authProvider.user?.address,
                     'date': DateTime.now().toIso8601String(),
                     'status': 'Queued',
                   };
@@ -331,68 +326,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-        ),
-      ),
-    );
-  }
-
-  void _showLocationPicker(BuildContext context) {
-    final locations = [
-      'Hall 1',
-      'Hall 2',
-      'Hall 3',
-      'Hall 4',
-      'Hall 5',
-      'Hall 6',
-      'Hall 7',
-      'Hall 8',
-      'Faculty',
-      'Admin',
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Select Delivery Location',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: locations.length,
-                itemBuilder: (context, index) {
-                  final loc = locations[index];
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      loc,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    onTap: () {
-                      _addressController.text = loc;
-                      Navigator.pop(context);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
         ),
       ),
     );

@@ -20,6 +20,11 @@ class AuthRepository {
     });
     return response.data;
   }
+
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> updates) async {
+    final response = await apiService.dio.patch('/auth/profile', data: updates);
+    return response.data;
+  }
 }
 
 final authRepository = AuthRepository();
