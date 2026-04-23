@@ -13,25 +13,46 @@ import '../../widgets/orders/order_history_card.dart';
 import '../../widgets/orders/login_required_view.dart';
 
 class OrdersScreen extends StatelessWidget {
-  const OrdersScreen({super.key});
+ const OrdersScreen({super.key});
+
+  static bool get _isIOS => Platform.isIOS;
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
+    final auth = context.watch<AuthProvider>();
     final orderProvider = context.watch<OrderProvider>();
-    final orders = orderProvider.orders;
-    final isIOS = Platform.isIOS;
 
-    if (!authProvider.isAuthenticated) {
+    if (!auth.isAuthenticated) {
       return Scaffold(
         backgroundColor: Colors.white,
-        appBar: _buildAppBar(context, isIOS),
+        appBar: _OrdersAppBar(isIOS: _isIOS),
         body: const LoginRequiredView(),
       );
     }
 
-    final activeOrder = orders.firstWhere(
-      (o) => o.status != OrderStatus.delivered && o.status != OrderStatus.cancelled,
+    final activeOrder = _resolveActiveOrder(orderProvider.orders);
+    final hasActiveOrder = _isActive(activeOrder);
+
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: _OrdersAppBar(isIOS: _isIOS),
+      body: _OrdersBody(
+        orderProvider: orderProvider,
+        orders: orderProvider.orders,
+        activeOrder: activeOrder,
+        hasActiveOrder: hasActiveOrder,
+        isIOS: _isIOS,
+      ),
+    );
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  static Order _resolveActiveOrder(List<Order> orders) {
+    return orders.firstWhere(
+      (o) =>
+          o.status != OrderStatus.delivered &&
+          o.status != OrderStatus.cancelled,
       orElse: () => Order(
         id: '',
         items: [],
@@ -42,25 +63,26 @@ class OrdersScreen extends StatelessWidget {
         isPriority: false,
       ),
     );
-
-    final hasActiveOrder = activeOrder.id.isNotEmpty &&
-        activeOrder.status != OrderStatus.cancelled &&
-        activeOrder.status != OrderStatus.delivered;
-
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: _buildAppBar(context, isIOS),
-      body: _OrdersBody(
-        orderProvider: orderProvider,
-        orders: orders,
-        activeOrder: activeOrder,
-        hasActiveOrder: hasActiveOrder,
-        isIOS: isIOS,
-      ),
-    );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, bool isIOS) {
+  static bool _isActive(Order order) =>
+      order.id.isNotEmpty &&
+      order.status != OrderStatus.cancelled &&
+      order.status != OrderStatus.delivered;
+}
+
+// ─── App Bar ──────────────────────────────────────────────────────────────
+
+class _OrdersAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _OrdersAppBar({required this.isIOS});
+
+  final bool isIOS;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
     if (isIOS) {
       return CupertinoNavigationBar(
         middle: const Text(
@@ -75,7 +97,11 @@ class OrdersScreen extends StatelessWidget {
     return AppBar(
       title: const Text(
         'My Orders',
-        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24, letterSpacing: -1),
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          fontSize: 24,
+          letterSpacing: -1,
+        ),
       ),
       centerTitle: false,
       backgroundColor: Colors.white,
@@ -85,13 +111,9 @@ class OrdersScreen extends StatelessWidget {
   }
 }
 
-class _OrdersBody extends StatelessWidget {
-  final OrderProvider orderProvider;
-  final List<Order> orders;
-  final Order activeOrder;
-  final bool hasActiveOrder;
-  final bool isIOS;
+// ─── Body ─────────────────────────────────────────────────────────────────
 
+class _OrdersBody extends StatelessWidget {
   const _OrdersBody({
     required this.orderProvider,
     required this.orders,
@@ -100,61 +122,111 @@ class _OrdersBody extends StatelessWidget {
     required this.isIOS,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final content = ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      children: [
+  final OrderProvider orderProvider;
+  final List<Order> orders;
+  final Order activeOrder;
+  final bool hasActiveOrder;
+  final bool isIOS;
+
+  List<Widget> get _children => [
         if (hasActiveOrder) ...[
-          const Text(
-            'Active Delivery',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
-            ),
-          ).animate().fadeIn().slideX(begin: -0.1),
+          const _SectionLabel('Active Delivery'),
           const SizedBox(height: 16),
           ActiveOrderTracker(order: activeOrder),
           const SizedBox(height: 40),
         ],
-        
         if (orders.isEmpty)
           const _EmptyState()
         else ...[
-          const Text(
-            'Past Orders',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
-            ),
-          ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1),
+          const _SectionLabel('Past Orders', animationDelay: 200),
           const SizedBox(height: 16),
           ...orders.map((o) => OrderHistoryCard(order: o)),
           const SizedBox(height: 40),
         ],
-      ],
-    );
+      ];
 
-    if (isIOS) {
-      return CustomScrollView(
-        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-        slivers: [
-          CupertinoSliverRefreshControl(
-            onRefresh: () => orderProvider.refreshOrders(),
+  @override
+  Widget build(BuildContext context) {
+    if (isIOS) return _IOSScrollView(orderProvider: orderProvider, children: _children);
+    return _AndroidScrollView(orderProvider: orderProvider, children: _children);
+  }
+}
+
+// ─── Scroll Views ─────────────────────────────────────────────────────────
+
+class _IOSScrollView extends StatelessWidget {
+  const _IOSScrollView({
+    required this.orderProvider,
+    required this.children,
+  });
+
+  final OrderProvider orderProvider;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      slivers: [
+        CupertinoSliverRefreshControl(
+          onRefresh: orderProvider.refreshOrders,
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate(children),
           ),
-          SliverToBoxAdapter(child: content),
-        ],
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => orderProvider.refreshOrders(),
-      child: content,
+        ),
+      ],
     );
   }
 }
+
+class _AndroidScrollView extends StatelessWidget {
+  const _AndroidScrollView({
+    required this.orderProvider,
+    required this.children,
+  });
+
+  final OrderProvider orderProvider;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: orderProvider.refreshOrders,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        children: children,
+      ),
+    );
+  }
+}
+
+// ─── Section Label ────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text, {this.animationDelay = 0});
+
+  final String text;
+  final int animationDelay;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w900,
+        letterSpacing: -0.5,
+      ),
+    ).animate().fadeIn(delay: Duration(milliseconds: animationDelay)).slideX(begin: -0.1);
+  }
+}
+
+// ─── Empty State ──────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
@@ -165,7 +237,11 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 80),
-          Icon(Icons.receipt_long_rounded, size: 80, color: AppColors.lightSurface),
+          Icon(
+            Icons.receipt_long_rounded,
+            size: 80,
+            color: AppColors.lightSurface,
+          ),
           const SizedBox(height: 24),
           const Text(
             'No orders yet',
@@ -181,4 +257,3 @@ class _EmptyState extends StatelessWidget {
     ).animate().fadeIn(delay: 400.ms);
   }
 }
-

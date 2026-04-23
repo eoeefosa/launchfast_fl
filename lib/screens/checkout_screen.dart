@@ -209,13 +209,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               isActive: true,
             ),
             const SizedBox(height: 12),
-            _buildPaymentCard(
-              icon: Icons.credit_card_rounded,
-              title: 'Mastercard',
-              subtitle: '**** 4432',
-              isActive: false,
-            ),
-            const SizedBox(height: 30),
 
             Container(
               padding: const EdgeInsets.all(20),

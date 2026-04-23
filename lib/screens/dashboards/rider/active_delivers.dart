@@ -59,7 +59,7 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen> {
     try {
       final updated = await orderRepository.updateOrderStatus(
         _activeOrder!.id,
-        newStatus.name.toUpperCase(),
+        newStatus.backendName,
       );
       setState(() {
         _activeOrder = newStatus == OrderStatus.delivered ? null : updated;
@@ -288,19 +288,15 @@ class _DeliveryStepActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (status) {
-      OrderStatus.pickingUp => _DeliveryStep(
-        heading: 'Navigate to Restaurant',
-        buttonLabel: 'Arrived at Restaurant',
-        onPressed: () => onUpdateStatus(OrderStatus.readyForPickup),
-      ),
-      OrderStatus.readyForPickup => _DeliveryStep(
+      OrderStatus.pickingUp || OrderStatus.readyForPickup => _DeliveryStep(
         heading: 'Pickup Order',
-        subtitle: 'Verify items with the restaurant.',
+        subtitle: 'Head to the restaurant and verify the items.',
         buttonLabel: 'Order Picked Up',
         onPressed: () => onUpdateStatus(OrderStatus.onTheWay),
       ),
-      OrderStatus.onTheWay => _DeliveryStep(
+      OrderStatus.onTheWay || OrderStatus.outForDelivery => _DeliveryStep(
         heading: 'Navigate to Customer',
+        subtitle: 'Deliver the order to the customer\'s location.',
         buttonLabel: 'Mark as Delivered',
         onPressed: () => onUpdateStatus(OrderStatus.delivered),
       ),

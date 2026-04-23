@@ -15,7 +15,6 @@ class RiderDashboard extends StatefulWidget {
 }
 
 class _RiderDashboardState extends State<RiderDashboard> {
-  bool _isOnline = false;
   int _activeOrdersCount = 0;
   List<Order> _availableJobs = [];
   bool _isLoading = true;
@@ -35,12 +34,14 @@ class _RiderDashboardState extends State<RiderDashboard> {
       final jobs = await orderRepository.getAvailableJobs();
       final riderOrders = await orderRepository.getRiderOrders(userId);
 
+      if (!mounted) return;
       setState(() {
         _availableJobs = jobs;
         _activeOrdersCount = riderOrders.where(_isActiveOrder).length;
         _isLoading = false;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
@@ -58,6 +59,7 @@ class _RiderDashboardState extends State<RiderDashboard> {
   }
 
   void _handleNewJob(dynamic data) {
+    if (!mounted) return;
     final newOrder = Order.fromJson(Map<String, dynamic>.from(data));
     final alreadyExists = _availableJobs.any((o) => o.id == newOrder.id);
     if (!alreadyExists) {
@@ -66,6 +68,7 @@ class _RiderDashboardState extends State<RiderDashboard> {
   }
 
   void _handleOrderUpdate(dynamic data) {
+    if (!mounted) return;
     final orderId = data['orderId'] as String?;
     final status = data['status'] as String?;
     if (orderId != null && status != 'READY_FOR_PICKUP') {
@@ -78,8 +81,9 @@ class _RiderDashboardState extends State<RiderDashboard> {
     try {
       await orderRepository.updateOrder(order.id, {
         'riderId': userId,
-        'status': 'PICKING_UP',
+        'status': OrderStatus.pickingUp.backendName,
       });
+      if (!mounted) return;
       setState(() {
         _availableJobs.removeWhere((o) => o.id == order.id);
         _activeOrdersCount++;
@@ -108,38 +112,82 @@ class _RiderDashboardState extends State<RiderDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Rider Dashboard'),
-        backgroundColor: AppColors.lightBackground,
+        title: const Text(
+          'Rider Dashboard',
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: -0.5),
+        ),
+        backgroundColor: Colors.white,
         foregroundColor: AppColors.lightText,
         elevation: 0,
+        centerTitle: false,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _OnlineStatusBanner(
-              isOnline: _isOnline,
-              onToggle: (value) => setState(() => _isOnline = value),
-            ),
-            const SizedBox(height: 16),
-            const _EarningsRow(),
-            const SizedBox(height: 16),
-            _ActiveOrdersBadge(count: _activeOrdersCount),
-            const SizedBox(height: 20),
-            const _SectionLabel('Available Orders'),
-            const SizedBox(height: 10),
-            Expanded(
-              child: _AvailableJobsList(
-                isLoading: _isLoading,
-                jobs: _availableJobs,
-                onAccept: _acceptJob,
+      body: RefreshIndicator(
+        onRefresh: _loadDashboardData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _OnlineStatusBanner(
+                isOnline: context.watch<AuthProvider>().user?.isOnline ?? false,
+                onToggle: (value) => context.read<AuthProvider>().toggleOnlineStatus(value),
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              const _EarningsRow(),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const _SectionLabel('Available Jobs'),
+                  _ActiveOrdersBadge(count: _activeOrdersCount),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (!(context.watch<AuthProvider>().user?.isOnline ?? false))
+                _OfflineState()
+              else
+                _AvailableJobsList(
+                  isLoading: _isLoading,
+                  jobs: _availableJobs,
+                  onAccept: _acceptJob,
+                ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _OfflineState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.lightBorder),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          const Text(
+            'You are currently offline',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Go online to start receiving and accepting delivery jobs.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey[500], fontSize: 14),
+          ),
+        ],
       ),
     );
   }
@@ -255,6 +303,8 @@ class _AvailableJobsList extends StatelessWidget {
     }
 
     return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: jobs.length,
       itemBuilder: (context, index) =>
           _JobListItem(job: jobs[index], onAccept: onAccept),

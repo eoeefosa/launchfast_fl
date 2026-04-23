@@ -42,6 +42,8 @@ extension OrderStatusExtension on OrderStatus {
     }
   }
 
+  String get backendName => name.toUpperCase().replaceAll(' ', '_');
+
   static OrderStatus fromString(String status) {
     final s = status.toUpperCase().replaceAll(' ', '_');
     switch (s) {

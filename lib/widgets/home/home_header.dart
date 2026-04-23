@@ -1,10 +1,10 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'location_selector.dart';
+
 
 class HomeHeader extends StatelessWidget {
   final TextEditingController searchController;
@@ -56,7 +56,7 @@ class HomeHeader extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       (user?.name != null && user!.name.isNotEmpty)
-                          ? '${user!.name} 👋'
+                          ? '${user.name} 👋'
                           : 'Guest User',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -75,10 +75,7 @@ class HomeHeader extends StatelessWidget {
           const SizedBox(height: 28),
           const LocationSelector(),
           const SizedBox(height: 24),
-          _SearchBar(
-            controller: searchController,
-            onChanged: onSearchChanged,
-          ),
+          _SearchBar(controller: searchController, onChanged: onSearchChanged),
         ],
       ),
     );
@@ -113,10 +110,7 @@ class _HeaderActions extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.grey[50],
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.grey[100]!,
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Colors.grey[100]!, width: 1.5),
                 ),
                 child: const Icon(
                   Icons.notifications_none_rounded,
@@ -158,28 +152,31 @@ class _HeaderActions extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Hero(
-          tag: 'profile_avatar',
-          child: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: primaryColor.withValues(alpha: 0.2),
-                width: 2,
+        GestureDetector(
+          onTap: () => context.go('/profile'),
+          child: Hero(
+            tag: 'profile_avatar',
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: primaryColor.withValues(alpha: 0.2),
+                  width: 2,
+                ),
               ),
-            ),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: primaryColor.withValues(alpha: 0.1),
-              child: Text(
-                (user?.name != null && user!.name.trim().isNotEmpty)
-                    ? user!.name.trim()[0].toUpperCase()
-                    : '?',
-                style: TextStyle(
-                  color: primaryColor,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
+              child: CircleAvatar(
+                radius: 20,
+                backgroundColor: primaryColor.withValues(alpha: 0.1),
+                child: Text(
+                  (user?.name != null && user!.name.trim().isNotEmpty)
+                      ? user!.name.trim()[0].toUpperCase()
+                      : '?',
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -231,4 +228,3 @@ class _SearchBar extends StatelessWidget {
     );
   }
 }
-

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/order.dart';
-import '../../models/cart_item.dart';
 import '../../providers/cart_provider.dart';
 import '../../constants/app_colors.dart';
 
@@ -15,8 +14,8 @@ class OrderHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDelivered = order.status == OrderStatus.delivered;
-    final isCancelled = order.status == OrderStatus.cancelled;
+    // final isDelivered = order.status == OrderStatus.delivered;
+    // final isCancelled = order.status == OrderStatus.cancelled;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -50,22 +49,24 @@ class OrderHistoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Order #${order.id.substring(order.id.length - 4).toUpperCase()}',
+                      'Order #${order.id.length > 4 ? order.id.substring(order.id.length - 4).toUpperCase() : order.id.toUpperCase()}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 16,
                         letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat('MMM dd, yyyy • hh:mm a').format(DateTime.parse(order.date)),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.lightMuted,
-                        fontWeight: FontWeight.w500,
+                    if (order.date.isNotEmpty)
+                      Text(
+                        DateFormat(
+                          'MMM dd, yyyy • hh:mm a',
+                        ).format(DateTime.parse(order.date)),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.lightMuted,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -117,16 +118,16 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDelivered = status == OrderStatus.delivered;
     final isCancelled = status == OrderStatus.cancelled;
-    
-    Color bgColor = Colors.orange[50]!;
-    Color textColor = Colors.orange[700]!;
+
+    Color bgColor = Colors.orange.shade50;
+    Color textColor = Colors.orange.shade700;
 
     if (isDelivered) {
-      bgColor = Colors.green[50]!;
-      textColor = Colors.green[700]!;
+      bgColor = Colors.green.shade50;
+      textColor = Colors.green.shade700;
     } else if (isCancelled) {
-      bgColor = Colors.red[50]!;
-      textColor = Colors.red[700]!;
+      bgColor = Colors.red.shade50;
+      textColor = Colors.red.shade700;
     }
 
     return Container(

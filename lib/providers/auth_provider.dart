@@ -256,4 +256,20 @@ class AuthProvider with ChangeNotifier {
       updateUser({'walletBalance': _user!.walletBalance + amount});
     }
   }
+
+  Future<void> toggleOnlineStatus(bool isOnline) async {
+    if (_user == null) return;
+    
+    // Optimistic update
+    final oldStatus = _user!.isOnline;
+    updateUser({'isOnline': isOnline});
+    
+    try {
+      await authRepository.updateProfile({'isOnline': isOnline});
+    } catch (e) {
+      // Revert if API fails
+      updateUser({'isOnline': oldStatus});
+      rethrow;
+    }
+  }
 }

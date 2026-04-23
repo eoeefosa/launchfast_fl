@@ -20,7 +20,10 @@ class ActiveOrderTracker extends StatelessWidget {
     final statusDescription = _getStatusDescription(order.status);
     
     final rider = order.riderId != null
-        ? StaticData.riders.firstWhere((r) => r.id == order.riderId)
+        ? StaticData.riders.cast<dynamic>().firstWhere(
+            (r) => r.id == order.riderId, 
+            orElse: () => null
+          )
         : null;
 
     return Container(
@@ -60,7 +63,7 @@ class ActiveOrderTracker extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                'ORDER #${order.id.substring(order.id.length - 6).toUpperCase()}',
+                                'ORDER #${order.id.length > 6 ? order.id.substring(order.id.length - 6).toUpperCase() : order.id.toUpperCase()}',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w900,

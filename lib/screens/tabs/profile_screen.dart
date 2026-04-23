@@ -15,6 +15,7 @@ import 'profile/widgets/profile_header.dart';
 import 'profile/widgets/wallet_card.dart';
 import 'profile/widgets/settings_tile.dart';
 import 'profile/widgets/verification_tile.dart';
+
 import 'profile/widgets/unauthenticated_view.dart';
 import 'profile/sheets/verification_sheet.dart';
 
@@ -110,7 +111,7 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 32),
               _LogoutButton(auth: auth),
-              const SizedBox(height: 60),
+              const SizedBox(height: 200),
             ],
           ),
         ),

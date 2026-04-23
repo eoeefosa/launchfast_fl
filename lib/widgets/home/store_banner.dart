@@ -6,6 +6,7 @@ class StoreBanner extends StatelessWidget {
 
   const StoreBanner({super.key, required this.store});
 
+  
   @override
   Widget build(BuildContext context) {
     return Container(

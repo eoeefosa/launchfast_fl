@@ -10,9 +10,7 @@ import '../../models/menu_item.dart';
 import '../../models/notification_item.dart';
 import '../../models/order.dart';
 import '../../widgets/home/home_header.dart';
-import '../../widgets/home/featured_meals.dart';
 import '../../widgets/home/store_section.dart';
-import '../../widgets/home/store_banner.dart';
 import '../../widgets/home/menu_grouped_list.dart';
 import '../../widgets/home/category_selector.dart';
 import '../../widgets/home/cart_bar.dart';
@@ -50,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _initializeData() {
     final storeProvider = context.read<StoreProvider>();
     if (storeProvider.stores.isNotEmpty) {
-      _activeStoreId = storeProvider.stores[0].id;
+      _activeStoreId = storeProvider.stores.first.id;
     }
   }
 
@@ -112,13 +110,20 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _onSearchChanged(String query) => setState(() => _searchQuery = query);
+  void _onSearchChanged(String query) {
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() => _searchQuery = query);
+      }
+    });
+  }
 
   void _onStoreSelected(String storeId) {
     setState(() {
       _activeStoreId = storeId;
       _searchQuery = '';
       _searchController.clear();
+      _selectedCategory = 'All';
     });
   }
 
@@ -138,9 +143,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator.adaptive()));
     }
 
+    if (storeProvider.stores.isEmpty) {
+      return const Scaffold(
+        body: Center(child: Text('No stores available')),
+      );
+    }
+
     final activeStore = storeProvider.stores.firstWhere(
       (s) => s.id == _activeStoreId,
-      orElse: () => storeProvider.stores.isNotEmpty ? storeProvider.stores[0] : storeProvider.stores[0],
+      orElse: () => storeProvider.stores.isNotEmpty
+          ? storeProvider.stores.first
+          : throw Exception('No stores available'),
     );
 
     final filteredItems = storeProvider.menuItems.where((item) {
@@ -154,7 +167,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }).toList();
 
     final groupedItems = <String, List<MenuItem>>{};
-    final categories = ['Rice', 'Swallow', 'Soup', 'Others', 'Drinks'];
+    final categories = storeProvider.menuItems
+        .map((item) => item.category)
+        .toSet()
+        .toList();
     for (var cat in categories) {
       final items = filteredItems.where((i) => i.category == cat).toList();
       if (items.isNotEmpty) groupedItems[cat] = items;
@@ -164,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF7F7F7),
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -182,62 +198,123 @@ class _HomeScreenState extends State<HomeScreen> {
                     onSearchChanged: _onSearchChanged,
                   ),
                 ),
-                if (_searchQuery.isEmpty)
-                  SliverToBoxAdapter(
-                    child: FeaturedMeals(
-                      items: storeProvider.menuItems.where((i) => i.popular).toList(),
-                      onAdd: (item) => _handleAddItem(context, item),
-                    ),
-                  ),
-                SliverToBoxAdapter(
-                  child: CategorySelector(
-                    selectedCategory: _selectedCategory,
-                    onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: StoreSection(
-                    stores: storeProvider.stores,
-                    activeStoreId: _activeStoreId,
-                    onStoreSelected: _onStoreSelected,
-                    accentColor: accentColor,
-                  ),
-                ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.location_on, size: 18, color: Colors.black54),
+                            SizedBox(width: 4),
+                            Text('Deliver to Home', style: TextStyle(fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'Now',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Insert "Restaurants" header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text(
+                      'Restaurants',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ),
+                ),
+                // Wrap StoreSection with fade + slide animation
+                SliverToBoxAdapter(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: const Duration(milliseconds: 500),
+                    builder: (context, value, child) {
+                      return Opacity(
+                        opacity: value,
+                        child: Transform.translate(
+                          offset: Offset(0, 20 * (1 - value)),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: StoreSection(
+                      stores: storeProvider.stores,
+                      activeStoreId: _activeStoreId,
+                      onStoreSelected: _onStoreSelected,
+                      accentColor: accentColor,
+                    ),
+                  ),
+                ),
+                // Insert sticky category selector after StoreSection with Uber Eats chips style
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _CategoryHeaderDelegate(
+                    child: Container(
+                      color: const Color(0xFFF7F7F7),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: CategorySelector(
+                        selectedCategory: _selectedCategory,
+                        onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
+                      ),
+                    ),
+                  ),
+                ),
+                // Add MenuGroupedList with subtle entry animation and spacing
+                SliverPadding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 120),
+                  sliver: SliverToBoxAdapter(
                     child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 800),
-                      curve: Curves.easeOutCubic,
+                      tween: Tween(begin: 0, end: 1),
+                      duration: const Duration(milliseconds: 400),
                       builder: (context, value, child) {
                         return Opacity(
                           opacity: value,
                           child: Transform.translate(
-                            offset: Offset(0, 30 * (1 - value)),
-                            child: StoreBanner(store: activeStore),
+                            offset: Offset(0, 15 * (1 - value)),
+                            child: child,
                           ),
                         );
                       },
+                      child: MenuGroupedList(
+                        groupedItems: groupedItems,
+                        accentColor: accentColor,
+                        onAdd: (item) => _handleAddItem(context, item),
+                        emptyMessage: filteredItems.isEmpty
+                            ? 'No items found. Try a different search or category.'
+                            : storeProvider.error,
+                      ),
                     ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.only(bottom: 120),
-                  sliver: MenuGroupedList(
-                    groupedItems: groupedItems,
-                    accentColor: accentColor,
-                    onAdd: (item) => _handleAddItem(context, item),
-                    emptyMessage: storeProvider.error,
                   ),
                 ),
               ],
             ),
             Positioned(
-              bottom: 0,
+              bottom: 10,
               left: 0,
               right: 0,
-              child: CartBar(accent: accentColor),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(30),
+                  child: CartBar(accent: accentColor),
+                ),
+              ),
             ),
           ],
         ),
@@ -248,9 +325,17 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleAddItem(BuildContext context, MenuItem item) {
     final cartProvider = context.read<CartProvider>();
     if (item.category == 'Swallow' || (item.addonIds != null && item.addonIds!.isNotEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select options for this item')),
+      );
       context.push('/item/${item.id}');
     } else {
       final success = cartProvider.addToCart(item: item, quantity: 1);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${item.name} added to cart')),
+        );
+      }
       if (!success) _showClearCartDialog(context, item);
     }
   }
@@ -309,4 +394,24 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
   }
+}
+
+class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  _CategoryHeaderDelegate({required this.child});
+
+  @override
+  double get minExtent => 60;
+
+  @override
+  double get maxExtent => 60;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => false;
 }

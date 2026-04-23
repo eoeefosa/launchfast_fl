@@ -9,6 +9,7 @@ class UserProfile {
   final String? adminStore;
   final bool emailVerified;
   final bool phoneVerified;
+  final bool isOnline;
 
   UserProfile({
     required this.id,
@@ -21,6 +22,7 @@ class UserProfile {
     this.adminStore,
     this.emailVerified = false,
     this.phoneVerified = false,
+    this.isOnline = false,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -35,6 +37,7 @@ class UserProfile {
       adminStore: json['adminStore'],
       emailVerified: json['emailVerified'] ?? false,
       phoneVerified: json['phoneVerified'] ?? false,
+      isOnline: json['isOnline'] ?? false,
     );
   }
 
@@ -50,6 +53,7 @@ class UserProfile {
       'adminStore': adminStore,
       'emailVerified': emailVerified,
       'phoneVerified': phoneVerified,
+      'isOnline': isOnline,
     };
   }
 }
