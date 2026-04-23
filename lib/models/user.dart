@@ -7,6 +7,8 @@ class UserProfile {
   final double walletBalance;
   final String role; // 'user', 'store_owner', 'rider', 'admin'
   final String? adminStore;
+  final bool emailVerified;
+  final bool phoneVerified;
 
   UserProfile({
     required this.id,
@@ -17,6 +19,8 @@ class UserProfile {
     required this.walletBalance,
     required this.role,
     this.adminStore,
+    this.emailVerified = false,
+    this.phoneVerified = false,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -29,6 +33,8 @@ class UserProfile {
       walletBalance: (json['walletBalance'] as num?)?.toDouble() ?? 0.0,
       role: json['role'] ?? 'user',
       adminStore: json['adminStore'],
+      emailVerified: json['emailVerified'] ?? false,
+      phoneVerified: json['phoneVerified'] ?? false,
     );
   }
 
@@ -42,6 +48,8 @@ class UserProfile {
       'walletBalance': walletBalance,
       'role': role,
       'adminStore': adminStore,
+      'emailVerified': emailVerified,
+      'phoneVerified': phoneVerified,
     };
   }
 }

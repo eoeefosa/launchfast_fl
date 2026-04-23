@@ -5,6 +5,7 @@ import '../models/user.dart';
 import '../models/store.dart';
 import '../repositories/auth_repository.dart';
 import '../constants/static_data.dart';
+import '../services/api_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:io';
 
@@ -175,6 +176,30 @@ class AuthProvider with ChangeNotifier {
       );
       notifyListeners();
     }
+  }
+
+  /// Called by Ably role-update listener to instantly update the in-memory
+  /// user role and persist it, triggering navigation re-evaluation.
+  void updateRole(String newRole) {
+    if (_user != null && _user!.role != newRole) {
+      updateUser({'role': newRole});
+    }
+  }
+
+  /// Fetches fresh user data from the backend and persists it.
+  Future<void> refreshUser() async {
+    if (_token == null) return;
+    try {
+      final res = await apiService.dio.get('/auth/me');
+      if (res.data != null) {
+        _user = UserProfile.fromJson(res.data as Map<String, dynamic>);
+        await storage.write(
+          key: 'launch-fast-user',
+          value: jsonEncode(_user!.toJson()),
+        );
+        notifyListeners();
+      }
+    } catch (_) {}
   }
 
   void topUpWallet(double amount) {

@@ -10,6 +10,7 @@ import '../../widgets/home/store_tabs.dart';
 import '../../widgets/home/store_banner.dart';
 import '../../widgets/home/menu_item_card.dart';
 import '../../widgets/home/cart_bar.dart';
+import '../../services/ably_service.dart';
 
 import '../../providers/auth_provider.dart';
 import '../dashboards/admin/admin_main_nav.dart';
@@ -29,6 +30,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _activeStoreId = '';
   String _searchQuery = '';
 
+  // Keep a reference so we can remove it in dispose
+  late final void Function(String) _roleListener;
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +40,29 @@ class _HomeScreenState extends State<HomeScreen> {
     if (storeProvider.stores.isNotEmpty) {
       _activeStoreId = storeProvider.stores[0].id;
     }
+
+    // ─── Ably: listen for instant role updates from the admin ─────────
+    final auth = context.read<AuthProvider>();
+    final userId = auth.user?.id;
+    if (userId != null) {
+      ablyService.initAbly(userId);
+      _roleListener = (String newRole) {
+        if (mounted) {
+          context.read<AuthProvider>().updateRole(newRole);
+        }
+      };
+      ablyService.addRoleListener(_roleListener);
+    } else {
+      // No user yet — register a no-op so dispose is safe
+      _roleListener = (_) {};
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    ablyService.removeRoleListener(_roleListener);
+    super.dispose();
   }
 
   void _onSearchChanged(String query) {

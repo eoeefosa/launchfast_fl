@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class CustomButton extends StatelessWidget {
@@ -52,9 +53,7 @@ class ForgotPasswordButton extends StatelessWidget {
     return Align(
       alignment: Alignment.centerRight,
       child: TextButton(
-        onPressed: () {
-          // TODO: navigate to forgot-password screen
-        },
+        onPressed: () => context.push('/forgot-password'),
         child: Text(
           'Forgot Password?',
           style: TextStyle(

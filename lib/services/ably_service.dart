@@ -26,6 +26,9 @@ class AblyService {
   // Listener registry for store updates
   final List<Function(String storeId, bool isOpen)> _storeListeners = [];
 
+  // Listener registry for role updates
+  final List<Function(String newRole)> _roleListeners = [];
+
   Future<void> initAbly(String userId) async {
     // Prevent duplicate concurrent init calls
     if (_isConnecting) return;
@@ -85,10 +88,6 @@ class AblyService {
           final orderId = data['orderId'] as String;
           final statusStr = data['status'] as String;
           final status = OrderStatusExtension.fromString(statusStr);
-
-          // print('Ably received order update: $orderId => $statusStr');
-
-          // Notify order listeners
           for (final cb in _orderListeners) {
             cb(orderId, status);
           }
@@ -98,25 +97,38 @@ class AblyService {
       },
     );
 
+    // Subscribe to role-update events on the user's personal channel
+    _userChannel!.subscribe(name: 'role-update').listen((ably.Message message) {
+      try {
+        final data = message.data as Map;
+        final newRole = data['newRole'] as String;
+        for (final cb in _roleListeners) {
+          cb(newRole);
+        }
+      } catch (e) {
+        // print("Error processing role update message: $e");
+      }
+    });
+
     // Subscribe to public stores channel
     _storesSubscription?.cancel();
     _storesChannel = _realtime!.channels.get('public:stores');
     _storesSubscription = _storesChannel!
         .subscribe(name: 'store-toggle')
         .listen((ably.Message message) {
-      try {
-        final data = message.data as Map;
-        final storeId = data['storeId'] as String;
-        final isOpen = data['isOpen'] as bool;
+          try {
+            final data = message.data as Map;
+            final storeId = data['storeId'] as String;
+            final isOpen = data['isOpen'] as bool;
 
-        // Notify store listeners
-        for (final cb in _storeListeners) {
-          cb(storeId, isOpen);
-        }
-      } catch (e) {
-        // print('Error processing store toggle message: $e');
-      }
-    });
+            // Notify store listeners
+            for (final cb in _storeListeners) {
+              cb(storeId, isOpen);
+            }
+          } catch (e) {
+            // print('Error processing store toggle message: $e');
+          }
+        });
 
     // Subscribe to rider channel if role is rider
     // This is handled via explicit calls to subscribeToRiderChannel
@@ -132,8 +144,9 @@ class AblyService {
     // 1. Specific Rider Updates (e.g. status changes of assigned orders)
     _riderSubscription?.cancel();
     _riderChannel = _realtime!.channels.get('rider:$riderId');
-    _riderSubscription =
-        _riderChannel!.subscribe(name: 'order-update').listen((message) {
+    _riderSubscription = _riderChannel!.subscribe(name: 'order-update').listen((
+      message,
+    ) {
       if (onOrderUpdate != null) {
         onOrderUpdate(message.data as Map);
       }
@@ -142,8 +155,9 @@ class AblyService {
     // 2. Global Available Jobs
     _jobsSubscription?.cancel();
     _jobsChannel = _realtime!.channels.get('riders:available');
-    _jobsSubscription =
-        _jobsChannel!.subscribe(name: 'new-job').listen((message) {
+    _jobsSubscription = _jobsChannel!.subscribe(name: 'new-job').listen((
+      message,
+    ) {
       if (onNewJob != null) {
         onNewJob(message.data as Map);
       }
@@ -208,6 +222,17 @@ class AblyService {
     _storeListeners.remove(listener);
   }
 
+  // Role listeners — called instantly when admin changes this user's role
+  void addRoleListener(Function(String newRole) listener) {
+    if (!_roleListeners.contains(listener)) {
+      _roleListeners.add(listener);
+    }
+  }
+
+  void removeRoleListener(Function(String newRole) listener) {
+    _roleListeners.remove(listener);
+  }
+
   void subscribeToUserOrders(
     String userId,
     Function(String orderId, OrderStatus status) onUpdate,
@@ -239,6 +264,7 @@ class AblyService {
     _realtime = null;
     _orderListeners.clear();
     _storeListeners.clear();
+    _roleListeners.clear();
     _isConnecting = false;
     // print('Ably disconnected and listeners cleared');
   }

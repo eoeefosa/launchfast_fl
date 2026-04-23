@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:launchfast_fl/screens/auth/forgot_password_screen.dart';
 import 'package:launchfast_fl/screens/auth/login_screen.dart';
 import 'package:launchfast_fl/screens/auth/register_screen.dart';
 import 'package:launchfast_fl/screens/dashboards/rider/main_rider.dart';
@@ -16,13 +17,16 @@ import 'screens/checkout_screen.dart';
 import 'package:launchfast_fl/screens/dashboards/admin/admin_main_nav.dart';
 
 final router = GoRouter(
-  // initialLocation: '/',
-  initialLocation: '/admin/dashboard',
+  initialLocation: '/',
   routes: [
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => const ForgotPasswordScreen(),
     ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
