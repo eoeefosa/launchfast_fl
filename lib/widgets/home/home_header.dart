@@ -71,7 +71,10 @@ class HomeHeader extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.grey[100],
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.grey[200]!, width: 1),
+                            border: Border.all(
+                              color: Colors.grey[200]!,
+                              width: 1,
+                            ),
                           ),
                           child: const Icon(
                             Icons.notifications_none_rounded,
@@ -80,7 +83,9 @@ class HomeHeader extends StatelessWidget {
                         ),
                         Consumer<NotificationProvider>(
                           builder: (context, provider, child) {
-                            if (provider.unreadCount == 0) return const SizedBox.shrink();
+                            if (provider.unreadCount == 0) {
+                              return const SizedBox.shrink();
+                            }
                             return Positioned(
                               right: 2,
                               top: 2,
@@ -155,38 +160,10 @@ class HomeHeader extends StatelessWidget {
                         color: Colors.grey[500],
                         size: 22,
                       ),
-                      suffixIcon: Icon(
-                        Icons.mic_none_rounded,
-                        color: Theme.of(context).primaryColor,
-                        size: 22,
-                      ),
+
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                height: 54,
-                width: 54,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.tune_rounded,
-                    color: Colors.white,
-                    size: 22,
                   ),
                 ),
               ),

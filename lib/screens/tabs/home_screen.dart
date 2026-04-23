@@ -32,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _activeStoreId = '';
   String _searchQuery = '';
+  String _selectedCategory = 'All';
 
   // Keep a reference so we can remove it in dispose
   late final void Function(String) _roleListener;
@@ -153,7 +154,10 @@ class _HomeScreenState extends State<HomeScreen> {
           item.name.toLowerCase().contains(query) ||
           item.description.toLowerCase().contains(query) ||
           item.category.toLowerCase().contains(query);
-      return matchesStore && matchesSearch;
+      
+      final matchesCategory = _selectedCategory == 'All' || item.category == _selectedCategory;
+      
+      return matchesStore && matchesSearch && matchesCategory;
     }).toList();
 
     // Group items by category
@@ -196,15 +200,40 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Row(
                         children: [
-                          _buildCategoryChip('All', Icons.restaurant_rounded, true),
+                          _buildCategoryChip(
+                            'All',
+                            Icons.restaurant_rounded,
+                            _selectedCategory == 'All',
+                            () => setState(() => _selectedCategory = 'All'),
+                          ),
                           const SizedBox(width: 12),
-                          _buildCategoryChip('Rice', Icons.rice_bowl_rounded, false),
+                          _buildCategoryChip(
+                            'Rice',
+                            Icons.rice_bowl_rounded,
+                            _selectedCategory == 'Rice',
+                            () => setState(() => _selectedCategory = 'Rice'),
+                          ),
                           const SizedBox(width: 12),
-                          _buildCategoryChip('Swallow', Icons.cookie_rounded, false),
+                          _buildCategoryChip(
+                            'Swallow',
+                            Icons.cookie_rounded,
+                            _selectedCategory == 'Swallow',
+                            () => setState(() => _selectedCategory = 'Swallow'),
+                          ),
                           const SizedBox(width: 12),
-                          _buildCategoryChip('Soup', Icons.soup_kitchen_rounded, false),
+                          _buildCategoryChip(
+                            'Soup',
+                            Icons.soup_kitchen_rounded,
+                            _selectedCategory == 'Soup',
+                            () => setState(() => _selectedCategory = 'Soup'),
+                          ),
                           const SizedBox(width: 12),
-                          _buildCategoryChip('Drinks', Icons.local_drink_rounded, false),
+                          _buildCategoryChip(
+                            'Drinks',
+                            Icons.local_drink_rounded,
+                            _selectedCategory == 'Drinks',
+                            () => setState(() => _selectedCategory = 'Drinks'),
+                          ),
                         ],
                       ),
                     ),
@@ -336,39 +365,47 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCategoryChip(String label, IconData icon, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.black : Colors.grey[100],
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: isActive ? Colors.white : Colors.grey[600],
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: isActive ? Colors.white : Colors.grey[800],
-              fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
-              fontSize: 14,
+  Widget _buildCategoryChip(
+    String label,
+    IconData icon,
+    bool isActive,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.black : Colors.grey[100],
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isActive ? Colors.white : Colors.grey[600],
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? Colors.white : Colors.grey[800],
+                fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -429,11 +429,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
             decoration: const InputDecoration(labelText: 'Email Address'),
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: _addressCtrl,
-            decoration: const InputDecoration(labelText: 'Delivery Address'),
-            maxLines: 3,
-          ),
+          LocationSelector(),
           const SizedBox(height: 24),
           _PrimaryButton(label: 'Save Changes', onPressed: _save),
         ],
