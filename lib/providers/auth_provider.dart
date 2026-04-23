@@ -73,14 +73,17 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     try {
       final data = await authRepository.login(email, password);
-      _user = UserProfile.fromJson(data['user']);
-      _token = data['token'];
+      final userData = data['user'] ?? data;
+      if (userData is Map && userData['id'] != null) {
+        _user = UserProfile.fromJson(userData as Map<String, dynamic>);
+        _token = data['token'];
 
-      await storage.write(key: 'launch-fast-token', value: _token);
-      await storage.write(
-        key: 'launch-fast-user',
-        value: jsonEncode(_user!.toJson()),
-      );
+        await storage.write(key: 'launch-fast-token', value: _token);
+        await storage.write(
+          key: 'launch-fast-user',
+          value: jsonEncode(_user!.toJson()),
+        );
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -92,14 +95,17 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     try {
       final data = await authRepository.register(userData);
-      _user = UserProfile.fromJson(data['user']);
-      _token = data['token'];
+      final uData = data['user'] ?? data;
+      if (uData is Map && uData['id'] != null) {
+        _user = UserProfile.fromJson(uData as Map<String, dynamic>);
+        _token = data['token'];
 
-      await storage.write(key: 'launch-fast-token', value: _token);
-      await storage.write(
-        key: 'launch-fast-user',
-        value: jsonEncode(_user!.toJson()),
-      );
+        await storage.write(key: 'launch-fast-token', value: _token);
+        await storage.write(
+          key: 'launch-fast-user',
+          value: jsonEncode(_user!.toJson()),
+        );
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -126,14 +132,17 @@ class AuthProvider with ChangeNotifier {
       }
 
       final data = await authRepository.loginWithGoogle(idToken);
-      _user = UserProfile.fromJson(data['user']);
-      _token = data['token'];
+      final uData = data['user'] ?? data;
+      if (uData is Map && uData['id'] != null) {
+        _user = UserProfile.fromJson(uData as Map<String, dynamic>);
+        _token = data['token'];
 
-      await storage.write(key: 'launch-fast-token', value: _token);
-      await storage.write(
-        key: 'launch-fast-user',
-        value: jsonEncode(_user!.toJson()),
-      );
+        await storage.write(key: 'launch-fast-token', value: _token);
+        await storage.write(
+          key: 'launch-fast-user',
+          value: jsonEncode(_user!.toJson()),
+        );
+      }
     } catch (e) {
       // print('Google Sign-In Error: $e');
       rethrow;
@@ -170,8 +179,9 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final data = await authRepository.updateProfile(updates);
-      if (data['user'] != null) {
-        _user = UserProfile.fromJson(data['user']);
+      final uData = data['user'] ?? data;
+      if (uData is Map && uData['id'] != null) {
+        _user = UserProfile.fromJson(uData as Map<String, dynamic>);
         await storage.write(
           key: 'launch-fast-user',
           value: jsonEncode(_user!.toJson()),
@@ -213,12 +223,25 @@ class AuthProvider with ChangeNotifier {
     try {
       final res = await apiService.dio.get('/auth/me');
       if (res.data != null) {
-        _user = UserProfile.fromJson(res.data as Map<String, dynamic>);
-        await storage.write(
-          key: 'launch-fast-user',
-          value: jsonEncode(_user!.toJson()),
-        );
-        notifyListeners();
+        Map<String, dynamic>? userData;
+        
+        if (res.data is Map) {
+          final dataMap = res.data as Map;
+          if (dataMap.containsKey('user') && dataMap['user'] is Map) {
+            userData = Map<String, dynamic>.from(dataMap['user']);
+          } else {
+            userData = Map<String, dynamic>.from(dataMap);
+          }
+        }
+
+        if (userData != null && userData.containsKey('id') && userData['id'] != null) {
+          _user = UserProfile.fromJson(userData);
+          await storage.write(
+            key: 'launch-fast-user',
+            value: jsonEncode(_user!.toJson()),
+          );
+          notifyListeners();
+        }
       }
     } catch (_) {}
   }

@@ -250,8 +250,9 @@ class _AvailableJobsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) return const Center(child: CircularProgressIndicator());
-    if (jobs.isEmpty)
+    if (jobs.isEmpty) {
       return const Center(child: Text('No jobs available right now.'));
+    }
 
     return ListView.builder(
       itemCount: jobs.length,
