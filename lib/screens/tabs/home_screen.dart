@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // No user yet — register a no-op so dispose is safe
       _roleListener = (_) {};
       _notificationListener = (_) {};
-      _ablyOrderListener = (_, __) {};
+      _ablyOrderListener = (_, _) {};
     }
   }
 

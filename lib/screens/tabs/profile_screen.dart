@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:launchfast_fl/widgets/home/location_selector.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -32,7 +33,7 @@ class ProfileScreen extends StatelessWidget {
             _ProfileHeader(user: user, auth: auth),
             _WalletCard(auth: auth),
             const SizedBox(height: 10),
-            _DeliveryAddressTile(auth: auth),
+            LocationSelector(),
             _VerificationTile(
               icon: user.emailVerified
                   ? Icons.mark_email_read
@@ -51,19 +52,10 @@ class ProfileScreen extends StatelessWidget {
                   ? null
                   : () => _showVerificationModal(context, auth, 'phone'),
             ),
+
             _SettingsTile(
-              icon: Icons.credit_card,
-              title: 'Payment Methods',
-              onTap: _launchWhatsApp,
-            ),
-            _SettingsTile(
-              icon: Icons.notifications,
-              title: 'Notifications',
-              onTap: () {},
-            ),
-            _SettingsTile(
-              icon: Icons.help_outline,
-              title: 'Help & Support',
+              icon: Icons.support_agent,
+              title: 'Contact Support',
               onTap: _launchWhatsApp,
             ),
             _LogoutTile(auth: auth),
@@ -329,33 +321,6 @@ class _SettingsTile extends StatelessWidget {
           : null,
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
       onTap: onTap,
-    );
-  }
-}
-
-class _DeliveryAddressTile extends StatelessWidget {
-  const _DeliveryAddressTile({required this.auth});
-
-  final AuthProvider auth;
-
-  void _showEditModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-      ),
-      builder: (_) => _EditProfileSheet(auth: auth),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _SettingsTile(
-      icon: Icons.location_on,
-      title: 'Delivery Address',
-      onTap: () => _showEditModal(context),
     );
   }
 }

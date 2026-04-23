@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/notification_provider.dart';
@@ -21,7 +22,8 @@ class NotificationsScreen extends StatelessWidget {
         actions: [
           if (notifications.isNotEmpty)
             TextButton(
-              onPressed: () => _showClearConfirmation(context, notificationProvider),
+              onPressed: () =>
+                  _showClearConfirmation(context, notificationProvider),
               child: const Text('Clear All'),
             ),
         ],
@@ -48,7 +50,11 @@ class NotificationsScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.notifications_off_outlined, size: 80, color: Colors.grey[300]),
+          Icon(
+            Icons.notifications_off_outlined,
+            size: 80,
+            color: Colors.grey[300],
+          ),
           const SizedBox(height: 16),
           Text(
             'No notifications yet',
@@ -68,7 +74,10 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  void _showClearConfirmation(BuildContext context, NotificationProvider provider) {
+  void _showClearConfirmation(
+    BuildContext context,
+    NotificationProvider provider,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -114,15 +123,34 @@ class _NotificationTile extends StatelessWidget {
       child: InkWell(
         onTap: () {
           context.read<NotificationProvider>().markAsRead(item.id);
-          // TODO: Handle navigation based on metadata (e.g., go to order details)
+
+          // Handle navigation based on notification type and metadata
+          switch (item.type) {
+            case NotificationType.orderUpdate:
+              // Navigate to the Orders tab
+              context.go('/orders');
+              break;
+            case NotificationType.walletUpdate:
+            case NotificationType.profileUpdate:
+              // Navigate to the Profile tab
+              context.go('/profile');
+              break;
+            case NotificationType.serverAlert:
+            case NotificationType.promotion:
+              // For these, we might just stay on the notifications screen
+              // or navigate to a specific promotional page if metadata exists.
+              if (item.metadata != null && item.metadata!['url'] != null) {
+                // If there's a specific URL in metadata, we could open it
+                // launchUrl(Uri.parse(item.metadata!['url']));
+              }
+              break;
+          }
         },
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: item.isRead ? null : Colors.blue.withValues(alpha: 0.05),
-            border: Border(
-              bottom: BorderSide(color: Colors.grey[200]!),
-            ),
+            border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,8 +168,9 @@ class _NotificationTile extends StatelessWidget {
                           child: Text(
                             item.title,
                             style: TextStyle(
-                              fontWeight:
-                                  item.isRead ? FontWeight.bold : FontWeight.w900,
+                              fontWeight: item.isRead
+                                  ? FontWeight.bold
+                                  : FontWeight.w900,
                               fontSize: 16,
                             ),
                           ),
@@ -158,10 +187,7 @@ class _NotificationTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       item.message,
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        height: 1.3,
-                      ),
+                      style: TextStyle(color: Colors.grey[700], height: 1.3),
                     ),
                   ],
                 ),
