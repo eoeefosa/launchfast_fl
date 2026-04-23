@@ -13,7 +13,7 @@ class CustomButton extends StatelessWidget {
 
   final String label;
   final bool isLoading;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color primaryColor;
 
   @override

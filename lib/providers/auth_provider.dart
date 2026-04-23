@@ -158,6 +158,8 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> updateProfile(Map<String, dynamic> updates) async {
+    _isLoading = true;
+    notifyListeners();
     // Optimistic Update: Update local state immediately for better UX
     final oldUser = _user;
     if (_user != null) {
@@ -180,6 +182,7 @@ class AuthProvider with ChangeNotifier {
       _user = oldUser;
       rethrow;
     } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:launchfast_fl/screens/auth/widgets/constants.dart';
+import 'package:launchfast_fl/screens/auth/widgets/custom_button.dart';
 import 'package:launchfast_fl/widgets/home/location_selector.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -429,7 +431,12 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           const SizedBox(height: 12),
           LocationSelector(),
           const SizedBox(height: 24),
-          PrimaryButton(label: 'Save Changes', onPressed: _save),
+          CustomButton(
+            isLoading: widget.auth.isLoading,
+            label: 'Save Changes',
+            primaryColor: Theme.of(context).primaryColor,
+            onPressed: widget.auth.isLoading ? null : _save,
+          ),
         ],
       ),
     );
@@ -502,57 +509,17 @@ class _TopUpSheetState extends State<_TopUpSheet> {
                 .toList(),
           ),
           const SizedBox(height: 24),
-          PrimaryButton(label: 'Deposit Now', onPressed: _deposit),
+          CustomButton(
+            isLoading: widget.auth.isLoading,
+            label: 'Deposit Now',
+            primaryColor: Theme.of(context).primaryColor,
+            onPressed: widget.auth.isLoading ? null : _deposit,
+          ),
         ],
       ),
     );
   }
 }
-
-const networks = [
-  {
-    "name": "MTN",
-    "prefix": [
-      "0803",
-      "0703",
-      "0903",
-      "0806",
-      "0706",
-      "0813",
-      "0810",
-      "0814",
-      "0816",
-      "0906",
-      "0913",
-      "0916",
-      "0910",
-      "0702",
-    ],
-  },
-  {
-    "name": "Airtel",
-    "prefix": [
-      "0802",
-      "0808",
-      "0708",
-      "0812",
-      "0701",
-      "0902",
-      "0901",
-      "0904",
-      "0907",
-      "0912",
-    ],
-  },
-  {
-    "name": "Glo",
-    "prefix": ["0805", "0807", "0705", "0815", "0811", "0905", "0915"],
-  },
-  {
-    "name": "9mobile",
-    "prefix": ["0809", "0818", "0817", "0909", "0908"],
-  },
-];
 
 // ─── Verification Sheet ───────────────────────────────────────────────────
 
@@ -776,7 +743,8 @@ class _VerificationSheetState extends State<VerificationSheet> {
             style: TextStyle(color: _subtitleColor, fontSize: 14),
           ),
         const SizedBox(height: 20),
-        PrimaryButton(
+        CustomButton(
+          primaryColor: Theme.of(context).primaryColor,
           label: 'Send Code',
           onPressed: _isSending ? null : _sendCode,
           isLoading: _isSending,
@@ -825,10 +793,13 @@ class _VerificationSheetState extends State<VerificationSheet> {
           valueListenable: _otpCtrl,
           builder: (context, value, child) {
             final isValid = value.text.length == 6;
-            return PrimaryButton(
-              label: 'Verify Now',
-              onPressed: (_isVerifying || !isValid) ? null : _verifyOtp,
+            return CustomButton(
+              primaryColor: Theme.of(context).primaryColor,
               isLoading: _isVerifying,
+              label: 'Verify Now',
+              onPressed: () {
+                (_isVerifying || !isValid) ? null : _verifyOtp;
+              },
             );
           },
         ),
@@ -885,47 +856,6 @@ class BottomSheetScaffold extends StatelessWidget {
           const SizedBox(height: 40),
         ],
       ),
-    );
-  }
-}
-
-class PrimaryButton extends StatelessWidget {
-  const PrimaryButton({
-    super.key,
-    required this.label,
-    required this.onPressed,
-    this.isLoading = false,
-  });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).primaryColor,
-        minimumSize: const Size(double.infinity, 56),
-      ),
-      child: isLoading
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            )
-          : Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
     );
   }
 }

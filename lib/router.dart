@@ -16,10 +16,15 @@ import 'screens/store/item_detail_screen.dart';
 import 'screens/checkout_screen.dart';
 import 'package:launchfast_fl/screens/dashboards/admin/admin_main_nav.dart';
 import 'package:launchfast_fl/screens/notifications_screen.dart';
+import 'package:launchfast_fl/splash_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
   routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const LaunchFastSplashScreen(),
+    ),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/register',
