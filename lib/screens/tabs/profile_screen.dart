@@ -30,11 +30,11 @@ class ProfileScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _ProfileHeader(user: user, auth: auth),
-            _WalletCard(auth: auth),
+            ProfileHeader(user: user, auth: auth),
+            WalletCard(auth: auth),
             const SizedBox(height: 10),
             LocationSelector(),
-            _VerificationTile(
+            VerificationTile(
               icon: user.emailVerified
                   ? Icons.mark_email_read
                   : Icons.mark_email_unread,
@@ -44,7 +44,7 @@ class ProfileScreen extends StatelessWidget {
                   ? null
                   : () => _showVerificationModal(context, auth, 'email'),
             ),
-            _VerificationTile(
+            VerificationTile(
               icon: user.phoneVerified ? Icons.verified : Icons.phone_android,
               title: 'Phone Verification (Telegram)',
               verified: user.phoneVerified,
@@ -84,7 +84,7 @@ class ProfileScreen extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
-      builder: (_) => _VerificationSheet(auth: auth, method: method),
+      builder: (_) => VerificationSheet(auth: auth, method: method),
     );
   }
 }
@@ -127,8 +127,8 @@ class UnauthenticatedView extends StatelessWidget {
 
 // ─── Profile Header ───────────────────────────────────────────────────────
 
-class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.user, required this.auth});
+class ProfileHeader extends StatelessWidget {
+  const ProfileHeader({super.key, required this.user, required this.auth});
 
   final dynamic user;
   final AuthProvider auth;
@@ -210,8 +210,8 @@ class _RoleBadge extends StatelessWidget {
 
 // ─── Wallet Card ──────────────────────────────────────────────────────────
 
-class _WalletCard extends StatelessWidget {
-  const _WalletCard({required this.auth});
+class WalletCard extends StatelessWidget {
+  const WalletCard({super.key, required this.auth});
 
   final AuthProvider auth;
 
@@ -325,8 +325,9 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
-class _VerificationTile extends StatelessWidget {
-  const _VerificationTile({
+class VerificationTile extends StatelessWidget {
+  const VerificationTile({
+    super.key,
     required this.icon,
     required this.title,
     required this.verified,
@@ -412,7 +413,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   @override
   Widget build(BuildContext context) {
     context.watch<AuthProvider>();
-    return _BottomSheetScaffold(
+    return BottomSheetScaffold(
       title: 'Edit Profile',
       child: Column(
         children: [
@@ -428,7 +429,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           const SizedBox(height: 12),
           LocationSelector(),
           const SizedBox(height: 24),
-          _PrimaryButton(label: 'Save Changes', onPressed: _save),
+          PrimaryButton(label: 'Save Changes', onPressed: _save),
         ],
       ),
     );
@@ -469,7 +470,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return _BottomSheetScaffold(
+    return BottomSheetScaffold(
       title: 'Top Up Wallet',
       child: Column(
         children: [
@@ -501,14 +502,14 @@ class _TopUpSheetState extends State<_TopUpSheet> {
                 .toList(),
           ),
           const SizedBox(height: 24),
-          _PrimaryButton(label: 'Deposit Now', onPressed: _deposit),
+          PrimaryButton(label: 'Deposit Now', onPressed: _deposit),
         ],
       ),
     );
   }
 }
 
-const _networks = [
+const networks = [
   {
     "name": "MTN",
     "prefix": [
@@ -555,17 +556,21 @@ const _networks = [
 
 // ─── Verification Sheet ───────────────────────────────────────────────────
 
-class _VerificationSheet extends StatefulWidget {
-  const _VerificationSheet({required this.auth, required this.method});
+class VerificationSheet extends StatefulWidget {
+  const VerificationSheet({
+    super.key,
+    required this.auth,
+    required this.method,
+  });
 
   final AuthProvider auth;
   final String method;
 
   @override
-  State<_VerificationSheet> createState() => _VerificationSheetState();
+  State<VerificationSheet> createState() => _VerificationSheetState();
 }
 
-class _VerificationSheetState extends State<_VerificationSheet> {
+class _VerificationSheetState extends State<VerificationSheet> {
   final _otpCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
 
@@ -587,7 +592,7 @@ class _VerificationSheetState extends State<_VerificationSheet> {
     final text = _phoneCtrl.text;
     if (text.length >= 4) {
       final prefix = text.substring(0, 4);
-      for (final network in _networks) {
+      for (final network in networks) {
         if ((network['prefix'] as List).contains(prefix)) {
           if (_predictedNetwork != network['name']) {
             setState(() {
@@ -710,7 +715,7 @@ class _VerificationSheetState extends State<_VerificationSheet> {
   Widget build(BuildContext context) {
     final title = _isPhone ? 'Verify Phone via Telegram' : 'Verify Email';
 
-    return _BottomSheetScaffold(
+    return BottomSheetScaffold(
       title: title,
       backgroundColor: _networkColor,
       textColor: _titleColor,
@@ -771,7 +776,7 @@ class _VerificationSheetState extends State<_VerificationSheet> {
             style: TextStyle(color: _subtitleColor, fontSize: 14),
           ),
         const SizedBox(height: 20),
-        _PrimaryButton(
+        PrimaryButton(
           label: 'Send Code',
           onPressed: _isSending ? null : _sendCode,
           isLoading: _isSending,
@@ -820,7 +825,7 @@ class _VerificationSheetState extends State<_VerificationSheet> {
           valueListenable: _otpCtrl,
           builder: (context, value, child) {
             final isValid = value.text.length == 6;
-            return _PrimaryButton(
+            return PrimaryButton(
               label: 'Verify Now',
               onPressed: (_isVerifying || !isValid) ? null : _verifyOtp,
               isLoading: _isVerifying,
@@ -834,8 +839,9 @@ class _VerificationSheetState extends State<_VerificationSheet> {
 
 // ─── Shared Sheet Widgets ─────────────────────────────────────────────────
 
-class _BottomSheetScaffold extends StatelessWidget {
-  const _BottomSheetScaffold({
+class BottomSheetScaffold extends StatelessWidget {
+  const BottomSheetScaffold({
+    super.key,
     required this.title,
     required this.child,
     this.backgroundColor,
@@ -883,8 +889,9 @@ class _BottomSheetScaffold extends StatelessWidget {
   }
 }
 
-class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton({
+class PrimaryButton extends StatelessWidget {
+  const PrimaryButton({
+    super.key,
     required this.label,
     required this.onPressed,
     this.isLoading = false,
