@@ -777,9 +777,13 @@ class _VerificationSheetState extends State<_VerificationSheet> {
               labelText: 'Phone Number',
               labelStyle: TextStyle(color: _subtitleColor),
               hintText: 'e.g. 0803 123 4567',
-              hintStyle: TextStyle(color: _subtitleColor.withOpacity(0.5)),
+              hintStyle: TextStyle(
+                color: _subtitleColor.withValues(alpha: 0.5),
+              ),
               enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: _subtitleColor.withOpacity(0.3)),
+                borderSide: BorderSide(
+                  color: _subtitleColor.withValues(alpha: 0.3),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderSide: BorderSide(color: _titleColor, width: 2),
@@ -839,9 +843,11 @@ class _VerificationSheetState extends State<_VerificationSheet> {
             labelText: 'OTP Code',
             labelStyle: TextStyle(color: _subtitleColor),
             hintText: '123456',
-            hintStyle: TextStyle(color: _subtitleColor.withOpacity(0.5)),
+            hintStyle: TextStyle(color: _subtitleColor.withValues(alpha: 0.5)),
             enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: _subtitleColor.withOpacity(0.3)),
+              borderSide: BorderSide(
+                color: _subtitleColor.withValues(alpha: 0.3),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(color: _titleColor, width: 2),

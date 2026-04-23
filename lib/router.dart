@@ -15,6 +15,7 @@ import 'screens/store/store_detail_screen.dart';
 import 'screens/store/item_detail_screen.dart';
 import 'screens/checkout_screen.dart';
 import 'package:launchfast_fl/screens/dashboards/admin/admin_main_nav.dart';
+import 'package:launchfast_fl/screens/notifications_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -27,6 +28,10 @@ final router = GoRouter(
     GoRoute(
       path: '/forgot-password',
       builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/notifications',
+      builder: (context, state) => const NotificationsScreen(),
     ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>

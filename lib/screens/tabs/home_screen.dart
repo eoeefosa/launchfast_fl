@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/store_provider.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../models/menu_item.dart';
+import '../../models/notification_item.dart';
+import '../../models/order.dart';
 import '../../widgets/home/home_header.dart';
 import '../../widgets/home/featured_meals.dart';
 import '../../widgets/home/store_tabs.dart';
@@ -32,6 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Keep a reference so we can remove it in dispose
   late final void Function(String) _roleListener;
+  late final void Function(Map<String, dynamic>) _notificationListener;
+  late final void Function(String, OrderStatus) _ablyOrderListener;
 
   @override
   void initState() {
@@ -52,9 +57,46 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       };
       ablyService.addRoleListener(_roleListener);
+
+      // Listen for generic notifications
+      _notificationListener = (Map<String, dynamic> payload) {
+        if (mounted) {
+          final item = NotificationItem(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: payload['title'] ?? 'New Notification',
+            message: payload['message'] ?? '',
+            type: NotificationType.values.firstWhere(
+              (t) => t.toString().split('.').last == payload['type'],
+              orElse: () => NotificationType.serverAlert,
+            ),
+            timestamp: DateTime.now(),
+            metadata: Map<String, dynamic>.from(payload['metadata'] ?? {}),
+          );
+          context.read<NotificationProvider>().addNotification(item);
+        }
+      };
+      ablyService.addNotificationListener(_notificationListener);
+
+      // Listen for order updates specifically to create notifications
+      _ablyOrderListener = (String orderId, OrderStatus status) {
+        if (mounted) {
+          final item = NotificationItem(
+            id: 'order-$orderId-${status.name}',
+            title: 'Order Updated',
+            message: 'Your order #$orderId is now ${status.name.toUpperCase()}',
+            type: NotificationType.orderUpdate,
+            timestamp: DateTime.now(),
+            metadata: {'orderId': orderId, 'status': status.name},
+          );
+          context.read<NotificationProvider>().addNotification(item);
+        }
+      };
+      ablyService.addOrderListener(_ablyOrderListener);
     } else {
       // No user yet — register a no-op so dispose is safe
       _roleListener = (_) {};
+      _notificationListener = (_) {};
+      _ablyOrderListener = (_, __) {};
     }
   }
 
@@ -62,6 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _searchController.dispose();
     ablyService.removeRoleListener(_roleListener);
+    ablyService.removeNotificationListener(_notificationListener);
+    ablyService.removeOrderListener(_ablyOrderListener);
     super.dispose();
   }
 

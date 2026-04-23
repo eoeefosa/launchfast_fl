@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/notification_provider.dart';
+import 'package:go_router/go_router.dart';
+import 'location_selector.dart';
 
 class HomeHeader extends StatelessWidget {
   final TextEditingController searchController;
@@ -58,17 +61,53 @@ class HomeHeader extends StatelessWidget {
               ),
               Row(
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey[200]!, width: 1),
-                    ),
-                    child: const Icon(
-                      Icons.notifications_none_rounded,
-                      size: 24,
+                  GestureDetector(
+                    onTap: () => context.push('/notifications'),
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.grey[200]!, width: 1),
+                          ),
+                          child: const Icon(
+                            Icons.notifications_none_rounded,
+                            size: 24,
+                          ),
+                        ),
+                        Consumer<NotificationProvider>(
+                          builder: (context, provider, child) {
+                            if (provider.unreadCount == 0) return const SizedBox.shrink();
+                            return Positioned(
+                              right: 2,
+                              top: 2,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  '${provider.unreadCount}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -90,43 +129,7 @@ class HomeHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          GestureDetector(
-            onTap: () => _showLocationPicker(context, authProvider),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[100]!),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.location_on_rounded,
-                    size: 20,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      user?.address ?? 'Set delivery location...',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: Colors.grey[400],
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const LocationSelector(),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -190,87 +193,6 @@ class HomeHeader extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  void _showLocationPicker(BuildContext context, AuthProvider authProvider) {
-    final locations = [
-      'Hall 1',
-      'Hall 2',
-      'Hall 3',
-      'Hall 4',
-      'Hall 5',
-      'Hall 6',
-      'Hall 7',
-      'Hall 8',
-      'Faculty',
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Select Delivery Location',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: locations.length,
-                itemBuilder: (context, index) {
-                  final loc = locations[index];
-                  final isSelected = authProvider.user?.address == loc;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.black : Colors.grey[50],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.home_work_rounded,
-                        size: 20,
-                        color: isSelected ? Colors.white : Colors.grey[400],
-                      ),
-                    ),
-                    title: Text(
-                      loc,
-                      style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        color: isSelected ? Colors.black : Colors.grey[700],
-                      ),
-                    ),
-                    trailing: isSelected
-                        ? const Icon(Icons.check_circle_rounded, color: Colors.black)
-                        : null,
-                    onTap: () {
-                      authProvider.updateUser({'address': loc});
-                      Navigator.pop(context);
-                    },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
       ),
     );
   }

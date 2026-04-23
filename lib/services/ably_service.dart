@@ -29,6 +29,9 @@ class AblyService {
   // Listener registry for role updates
   final List<Function(String newRole)> _roleListeners = [];
 
+  // Listener registry for generic notifications
+  final List<Function(Map<String, dynamic> payload)> _notificationListeners = [];
+
   Future<void> initAbly(String userId) async {
     // Prevent duplicate concurrent init calls
     if (_isConnecting) return;
@@ -107,6 +110,18 @@ class AblyService {
         }
       } catch (e) {
         // print("Error processing role update message: $e");
+      }
+    });
+
+    // Subscribe to general-notification events on the user's personal channel
+    _userChannel!.subscribe(name: 'general-notification').listen((ably.Message message) {
+      try {
+        final data = Map<String, dynamic>.from(message.data as Map);
+        for (final cb in _notificationListeners) {
+          cb(data);
+        }
+      } catch (e) {
+        // print("Error processing generic notification message: $e");
       }
     });
 
@@ -231,6 +246,17 @@ class AblyService {
 
   void removeRoleListener(Function(String newRole) listener) {
     _roleListeners.remove(listener);
+  }
+
+  // Notification listeners
+  void addNotificationListener(Function(Map<String, dynamic> payload) listener) {
+    if (!_notificationListeners.contains(listener)) {
+      _notificationListeners.add(listener);
+    }
+  }
+
+  void removeNotificationListener(Function(Map<String, dynamic> payload) listener) {
+    _notificationListeners.remove(listener);
   }
 
   void subscribeToUserOrders(
