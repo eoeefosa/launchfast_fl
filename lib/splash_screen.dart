@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 
 class LaunchFastSplashScreen extends StatefulWidget {
   const LaunchFastSplashScreen({super.key});
@@ -9,6 +10,16 @@ class LaunchFastSplashScreen extends StatefulWidget {
 }
 
 class _LaunchFastSplashScreenState extends State<LaunchFastSplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(microseconds: 3000000), () {
+      if (mounted) {
+        context.go('/home');
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Brand Colors
