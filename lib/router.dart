@@ -1,22 +1,22 @@
 import 'package:go_router/go_router.dart';
-import 'package:launchfast_fl/screens/auth/forgot_password_screen.dart';
-import 'package:launchfast_fl/screens/auth/login_screen.dart';
-import 'package:launchfast_fl/screens/auth/register_screen.dart';
-import 'package:launchfast_fl/screens/dashboards/rider/main_rider.dart';
-import 'package:launchfast_fl/screens/dashboards/store/store_main_nav.dart';
-import 'package:launchfast_fl/screens/dashboards/worker/worker_main_nav.dart';
-import 'package:launchfast_fl/screens/stores_screen.dart';
-import 'package:launchfast_fl/screens/tabs/home_screen.dart';
-import 'package:launchfast_fl/screens/tabs/orders_screen.dart';
-import 'package:launchfast_fl/screens/tabs/profile_screen.dart';
-import 'package:launchfast_fl/screens/tabs/tabs_shell.dart';
+import 'package:launchfast/screens/auth/forgot_password_screen.dart';
+import 'package:launchfast/screens/auth/login_screen.dart';
+import 'package:launchfast/screens/auth/register_screen.dart';
+import 'package:launchfast/screens/dashboards/rider/main_rider.dart';
+import 'package:launchfast/screens/dashboards/store/store_main_nav.dart';
+import 'package:launchfast/screens/dashboards/worker/worker_main_nav.dart';
+import 'package:launchfast/screens/stores_screen.dart';
+import 'package:launchfast/screens/tabs/home_screen.dart';
+import 'package:launchfast/screens/tabs/orders_screen.dart';
+import 'package:launchfast/screens/tabs/profile_screen.dart';
+import 'package:launchfast/screens/tabs/tabs_shell.dart';
 import 'screens/tabs/cart_screen.dart';
 import 'screens/store/store_detail_screen.dart';
 import 'screens/store/item_detail_screen.dart';
 import 'screens/checkout_screen.dart';
-import 'package:launchfast_fl/screens/dashboards/admin/admin_main_nav.dart';
-import 'package:launchfast_fl/screens/notifications_screen.dart';
-import 'package:launchfast_fl/splash_screen.dart';
+import 'package:launchfast/screens/dashboards/admin/admin_main_nav.dart';
+import 'package:launchfast/screens/notifications_screen.dart';
+import 'package:launchfast/splash_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -44,7 +44,10 @@ final router = GoRouter(
       branches: [
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+            GoRoute(
+              path: '/home',
+              builder: (context, state) => const HomeScreen(),
+            ),
           ],
         ),
         StatefulShellBranch(

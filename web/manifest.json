@@ -1,6 +1,6 @@
 {
-    "name": "launchfast_fl",
-    "short_name": "launchfast_fl",
+    "name": "launchfast",
+    "short_name": "launchfast",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

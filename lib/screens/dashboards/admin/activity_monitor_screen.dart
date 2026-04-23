@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/services/api_service.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/services/api_service.dart';
 import 'package:intl/intl.dart';
 
 class ActivityMonitorScreen extends StatefulWidget {
@@ -64,7 +64,12 @@ class _ActivityMonitorScreenState extends State<ActivityMonitorScreen> {
     );
   }
 
-  Widget _buildLogCard(Map<String, dynamic> log, bool isDark, Color textColor, Color muted) {
+  Widget _buildLogCard(
+    Map<String, dynamic> log,
+    bool isDark,
+    Color textColor,
+    Color muted,
+  ) {
     final action = log['action'] as String;
     final date = DateTime.parse(log['createdAt']);
     final admin = log['admin']?['name'] ?? 'System';
@@ -127,10 +132,7 @@ class _ActivityMonitorScreenState extends State<ActivityMonitorScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'By $admin',
-                  style: TextStyle(color: muted, fontSize: 12),
-                ),
+                Text('By $admin', style: TextStyle(color: muted, fontSize: 12)),
                 if (log['resource'] != null) ...[
                   const SizedBox(height: 8),
                   Text(

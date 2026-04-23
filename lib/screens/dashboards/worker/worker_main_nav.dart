@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/providers/auth_provider.dart';
-import 'package:launchfast_fl/providers/store_provider.dart';
-import 'package:launchfast_fl/services/ably_service.dart';
-import 'package:launchfast_fl/models/order.dart';
-import 'package:launchfast_fl/screens/dashboards/worker/worker_dashboard.dart';
-import 'package:launchfast_fl/screens/dashboards/store/order_screen.dart';
-import 'package:launchfast_fl/screens/dashboards/store/menu_screen.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/providers/auth_provider.dart';
+import 'package:launchfast/providers/store_provider.dart';
+import 'package:launchfast/services/ably_service.dart';
+import 'package:launchfast/models/order.dart';
+import 'package:launchfast/screens/dashboards/worker/worker_dashboard.dart';
+import 'package:launchfast/screens/dashboards/store/order_screen.dart';
+import 'package:launchfast/screens/dashboards/store/menu_screen.dart';
 
 class WorkerMainNav extends StatefulWidget {
   const WorkerMainNav({super.key});

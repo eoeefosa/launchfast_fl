@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/services/api_service.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/services/api_service.dart';
 
 // ─── Main Widget ──────────────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
+import 'package:launchfast/constants/app_colors.dart';
 
 class EarningsCard extends StatelessWidget {
   final String title;
@@ -18,11 +18,14 @@ class EarningsCard extends StatelessWidget {
       child: Column(
         children: [
           Text(title, style: const TextStyle(color: Colors.white70)),
-          Text(amount,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16)),
+          Text(
+            amount,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
         ],
       ),
     );
@@ -58,11 +61,13 @@ class JobCard extends StatelessWidget {
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(pay,
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                )),
+            Text(
+              pay,
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 4),
             SizedBox(
               height: 30,
@@ -76,7 +81,7 @@ class JobCard extends StatelessWidget {
                 onPressed: onAccept,
                 child: const Text("Accept", style: TextStyle(fontSize: 12)),
               ),
-            )
+            ),
           ],
         ),
       ),

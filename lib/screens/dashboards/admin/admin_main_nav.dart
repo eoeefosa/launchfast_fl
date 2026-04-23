@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/screens/dashboards/admin/admin_dashboard_home.dart';
-import 'package:launchfast_fl/screens/dashboards/admin/user_management_screen.dart';
-import 'package:launchfast_fl/screens/dashboards/admin/activity_monitor_screen.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/screens/dashboards/admin/admin_dashboard_home.dart';
+import 'package:launchfast/screens/dashboards/admin/user_management_screen.dart';
+import 'package:launchfast/screens/dashboards/admin/activity_monitor_screen.dart';
 
 class AdminMainNav extends StatefulWidget {
   const AdminMainNav({super.key});
@@ -15,7 +15,7 @@ class _AdminMainNavState extends State<AdminMainNav> {
   int _currentIndex = 0;
 
   static const List<({String label, IconData icon, IconData activeIcon})>
-      _navItems = [
+  _navItems = [
     (
       label: 'Dashboard',
       icon: Icons.dashboard_outlined,
@@ -78,8 +78,8 @@ class _AdminMainNavState extends State<AdminMainNav> {
                         color: isActive
                             ? AppColors.primary
                             : isDark
-                                ? AppColors.darkMuted
-                                : AppColors.lightMuted,
+                            ? AppColors.darkMuted
+                            : AppColors.lightMuted,
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -88,10 +88,12 @@ class _AdminMainNavState extends State<AdminMainNav> {
                           color: isActive
                               ? AppColors.primary
                               : isDark
-                                  ? AppColors.darkMuted
-                                  : AppColors.lightMuted,
+                              ? AppColors.darkMuted
+                              : AppColors.lightMuted,
                           fontSize: 11,
-                          fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: isActive
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 4),

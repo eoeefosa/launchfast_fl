@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/providers/auth_provider.dart';
-import 'package:launchfast_fl/services/ably_service.dart';
-import 'package:launchfast_fl/repositories/order_repository.dart';
-import 'package:launchfast_fl/models/order.dart';
-import 'package:launchfast_fl/screens/dashboards/rider/reusalbe.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/providers/auth_provider.dart';
+import 'package:launchfast/services/ably_service.dart';
+import 'package:launchfast/repositories/order_repository.dart';
+import 'package:launchfast/models/order.dart';
+import 'package:launchfast/screens/dashboards/rider/reusalbe.dart';
 
 class RiderDashboard extends StatefulWidget {
   const RiderDashboard({super.key});
@@ -98,7 +98,9 @@ class _RiderDashboardState extends State<RiderDashboard> {
       o.status != OrderStatus.delivered && o.status != OrderStatus.cancelled;
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   // ─── Build ────────────────────────────────────────────────────────────────
@@ -146,10 +148,7 @@ class _RiderDashboardState extends State<RiderDashboard> {
 // ─── Online Status Banner ─────────────────────────────────────────────────
 
 class _OnlineStatusBanner extends StatelessWidget {
-  const _OnlineStatusBanner({
-    required this.isOnline,
-    required this.onToggle,
-  });
+  const _OnlineStatusBanner({required this.isOnline, required this.onToggle});
 
   final bool isOnline;
   final ValueChanged<bool> onToggle;
@@ -194,9 +193,13 @@ class _EarningsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Row(
       children: [
-        Expanded(child: EarningsCard(title: 'Today', amount: '₦5,400')),
+        Expanded(
+          child: EarningsCard(title: 'Today', amount: '₦5,400'),
+        ),
         SizedBox(width: 10),
-        Expanded(child: EarningsCard(title: 'Week', amount: '₦28,000')),
+        Expanded(
+          child: EarningsCard(title: 'Week', amount: '₦28,000'),
+        ),
       ],
     );
   }
@@ -227,10 +230,7 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(fontWeight: FontWeight.bold),
-    );
+    return Text(text, style: const TextStyle(fontWeight: FontWeight.bold));
   }
 }
 
@@ -250,14 +250,13 @@ class _AvailableJobsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) return const Center(child: CircularProgressIndicator());
-    if (jobs.isEmpty) return const Center(child: Text('No jobs available right now.'));
+    if (jobs.isEmpty)
+      return const Center(child: Text('No jobs available right now.'));
 
     return ListView.builder(
       itemCount: jobs.length,
-      itemBuilder: (context, index) => _JobListItem(
-        job: jobs[index],
-        onAccept: onAccept,
-      ),
+      itemBuilder: (context, index) =>
+          _JobListItem(job: jobs[index], onAccept: onAccept),
     );
   }
 }

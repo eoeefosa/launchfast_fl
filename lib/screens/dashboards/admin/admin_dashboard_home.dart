@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/services/api_service.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/services/api_service.dart';
 import 'package:intl/intl.dart';
 
 class AdminDashboardHome extends StatefulWidget {
@@ -124,17 +124,40 @@ class _AdminDashboardHomeState extends State<AdminDashboardHome> {
       crossAxisSpacing: 16,
       childAspectRatio: 1.4,
       children: [
-        _buildStatCard('Total Revenue', '₦${NumberFormat('#,###').format(revenue)}',
-            Icons.payments_rounded, Colors.green),
-        _buildStatCard('Total Orders', '$orders', Icons.receipt_long_rounded,
-            Colors.blue),
-        _buildStatCard('Active Stores', '12', Icons.store_rounded, Colors.orange),
-        _buildStatCard('Total Riders', '8', Icons.pedal_bike_rounded, Colors.purple),
+        _buildStatCard(
+          'Total Revenue',
+          '₦${NumberFormat('#,###').format(revenue)}',
+          Icons.payments_rounded,
+          Colors.green,
+        ),
+        _buildStatCard(
+          'Total Orders',
+          '$orders',
+          Icons.receipt_long_rounded,
+          Colors.blue,
+        ),
+        _buildStatCard(
+          'Active Stores',
+          '12',
+          Icons.store_rounded,
+          Colors.orange,
+        ),
+        _buildStatCard(
+          'Total Riders',
+          '8',
+          Icons.pedal_bike_rounded,
+          Colors.purple,
+        ),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -158,10 +181,7 @@ class _AdminDashboardHomeState extends State<AdminDashboardHome> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(
-            title,
-            style: const TextStyle(color: Colors.grey, fontSize: 11),
-          ),
+          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 11)),
         ],
       ),
     );
@@ -170,7 +190,9 @@ class _AdminDashboardHomeState extends State<AdminDashboardHome> {
   Widget _buildRevenueList(bool isDark, Color textColor, Color muted) {
     final daily = (_stats?['dailyRevenue'] as List?) ?? [];
     if (daily.isEmpty) {
-      return Center(child: Text('No data available', style: TextStyle(color: muted)));
+      return Center(
+        child: Text('No data available', style: TextStyle(color: muted)),
+      );
     }
 
     return Column(
@@ -196,7 +218,11 @@ class _AdminDashboardHomeState extends State<AdminDashboardHome> {
                   color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.trending_up_rounded, color: Colors.green, size: 20),
+                child: const Icon(
+                  Icons.trending_up_rounded,
+                  color: Colors.green,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -205,7 +231,10 @@ class _AdminDashboardHomeState extends State<AdminDashboardHome> {
                   children: [
                     Text(
                       DateFormat('EEEE, MMM d').format(date),
-                      style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       'Daily Earnings',

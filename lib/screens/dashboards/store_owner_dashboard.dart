@@ -1,3 +1,3 @@
 // This file is kept for backwards compatibility.
 // All store owner UI now lives in StoreMainNav.
-export 'package:launchfast_fl/screens/dashboards/store/store_main_nav.dart';
+export 'package:launchfast/screens/dashboards/store/store_main_nav.dart';

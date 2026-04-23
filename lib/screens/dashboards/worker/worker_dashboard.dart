@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/providers/auth_provider.dart';
-import 'package:launchfast_fl/providers/store_provider.dart';
-import 'package:launchfast_fl/services/api_service.dart';
-import 'package:launchfast_fl/services/ably_service.dart';
-// import 'package:launchfast_fl/models/order.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/providers/auth_provider.dart';
+import 'package:launchfast/providers/store_provider.dart';
+import 'package:launchfast/services/api_service.dart';
+import 'package:launchfast/services/ably_service.dart';
+// import 'package:launchfast/models/order.dart';
 import 'package:intl/intl.dart';
 
 class WorkerDashboardHome extends StatefulWidget {

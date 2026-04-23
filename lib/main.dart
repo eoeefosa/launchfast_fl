@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast_fl/router.dart';
+import 'package:launchfast/router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 

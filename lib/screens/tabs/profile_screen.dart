@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast_fl/screens/auth/widgets/constants.dart';
-import 'package:launchfast_fl/screens/auth/widgets/custom_button.dart';
-import 'package:launchfast_fl/widgets/home/location_selector.dart';
+import 'package:launchfast/screens/auth/widgets/constants.dart';
+import 'package:launchfast/screens/auth/widgets/custom_button.dart';
+import 'package:launchfast/widgets/home/location_selector.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';

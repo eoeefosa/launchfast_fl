@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast_fl/constants/static_data.dart';
+import 'package:launchfast/constants/static_data.dart';
 import 'package:provider/provider.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/providers/store_provider.dart';
-import 'package:launchfast_fl/providers/auth_provider.dart';
-import 'package:launchfast_fl/models/menu_item.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/providers/store_provider.dart';
+import 'package:launchfast/providers/auth_provider.dart';
+import 'package:launchfast/models/menu_item.dart';
 
 class StoreMenuScreen extends StatefulWidget {
   const StoreMenuScreen({super.key});
@@ -659,7 +659,7 @@ class _MenuItemCard extends StatelessWidget {
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -676,7 +676,7 @@ class _MenuItemCard extends StatelessWidget {
               child: Container(
                 width: 70,
                 height: 70,
-                color: AppColors.primary.withValues(alpha:0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 child: item.image.isNotEmpty && item.image.startsWith('http')
                     ? Image.network(
                         item.image,
@@ -714,7 +714,7 @@ class _MenuItemCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: (item.isReady ? Colors.green : Colors.red)
-                              .withValues(alpha:0.12),
+                              .withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -755,7 +755,7 @@ class _MenuItemCard extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha:0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(

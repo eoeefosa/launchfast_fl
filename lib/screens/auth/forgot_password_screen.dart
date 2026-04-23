@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:launchfast_fl/services/api_service.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
+import 'package:launchfast/services/api_service.dart';
+import 'package:launchfast/constants/app_colors.dart';
 import 'widgets/apptextfield.dart';
 import 'widgets/constants.dart';
 
@@ -50,13 +50,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: _emailSent ? _SuccessView(email: _emailCtrl.text.trim()) : _FormView(
-            formKey: _formKey,
-            emailCtrl: _emailCtrl,
-            isLoading: _isLoading,
-            primaryColor: primaryColor,
-            onSubmit: _submit,
-          ),
+          child: _emailSent
+              ? _SuccessView(email: _emailCtrl.text.trim())
+              : _FormView(
+                  formKey: _formKey,
+                  emailCtrl: _emailCtrl,
+                  isLoading: _isLoading,
+                  primaryColor: primaryColor,
+                  onSubmit: _submit,
+                ),
         ),
       ),
     );
@@ -225,11 +227,7 @@ class _SuccessView extends StatelessWidget {
 
         Text(
           'If an account exists for $email, you\'ll receive a password reset link shortly.',
-          style: TextStyle(
-            fontSize: 15,
-            color: Colors.grey[600],
-            height: 1.6,
-          ),
+          style: TextStyle(fontSize: 15, color: Colors.grey[600], height: 1.6),
           textAlign: TextAlign.center,
         ),
 

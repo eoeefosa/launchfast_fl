@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/screens/dashboards/rider/active_delivers.dart';
-import 'package:launchfast_fl/screens/dashboards/rider/rider_dashboard.dart';
-import 'package:launchfast_fl/screens/tabs/profile_screen.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/screens/dashboards/rider/active_delivers.dart';
+import 'package:launchfast/screens/dashboards/rider/rider_dashboard.dart';
+import 'package:launchfast/screens/tabs/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});

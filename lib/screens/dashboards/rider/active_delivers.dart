@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/providers/auth_provider.dart';
-import 'package:launchfast_fl/repositories/order_repository.dart';
-import 'package:launchfast_fl/models/order.dart';
-import 'package:launchfast_fl/services/ably_service.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/providers/auth_provider.dart';
+import 'package:launchfast/repositories/order_repository.dart';
+import 'package:launchfast/models/order.dart';
+import 'package:launchfast/services/ably_service.dart';
 
 class ActiveDeliveryScreen extends StatefulWidget {
   const ActiveDeliveryScreen({super.key});
@@ -82,8 +82,9 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen> {
       status == OrderStatus.pickingUp || status == OrderStatus.readyForPickup;
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   // ─── Build ────────────────────────────────────────────────────────────────
@@ -263,8 +264,7 @@ class _OrderInfoRow extends StatelessWidget {
           children: [
             Text(
               label,
-              style:
-                  const TextStyle(color: AppColors.lightMuted, fontSize: 12),
+              style: const TextStyle(color: AppColors.lightMuted, fontSize: 12),
             ),
             Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
           ],
@@ -289,21 +289,21 @@ class _DeliveryStepActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (status) {
       OrderStatus.pickingUp => _DeliveryStep(
-          heading: 'Navigate to Restaurant',
-          buttonLabel: 'Arrived at Restaurant',
-          onPressed: () => onUpdateStatus(OrderStatus.readyForPickup),
-        ),
+        heading: 'Navigate to Restaurant',
+        buttonLabel: 'Arrived at Restaurant',
+        onPressed: () => onUpdateStatus(OrderStatus.readyForPickup),
+      ),
       OrderStatus.readyForPickup => _DeliveryStep(
-          heading: 'Pickup Order',
-          subtitle: 'Verify items with the restaurant.',
-          buttonLabel: 'Order Picked Up',
-          onPressed: () => onUpdateStatus(OrderStatus.onTheWay),
-        ),
+        heading: 'Pickup Order',
+        subtitle: 'Verify items with the restaurant.',
+        buttonLabel: 'Order Picked Up',
+        onPressed: () => onUpdateStatus(OrderStatus.onTheWay),
+      ),
       OrderStatus.onTheWay => _DeliveryStep(
-          heading: 'Navigate to Customer',
-          buttonLabel: 'Mark as Delivered',
-          onPressed: () => onUpdateStatus(OrderStatus.delivered),
-        ),
+        heading: 'Navigate to Customer',
+        buttonLabel: 'Mark as Delivered',
+        onPressed: () => onUpdateStatus(OrderStatus.delivered),
+      ),
       _ => const SizedBox.shrink(),
     };
   }

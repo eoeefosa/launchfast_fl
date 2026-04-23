@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/providers/auth_provider.dart';
-import 'package:launchfast_fl/services/api_service.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/providers/auth_provider.dart';
+import 'package:launchfast/services/api_service.dart';
 
 class StoreSettingsScreen extends StatefulWidget {
   const StoreSettingsScreen({super.key});
@@ -82,12 +82,15 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
     if (_storeId == null) return;
     setState(() => _isSaving = true);
     try {
-      await apiService.dio.put('/stores/$_storeId', data: {
-        'name': _nameCtrl.text.trim(),
-        'tagline': _taglineCtrl.text.trim(),
-        'deliveryTime': _deliveryTimeCtrl.text.trim(),
-        'deliveryFee': double.tryParse(_deliveryFeeCtrl.text.trim()) ?? 0,
-      });
+      await apiService.dio.put(
+        '/stores/$_storeId',
+        data: {
+          'name': _nameCtrl.text.trim(),
+          'tagline': _taglineCtrl.text.trim(),
+          'deliveryTime': _deliveryTimeCtrl.text.trim(),
+          'deliveryFee': double.tryParse(_deliveryFeeCtrl.text.trim()) ?? 0,
+        },
+      );
       _showSnackBar('Store updated successfully', success: true);
     } catch (_) {
       _showSnackBar('Failed to save store settings', success: false);
@@ -99,11 +102,17 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   Future<void> _addStaff(String email) async {
     if (_storeId == null) return;
     try {
-      await apiService.dio.post('/stores/$_storeId/staff', data: {'email': email});
+      await apiService.dio.post(
+        '/stores/$_storeId/staff',
+        data: {'email': email},
+      );
       _loadStaff();
       _showSnackBar('Staff added successfully', success: true);
     } catch (_) {
-      _showSnackBar('Failed to add staff. Ensure the user exists.', success: false);
+      _showSnackBar(
+        'Failed to add staff. Ensure the user exists.',
+        success: false,
+      );
     }
   }
 
@@ -173,7 +182,9 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         onSave: _saveStore,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
           : _SettingsBody(
               theme: theme,
               user: user,
@@ -669,20 +680,13 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: TextStyle(
-        color: color,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
+      style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold),
     );
   }
 }
 
 class _SettingsSectionCard extends StatelessWidget {
-  const _SettingsSectionCard({
-    required this.theme,
-    required this.child,
-  });
+  const _SettingsSectionCard({required this.theme, required this.child});
 
   final _SettingsTheme theme;
   final Widget child;
@@ -832,10 +836,7 @@ class _AddStaffDialog extends StatelessWidget {
 }
 
 class _LogoutDialog extends StatelessWidget {
-  const _LogoutDialog({
-    required this.onConfirm,
-    required this.onCancel,
-  });
+  const _LogoutDialog({required this.onConfirm, required this.onCancel});
 
   final VoidCallback onConfirm;
   final VoidCallback onCancel;

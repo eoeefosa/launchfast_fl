@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:launchfast_fl/constants/app_colors.dart';
-import 'package:launchfast_fl/models/order.dart';
-import 'package:launchfast_fl/repositories/order_repository.dart';
-import 'package:launchfast_fl/services/ably_service.dart';
+import 'package:launchfast/constants/app_colors.dart';
+import 'package:launchfast/models/order.dart';
+import 'package:launchfast/repositories/order_repository.dart';
+import 'package:launchfast/services/ably_service.dart';
 
 class StoreOrdersScreen extends StatefulWidget {
   const StoreOrdersScreen({super.key});
