@@ -36,7 +36,7 @@ class ProfileScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        centerTitle: true,
+        centerTitle: false,
         title: const Text(
           'Profile',
           style: TextStyle(

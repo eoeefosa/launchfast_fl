@@ -84,7 +84,7 @@ class _CategoryGroup extends StatelessWidget {
       curve: Curves.easeOutBack,
       builder: (context, value, child) {
         return Opacity(
-          opacity: value,
+          opacity: value.clamp(0.0, 1.0),
           child: Transform.translate(
             offset: Offset(0, 40 * (1 - value)),
             child: child,

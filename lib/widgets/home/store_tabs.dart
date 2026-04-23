@@ -16,39 +16,50 @@ class StoreTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 0.5)),
-      ),
-      child: Row(
-        children: stores.map((store) {
+      height: 48,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: stores.length,
+        itemBuilder: (context, index) {
+          final store = stores[index];
           final isActive = store.id == activeStoreId;
-          final accentColor = Color(int.parse(store.accentColor.replaceFirst('#', '0xFF')));
-          
-          return Expanded(
-            child: InkWell(
+          final accentColor = Color(
+            int.parse(store.accentColor.replaceFirst('#', '0xFF')),
+          );
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: GestureDetector(
               onTap: () => onSelect(store.id),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
-                  border: isActive 
-                      ? Border(bottom: BorderSide(color: accentColor, width: 2.5))
-                      : null,
+                  color: isActive ? accentColor.withValues(alpha: 0.1) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: isActive ? accentColor : Colors.grey[200]!,
+                    width: 1.5,
+                  ),
                 ),
-                child: Text(
-                  store.name,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                    color: isActive ? accentColor : Colors.grey[600],
+                child: Center(
+                  child: Text(
+                    store.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                      color: isActive ? accentColor : Colors.grey[500],
+                    ),
                   ),
                 ),
               ),
             ),
           );
-        }).toList(),
+        },
       ),
     );
   }
 }
+
