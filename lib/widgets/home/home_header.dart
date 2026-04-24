@@ -7,13 +7,8 @@ import 'location_selector.dart';
 
 
 class HomeHeader extends StatelessWidget {
-  final TextEditingController searchController;
-  final ValueChanged<String> onSearchChanged;
-
   const HomeHeader({
     super.key,
-    required this.searchController,
-    required this.onSearchChanged,
   });
 
   @override
@@ -47,10 +42,10 @@ class HomeHeader extends StatelessWidget {
                     Text(
                       _getGreeting(),
                       style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[500],
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
+                        fontSize: 11,
+                        color: Colors.grey[400],
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -72,10 +67,36 @@ class HomeHeader extends StatelessWidget {
               _HeaderActions(user: user, primaryColor: primaryColor),
             ],
           ),
-          const SizedBox(height: 28),
-          const LocationSelector(),
           const SizedBox(height: 24),
-          _SearchBar(controller: searchController, onChanged: onSearchChanged),
+          Row(
+            children: [
+              const Expanded(child: LocationSelector()),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: () => context.push('/search'),
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.search_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -183,48 +204,6 @@ class _HeaderActions extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _SearchBar extends StatelessWidget {
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-
-  const _SearchBar({required this.controller, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 58,
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!, width: 1.5),
-      ),
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-        decoration: InputDecoration(
-          hintText: 'Search for your favorite meals...',
-          hintStyle: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
-          prefixIcon: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Icon(
-              Icons.search_rounded,
-              color: Colors.grey[800],
-              size: 24,
-            ),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 18),
-        ),
-      ),
     );
   }
 }

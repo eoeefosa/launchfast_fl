@@ -77,7 +77,7 @@ class _BrowseButton extends StatelessWidget {
       return CupertinoButton(
         color: Colors.black,
         borderRadius: BorderRadius.circular(20),
-        onPressed: () => context.go('/'),
+        onPressed: () => context.go('/home'),
         child: const Text(
           'Start Browsing',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -91,9 +91,7 @@ class _BrowseButton extends StatelessWidget {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 0,
       ),
       child: const Text(
