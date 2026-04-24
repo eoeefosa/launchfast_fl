@@ -129,14 +129,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final user = authProvider.user;
-
-    // Role-based redirection
-    if (user?.role == 'SUPER_ADMIN') return const AdminMainNav();
-    if (user?.role == 'STORE_OWNER') return const StoreMainNav();
-    if (user?.role == 'STORE_WORKER') return const WorkerMainNav();
-    if (user?.role == 'RIDER') return const RiderDashboard();
+    // final authProvider = context.watch<AuthProvider>();
+    // final user = authProvider.user;
 
     final storeProvider = context.watch<StoreProvider>();
     if (storeProvider.isLoading && storeProvider.stores.isEmpty) {

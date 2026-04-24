@@ -19,7 +19,7 @@ import 'package:launchfast/screens/notifications_screen.dart';
 import 'package:launchfast/splash_screen.dart';
 
 final router = GoRouter(
-  initialLocation:'/worker',
+  initialLocation: '/',
   routes: [
     GoRoute(
       path: '/',
@@ -90,20 +90,6 @@ final router = GoRouter(
     GoRoute(
       path: '/checkout',
       builder: (context, state) => const CheckoutScreen(),
-    ),
-    GoRoute(
-      path: '/admin/dashboard',
-      builder: (context, state) => const AdminMainNav(),
-    ),
-
-    GoRoute(
-      path: '/rider',
-      builder: (context, state) => const MainNavigation(),
-    ),
-    GoRoute(path: '/store', builder: (context, state) => const StoreMainNav()),
-    GoRoute(
-      path: '/worker',
-      builder: (context, state) => const WorkerMainNav(),
     ),
   ],
 );
