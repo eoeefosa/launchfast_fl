@@ -136,12 +136,16 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_rounded, size: 80, color: Colors.grey[200]),
+            Icon(
+              Icons.search_rounded,
+              size: 80,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+            ),
             const SizedBox(height: 16),
             Text(
               'Search for your cravings',
               style: TextStyle(
-                color: Colors.grey[400],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -200,12 +204,16 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off_rounded, size: 80, color: Colors.grey[200]),
+            Icon(
+              Icons.search_off_rounded,
+              size: 80,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+            ),
             const SizedBox(height: 16),
             Text(
               'No results found for "$_query"',
               style: TextStyle(
-                color: Colors.grey[400],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),

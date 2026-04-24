@@ -28,7 +28,7 @@ class StoreSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -44,7 +44,7 @@ class StoreSection extends StatelessWidget {
                     'Hand-picked for your taste',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

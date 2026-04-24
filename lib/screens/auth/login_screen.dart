@@ -89,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Sign in to continue ordering delicious campus food.',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     height: 1.5,
                   ),
                 ),
@@ -140,15 +140,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 /// Divider
                 Row(
                   children: [
-                    Expanded(child: Divider(color: Colors.grey[300])),
+                    Expanded(child: Divider(color: Theme.of(context).dividerColor.withValues(alpha: 0.5))),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         'OR',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                          fontSize: 14,
+                        ),
                       ),
                     ),
-                    Expanded(child: Divider(color: Colors.grey[300])),
+                    Expanded(child: Divider(color: Theme.of(context).dividerColor.withValues(alpha: 0.5))),
                   ],
                 ),
 

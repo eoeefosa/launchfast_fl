@@ -90,7 +90,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   'Join Launch Fast — carefully crafted for your campus needs.',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     height: 1.5,
                   ),
                 ),

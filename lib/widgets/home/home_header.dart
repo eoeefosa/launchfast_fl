@@ -119,6 +119,7 @@ class _HeaderActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         GestureDetector(
@@ -130,19 +131,17 @@ class _HeaderActions extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.surfaceVariant.withValues(alpha: 0.5),
+                  color: scheme.onSurface.withValues(alpha: 0.05),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Theme.of(context).dividerColor,
+                    color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
                     width: 1,
                   ),
                 ),
                 child: Icon(
                   Icons.notifications_none_rounded,
                   size: 26,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: scheme.onSurface,
                 ),
               ),
               Consumer<NotificationProvider>(
@@ -156,7 +155,7 @@ class _HeaderActions extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.redAccent,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(color: scheme.surface, width: 2),
                       ),
                       constraints: const BoxConstraints(
                         minWidth: 20,

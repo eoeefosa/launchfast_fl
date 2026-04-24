@@ -83,7 +83,7 @@ class GoogleSignInButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(double.infinity, 56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        side: BorderSide(color: Colors.grey[300]!),
+        side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       child: isLoading
           ? const SizedBox(
@@ -91,7 +91,7 @@ class GoogleSignInButton extends StatelessWidget {
               height: 24,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Row(
+          : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 FaIcon(FontAwesomeIcons.google, size: 20, color: Colors.red),
@@ -99,7 +99,7 @@ class GoogleSignInButton extends StatelessWidget {
                 Text(
                   'Sign in with Google',
                   style: TextStyle(
-                    color: Colors.black,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),

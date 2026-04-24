@@ -7,10 +7,11 @@ class UnauthenticatedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
+    final scheme = Theme.of(context).colorScheme;
+    final primary = scheme.primary;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -23,20 +24,25 @@ class UnauthenticatedView extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: primary.withValues(alpha: 0.05),
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: primary.withValues(alpha: 0.1),
+                      width: 2,
+                    ),
                   ),
                   child: Icon(
-                    Icons.person_outline_rounded,
+                    Icons.person_rounded,
                     size: 80,
                     color: primary,
                   ),
                 ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
                 const SizedBox(height: 32),
-                const Text(
+                Text(
                   'Join the Experience',
                   style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.5,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1,
+                    color: scheme.onSurface,
                   ),
                 ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
                 const SizedBox(height: 12),
@@ -45,14 +51,15 @@ class UnauthenticatedView extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: scheme.onSurface.withValues(alpha: 0.6),
                     height: 1.5,
+                    fontWeight: FontWeight.w500,
                   ),
                 ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
-                const SizedBox(height: 40),
+                const SizedBox(height: 48),
                 SizedBox(
                   width: double.infinity,
-                  height: 56,
+                  height: 58,
                   child: ElevatedButton(
                     onPressed: () => context.push('/login'),
                     style: ElevatedButton.styleFrom(
@@ -60,14 +67,15 @@ class UnauthenticatedView extends StatelessWidget {
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                     ),
                     child: const Text(
                       'Get Started',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),

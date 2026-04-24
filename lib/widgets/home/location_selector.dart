@@ -8,6 +8,7 @@ class LocationSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final scheme = Theme.of(context).colorScheme;
 
     return Material(
       color: Colors.transparent,
@@ -17,12 +18,10 @@ class LocationSelector extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Theme.of(
-              context,
-            ).colorScheme.surfaceVariant.withValues(alpha: 0.4),
+            color: scheme.onSurface.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+              color: scheme.onSurface.withValues(alpha: 0.1),
             ),
           ),
           child: Row(
@@ -30,7 +29,7 @@ class LocationSelector extends StatelessWidget {
               Icon(
                 Icons.location_on_rounded,
                 size: 20,
-                color: Theme.of(context).primaryColor,
+                color: scheme.primary,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -39,9 +38,7 @@ class LocationSelector extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.85),
+                    color: scheme.onSurface.withValues(alpha: 0.85),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -49,9 +46,7 @@ class LocationSelector extends StatelessWidget {
               ),
               Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.4),
+                color: scheme.onSurface.withValues(alpha: 0.4),
               ),
             ],
           ),
@@ -110,7 +105,7 @@ class LocationSelector extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? scheme.primary
-                            : scheme.surfaceVariant.withValues(alpha: 0.5),
+                            : scheme.onSurface.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(

@@ -46,52 +46,81 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return BottomSheetScaffold(
       title: 'Edit Profile',
       child: Column(
         children: [
-          TextField(
+          _buildTextField(
             controller: _nameCtrl,
-            decoration: InputDecoration(
-              labelText: 'Full Name',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              prefixIcon: const Icon(Icons.person_outline),
-            ),
+            label: 'Full Name',
+            icon: Icons.person_rounded,
           ),
-          const SizedBox(height: 16),
-          TextField(
+          const SizedBox(height: 20),
+          _buildTextField(
             controller: _emailCtrl,
-            decoration: InputDecoration(
-              labelText: 'Email Address',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              prefixIcon: const Icon(Icons.email_outlined),
-            ),
+            label: 'Email Address',
+            icon: Icons.email_rounded,
+            keyboardType: TextInputType.emailAddress,
           ),
-          const SizedBox(height: 16),
-          TextField(
+          const SizedBox(height: 20),
+          _buildTextField(
             controller: _phoneCtrl,
-            decoration: InputDecoration(
-              labelText: 'Phone Number',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              prefixIcon: const Icon(Icons.phone_outlined),
-            ),
+            label: 'Phone Number',
+            icon: Icons.phone_rounded,
+            keyboardType: TextInputType.phone,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           const LocationSelector(),
-          const SizedBox(height: 32),
+          const SizedBox(height: 40),
           CustomButton(
             isLoading: widget.auth.isLoading,
             label: 'Save Changes',
-            primaryColor: Theme.of(context).primaryColor,
+            primaryColor: scheme.primary,
             onPressed: widget.auth.isLoading ? null : _save,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: const TextStyle(fontWeight: FontWeight.w600),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          color: scheme.onSurface.withValues(alpha: 0.5),
+          fontWeight: FontWeight.w500,
+        ),
+        floatingLabelStyle: TextStyle(
+          color: scheme.primary,
+          fontWeight: FontWeight.w700,
+        ),
+        filled: true,
+        fillColor: scheme.onSurface.withValues(alpha: 0.05),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: scheme.primary, width: 2),
+        ),
+        prefixIcon: Icon(icon, color: scheme.primary, size: 20),
       ),
     );
   }

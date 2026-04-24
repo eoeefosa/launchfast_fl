@@ -24,7 +24,7 @@ class OrdersScreen extends StatelessWidget {
 
     if (!auth.isAuthenticated) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.background,
         appBar: _OrdersAppBar(isIOS: _isIOS),
         body: const LoginRequiredView(),
       );
@@ -34,7 +34,7 @@ class OrdersScreen extends StatelessWidget {
     final hasActiveOrder = _isActive(activeOrder);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: _OrdersAppBar(isIOS: _isIOS),
       body: _OrdersBody(
         orderProvider: orderProvider,
@@ -89,7 +89,7 @@ class _OrdersAppBar extends StatelessWidget implements PreferredSizeWidget {
           'My Orders',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
-        backgroundColor: Colors.white.withValues(alpha: 0.8),
+        backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
         border: null,
       );
     }
@@ -104,8 +104,8 @@ class _OrdersAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       centerTitle: false,
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      surfaceTintColor: Theme.of(context).colorScheme.surface,
       elevation: 0,
     );
   }
@@ -241,7 +241,7 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.receipt_long_rounded,
             size: 80,
-            color: AppColors.lightSurface,
+            color: Theme.of(context).colorScheme.surfaceVariant,
           ),
           const SizedBox(height: 24),
           const Text(
@@ -251,7 +251,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'When you place an order, it will appear here.',
-            style: TextStyle(color: AppColors.lightMuted),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
           ),
         ],
       ),

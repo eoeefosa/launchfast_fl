@@ -28,7 +28,7 @@ class ActiveOrderTracker extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
@@ -156,7 +156,7 @@ class _StatusIcon extends StatelessWidget {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: Colors.black,
+            color: Theme.of(context).colorScheme.onSurface,
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
@@ -166,7 +166,7 @@ class _StatusIcon extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(icon, color: Colors.white, size: 40),
+          child: Icon(icon, color: Theme.of(context).colorScheme.surface, size: 40),
         )
         .animate(onPlay: (controller) => controller.repeat(reverse: true))
         .scale(
@@ -189,7 +189,7 @@ class _RiderCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.lightSurface,
+        color: Theme.of(context).colorScheme.surfaceVariant.withValues(alpha: 0.5),
         border: Border(
           top: BorderSide(color: AppColors.lightBorder.withValues(alpha: 0.5)),
         ),
@@ -201,7 +201,7 @@ class _RiderCard extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               border: Border.all(color: AppColors.primary, width: 2),
               image: const DecorationImage(
                 image: NetworkImage(
@@ -259,12 +259,12 @@ class _CallButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.black,
+            color: Theme.of(context).colorScheme.onSurface,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Icon(
+          child: Icon(
             CupertinoIcons.phone_fill,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             size: 20,
           ),
         ),
@@ -273,9 +273,9 @@ class _CallButton extends StatelessWidget {
 
     return IconButton(
       onPressed: () => launchUrl(Uri.parse('tel:$phoneNumber')),
-      icon: const Icon(Icons.phone_in_talk_rounded, color: Colors.white),
+      icon: Icon(Icons.phone_in_talk_rounded, color: Theme.of(context).colorScheme.surface),
       style: IconButton.styleFrom(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).colorScheme.onSurface,
         padding: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),

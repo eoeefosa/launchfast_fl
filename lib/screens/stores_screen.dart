@@ -11,16 +11,21 @@ class StoresScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final storeProvider = context.watch<StoreProvider>();
     final stores = storeProvider.stores;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'All Stores',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: -0.5),
         ),
+        backgroundColor: scheme.surface,
+        surfaceTintColor: scheme.surface,
+        elevation: 0,
       ),
       body: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         itemCount: stores.length,
         itemBuilder: (context, index) {
           final store = stores[index];
@@ -31,156 +36,192 @@ class StoresScreen extends StatelessWidget {
   }
 
   Widget _buildStoreCard(BuildContext context, Store store) {
-    return InkWell(
-      onTap: () => context.push('/store/${store.id}'),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    final scheme = Theme.of(context).colorScheme;
+    final accentColor = Color(
+      int.parse(store.accentColor.replaceFirst('#', '0xFF')),
+    );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: scheme.onSurface.withValues(alpha: 0.05),
+          width: 1,
         ),
-        child: Column(
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-              child: Container(
-                height: 160,
-                width: double.infinity,
-                color: Color(
-                  int.parse(store.accentColor.replaceFirst('#', '0xFF')),
-                ),
-                child: Stack(
-                  children: [
-                    Center(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: () => context.push('/store/${store.id}'),
+          child: Column(
+            children: [
+              // Store Banner
+              Stack(
+                children: [
+                  Container(
+                    height: 140,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          accentColor,
+                          accentColor.withValues(alpha: 0.8),
+                        ],
+                      ),
+                    ),
+                    child: Center(
                       child: Icon(
                         Icons.storefront_rounded,
-                        size: 64,
-                        color: Colors.white.withValues(alpha: 0.3),
+                        size: 56,
+                        color: Colors.white.withValues(alpha: 0.2),
                       ),
                     ),
-                    Positioned(
-                      bottom: 12,
-                      right: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          store.deliveryTime,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                  ),
+                  // Delivery Time Badge
+                  Positioned(
+                    bottom: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
                           ),
-                        ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.access_time_filled_rounded,
+                            size: 14,
+                            color: Colors.black87,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            store.deliveryTime,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    if (!store.isOpen)
-                      Positioned.fill(
-                        child: Container(
-                          color: Colors.black45,
-                          child: const Center(
-                            child: Text(
+                  ),
+                  // Closed Overlay
+                  if (!store.isOpen)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black54,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
                               'CLOSED',
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
                                 letterSpacing: 2,
                               ),
                             ),
                           ),
                         ),
                       ),
+                    ),
+                ],
+              ),
+              // Store Info
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            store.name,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.star_rounded,
+                                size: 16,
+                                color: Colors.amber,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                store.rating.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      store.tagline,
+                      style: TextStyle(
+                        color: scheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Divider(color: scheme.onSurface.withValues(alpha: 0.05)),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        store.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          const Icon(Icons.star, size: 14, color: Colors.amber),
-                          const SizedBox(width: 4),
-                          Text(
-                            store.rating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    store.tagline,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.directions_bike,
-                            size: 16,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '₦${store.deliveryFee.toInt()}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: store.isOpen ? Colors.green : Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

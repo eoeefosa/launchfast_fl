@@ -26,12 +26,17 @@ class ProfileSettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isIOS = Platform.isIOS;
+    final scheme = Theme.of(context).colorScheme;
 
     final content = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: scheme.onSurface.withValues(alpha: 0.05),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -45,15 +50,15 @@ class ProfileSettingsTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: (iconColor ?? Theme.of(context).primaryColor).withValues(
-                alpha: 0.1,
+              color: (iconColor ?? scheme.primary).withValues(
+                alpha: 0.08,
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
               icon,
               size: 20,
-              color: iconColor ?? Theme.of(context).primaryColor,
+              color: iconColor ?? scheme.primary,
             ),
           ),
           const SizedBox(width: 16),
@@ -65,9 +70,10 @@ class ProfileSettingsTile extends StatelessWidget {
                   title,
                   style: TextStyle(
                     color:
-                        titleColor ?? Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
+                        titleColor ?? scheme.onSurface,
+                    fontWeight: FontWeight.w800,
                     fontSize: 16,
+                    letterSpacing: -0.2,
                   ),
                 ),
                 if (subtitle != null) ...[
@@ -75,10 +81,9 @@ class ProfileSettingsTile extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.5),
+                      color: scheme.onSurface.withValues(alpha: 0.5),
                       fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -87,10 +92,8 @@ class ProfileSettingsTile extends StatelessWidget {
           ),
           trailing ??
               Icon(
-                isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.3),
+                isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right_rounded,
+                color: scheme.onSurface.withValues(alpha: 0.3),
                 size: 18,
               ),
         ],
@@ -98,7 +101,7 @@ class ProfileSettingsTile extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -106,7 +109,7 @@ class ProfileSettingsTile extends StatelessWidget {
             HapticFeedback.lightImpact();
             onTap?.call();
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: content,
         ),
       ),

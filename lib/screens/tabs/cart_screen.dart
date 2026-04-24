@@ -49,11 +49,17 @@ class CartScreen extends StatelessWidget {
     Color accentColor,
     CartProvider cart,
   ) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     if (isIOS) {
       return CupertinoNavigationBar(
-        middle: const Text(
+        middle: Text(
           'Your Cart',
-          style: TextStyle(fontWeight: FontWeight.w800),
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            color: scheme.onSurface,
+          ),
         ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
@@ -63,8 +69,13 @@ class CartScreen extends StatelessWidget {
             style: TextStyle(color: CupertinoColors.destructiveRed),
           ),
         ),
-        backgroundColor: Colors.white.withValues(alpha: 0.8),
-        border: null,
+        backgroundColor: scheme.surface.withValues(alpha: 0.8),
+        border: Border(
+          bottom: BorderSide(
+            color: scheme.onSurface.withValues(alpha: 0.1),
+            width: 0.5,
+          ),
+        ),
       );
     }
 
@@ -83,8 +94,8 @@ class CartScreen extends StatelessWidget {
           ),
         ),
       ],
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      surfaceTintColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: scheme.surface,
+      surfaceTintColor: scheme.surface,
       elevation: 0,
     );
   }
@@ -103,6 +114,7 @@ class _CartBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
       children: [
@@ -126,7 +138,7 @@ class _CartBody extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: scheme.onSurface,
                     fontSize: 14,
                   ),
                   children: [
@@ -161,37 +173,38 @@ class _CartBody extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+              color: scheme.onSurface.withValues(alpha: 0.1),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Row(
             children: [
               Icon(
                 Icons.confirmation_number_outlined,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.4),
+                color: scheme.onSurface.withValues(alpha: 0.4),
               ),
               const SizedBox(width: 12),
               Text(
                 'Add promo code',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.5),
+                  color: scheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
               const Spacer(),
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 14,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.3),
+                color: scheme.onSurface.withValues(alpha: 0.3),
               ),
             ],
           ),

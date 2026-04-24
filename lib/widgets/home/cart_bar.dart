@@ -13,51 +13,66 @@ class CartBar extends StatelessWidget {
     final cartProvider = context.watch<CartProvider>();
     final totalQuantity = cartProvider.totalQuantity;
     final cartTotal = cartProvider.cartTotal;
+    final scheme = Theme.of(context).colorScheme;
 
     if (totalQuantity == 0) return const SizedBox.shrink();
 
     return Container(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 12,
-        bottom: MediaQuery.of(context).padding.bottom + 12,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          top: BorderSide(color: Theme.of(context).dividerColor, width: 0.5),
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: scheme.onSurface.withValues(alpha: 0.05),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            offset: const Offset(0, -4),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.1),
+            offset: const Offset(0, 4),
+            blurRadius: 15,
           ),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Text(
-                '$totalQuantity item${totalQuantity > 1 ? 's' : ''}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.shopping_bag_rounded,
+                  color: accent,
+                  size: 20,
                 ),
               ),
-              Text(
-                '₦${cartTotal.toStringAsFixed(2)}',
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.5),
-                  fontSize: 13,
-                ),
+              const SizedBox(width: 12),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$totalQuantity item${totalQuantity > 1 ? 's' : ''}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  Text(
+                    '₦${cartTotal.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      color: accent,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -68,13 +83,20 @@ class CartBar extends StatelessWidget {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
               ),
-              elevation: 0,
+              elevation: 4,
+              shadowColor: accent.withValues(alpha: 0.4),
             ),
-            child: const Text(
-              'Checkout',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            child: const Row(
+              children: [
+                Text(
+                  'Checkout',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                ),
+                SizedBox(width: 4),
+                Icon(Icons.arrow_forward_ios_rounded, size: 12),
+              ],
             ),
           ),
         ],

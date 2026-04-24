@@ -20,6 +20,9 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final primaryColor = scheme.primary;
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -30,35 +33,40 @@ class ProfileHeader extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.2),
+                    color: primaryColor.withValues(alpha: 0.1),
                     width: 4,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryColor.withValues(alpha: 0.1),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                    ),
+                  ],
                 ),
                 child: CircleAvatar(
-                  radius: 35,
-                  backgroundColor: Theme.of(
-                    context,
-                  ).primaryColor.withValues(alpha: 0.1),
+                  radius: 38,
+                  backgroundColor: primaryColor.withValues(alpha: 0.05),
                   child: Text(
                     user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
                     style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: primaryColor,
+                      letterSpacing: -1,
                     ),
                   ),
                 ),
               ),
               Positioned(
-                bottom: 0,
-                right: 0,
+                bottom: 2,
+                right: 2,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.green,
                     shape: BoxShape.circle,
+                    border: Border.all(color: scheme.surface, width: 2),
                   ),
                   child: const Icon(Icons.check, size: 10, color: Colors.white),
                 ),
@@ -77,28 +85,30 @@ class ProfileHeader extends StatelessWidget {
                 Text(
                   user.name.isNotEmpty ? user.name : 'LaunchFast User',
                   style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.5,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1,
                   ),
                 ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.2),
                 Text(
                   user.email,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: TextStyle(
+                    color: scheme.onSurface.withValues(alpha: 0.5),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.2),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 _RoleBadge(role: user.role),
               ],
             ),
           ),
-          IconButton.filledTonal(
-            onPressed: () => _showEditModal(context),
-            icon: const Icon(Icons.edit_outlined, size: 20),
-            style: IconButton.styleFrom(
-              backgroundColor: Theme.of(
-                context,
-              ).primaryColor.withValues(alpha: 0.1),
-              foregroundColor: Theme.of(context).primaryColor,
+          Material(
+            color: primaryColor.withValues(alpha: 0.08),
+            shape: const CircleBorder(),
+            child: IconButton(
+              onPressed: () => _showEditModal(context),
+              icon: Icon(Icons.edit_rounded, size: 20, color: primaryColor),
             ),
           ).animate().fadeIn(delay: 400.ms).scale(),
         ],
@@ -114,22 +124,23 @@ class _RoleBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+        color: primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+          color: primaryColor.withValues(alpha: 0.1),
         ),
       ),
       child: Text(
         role.toUpperCase().replaceAll('_', ' '),
         style: TextStyle(
           fontSize: 10,
-          fontWeight: FontWeight.w800,
-          color: Theme.of(context).primaryColor,
-          letterSpacing: 0.5,
+          fontWeight: FontWeight.w900,
+          color: primaryColor,
+          letterSpacing: 1,
         ),
       ),
     ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.5);

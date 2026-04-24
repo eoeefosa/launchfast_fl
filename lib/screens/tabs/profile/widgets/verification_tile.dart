@@ -17,27 +17,32 @@ class VerificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = verified ? Colors.green : Colors.orangeAccent;
+
     return ProfileSettingsTile(
       icon: icon,
       title: title,
-      iconColor: verified ? Colors.green : Colors.orange,
-      titleColor: verified ? null : Colors.orange,
+      iconColor: color,
+      titleColor: verified ? null : color,
       subtitle: verified ? 'Account Verified' : 'Tap to complete verification',
       onTap: onTap,
       trailing: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: verified
-              ? Colors.green.withValues(alpha: 0.1)
-              : Colors.orange.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: color.withValues(alpha: 0.1),
+          ),
         ),
         child: Text(
           verified ? 'VERIFIED' : 'PENDING',
           style: TextStyle(
-            color: verified ? Colors.green : Colors.orange,
+            color: color,
             fontSize: 10,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.5,
           ),
         ),
       ),

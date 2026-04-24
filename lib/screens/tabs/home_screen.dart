@@ -155,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -179,6 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Restaurants',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -210,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   pinned: true,
                   delegate: _CategoryHeaderDelegate(
                     child: Container(
-                      color: const Color(0xFFF7F7F7),
+                      color: Theme.of(context).scaffoldBackgroundColor,
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: CategorySelector(
                         selectedCategory: _selectedCategory,
@@ -239,11 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
               right: 0,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Material(
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(30),
-                  child: CartBar(accent: accentColor),
-                ),
+                child: CartBar(accent: accentColor),
               ),
             ),
           ],

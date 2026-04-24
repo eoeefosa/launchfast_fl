@@ -19,11 +19,12 @@ class WalletCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
+    final scheme = Theme.of(context).colorScheme;
+    final primary = scheme.primary;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      height: 180,
+      height: 190,
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -31,26 +32,38 @@ class WalletCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: primary.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: primary.withValues(alpha: 0.25),
+            blurRadius: 25,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
       child: Stack(
         children: [
-          // Decorative background element
+          // Decorative background elements
           Positioned(
-            right: -50,
-            top: -50,
+            right: -40,
+            top: -40,
             child: Container(
-              width: 150,
-              height: 150,
+              width: 160,
+              height: 160,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            left: -20,
+            bottom: -20,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
             ),
@@ -63,49 +76,83 @@ class WalletCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'LaunchFast Wallet',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.wallet_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'LaunchFast Wallet',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
                     ),
-                    Icon(
-                      Icons.account_balance_wallet_rounded,
-                      color: Colors.white.withValues(alpha: 0.8),
+                    const Icon(
+                      Icons.qr_code_scanner_rounded,
+                      color: Colors.white70,
+                      size: 20,
                     ),
                   ],
                 ),
                 const Spacer(),
-                Text(
-                  '₦${auth.user!.walletBalance.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -1,
-                  ),
-                ).animate().shimmer(duration: 2.seconds, color: Colors.white24),
-                const Spacer(),
-                Material(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                  child: InkWell(
-                    onTap: () => _showTopUpModal(context),
-                    borderRadius: BorderRadius.circular(15),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Available Balance',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
-                      child: Text(
-                        'Deposit Funds',
-                        style: TextStyle(
-                          color: primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '₦${auth.user!.walletBalance.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 38,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1.5,
+                      ),
+                    ).animate().shimmer(duration: 2.seconds, color: Colors.white24),
+                  ],
+                ),
+                const Spacer(),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => _showTopUpModal(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: primary,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Deposit Funds',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),

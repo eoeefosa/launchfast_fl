@@ -20,9 +20,9 @@ class OrderHistoryCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.lightBorder.withValues(alpha: 0.5)),
+        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -34,12 +34,12 @@ class OrderHistoryCard extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: AppColors.lightSurface,
+                  color: Theme.of(context).colorScheme.surfaceVariant.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   Icons.restaurant_rounded,
-                  color: AppColors.lightMuted,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                   size: 24,
                 ),
               ),
@@ -119,15 +119,17 @@ class _StatusBadge extends StatelessWidget {
     final isDelivered = status == OrderStatus.delivered;
     final isCancelled = status == OrderStatus.cancelled;
 
-    Color bgColor = Colors.orange.shade50;
-    Color textColor = Colors.orange.shade700;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    Color bgColor = isDark ? Colors.orange.withValues(alpha: 0.15) : Colors.orange.shade50;
+    Color textColor = isDark ? Colors.orange.shade300 : Colors.orange.shade700;
 
     if (isDelivered) {
-      bgColor = Colors.green.shade50;
-      textColor = Colors.green.shade700;
+      bgColor = isDark ? Colors.green.withValues(alpha: 0.15) : Colors.green.shade50;
+      textColor = isDark ? Colors.green.shade300 : Colors.green.shade700;
     } else if (isCancelled) {
-      bgColor = Colors.red.shade50;
-      textColor = Colors.red.shade700;
+      bgColor = isDark ? Colors.red.withValues(alpha: 0.15) : Colors.red.shade50;
+      textColor = isDark ? Colors.red.shade300 : Colors.red.shade700;
     }
 
     return Container(
@@ -177,7 +179,7 @@ class _DetailItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.lightSurface,
+              color: Theme.of(context).colorScheme.surfaceVariant.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
@@ -240,8 +242,8 @@ class _EditOrderButton extends StatelessWidget {
         icon: const Icon(Icons.edit_outlined, size: 18),
         label: const Text('Edit Selections'),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.onSurface,
+          foregroundColor: Theme.of(context).colorScheme.surface,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),

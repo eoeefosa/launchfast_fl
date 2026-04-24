@@ -15,6 +15,7 @@ class StoreTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       height: 48,
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -45,7 +46,9 @@ class StoreTabs extends StatelessWidget {
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: isActive ? accentColor : Colors.grey[200]!,
+                    color: isActive
+                        ? accentColor
+                        : scheme.onSurface.withValues(alpha: 0.1),
                     width: 1.5,
                   ),
                 ),
@@ -55,7 +58,9 @@ class StoreTabs extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                      color: isActive ? accentColor : Colors.grey[500],
+                      color: isActive
+                          ? accentColor
+                          : scheme.onSurfaceVariant,
                     ),
                   ),
                 ),

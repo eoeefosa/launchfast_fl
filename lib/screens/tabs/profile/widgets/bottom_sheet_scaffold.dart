@@ -16,17 +16,20 @@ class BottomSheetScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
+        color: backgroundColor ?? scheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 30,
+            offset: const Offset(0, -10),
           ),
         ],
       ),
@@ -46,7 +49,7 @@ class BottomSheetScaffold extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: scheme.onSurface.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -55,9 +58,9 @@ class BottomSheetScaffold extends StatelessWidget {
             title,
             style: TextStyle(
               fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: textColor ?? Colors.black87,
-              letterSpacing: -0.5,
+              fontWeight: FontWeight.w900,
+              color: textColor ?? scheme.onSurface,
+              letterSpacing: -1,
             ),
           ),
           const SizedBox(height: 24),

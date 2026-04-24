@@ -25,12 +25,18 @@ class MenuGroupedList extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.search_off_rounded, size: 64, color: Colors.grey[300]),
+              Icon(
+                Icons.search_off_rounded,
+                size: 64,
+                color: Theme.of(context).colorScheme.onSurface.withValues(
+                  alpha: 0.1,
+                ),
+              ),
               const SizedBox(height: 16),
               Text(
                 emptyMessage ?? "No items found",
                 style: TextStyle(
-                  color: Colors.grey[500],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -46,7 +52,7 @@ class MenuGroupedList extends StatelessWidget {
         (context, index) {
           final category = groupedItems.keys.elementAt(index);
           final items = groupedItems[category]!;
-          
+
           return _CategoryGroup(
             category: category,
             items: items,
@@ -113,12 +119,15 @@ class _CategoryGroup extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.5,
-                    color: Colors.grey[800],
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Divider(color: Colors.grey[100], thickness: 1.5),
+                  child: Divider(
+                    color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                    thickness: 1.5,
+                  ),
                 ),
               ],
             ),
