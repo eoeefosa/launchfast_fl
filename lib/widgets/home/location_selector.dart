@@ -17,9 +17,13 @@ class LocationSelector extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceVariant.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[100]!),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+            ),
           ),
           child: Row(
             children: [
@@ -35,13 +39,20 @@ class LocationSelector extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.85),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey[400]),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
             ],
           ),
         ),
@@ -65,11 +76,11 @@ class LocationSelector extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        decoration: BoxDecoration(
+          color: Theme.of(ctx).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -91,18 +102,23 @@ class LocationSelector extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final loc = locations[index];
                   final isSelected = authProvider.currentAddress == loc;
+                  final scheme = Theme.of(context).colorScheme;
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.black : Colors.grey[50],
+                        color: isSelected
+                            ? scheme.primary
+                            : scheme.surfaceVariant.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         Icons.home_work_rounded,
                         size: 20,
-                        color: isSelected ? Colors.white : Colors.grey[400],
+                        color: isSelected
+                            ? Colors.white
+                            : scheme.onSurface.withValues(alpha: 0.4),
                       ),
                     ),
                     title: Text(
@@ -111,22 +127,37 @@ class LocationSelector extends StatelessWidget {
                         fontWeight: isSelected
                             ? FontWeight.w800
                             : FontWeight.w600,
-                        color: isSelected ? Colors.black : Colors.grey[700],
+                        color: isSelected
+                            ? scheme.primary
+                            : scheme.onSurface.withValues(alpha: 0.8),
                       ),
                     ),
                     trailing: isSelected
-                        ? const Icon(
+                        ? Icon(
                             Icons.check_circle_rounded,
-                            color: Colors.black,
+                            color: scheme.primary,
                           )
                         : null,
-                    onTap: () {
-                      if (authProvider.user != null) {
-                        authProvider.updateProfile({'address': loc});
-                      } else {
-                        authProvider.setGuestAddress(loc);
+                    onTap: () async {
+                      try {
+                        if (authProvider.user != null) {
+                          await authProvider.updateProfile({'address': loc});
+                        } else {
+                          authProvider.setGuestAddress(loc);
+                        }
+                        if (context.mounted) Navigator.pop(context);
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Failed to update address: ${e.toString()}',
+                              ),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                        }
                       }
-                      Navigator.pop(context);
                     },
                   );
                 },

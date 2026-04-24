@@ -62,6 +62,7 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -69,16 +70,18 @@ class _CategoryChip extends StatelessWidget {
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
-          color: isActive ? Colors.black : Colors.white,
+          color: isActive ? scheme.primary : scheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive ? Colors.black : Colors.grey[200]!,
+            color: isActive
+                ? scheme.primary
+                : scheme.onSurface.withValues(alpha: 0.1),
             width: 1.5,
           ),
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
+                    color: scheme.primary.withValues(alpha: 0.25),
                     blurRadius: 10,
                     offset: const Offset(0, 6),
                   ),
@@ -90,13 +93,17 @@ class _CategoryChip extends StatelessWidget {
             Icon(
               icon,
               size: 20,
-              color: isActive ? Colors.white : Colors.grey[600],
+              color: isActive
+                  ? Colors.white
+                  : scheme.onSurface.withValues(alpha: 0.5),
             ),
             const SizedBox(width: 10),
             Text(
               label,
               style: TextStyle(
-                color: isActive ? Colors.white : Colors.grey[800],
+                color: isActive
+                    ? Colors.white
+                    : scheme.onSurface.withValues(alpha: 0.8),
                 fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
                 fontSize: 14,
                 letterSpacing: -0.2,

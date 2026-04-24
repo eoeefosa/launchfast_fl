@@ -135,10 +135,12 @@ class TabsShell extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: Theme.of(
+              context,
+            ).colorScheme.surface.withValues(alpha: 0.85),
             border: Border(
               top: BorderSide(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
                 width: 0.5,
               ),
             ),
@@ -178,7 +180,7 @@ class TabsShell extends StatelessWidget {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -198,7 +200,10 @@ class TabsShell extends StatelessWidget {
                 color: primaryColor,
               );
             }
-            return const TextStyle(fontSize: 12, color: Colors.grey);
+            return TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            );
           }),
         ),
         child: NavigationBar(
@@ -207,7 +212,7 @@ class TabsShell extends StatelessWidget {
             HapticFeedback.selectionClick();
             navigationShell.goBranch(index);
           },
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           elevation: 0,
           height: 70,
           destinations: items.map((item) {

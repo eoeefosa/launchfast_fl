@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'dart:io';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../constants/app_colors.dart';
 
 class EmptyCartView extends StatelessWidget {
   const EmptyCartView({super.key});
@@ -13,7 +12,7 @@ class EmptyCartView extends StatelessWidget {
     final isIOS = Platform.isIOS;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -24,13 +23,17 @@ class EmptyCartView extends StatelessWidget {
                 width: 160,
                 height: 160,
                 decoration: BoxDecoration(
-                  color: AppColors.lightSurface,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceVariant.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   isIOS ? CupertinoIcons.cart : Icons.shopping_cart_outlined,
                   size: 80,
-                  color: AppColors.primary.withValues(alpha: 0.2),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.25),
                 ),
               ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
               const SizedBox(height: 40),
@@ -49,7 +52,9 @@ class EmptyCartView extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppColors.lightMuted,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                   height: 1.5,
                 ),
               ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
@@ -75,7 +80,7 @@ class _BrowseButton extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isIOS) {
       return CupertinoButton(
-        color: Colors.black,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(20),
         onPressed: () => context.go('/home'),
         child: const Text(
@@ -88,7 +93,7 @@ class _BrowseButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: () => context.go('/'),
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

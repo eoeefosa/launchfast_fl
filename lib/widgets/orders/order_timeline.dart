@@ -36,19 +36,25 @@ class OrderTimeline extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: isCompleted ? Colors.black : AppColors.lightSurface,
+                      color: isCompleted
+                          ? Colors.black
+                          : AppColors.lightSurface,
                       shape: BoxShape.circle,
-                      boxShadow: isCurrent ? [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        )
-                      ] : null,
+                      boxShadow: isCurrent
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Icon(
                       steps[index]['icon'] as IconData,
-                      color: isCompleted ? Colors.white : AppColors.lightMuted.withValues(alpha: 0.5),
+                      color: isCompleted
+                          ? Colors.white
+                          : AppColors.lightMuted.withValues(alpha: 0.5),
                       size: 22,
                     ),
                   ),
@@ -57,7 +63,9 @@ class OrderTimeline extends StatelessWidget {
                     steps[index]['title'] as String,
                     style: TextStyle(
                       fontSize: 11,
-                      fontWeight: isCompleted ? FontWeight.w900 : FontWeight.w600,
+                      fontWeight: isCompleted
+                          ? FontWeight.w900
+                          : FontWeight.w600,
                       color: isCompleted ? Colors.black : AppColors.lightMuted,
                     ),
                   ),
@@ -70,7 +78,9 @@ class OrderTimeline extends StatelessWidget {
                     child: Container(
                       height: 3,
                       decoration: BoxDecoration(
-                        color: index < currentStep ? Colors.black : AppColors.lightBorder,
+                        color: index < currentStep
+                            ? Colors.black
+                            : AppColors.lightBorder,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),

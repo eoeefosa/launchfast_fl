@@ -18,10 +18,10 @@ class CheckoutBar extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPadding + 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 40,
             offset: const Offset(0, -10),
           ),
@@ -40,7 +40,9 @@ class CheckoutBar extends StatelessWidget {
                   Text(
                     'Total Price',
                     style: TextStyle(
-                      color: AppColors.lightMuted,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -114,9 +116,7 @@ class _CheckoutButton extends StatelessWidget {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         minimumSize: const Size(double.infinity, 56),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 8,
         shadowColor: AppColors.primary.withValues(alpha: 0.4),
       ),

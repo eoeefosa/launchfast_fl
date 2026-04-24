@@ -35,9 +35,14 @@ class StoreTabs extends StatelessWidget {
               onTap: () => onSelect(store.id),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: isActive ? accentColor.withValues(alpha: 0.1) : Colors.transparent,
+                  color: isActive
+                      ? accentColor.withValues(alpha: 0.1)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: isActive ? accentColor : Colors.grey[200]!,
@@ -62,4 +67,3 @@ class StoreTabs extends StatelessWidget {
     );
   }
 }
-

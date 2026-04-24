@@ -26,7 +26,9 @@ class LoginRequiredView extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isIOS ? CupertinoIcons.lock_shield : Icons.shopping_bag_outlined,
+                isIOS
+                    ? CupertinoIcons.lock_shield
+                    : Icons.shopping_bag_outlined,
                 size: 70,
                 color: AppColors.primary.withValues(alpha: 0.2),
               ),
@@ -107,9 +109,7 @@ class _SignInButton extends StatelessWidget {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 8,
         shadowColor: AppColors.primary.withValues(alpha: 0.4),
       ),

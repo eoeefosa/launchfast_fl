@@ -15,9 +15,9 @@ class NotificationsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        surfaceTintColor: Colors.white,
+        surfaceTintColor: Theme.of(context).colorScheme.surface,
         title: const Text(
           'Notifications',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -153,7 +153,9 @@ class _NotificationTile extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: item.isRead ? null : Colors.blue.withValues(alpha: 0.05),
-            border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+            border: Border(
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
+            ),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,7 +184,9 @@ class _NotificationTile extends StatelessWidget {
                           DateFormat.jm().format(item.timestamp),
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[500],
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.4),
                           ),
                         ),
                       ],
@@ -190,7 +194,12 @@ class _NotificationTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       item.message,
-                      style: TextStyle(color: Colors.grey[700], height: 1.3),
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.65),
+                        height: 1.3,
+                      ),
                     ),
                   ],
                 ),

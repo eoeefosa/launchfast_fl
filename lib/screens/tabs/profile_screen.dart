@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../widgets/home/location_selector.dart';
 
 // Broken down components
@@ -32,11 +33,11 @@ class ProfileScreen extends StatelessWidget {
     final isIOS = Platform.isIOS;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        surfaceTintColor: Theme.of(context).colorScheme.surface,
         centerTitle: false,
         title: const Text(
           'Profile',
@@ -91,6 +92,7 @@ class ProfileScreen extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: LocationSelector(),
               ),
+              _ThemeSwitcher(),
 
               const _SectionHeader(title: 'Support & Help'),
               ProfileSettingsTile(
@@ -251,5 +253,185 @@ class _LogoutButton extends StatelessWidget {
         ),
       );
     }
+  }
+}
+
+// ── Theme Switcher ────────────────────────────────────────────────────────────
+
+class _ThemeSwitcher extends StatelessWidget {
+  const _ThemeSwitcher();
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final scheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.05),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    themeProvider.isDark
+                        ? Icons.dark_mode_rounded
+                        : themeProvider.isLight
+                        ? Icons.light_mode_rounded
+                        : Icons.brightness_auto_rounded,
+                    color: scheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Appearance',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        themeProvider.isDark
+                            ? 'Dark Mode'
+                            : themeProvider.isLight
+                            ? 'Light Mode'
+                            : 'System Default',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: scheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              decoration: BoxDecoration(
+                color: scheme.onSurface.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.all(4),
+              child: Row(
+                children: [
+                  _ThemeOption(
+                    label: 'Light',
+                    icon: Icons.light_mode_rounded,
+                    selected: themeProvider.isLight,
+                    onTap: () => themeProvider.setTheme(ThemeMode.light),
+                  ),
+                  _ThemeOption(
+                    label: 'System',
+                    icon: Icons.brightness_auto_rounded,
+                    selected: themeProvider.isSystem,
+                    onTap: () => themeProvider.setTheme(ThemeMode.system),
+                  ),
+                  _ThemeOption(
+                    label: 'Dark',
+                    icon: Icons.dark_mode_rounded,
+                    selected: themeProvider.isDark,
+                    onTap: () => themeProvider.setTheme(ThemeMode.dark),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: 200.ms);
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ThemeOption({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? scheme.surface : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                      color: Colors.black.withValues(alpha: 0.08),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: selected
+                    ? scheme.primary
+                    : scheme.onSurface.withValues(alpha: 0.4),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected
+                      ? scheme.primary
+                      : scheme.onSurface.withValues(alpha: 0.4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

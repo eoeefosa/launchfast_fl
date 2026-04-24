@@ -13,7 +13,7 @@ import '../../widgets/orders/order_history_card.dart';
 import '../../widgets/orders/login_required_view.dart';
 
 class OrdersScreen extends StatelessWidget {
- const OrdersScreen({super.key});
+  const OrdersScreen({super.key});
 
   static bool get _isIOS => Platform.isIOS;
 
@@ -129,36 +129,38 @@ class _OrdersBody extends StatelessWidget {
   final bool isIOS;
 
   List<Widget> get _children => [
-        if (hasActiveOrder) ...[
-          const _SectionLabel('Active Delivery'),
-          const SizedBox(height: 16),
-          ActiveOrderTracker(order: activeOrder),
-          const SizedBox(height: 40),
-        ],
-        if (orders.isEmpty)
-          const _EmptyState()
-        else ...[
-          const _SectionLabel('Past Orders', animationDelay: 200),
-          const SizedBox(height: 16),
-          ...orders.map((o) => OrderHistoryCard(order: o)),
-          const SizedBox(height: 40),
-        ],
-      ];
+    if (hasActiveOrder) ...[
+      const _SectionLabel('Active Delivery'),
+      const SizedBox(height: 16),
+      ActiveOrderTracker(order: activeOrder),
+      const SizedBox(height: 40),
+    ],
+    if (orders.isEmpty)
+      const _EmptyState()
+    else ...[
+      const _SectionLabel('Past Orders', animationDelay: 200),
+      const SizedBox(height: 16),
+      ...orders.map((o) => OrderHistoryCard(order: o)),
+      const SizedBox(height: 40),
+    ],
+  ];
 
   @override
   Widget build(BuildContext context) {
-    if (isIOS) return _IOSScrollView(orderProvider: orderProvider, children: _children);
-    return _AndroidScrollView(orderProvider: orderProvider, children: _children);
+    if (isIOS) {
+      return _IOSScrollView(orderProvider: orderProvider, children: _children);
+    }
+    return _AndroidScrollView(
+      orderProvider: orderProvider,
+      children: _children,
+    );
   }
 }
 
 // ─── Scroll Views ─────────────────────────────────────────────────────────
 
 class _IOSScrollView extends StatelessWidget {
-  const _IOSScrollView({
-    required this.orderProvider,
-    required this.children,
-  });
+  const _IOSScrollView({required this.orderProvider, required this.children});
 
   final OrderProvider orderProvider;
   final List<Widget> children;
@@ -170,14 +172,10 @@ class _IOSScrollView extends StatelessWidget {
         parent: AlwaysScrollableScrollPhysics(),
       ),
       slivers: [
-        CupertinoSliverRefreshControl(
-          onRefresh: orderProvider.refreshOrders,
-        ),
+        CupertinoSliverRefreshControl(onRefresh: orderProvider.refreshOrders),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate(children),
-          ),
+          sliver: SliverList(delegate: SliverChildListDelegate(children)),
         ),
       ],
     );
@@ -216,13 +214,16 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w900,
-        letterSpacing: -0.5,
-      ),
-    ).animate().fadeIn(delay: Duration(milliseconds: animationDelay)).slideX(begin: -0.1);
+          text,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
+          ),
+        )
+        .animate()
+        .fadeIn(delay: Duration(milliseconds: animationDelay))
+        .slideX(begin: -0.1);
   }
 }
 

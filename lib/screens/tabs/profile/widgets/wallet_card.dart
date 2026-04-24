@@ -20,7 +20,7 @@ class WalletCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       height: 180,
@@ -95,7 +95,10 @@ class WalletCard extends StatelessWidget {
                     onTap: () => _showTopUpModal(context),
                     borderRadius: BorderRadius.circular(15),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                       child: Text(
                         'Deposit Funds',
                         style: TextStyle(

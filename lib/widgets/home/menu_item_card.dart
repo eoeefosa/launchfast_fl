@@ -25,12 +25,15 @@ class MenuItemCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.grey[100]!, width: 1.5),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -45,8 +48,9 @@ class MenuItemCard extends StatelessWidget {
                   width: 90,
                   height: 90,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) =>
-                      Container(color: Colors.grey[50]),
+                  placeholder: (context, url) => Container(
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -77,7 +81,9 @@ class MenuItemCard extends StatelessWidget {
                       item.description,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[500],
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
                         height: 1.4,
                         fontWeight: FontWeight.w500,
                       ),
@@ -104,7 +110,8 @@ class MenuItemCard extends StatelessWidget {
                                 ' / portion',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[400],
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.4),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -118,7 +125,7 @@ class MenuItemCard extends StatelessWidget {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.black,
+                              color: Theme.of(context).colorScheme.primary,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Text(

@@ -30,13 +30,17 @@ class ProfileHeader extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.2),
                     width: 4,
                   ),
                 ),
                 child: CircleAvatar(
                   radius: 35,
-                  backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).primaryColor.withValues(alpha: 0.1),
                   child: Text(
                     user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
                     style: TextStyle(
@@ -56,15 +60,15 @@ class ProfileHeader extends StatelessWidget {
                     color: Colors.green,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.check,
-                    size: 10,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.check, size: 10, color: Colors.white),
                 ),
               ),
             ],
-          ).animate().scale(delay: 100.ms, duration: 400.ms, curve: Curves.easeOutBack),
+          ).animate().scale(
+            delay: 100.ms,
+            duration: 400.ms,
+            curve: Curves.easeOutBack,
+          ),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
@@ -91,7 +95,9 @@ class ProfileHeader extends StatelessWidget {
             onPressed: () => _showEditModal(context),
             icon: const Icon(Icons.edit_outlined, size: 20),
             style: IconButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+              backgroundColor: Theme.of(
+                context,
+              ).primaryColor.withValues(alpha: 0.1),
               foregroundColor: Theme.of(context).primaryColor,
             ),
           ).animate().fadeIn(delay: 400.ms).scale(),

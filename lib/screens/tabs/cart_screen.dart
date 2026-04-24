@@ -6,7 +6,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../providers/cart_provider.dart';
 import '../../constants/static_data.dart';
-import '../../constants/app_colors.dart';
 import '../../widgets/cart/cart_item_tile.dart';
 import '../../widgets/cart/order_summary.dart';
 import '../../widgets/cart/checkout_bar.dart';
@@ -32,19 +31,23 @@ class CartScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _buildAppBar(context, isIOS, store, accentColor, cart),
-      body: _CartBody(cart: cart, storeName: store.name, accentColor: accentColor),
+      body: _CartBody(
+        cart: cart,
+        storeName: store.name,
+        accentColor: accentColor,
+      ),
       bottomNavigationBar: CheckoutBar(total: cart.cartTotal),
     );
   }
 
   PreferredSizeWidget _buildAppBar(
-    BuildContext context, 
-    bool isIOS, 
-    dynamic store, 
+    BuildContext context,
+    bool isIOS,
+    dynamic store,
     Color accentColor,
-    CartProvider cart
+    CartProvider cart,
   ) {
     if (isIOS) {
       return CupertinoNavigationBar(
@@ -55,7 +58,10 @@ class CartScreen extends StatelessWidget {
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: cart.clearCart,
-          child: const Text('Clear', style: TextStyle(color: CupertinoColors.destructiveRed)),
+          child: const Text(
+            'Clear',
+            style: TextStyle(color: CupertinoColors.destructiveRed),
+          ),
         ),
         backgroundColor: Colors.white.withValues(alpha: 0.8),
         border: null,
@@ -70,12 +76,15 @@ class CartScreen extends StatelessWidget {
       centerTitle: false,
       actions: [
         TextButton(
-          onPressed: cart.clearCart, 
-          child: const Text('Clear All', style: TextStyle(fontWeight: FontWeight.bold)),
+          onPressed: cart.clearCart,
+          child: const Text(
+            'Clear All',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ],
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      surfaceTintColor: Theme.of(context).colorScheme.surface,
       elevation: 0,
     );
   }
@@ -87,7 +96,7 @@ class _CartBody extends StatelessWidget {
   final Color accentColor;
 
   const _CartBody({
-    required this.cart, 
+    required this.cart,
     required this.storeName,
     required this.accentColor,
   });
@@ -97,12 +106,12 @@ class _CartBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
       children: [
-        if (cart.editingOrderId != null) 
+        if (cart.editingOrderId != null)
           const Padding(
             padding: EdgeInsets.only(bottom: 20),
             child: EditingBanner(),
           ),
-        
+
         // Store Header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -116,7 +125,10 @@ class _CartBody extends StatelessWidget {
               const SizedBox(width: 12),
               RichText(
                 text: TextSpan(
-                  style: const TextStyle(color: Colors.black, fontSize: 14),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 14,
+                  ),
                   children: [
                     const TextSpan(text: 'Ordering from '),
                     TextSpan(
@@ -132,37 +144,55 @@ class _CartBody extends StatelessWidget {
             ],
           ),
         ).animate().fadeIn().slideX(begin: -0.1),
-        
+
         const SizedBox(height: 24),
-        
+
         // Cart Items
         ...cart.items.map((item) => CartItemTile(item: item)),
-        
+
         const SizedBox(height: 12),
-        
+
         // Summary
         const OrderSummary(),
-        
+
         const SizedBox(height: 40),
-        
+
         // Notes or Promo Code Placeholder
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.lightBorder.withValues(alpha: 0.5)),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+            ),
           ),
           child: Row(
             children: [
-              Icon(Icons.confirmation_number_outlined, color: AppColors.lightMuted),
+              Icon(
+                Icons.confirmation_number_outlined,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Add promo code',
-                style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black54),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
               ),
               const Spacer(),
-              Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.lightMuted),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
             ],
           ),
         ).animate().fadeIn(delay: 400.ms),
@@ -170,4 +200,3 @@ class _CartBody extends StatelessWidget {
     );
   }
 }
-

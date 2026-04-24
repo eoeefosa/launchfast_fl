@@ -5,11 +5,8 @@ import '../../providers/notification_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'location_selector.dart';
 
-
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({
-    super.key,
-  });
+  const HomeHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +17,11 @@ class HomeHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
@@ -43,7 +40,9 @@ class HomeHeader extends StatelessWidget {
                       _getGreeting(),
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.grey[400],
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.4),
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.2,
                       ),
@@ -78,11 +77,13 @@ class HomeHeader extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.black,
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -129,14 +130,19 @@ class _HeaderActions extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceVariant.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey[100]!, width: 1.5),
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1,
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.notifications_none_rounded,
                   size: 26,
-                  color: Colors.black87,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               Consumer<NotificationProvider>(

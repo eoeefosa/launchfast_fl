@@ -18,11 +18,11 @@ class ActiveOrderTracker extends StatelessWidget {
     final isIOS = Platform.isIOS;
     final statusText = _getStatusText(order.status);
     final statusDescription = _getStatusDescription(order.status);
-    
+
     final rider = order.riderId != null
         ? StaticData.riders.cast<dynamic>().firstWhere(
-            (r) => r.id == order.riderId, 
-            orElse: () => null
+            (r) => r.id == order.riderId,
+            orElse: () => null,
           )
         : null;
 
@@ -110,21 +110,31 @@ class ActiveOrderTracker extends StatelessWidget {
 
   String _getStatusText(OrderStatus status) {
     switch (status) {
-      case OrderStatus.queued: return 'Pending Approval';
-      case OrderStatus.preparing: return 'Preparing Meal';
-      case OrderStatus.outForDelivery: return 'On the Way';
-      case OrderStatus.delivered: return 'Arrived';
-      default: return 'Order Placed';
+      case OrderStatus.queued:
+        return 'Pending Approval';
+      case OrderStatus.preparing:
+        return 'Preparing Meal';
+      case OrderStatus.outForDelivery:
+        return 'On the Way';
+      case OrderStatus.delivered:
+        return 'Arrived';
+      default:
+        return 'Order Placed';
     }
   }
 
   String _getStatusDescription(OrderStatus status) {
     switch (status) {
-      case OrderStatus.queued: return 'We are confirming your order with the store.';
-      case OrderStatus.preparing: return 'Your chef is working their magic right now.';
-      case OrderStatus.outForDelivery: return 'Hang tight! Your food is being delivered.';
-      case OrderStatus.delivered: return 'Enjoy your delicious meal!';
-      default: return 'Processing your order...';
+      case OrderStatus.queued:
+        return 'We are confirming your order with the store.';
+      case OrderStatus.preparing:
+        return 'Your chef is working their magic right now.';
+      case OrderStatus.outForDelivery:
+        return 'Hang tight! Your food is being delivered.';
+      case OrderStatus.delivered:
+        return 'Enjoy your delicious meal!';
+      default:
+        return 'Processing your order...';
     }
   }
 }
@@ -138,26 +148,33 @@ class _StatusIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     IconData icon = Icons.timer_rounded;
     if (status == OrderStatus.preparing) icon = Icons.restaurant_rounded;
-    if (status == OrderStatus.outForDelivery) icon = Icons.delivery_dining_rounded;
+    if (status == OrderStatus.outForDelivery)
+      icon = Icons.delivery_dining_rounded;
     if (status == OrderStatus.delivered) icon = Icons.check_circle_rounded;
 
     return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Icon(icon, color: Colors.white, size: 40),
-    ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-     .scale(begin: const Offset(1, 1), end: const Offset(1.05, 1.05), duration: 2.seconds, curve: Curves.easeInOut);
+          child: Icon(icon, color: Colors.white, size: 40),
+        )
+        .animate(onPlay: (controller) => controller.repeat(reverse: true))
+        .scale(
+          begin: const Offset(1, 1),
+          end: const Offset(1.05, 1.05),
+          duration: 2.seconds,
+          curve: Curves.easeInOut,
+        );
   }
 }
 
@@ -173,7 +190,9 @@ class _RiderCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.lightSurface,
-        border: Border(top: BorderSide(color: AppColors.lightBorder.withValues(alpha: 0.5))),
+        border: Border(
+          top: BorderSide(color: AppColors.lightBorder.withValues(alpha: 0.5)),
+        ),
       ),
       child: Row(
         children: [
@@ -185,7 +204,9 @@ class _RiderCard extends StatelessWidget {
               color: Colors.white,
               border: Border.all(color: AppColors.primary, width: 2),
               image: const DecorationImage(
-                image: NetworkImage('https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&auto=format&fit=crop'),
+                image: NetworkImage(
+                  'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&auto=format&fit=crop',
+                ),
                 fit: BoxFit.cover,
               ),
             ),
@@ -241,7 +262,11 @@ class _CallButton extends StatelessWidget {
             color: Colors.black,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Icon(CupertinoIcons.phone_fill, color: Colors.white, size: 20),
+          child: const Icon(
+            CupertinoIcons.phone_fill,
+            color: Colors.white,
+            size: 20,
+          ),
         ),
       );
     }

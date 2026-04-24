@@ -14,9 +14,11 @@ class OrderSummary extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: AppColors.lightBorder.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,11 +41,7 @@ class OrderSummary extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Divider(height: 1),
           ),
-          _SummaryRow(
-            label: 'Total',
-            value: cart.cartTotal,
-            isTotal: true,
-          ),
+          _SummaryRow(label: 'Total', value: cart.cartTotal, isTotal: true),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1);
@@ -71,7 +69,11 @@ class _SummaryRow extends StatelessWidget {
           style: TextStyle(
             fontSize: isTotal ? 18 : 15,
             fontWeight: isTotal ? FontWeight.w900 : FontWeight.w500,
-            color: isTotal ? Colors.black : AppColors.lightMuted,
+            color: isTotal
+                ? Theme.of(context).colorScheme.onSurface
+                : Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ),
         Text(
@@ -79,7 +81,9 @@ class _SummaryRow extends StatelessWidget {
           style: TextStyle(
             fontSize: isTotal ? 20 : 15,
             fontWeight: isTotal ? FontWeight.w900 : FontWeight.w700,
-            color: isTotal ? AppColors.primary : Colors.black,
+            color: isTotal
+                ? AppColors.primary
+                : Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],

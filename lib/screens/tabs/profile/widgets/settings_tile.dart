@@ -26,11 +26,11 @@ class ProfileSettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isIOS = Platform.isIOS;
-    
+
     final content = Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -45,7 +45,9 @@ class ProfileSettingsTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: (iconColor ?? Theme.of(context).primaryColor).withValues(alpha: 0.1),
+              color: (iconColor ?? Theme.of(context).primaryColor).withValues(
+                alpha: 0.1,
+              ),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -62,7 +64,8 @@ class ProfileSettingsTile extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    color: titleColor ?? Colors.black87,
+                    color:
+                        titleColor ?? Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
@@ -72,7 +75,9 @@ class ProfileSettingsTile extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: TextStyle(
-                      color: Colors.grey[500],
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
                       fontSize: 12,
                     ),
                   ),
@@ -80,11 +85,14 @@ class ProfileSettingsTile extends StatelessWidget {
               ],
             ),
           ),
-          trailing ?? Icon(
-            isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right,
-            color: Colors.grey[400],
-            size: 18,
-          ),
+          trailing ??
+              Icon(
+                isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.3),
+                size: 18,
+              ),
         ],
       ),
     );
