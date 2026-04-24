@@ -1,18 +1,16 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'dart:io';
+// import 'dart:io';
 
 class ApiService {
   late Dio dio;
   final storage = const FlutterSecureStorage();
 
   // Use 10.0.2.2 for Android Emulator, localhost for iOS simulator
-  static final String baseUrl = Platform.isAndroid
-      ? 'https://backend-lauchfast.vercel.app/api'
-      : 'https://backend-lauchfast.vercel.app/api';
+  static const String baseUrl = 'https://backend-lauchfast.vercel.app/api';
 
   // To test production, uncomment this instead:
-  // static final String baseUrl = 'https://backend-lauchfast.vercel.app/api';
+  // static const String baseUrl = 'https://backend-lauchfast.vercel.app/api';
 
   ApiService() {
     dio = Dio(

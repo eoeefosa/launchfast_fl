@@ -19,7 +19,7 @@ import 'package:launchfast/screens/notifications_screen.dart';
 import 'package:launchfast/splash_screen.dart';
 
 final router = GoRouter(
-  initialLocation: '/',
+  initialLocation:'/worker',
   routes: [
     GoRoute(
       path: '/',

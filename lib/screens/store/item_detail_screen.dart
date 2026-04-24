@@ -176,12 +176,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               onSaladChanged: (val) => setState(() => _hasSalad = val),
               onSoupSelected: (id) => setState(() => _selectedSoupId = id),
             ),
-            SlideTransition(
-              position: _footerSlide,
-              child: Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
+            // ── FIX: Positioned must be a direct child of Stack.
+            // Previously SlideTransition wrapped Positioned, which caused
+            // "ParentData of incompatible type" because FractionalTranslation
+            // (used by SlideTransition) intercepted the StackParentData
+            // handshake. Solution: flip the order so Positioned is the direct
+            // Stack child and SlideTransition lives inside it.
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: SlideTransition(
+                position: _footerSlide,
                 child: _Footer(
                   item: item,
                   quantity: _quantity,

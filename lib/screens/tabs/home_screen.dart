@@ -226,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                // Insert "Restaurants" header
+                // "Restaurants" header
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -238,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                // Wrap StoreSection with fade + slide animation
+                // StoreSection with fade + slide animation
                 SliverToBoxAdapter(
                   child: TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0, end: 1),
@@ -260,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                // Insert sticky category selector after StoreSection with Uber Eats chips style
+                // Sticky category selector
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _CategoryHeaderDelegate(
@@ -274,31 +274,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                // Add MenuGroupedList with subtle entry animation and spacing
+                // ── FIX: Use _AnimatedMenuList instead of wrapping MenuGroupedList
+                // (a sliver) inside SliverToBoxAdapter → TweenAnimationBuilder → Transform,
+                // which caused the RenderTransform/RenderSliverList type mismatch.
                 SliverPadding(
                   padding: const EdgeInsets.only(top: 8, bottom: 120),
-                  sliver: SliverToBoxAdapter(
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: 1),
-                      duration: const Duration(milliseconds: 400),
-                      builder: (context, value, child) {
-                        return Opacity(
-                          opacity: value,
-                          child: Transform.translate(
-                            offset: Offset(0, 15 * (1 - value)),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: MenuGroupedList(
-                        groupedItems: groupedItems,
-                        accentColor: accentColor,
-                        onAdd: (item) => _handleAddItem(context, item),
-                        emptyMessage: filteredItems.isEmpty
-                            ? 'No items found. Try a different search or category.'
-                            : storeProvider.error,
-                      ),
-                    ),
+                  sliver: _AnimatedMenuList(
+                    groupedItems: groupedItems,
+                    accentColor: accentColor,
+                    onAdd: (item) => _handleAddItem(context, item),
+                    emptyMessage: filteredItems.isEmpty
+                        ? 'No items found. Try a different search or category.'
+                        : storeProvider.error,
                   ),
                 ),
               ],
@@ -342,13 +329,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showClearCartDialog(BuildContext context, MenuItem item) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-    
+
     if (isIOS) {
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
           title: const Text('Start new order?'),
-          content: const Text('Your cart contains items from another store. Clear cart and add this item?'),
+          content: const Text(
+              'Your cart contains items from another store. Clear cart and add this item?'),
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.pop(context),
@@ -371,7 +359,8 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text('Start new order?'),
-          content: const Text('Your cart contains items from another store. Clear cart and add this item?'),
+          content: const Text(
+              'Your cart contains items from another store. Clear cart and add this item?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -396,6 +385,74 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// ── Sliver-aware animated wrapper for MenuGroupedList ─────────────────────────
+//
+// Root cause of the original crash:
+//   SliverToBoxAdapter → TweenAnimationBuilder → Transform expects a RenderBox
+//   child, but MenuGroupedList renders a SliverList (RenderSliverList) internally.
+//   RenderTransform cannot parent a RenderSliver — hence the assertion.
+//
+// Fix:
+//   Use SliverFadeTransition (sliver-aware opacity animation) as the outermost
+//   wrapper so the sliver protocol is respected end-to-end. The AnimationController
+//   drives a 0→1 fade-in on first build, giving the same entry feel as before.
+// ─────────────────────────────────────────────────────────────────────────────
+class _AnimatedMenuList extends StatefulWidget {
+  final Map<String, List<MenuItem>> groupedItems;
+  final Color accentColor;
+  final void Function(MenuItem) onAdd;
+  final String? emptyMessage;
+
+  const _AnimatedMenuList({
+    required this.groupedItems,
+    required this.accentColor,
+    required this.onAdd,
+    this.emptyMessage,
+  });
+
+  @override
+  State<_AnimatedMenuList> createState() => _AnimatedMenuListState();
+}
+
+class _AnimatedMenuListState extends State<_AnimatedMenuList>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    )..forward();
+
+    _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // SliverFadeTransition is sliver-aware — it wraps a sliver child correctly,
+    // unlike Opacity/Transform which expect RenderBox children.
+    return SliverFadeTransition(
+      opacity: _opacity,
+      sliver: MenuGroupedList(
+        groupedItems: widget.groupedItems,
+        accentColor: widget.accentColor,
+        onAdd: widget.onAdd,
+        emptyMessage: widget.emptyMessage,
+      ),
+    );
+  }
+}
+
+// ── Sticky category header delegate ──────────────────────────────────────────
 class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
 
