@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'menu_item.dart';
+import '../constants/static_data.dart';
 
 class CartItem {
   final MenuItem menuItem;
@@ -57,5 +58,34 @@ class CartItem {
       'hasSalad': hasSalad,
       'selectedAddons': selectedAddons,
     };
+  }
+
+  double get totalPrice {
+    double price = menuItem.price;
+
+    // Meat extras
+    if (selectedMeats != null) {
+      selectedMeats!.forEach((type, count) {
+        price += (StaticData.meatPrices[type] ?? 0) * count;
+      });
+    }
+
+    // Salad extra
+    if (hasSalad) {
+      price += StaticData.saladPrice;
+    }
+
+    // Addons extras
+    if (selectedAddons != null) {
+      selectedAddons!.forEach((addonId, count) {
+        final addonItem = StaticData.menuItems.firstWhere(
+          (m) => m.id == addonId,
+          orElse: () => menuItem, // Fallback (shouldn't happen)
+        );
+        price += addonItem.price * count;
+      });
+    }
+
+    return price * quantity;
   }
 }

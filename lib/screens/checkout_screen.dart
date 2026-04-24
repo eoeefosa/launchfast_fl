@@ -17,507 +17,261 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isPriority = false;
   bool _isSuccess = false;
-  final _nameController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    final user = context.read<AuthProvider>().user;
-    if (user != null) {
-      _nameController.text = user.name;
-    }
-  }
+  String _deliveryTime = "Deliver now (25–35 mins)";
+  String _paymentMethod = "Wallet";
 
   @override
   Widget build(BuildContext context) {
-    final cartProvider = context.watch<CartProvider>();
+    final cart = context.watch<CartProvider>();
     final orderProvider = context.watch<OrderProvider>();
-    final authProvider = context.read<AuthProvider>();
+    final auth = context.read<AuthProvider>();
 
-    const double priorityFee = 1000.0;
-    final double finalTotal =
-        cartProvider.cartTotal + (_isPriority ? priorityFee : 0);
-    final bool hasQueuedItems = cartProvider.items.any(
-      (i) => !i.menuItem.isReady,
-    );
+    const double priorityFee = 1000;
+    final total = cart.cartTotal + (_isPriority ? priorityFee : 0);
+    final hasQueuedItems = cart.items.any((i) => !i.menuItem.isReady);
 
     if (_isSuccess) {
-      return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(
-                          context,
-                        ).primaryColor.withValues(alpha: 0.4),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    hasQueuedItems ? Icons.access_time : Icons.check,
-                    size: 60,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  hasQueuedItems ? "Joined Queue!" : "Order Placed!",
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  hasQueuedItems
-                      ? "Your queued items will be prepared soon. You will be notified to pay when they are ready."
-                      : "Your food is being prepared and will be delivered soon.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[600],
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                ElevatedButton(
-                  onPressed: () {
-                    context.go('/orders');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: const Text(
-                    'Track Order',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      return const Scaffold(
+        body: Center(child: Text("✅ Order placed successfully")),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.close),
-        ),
-        elevation: 0,
-        shadowColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        // scrolledUnderElevation: 0,
-        backgroundColor: Colors.white,
-        title: const Text(
-          'Checkout',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.green),
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              _appBar(),
+
+              SliverToBoxAdapter(
+                child: _sectionCard(
+                  title: "Deliver to",
+                  child: const LocationSelector(),
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: _sectionCard(
+                  title: "Delivery time",
+                  child: ListTile(
+                    leading: const Icon(Icons.access_time),
+                    title: Text(_deliveryTime),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _showTimeSheet,
+                  ),
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: _sectionCard(
+                  title: "Payment",
+                  child: ListTile(
+                    leading: const Icon(Icons.account_balance_wallet),
+                    title: Text(_paymentMethod),
+                    subtitle: const Text("Tap to change"),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _showPaymentSheet,
+                  ),
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: _sectionCard(
+                  title: "Order Summary",
+                  child: ExpansionTile(
+                    title: Text("${cart.totalQuantity} Items"),
+                    children: [
+                      ...cart.items.map((item) => ListTile(
+                            title: Text(item.menuItem.name),
+                            trailing: Text("₦${item.totalPrice}"),
+                          )),
+                      const Divider(),
+                      _row("Subtotal", cart.subTotal),
+                      _row("Delivery", cart.deliveryFees),
+                      _row("Service", cart.serviceFees),
+                      if (_isPriority) _row("Priority", priorityFee),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            ],
           ),
-          const SizedBox(width: 8),
+
+          _bottomBar(total, cart, orderProvider, auth, hasQueuedItems),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+    );
+  }
+
+  SliverAppBar _appBar() {
+    return SliverAppBar(
+      pinned: true,
+      backgroundColor: Colors.white,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.close, color: Colors.black),
+        onPressed: () => context.pop(),
+      ),
+      title: const Text(
+        "Review & Place Order",
+        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+      ),
+      centerTitle: true,
+    );
+  }
+
+  Widget _sectionCard({required String title, required Widget child}) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Delivery Details',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            _buildInputField(
-              controller: _nameController,
-              hint: 'Your Name',
-              icon: Icons.person_outline,
-            ),
-            const SizedBox(height: 12),
-            const LocationSelector(),
-            const SizedBox(height: 24),
-            const Text(
-              'Delivery Options',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildOptionCard(
-                    icon: Icons.bolt_rounded,
-                    title: 'Instant',
-                    subtitle: '25-35 mins',
-                    isActive: !_isPriority,
-                    onTap: () => setState(() => _isPriority = false),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildOptionCard(
-                    icon: Icons.calendar_today_rounded,
-                    title: 'Schedule',
-                    subtitle: 'Later today',
-                    isActive:
-                        _isPriority, // Using priority as a proxy for scheduled for now
-                    onTap: () => setState(() => _isPriority = true),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
+            Text(title,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 10),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
 
-            const Text(
-              'Payment Method',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildPaymentCard(
-              icon: Icons.account_balance_wallet_rounded,
-              title: 'LanchFast Wallet',
-              subtitle: 'Balance: ₦12,500',
-              isActive: true,
-            ),
-            const SizedBox(height: 12),
+  void _showTimeSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: const Text("Deliver now"),
+            onTap: () {
+              setState(() {
+                _deliveryTime = "Deliver now (25–35 mins)";
+                _isPriority = false;
+              });
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: const Text("Schedule delivery"),
+            onTap: () {
+              setState(() {
+                _deliveryTime = "Scheduled";
+                _isPriority = true;
+              });
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(16),
-              ),
+  void _showPaymentSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: const Text("Wallet"),
+            onTap: () {
+              setState(() => _paymentMethod = "Wallet");
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: const Text("Pay on Delivery"),
+            onTap: () {
+              setState(() => _paymentMethod = "Cash");
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(String label, double value) {
+    return ListTile(
+      title: Text(label),
+      trailing: Text("₦${value.toStringAsFixed(0)}"),
+    );
+  }
+
+  Widget _bottomBar(double total, CartProvider cart,
+      OrderProvider orderProvider, AuthProvider auth, bool hasQueuedItems) {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(
+            16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black12)],
+        ),
+        child: Row(
+          children: [
+            Expanded(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSummaryRow('Subtotal', cartProvider.subTotal),
-                  _buildSummaryRow('Delivery Fees', cartProvider.deliveryFees),
-                  _buildSummaryRow('Service Charges', cartProvider.serviceFees),
-                  if (_isPriority)
-                    _buildSummaryRow('Priority Fee', priorityFee),
-                  const Divider(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        hasQueuedItems ? "Amount to Pay Later" : "Total to Pay",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '₦${finalTotal.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
+                  const Text("Total"),
+                  Text("₦${total.toStringAsFixed(0)}",
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: orderProvider.isLoading
+                  ? null
+                  : () async {
+                      if (!auth.isAuthenticated) {
+                        context.push('/login');
+                        return;
+                      }
+
+                      final orderData = {
+                        'items': cart.items.map((i) => i.toJson()).toList(),
+                        'total': total,
+                        'isPriority': _isPriority,
+                        'userId': auth.user!.id,
+                      };
+
+                      final Order? success =
+                          await orderProvider.placeOrder(orderData);
+
+                      if (success != null) {
+                        setState(() => _isSuccess = true);
+                        cart.clearCart();
+                      }
+                    },
+              child: orderProvider.isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(hasQueuedItems
+                      ? "Join Queue & Pay Later"
+                      : "Place Order & Pay Now"),
+            )
           ],
         ),
-      ),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          20,
-          20,
-          MediaQuery.of(context).padding.bottom + 20,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Colors.grey[200]!)),
-        ),
-        child: ElevatedButton(
-          onPressed: orderProvider.isLoading
-              ? null
-              : () async {
-                  if (!authProvider.isAuthenticated) {
-                    _showLoginRequiredDialog(context);
-                    return;
-                  }
-
-                  final orderData = {
-                    'items': cartProvider.items.map((i) => i.toJson()).toList(),
-                    'total': finalTotal,
-                    'stores': cartProvider.items
-                        .map((i) => i.menuItem.storeId)
-                        .toSet()
-                        .toList(),
-                    'isPriority': _isPriority,
-                    'userId': authProvider.user!.id,
-                    'address': authProvider.user?.address,
-                    'date': DateTime.now().toIso8601String(),
-                    'status': 'Queued',
-                  };
-
-                  final Order? success;
-                  if (cartProvider.editingOrderId != null) {
-                    success = await orderProvider.updateOrder(
-                      cartProvider.editingOrderId!,
-                      orderData,
-                    );
-                  } else {
-                    success = await orderProvider.placeOrder(orderData);
-                  }
-
-                  if (success != null) {
-                    setState(() => _isSuccess = true);
-                    cartProvider.clearCart();
-                  }
-                },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).primaryColor,
-            foregroundColor: Colors.white,
-            minimumSize: const Size(double.infinity, 56),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-          ),
-          child: orderProvider.isLoading
-              ? const CircularProgressIndicator(color: Colors.white)
-              : Text(
-                  cartProvider.editingOrderId != null
-                      ? "Update Order"
-                      : (hasQueuedItems ? "Join Queue" : "Place Order"),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    bool readOnly = false,
-    VoidCallback? onTap,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.grey[400], size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              readOnly: readOnly,
-              onTap: onTap,
-              decoration: InputDecoration(
-                hintText: hint,
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOptionCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.black : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isActive ? Colors.black : Colors.grey[200]!,
-            width: 1.5,
-          ),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: isActive ? Colors.white : Colors.black, size: 24),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: TextStyle(
-                color: isActive ? Colors.white : Colors.black,
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: isActive ? Colors.white70 : Colors.grey[500],
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool isActive,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isActive ? Colors.black : Colors.grey[100]!,
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: Colors.black, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (isActive)
-            const Icon(Icons.check_circle_rounded, color: Colors.black)
-          else
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey[200]!, width: 2),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryRow(String label, double value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-          Text(
-            '₦${value.toStringAsFixed(2)}',
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLoginRequiredDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Authentication Required'),
-        content: const Text(
-          'Please log in or create an account to place your order.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.push('/login');
-            },
-            child: const Text('Login / Sign Up'),
-          ),
-        ],
       ),
     );
   }

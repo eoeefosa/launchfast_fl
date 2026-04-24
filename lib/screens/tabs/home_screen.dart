@@ -16,10 +16,6 @@ import '../../widgets/home/category_selector.dart';
 import '../../widgets/home/cart_bar.dart';
 import '../../services/ably_service.dart';
 
-import '../dashboards/admin/admin_main_nav.dart';
-import '../dashboards/store/store_main_nav.dart';
-import '../dashboards/rider/rider_dashboard.dart';
-import '../dashboards/worker/worker_main_nav.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

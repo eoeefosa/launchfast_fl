@@ -2,9 +2,6 @@ import 'package:go_router/go_router.dart';
 import 'package:launchfast/screens/auth/forgot_password_screen.dart';
 import 'package:launchfast/screens/auth/login_screen.dart';
 import 'package:launchfast/screens/auth/register_screen.dart';
-import 'package:launchfast/screens/dashboards/rider/main_rider.dart';
-import 'package:launchfast/screens/dashboards/store/store_main_nav.dart';
-import 'package:launchfast/screens/dashboards/worker/worker_main_nav.dart';
 import 'package:launchfast/screens/stores_screen.dart';
 import 'package:launchfast/screens/tabs/home_screen.dart';
 import 'package:launchfast/screens/tabs/orders_screen.dart';
@@ -14,7 +11,6 @@ import 'screens/tabs/cart_screen.dart';
 import 'screens/store/store_detail_screen.dart';
 import 'screens/store/item_detail_screen.dart';
 import 'screens/checkout_screen.dart';
-import 'package:launchfast/screens/dashboards/admin/admin_main_nav.dart';
 import 'package:launchfast/screens/notifications_screen.dart';
 import 'package:launchfast/splash_screen.dart';
 

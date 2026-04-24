@@ -18,7 +18,10 @@ class AblyService {
   StreamSubscription? _riderSubscription;
   StreamSubscription? _jobsSubscription;
   StreamSubscription? _storesSubscription;
+  StreamSubscription? _roleSubscription;
+  StreamSubscription? _notificationSubscription;
   bool _isConnecting = false;
+  String? _currentUserId;
 
   // Listener registry for order updates
   final List<Function(String orderId, OrderStatus status)> _orderListeners = [];
@@ -36,41 +39,44 @@ class AblyService {
     // Prevent duplicate concurrent init calls
     if (_isConnecting) return;
 
-    // If already connected, just ensure channel subscription is active
-    if (_realtime != null) {
+    // If already connected with the same user, we're good
+    if (_realtime != null && _currentUserId == userId) {
       _subscribeChannel(userId);
       return;
     }
 
+    // If userId changed or was null, we should disconnect first if we had a connection
+    if (_realtime != null && _currentUserId != userId) {
+      disconnect();
+    }
+
     _isConnecting = true;
+    _currentUserId = userId;
 
     try {
+      final token = await apiService.storage.read(key: 'launch-fast-token');
+      
       final clientOptions = ably.ClientOptions()
-        ..autoConnect = true
-        ..authCallback = (ably.TokenParams params) async {
-          try {
-            final response = await apiService.dio.get('/ably/auth');
-            return ably.TokenRequest.fromMap(
-              response.data as Map<String, dynamic>,
-            );
-          } catch (e) {
-            // print('Ably Auth Error: $e');
-            throw Exception('Failed to get Ably token');
-          }
+        ..authUrl = '${ApiService.baseUrl}/ably/auth'
+        ..authHeaders = {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
         }
         ..clientId = userId;
 
       _realtime = ably.Realtime(options: clientOptions);
 
-      // Subscribe to channel only once connection is established
       _connectionSubscription = _realtime!.connection.on().listen((
         ably.ConnectionStateChange stateChange,
       ) {
-        // print('Ably connection state: ${stateChange.current}');
         if (stateChange.current == ably.ConnectionState.connected) {
           _subscribeChannel(userId);
         }
       });
+    } catch (e) {
+      _isConnecting = false;
+      _currentUserId = null;
+      rethrow;
     } finally {
       _isConnecting = false;
     }
@@ -101,7 +107,8 @@ class AblyService {
     );
 
     // Subscribe to role-update events on the user's personal channel
-    _userChannel!.subscribe(name: 'role-update').listen((ably.Message message) {
+    _roleSubscription?.cancel();
+    _roleSubscription = _userChannel!.subscribe(name: 'role-update').listen((ably.Message message) {
       try {
         final data = message.data as Map;
         final newRole = data['newRole'] as String;
@@ -114,7 +121,8 @@ class AblyService {
     });
 
     // Subscribe to general-notification events on the user's personal channel
-    _userChannel!.subscribe(name: 'general-notification').listen((ably.Message message) {
+    _notificationSubscription?.cancel();
+    _notificationSubscription = _userChannel!.subscribe(name: 'general-notification').listen((ably.Message message) {
       try {
         final data = Map<String, dynamic>.from(message.data as Map);
         for (final cb in _notificationListeners) {
@@ -280,6 +288,10 @@ class AblyService {
     _jobsSubscription = null;
     _storesSubscription?.cancel();
     _storesSubscription = null;
+    _roleSubscription?.cancel();
+    _roleSubscription = null;
+    _notificationSubscription?.cancel();
+    _notificationSubscription = null;
     _connectionSubscription?.cancel();
     _connectionSubscription = null;
     _userChannel = null;
@@ -288,6 +300,7 @@ class AblyService {
     _storesChannel = null;
     _realtime?.close();
     _realtime = null;
+    _currentUserId = null;
     _orderListeners.clear();
     _storeListeners.clear();
     _roleListeners.clear();

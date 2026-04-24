@@ -67,6 +67,8 @@ class OrderProvider with ChangeNotifier {
       if (userStr != null) {
         final userData = jsonDecode(userStr);
         final userId = userData['id'] as String?;
+        // ablyService.initAbly already handles redundant calls for the same user,
+        // but it's good to keep this logic clean.
         if (userId != null) initializeAbly(userId);
       }
     } catch (e) {

@@ -171,33 +171,7 @@ class CartProvider with ChangeNotifier {
   }
 
   double get subTotal {
-    double total = _items.fold(0, (sum, item) {
-      double itemPrice = item.menuItem.price;
-
-      // Meat extras
-      if (item.selectedMeats != null) {
-        item.selectedMeats!.forEach((type, count) {
-          itemPrice += (StaticData.meatPrices[type] ?? 0) * count;
-        });
-      }
-
-      // Salad extra
-      if (item.hasSalad) {
-        itemPrice += StaticData.saladPrice;
-      }
-
-      // Addons extras
-      if (item.selectedAddons != null) {
-        item.selectedAddons!.forEach((addonId, count) {
-          final addonItem = StaticData.menuItems.firstWhere(
-            (m) => m.id == addonId,
-          );
-          itemPrice += addonItem.price * count;
-        });
-      }
-
-      return sum + (itemPrice * item.quantity);
-    });
+    double total = _items.fold(0, (sum, item) => sum + item.totalPrice);
 
     // Swallow/Soup discount logic
     final swallowCount = _items
