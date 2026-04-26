@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../theme/app_spacing.dart';
+import '../utils/checkout_coordinator.dart';
+
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
 import '../providers/auth_provider.dart';
@@ -261,13 +264,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 20,
-              offset: const Offset(0, 6),
-              color: Colors.black.withValues(alpha: 0.05),
-            ),
-          ],
+          boxShadow: [AppShadows.softCard],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,9 +489,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             ),
                           ),
                           onPressed: () {
-                            // Pop with dialogContext, navigate with screenContext.
-                            Navigator.pop(dialogContext);
-                            screenContext.push('/profile');
+                            CheckoutCoordinator.handleInsufficientFunds(screenContext);
                           },
                           child: const Text(
                             'Top Up Wallet',
@@ -572,13 +567,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 20,
-              spreadRadius: -4,
-              color: Colors.black.withValues(alpha: 0.1),
-            ),
-          ],
+          boxShadow: [AppShadows.softCard],
         ),
         child: Row(
           children: [

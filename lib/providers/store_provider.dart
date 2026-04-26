@@ -1,3 +1,4 @@
+import '../locator.dart';
 import 'package:flutter/material.dart';
 import '../models/store.dart';
 import '../models/menu_item.dart';
@@ -42,8 +43,8 @@ class StoreProvider with ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final fetchedStores = await menuRepository.getStores();
-      final fetchedMenu = await menuRepository.getMenuItems();
+      final fetchedStores = await locator<MenuRepository>().getStores();
+      final fetchedMenu = await locator<MenuRepository>().getMenuItems();
 
       if (fetchedStores.isNotEmpty) _stores = fetchedStores;
       if (fetchedMenu.isNotEmpty) _menuItems = fetchedMenu;
@@ -58,7 +59,7 @@ class StoreProvider with ChangeNotifier {
 
   Future<void> addMenuItem(Map<String, dynamic> data) async {
     try {
-      final newItem = await menuRepository.createMenuItem(data);
+      final newItem = await locator<MenuRepository>().createMenuItem(data);
       _menuItems.add(newItem);
       notifyListeners();
     } catch (e) {
@@ -68,7 +69,7 @@ class StoreProvider with ChangeNotifier {
 
   Future<void> updateMenuItem(String id, Map<String, dynamic> data) async {
     try {
-      final updated = await menuRepository.updateMenuItem(id, data);
+      final updated = await locator<MenuRepository>().updateMenuItem(id, data);
       final index = _menuItems.indexWhere((item) => item.id == id);
       if (index != -1) {
         _menuItems[index] = updated;
@@ -81,7 +82,7 @@ class StoreProvider with ChangeNotifier {
 
   Future<void> deleteMenuItem(String id) async {
     try {
-      await menuRepository.deleteMenuItem(id);
+      await locator<MenuRepository>().deleteMenuItem(id);
       _menuItems.removeWhere((item) => item.id == id);
       notifyListeners();
     } catch (e) {

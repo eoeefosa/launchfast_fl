@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../locator.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -54,7 +55,7 @@ class OrderProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final fetchedOrders = await orderRepository.getMyOrders();
+      final fetchedOrders = await locator<OrderRepository>().getMyOrders();
       _orders = fetchedOrders;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
@@ -83,7 +84,7 @@ class OrderProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final newOrder = await orderRepository.placeOrder(orderData);
+      final newOrder = await locator<OrderRepository>().placeOrder(orderData);
       _orders.insert(0, newOrder);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
@@ -104,7 +105,7 @@ class OrderProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final updatedOrder = await orderRepository.updateOrder(id, orderData);
+      final updatedOrder = await locator<OrderRepository>().updateOrder(id, orderData);
       final index = _orders.indexWhere((o) => o.id == id);
       if (index != -1) {
         _orders[index] = updatedOrder;

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../utils/price_calculator.dart';
 import '../../providers/store_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../models/menu_item.dart';
@@ -95,27 +96,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
 
   // ── Derived data ───────────────────────────
 
-  double _computeTotal(
-    MenuItem item,
-    List<MenuItem> availableSoups,
-    List<MenuItem> availableAddons,
-  ) {
-    var total = item.price;
-    _selectedMeats.forEach(
-      (type, count) => total += (StaticData.meatPrices[type] ?? 0) * count,
-    );
-    if (_hasSalad) total += StaticData.saladPrice;
-    if (_selectedSoupId != null) {
-      final soup = availableSoups.firstWhere((s) => s.id == _selectedSoupId);
-      if (!soup.isFreeWithSwallow) total += soup.price;
-    }
-    _selectedAddons.forEach((id, count) {
-      final addon = availableAddons.firstWhere((m) => m.id == id);
-      total += addon.price * count;
-    });
-    return total * _quantity;
-  }
-
   @override
   Widget build(BuildContext context) {
     final storeProvider = context.watch<StoreProvider>();
@@ -141,7 +121,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                 .toList()
             : <MenuItem>[];
 
-    final totalPrice = _computeTotal(item, availableSoups, availableAddons);
+    final totalPrice = PriceCalculator.computeTotal(
+      item: item,
+      quantity: _quantity,
+      selectedMeats: _selectedMeats,
+      hasSalad: _hasSalad,
+      selectedAddons: _selectedAddons,
+      selectedSoupId: _selectedSoupId,
+      availableSoups: availableSoups,
+      availableAddons: availableAddons,
+    );
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,

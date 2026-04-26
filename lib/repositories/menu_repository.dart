@@ -32,5 +32,3 @@ class MenuRepository {
     await apiService.dio.delete('/menu/$id');
   }
 }
-
-final menuRepository = MenuRepository();

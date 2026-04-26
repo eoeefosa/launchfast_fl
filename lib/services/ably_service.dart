@@ -16,6 +16,7 @@ import '../models/order.dart';
 /// - Uses [debugPrint] instead of bare [print] so logs are silenced in release
 ///   builds automatically.
 class AblyService {
+  static final AblyService _instance = AblyService._internal();
   static AblyService get instance => _instance;
   factory AblyService() => _instance;
   AblyService._internal();

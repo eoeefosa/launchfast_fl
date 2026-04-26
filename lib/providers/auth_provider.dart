@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../locator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user.dart';
@@ -72,7 +73,7 @@ class AuthProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final data = await authRepository.login(email, password);
+      final data = await locator<AuthRepository>().login(email, password);
       final userData = data['user'] ?? data;
       if (userData is Map && userData['id'] != null) {
         _user = UserProfile.fromJson(userData as Map<String, dynamic>);
@@ -97,7 +98,7 @@ class AuthProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final data = await authRepository.register(userData);
+      final data = await locator<AuthRepository>().register(userData);
       final uData = data['user'] ?? data;
       if (uData is Map && uData['id'] != null) {
         _user = UserProfile.fromJson(uData as Map<String, dynamic>);
@@ -137,7 +138,7 @@ class AuthProvider with ChangeNotifier {
         throw Exception('No ID token returned from Google');
       }
 
-      final data = await authRepository.loginWithGoogle(idToken);
+      final data = await locator<AuthRepository>().loginWithGoogle(idToken);
       final uData = data['user'] ?? data;
       if (uData is Map && uData['id'] != null) {
         _user = UserProfile.fromJson(uData as Map<String, dynamic>);
@@ -184,7 +185,7 @@ class AuthProvider with ChangeNotifier {
     }
 
     try {
-      final data = await authRepository.updateProfile(updates);
+      final data = await locator<AuthRepository>().updateProfile(updates);
       final uData = data['user'] ?? data;
       if (uData is Map && uData['id'] != null) {
         _user = UserProfile.fromJson(uData as Map<String, dynamic>);
@@ -273,7 +274,7 @@ class AuthProvider with ChangeNotifier {
     updateUser({'isOnline': isOnline});
     
     try {
-      await authRepository.updateProfile({'isOnline': isOnline});
+      await locator<AuthRepository>().updateProfile({'isOnline': isOnline});
     } catch (e) {
       // Revert if API fails
       updateUser({'isOnline': oldStatus});

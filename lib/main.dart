@@ -11,8 +11,10 @@ import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/theme_provider.dart';
+import 'locator.dart';
 
 void main() {
+  setupLocator();
   runApp(
     MultiProvider(
       providers: [

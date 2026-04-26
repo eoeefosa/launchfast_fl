@@ -37,5 +37,3 @@ class OrderRepository {
     return (response.data as List).map((i) => Order.fromJson(i)).toList();
   }
 }
-
-final orderRepository = OrderRepository();
