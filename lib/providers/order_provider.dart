@@ -19,8 +19,8 @@ class OrderProvider with ChangeNotifier {
   }
 
   void initializeAbly(String userId) {
-    ablyService.initAbly(userId).then((_) {
-      ablyService.subscribeToUserOrders(userId, (orderId, status) {
+    locator<AblyService>().initAbly(userId).then((_) {
+      locator<AblyService>().subscribeToUserOrders(userId, (orderId, status) {
         updateOrderStatus(orderId, status);
       });
     });
@@ -68,7 +68,7 @@ class OrderProvider with ChangeNotifier {
       if (userStr != null) {
         final userData = jsonDecode(userStr);
         final userId = userData['id'] as String?;
-        // ablyService.initAbly already handles redundant calls for the same user,
+        // locator<AblyService>().initAbly already handles redundant calls for the same user,
         // but it's good to keep this logic clean.
         if (userId != null) initializeAbly(userId);
       }
@@ -167,7 +167,7 @@ class OrderProvider with ChangeNotifier {
     _orders = [];
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('launch-fast-orders');
-    ablyService.disconnect();
+    locator<AblyService>().disconnect();
     notifyListeners();
   }
 }

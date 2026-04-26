@@ -149,9 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (items.isNotEmpty) groupedItems[cat] = items;
     }
 
-    final accentColor = Color(
-      int.parse(activeStore.accentColor.replaceFirst('#', '0xFF')),
-    );
+    final accentColor = activeStore.accentColor;
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Scaffold(

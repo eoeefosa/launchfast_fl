@@ -26,9 +26,7 @@ class CartScreen extends StatelessWidget {
       (s) => s.id == cart.currentStoreId,
     );
 
-    final accentColor = Color(
-      int.parse(store.accentColor.replaceFirst('#', '0xFF')),
-    );
+    final accentColor = store.accentColor;
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,

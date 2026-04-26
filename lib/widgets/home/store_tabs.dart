@@ -26,9 +26,7 @@ class StoreTabs extends StatelessWidget {
         itemBuilder: (context, index) {
           final store = stores[index];
           final isActive = store.id == activeStoreId;
-          final accentColor = Color(
-            int.parse(store.accentColor.replaceFirst('#', '0xFF')),
-          );
+          final accentColor = store.accentColor;
 
           return Padding(
             padding: const EdgeInsets.only(right: 12),
