@@ -24,7 +24,7 @@ class WalletCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      height: 190,
+      height: 230,
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -130,7 +130,10 @@ class WalletCard extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                         letterSpacing: -1.5,
                       ),
-                    ).animate().shimmer(duration: 2.seconds, color: Colors.white24),
+                    ).animate().shimmer(
+                      duration: 2.seconds,
+                      color: Colors.white24,
+                    ),
                   ],
                 ),
                 const Spacer(),

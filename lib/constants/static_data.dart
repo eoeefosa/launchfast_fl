@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import '../models/store.dart';
 import '../models/menu_item.dart';
 import '../models/rider.dart';
+import 'app_colors.dart';
 
 class StaticData {
   static final List<Store> stores = [
@@ -8,12 +10,11 @@ class StaticData {
       id: 'homeways',
       name: "HomeWays",
       tagline: 'Home-cooked comfort',
-      accentColor: '#F59E0B',
+      accentColor: AppColors.homeways,
       deliveryTime: '20-35 min',
       rating: 4.9,
       isOpen: true,
       adminUsername: 'homeways',
-      adminPassword: 'admin',
       deliveryFee: 500,
       image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800',
     ),
@@ -21,12 +22,11 @@ class StaticData {
       id: 'rookies',
       name: 'Rookies',
       tagline: 'Quick bites, bold flavors',
-      accentColor: '#6366F1',
+      accentColor: AppColors.rookies,
       deliveryTime: '10-20 min',
       rating: 4.6,
       isOpen: true,
       adminUsername: 'rookies',
-      adminPassword: 'admin',
       deliveryFee: 300,
       image: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&q=80&w=800',
     ),

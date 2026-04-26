@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:launchfast/router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'constants/app_colors.dart';
 import 'providers/auth_provider.dart';
@@ -51,7 +52,7 @@ class MyApp extends StatelessWidget {
       // background: const Color(0xFFF6F7FB),
     ),
     textTheme: _textTheme(),
-    scaffoldBackgroundColor: const Color(0xFFF6F7FB),
+    scaffoldBackgroundColor: AppColors.lightScaffold,
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
@@ -87,7 +88,7 @@ class MyApp extends StatelessWidget {
       // background: const Color(0xFF0F0F12),
     ),
     textTheme: _textTheme(Brightness.dark),
-    scaffoldBackgroundColor: const Color(0xFF0F0F12),
+    scaffoldBackgroundColor: AppColors.darkScaffold,
     appBarTheme: const AppBarTheme(
       backgroundColor: Color(0xFF1C1C1E),
       surfaceTintColor: Color(0xFF1C1C1E),
@@ -113,13 +114,20 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
-    return MaterialApp.router(
-      title: 'Launch Fast',
-      debugShowCheckedModeBanner: false,
-      theme: _lightTheme,
-      darkTheme: _darkTheme,
-      themeMode: themeProvider.themeMode,
-      routerConfig: router,
+    return ScreenUtilInit(
+      designSize: const Size(393, 852),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) {
+        return MaterialApp.router(
+          title: 'Launch Fast',
+          debugShowCheckedModeBanner: false,
+          theme: _lightTheme,
+          darkTheme: _darkTheme,
+          themeMode: themeProvider.themeMode,
+          routerConfig: router,
+        );
+      },
     );
   }
 }

@@ -37,9 +37,7 @@ class StoresScreen extends StatelessWidget {
 
   Widget _buildStoreCard(BuildContext context, Store store) {
     final scheme = Theme.of(context).colorScheme;
-    final accentColor = Color(
-      int.parse(store.accentColor.replaceFirst('#', '0xFF')),
-    );
+    final accentColor = store.accentColor;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 24),

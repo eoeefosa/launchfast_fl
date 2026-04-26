@@ -49,11 +49,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = context.read<AuthProvider>();
     final userId = auth.user?.id;
     if (userId != null) {
-      ablyService.initAbly(userId);
+      AblyService.instance.initAbly(userId);
       _roleListener = (String newRole) {
         if (mounted) context.read<AuthProvider>().updateRole(newRole);
       };
-      ablyService.addRoleListener(_roleListener);
+      AblyService.instance.addRoleListener(_roleListener);
 
       _notificationListener = (Map<String, dynamic> payload) {
         if (mounted) {
@@ -71,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
           context.read<NotificationProvider>().addNotification(item);
         }
       };
-      ablyService.addNotificationListener(_notificationListener);
+      AblyService.instance.addNotificationListener(_notificationListener);
 
       _ablyOrderListener = (String orderId, OrderStatus status) {
         if (mounted) {
@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
           context.read<NotificationProvider>().addNotification(item);
         }
       };
-      ablyService.addOrderListener(_ablyOrderListener);
+      AblyService.instance.addOrderListener(_ablyOrderListener);
     } else {
       _roleListener = (_) {};
       _notificationListener = (_) {};
@@ -96,9 +96,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    ablyService.removeRoleListener(_roleListener);
-    ablyService.removeNotificationListener(_notificationListener);
-    ablyService.removeOrderListener(_ablyOrderListener);
+    AblyService.instance.removeRoleListener(_roleListener);
+    AblyService.instance.removeNotificationListener(_notificationListener);
+    AblyService.instance.removeOrderListener(_ablyOrderListener);
     super.dispose();
   }
 

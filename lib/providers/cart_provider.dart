@@ -5,6 +5,59 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/menu_item.dart';
 import '../constants/static_data.dart';
 
+// ── Delivery pricing constants ─────────────────────────────────────────────────
+// Centralised here so CheckoutScreen only reads state; it never calculates fees.
+
+enum DeliveryType { bulk, priority, pickup }
+
+extension DeliveryTypeX on DeliveryType {
+  static DeliveryType fromString(String value) {
+    switch (value) {
+      case 'priority':
+        return DeliveryType.priority;
+      case 'pickup':
+        return DeliveryType.pickup;
+      default:
+        return DeliveryType.bulk;
+    }
+  }
+
+  double get charge {
+    switch (this) {
+      case DeliveryType.priority:
+        return 1300;
+      case DeliveryType.pickup:
+        return 0;
+      case DeliveryType.bulk:
+        return 300;
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case DeliveryType.priority:
+        return 'Priority Delivery';
+      case DeliveryType.pickup:
+        return 'Pick Up';
+      case DeliveryType.bulk:
+        return 'Bulk Delivery';
+    }
+  }
+
+  String get priceLabel {
+    switch (this) {
+      case DeliveryType.priority:
+        return '₦1,300';
+      case DeliveryType.pickup:
+        return 'FREE';
+      case DeliveryType.bulk:
+        return '₦300';
+    }
+  }
+}
+
+// ── CartProvider ───────────────────────────────────────────────────────────────
+
 class CartProvider with ChangeNotifier {
   List<CartItem> _items = [];
   bool _isLoaded = false;
@@ -31,7 +84,7 @@ class CartProvider with ChangeNotifier {
         final List<dynamic> cartList = jsonDecode(cartStr);
         _items = cartList.map((i) => CartItem.fromJson(i)).toList();
       } catch (e) {
-        // print('Failed to load cart: $e');
+        debugPrint('[CartProvider] Failed to load cart: $e');
       }
     }
     _isLoaded = true;
@@ -60,19 +113,18 @@ class CartProvider with ChangeNotifier {
     bool hasSalad = false,
     Map<String, int>? selectedAddons,
   }) {
-    // Check if item is from same store
     if (currentStoreId != null && currentStoreId != item.storeId) {
       return false;
     }
 
+    // Uses CartItem.sameSlotAs() — no jsonEncode, pure map equality.
     final index = _items.indexWhere(
-      (i) =>
-          i.menuItem.id == item.id &&
-          jsonEncode(i.selectedMeats ?? {}) ==
-              jsonEncode(selectedMeats ?? {}) &&
-          i.hasSalad == hasSalad &&
-          jsonEncode(i.selectedAddons ?? {}) ==
-              jsonEncode(selectedAddons ?? {}),
+      (i) => i.sameSlotAs(
+        menuItemId: item.id,
+        selectedMeats: selectedMeats,
+        hasSalad: hasSalad,
+        selectedAddons: selectedAddons,
+      ),
     );
 
     if (index != -1) {
@@ -121,11 +173,12 @@ class CartProvider with ChangeNotifier {
     int newQuantity, {
     Map<String, int>? selectedMeats,
   }) {
+    // Uses CartItem._mapsEqual indirectly via sameSlotAs — no jsonEncode.
     final index = _items.indexWhere(
-      (i) =>
-          i.menuItem.id == itemId &&
-          (selectedMeats == null ||
-              jsonEncode(i.selectedMeats ?? {}) == jsonEncode(selectedMeats)),
+      (i) => i.sameSlotAs(
+        menuItemId: itemId,
+        selectedMeats: selectedMeats,
+      ),
     );
 
     if (index != -1) {
@@ -170,19 +223,19 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Fee calculations (business logic lives here, not in the UI) ─────────────
+
   double get subTotal {
     double total = _items.fold(0, (sum, item) => sum + item.totalPrice);
 
-    // Swallow/Soup discount logic
     final swallowCount = _items
         .where((i) => i.menuItem.category == 'Swallow')
         .fold(0, (sum, i) => sum + i.quantity);
-    final freeEligibleSoups =
-        _items
-            .where((i) => i.menuItem.isFreeWithSwallow)
-            .expand((i) => List.filled(i.quantity, i.menuItem.price))
-            .toList()
-          ..sort((a, b) => b.compareTo(a));
+    final freeEligibleSoups = _items
+        .where((i) => i.menuItem.isFreeWithSwallow)
+        .expand((i) => List.filled(i.quantity, i.menuItem.price))
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
 
     final discountCount = swallowCount < freeEligibleSoups.length
         ? swallowCount
@@ -211,6 +264,13 @@ class CartProvider with ChangeNotifier {
     if (subTotal <= 10000) return 300.0 * storeCount;
     return 350.0 * storeCount;
   }
+
+  /// Delivery charge for the given [DeliveryType]. The UI reads this; it does
+  /// not compute it inline.
+  double deliveryChargeFor(DeliveryType type) => type.charge;
+
+  double totalFor(DeliveryType deliveryType) =>
+      subTotal + serviceFees + deliveryChargeFor(deliveryType);
 
   double get cartTotal => subTotal + deliveryFees + serviceFees;
 }

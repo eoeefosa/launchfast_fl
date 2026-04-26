@@ -18,11 +18,11 @@ class StoreProvider with ChangeNotifier {
 
   StoreProvider() {
     refreshData();
-    _initStoreListener();
+    _setupListeners();
   }
 
-  void _initStoreListener() {
-    ablyService.addStoreListener((storeId, isOpen) {
+  void _setupListeners() {
+    AblyService.instance.addStoreListener((storeId, isOpen) {
       final index = _stores.indexWhere((s) => s.id == storeId);
       if (index != -1) {
         _stores[index] = _stores[index].copyWith(isOpen: isOpen);
@@ -33,10 +33,7 @@ class StoreProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    // Note: In many Flutter architectures, providers are rarely disposed
-    // unless they are scoped. If you use a scoped provider, you'd want to
-    // remove the listener here.
-    // ablyService.removeStoreListener(_onStoreUpdate);
+    // AblyService.instance.removeStoreListener(_onStoreUpdate);
     super.dispose();
   }
 

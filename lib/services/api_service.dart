@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-// import 'dart:io';
 
 class ApiService {
   late Dio dio;
@@ -29,22 +29,22 @@ class ApiService {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-          print(
-            '🚀 [API Request] ${options.method.toUpperCase()} ${options.path}',
+          debugPrint(
+            '🚀 [API] ${options.method.toUpperCase()} ${options.path}',
           );
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print(
-            '✅ [API Response] ${response.statusCode} ${response.requestOptions.path}',
+          debugPrint(
+            '✅ [API] ${response.statusCode} ${response.requestOptions.path}',
           );
           return handler.next(response);
         },
         onError: (DioException e, handler) {
-          print(
-            '❌ [API Error] ${e.response?.statusCode ?? 'Timeout'} ${e.requestOptions.path}',
+          debugPrint(
+            '❌ [API] ${e.response?.statusCode ?? 'Timeout'} ${e.requestOptions.path}',
           );
-          print('Message: ${e.response?.data?['error'] ?? e.message}');
+          debugPrint('Message: ${e.response?.data?['error'] ?? e.message}');
           return handler.next(e);
         },
       ),

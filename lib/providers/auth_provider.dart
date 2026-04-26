@@ -61,7 +61,7 @@ class AuthProvider with ChangeNotifier {
         _adminStoreId = adminId;
       }
     } catch (e) {
-      // print('Failed to load auth data: $e');
+      debugPrint('[AuthProvider] Failed to load auth data: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -84,6 +84,9 @@ class AuthProvider with ChangeNotifier {
           value: jsonEncode(_user!.toJson()),
         );
       }
+    } catch (e) {
+      debugPrint('[AuthProvider] login failed: $e');
+      rethrow; // Let the UI display the error.
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -106,6 +109,9 @@ class AuthProvider with ChangeNotifier {
           value: jsonEncode(_user!.toJson()),
         );
       }
+    } catch (e) {
+      debugPrint('[AuthProvider] register failed: $e');
+      rethrow; // Let the UI display the error.
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -144,7 +150,7 @@ class AuthProvider with ChangeNotifier {
         );
       }
     } catch (e) {
-      // print('Google Sign-In Error: $e');
+      debugPrint('[AuthProvider] Google Sign-In error: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -161,7 +167,7 @@ class AuthProvider with ChangeNotifier {
     try {
       await _googleSignIn.signOut();
     } catch (e) {
-      // print('Google sign out error: $e');
+      debugPrint('[AuthProvider] Google sign-out error: $e');
     }
     notifyListeners();
   }
@@ -243,7 +249,9 @@ class AuthProvider with ChangeNotifier {
           notifyListeners();
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[AuthProvider] refreshUser failed: $e');
+    }
   }
 
   void setGuestAddress(String address) {

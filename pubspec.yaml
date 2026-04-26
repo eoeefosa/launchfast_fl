@@ -45,6 +45,7 @@ dependencies:
   ably_flutter: ^1.2.18
   font_awesome_flutter: ^11.0.0
   flutter_animate: ^4.5.2
+  flutter_screenutil: ^5.9.3
 
 dev_dependencies:
   flutter_test:

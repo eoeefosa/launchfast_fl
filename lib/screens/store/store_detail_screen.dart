@@ -29,9 +29,7 @@ class StoreDetailScreen extends StatelessWidget {
       if (catItems.isNotEmpty) groupedItems[cat] = catItems;
     }
 
-    final accentColor = Color(
-      int.parse(store.accentColor.replaceFirst('#', '0xFF')),
-    );
+    final accentColor = store.accentColor;
 
     return Scaffold(
       body: Stack(

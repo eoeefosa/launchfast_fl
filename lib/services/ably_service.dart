@@ -1,51 +1,50 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:ably_flutter/ably_flutter.dart' as ably;
 import 'api_service.dart';
 import '../models/order.dart';
 
+/// A focused real-time messaging service backed by Ably.
+///
+/// Design decisions:
+/// - All [StreamSubscription]s are collected in a single [_subscriptions] list
+///   and cancelled atomically via [_cancelAllSubscriptions]. This eliminates
+///   the "memory leak factory" of a dozen nullable fields each needing manual
+///   cancellation.
+/// - Channel subscription logic is split into focused private methods to avoid
+///   an [initAbly] god-method.
+/// - Uses [debugPrint] instead of bare [print] so logs are silenced in release
+///   builds automatically.
 class AblyService {
-  static final AblyService _instance = AblyService._internal();
+  static AblyService get instance => _instance;
   factory AblyService() => _instance;
   AblyService._internal();
 
   ably.Realtime? _realtime;
-  ably.RealtimeChannel? _userChannel;
-  ably.RealtimeChannel? _storesChannel;
-  ably.RealtimeChannel? _riderChannel;
-  ably.RealtimeChannel? _jobsChannel;
-  StreamSubscription? _connectionSubscription;
-  StreamSubscription? _channelSubscription;
-  StreamSubscription? _riderSubscription;
-  StreamSubscription? _jobsSubscription;
-  StreamSubscription? _storesSubscription;
-  StreamSubscription? _roleSubscription;
-  StreamSubscription? _notificationSubscription;
   bool _isConnecting = false;
   String? _currentUserId;
 
-  // Listener registry for order updates
+  /// All active subscriptions. Cancelled atomically by [_cancelAllSubscriptions].
+  final List<StreamSubscription> _subscriptions = [];
+
+  // ── Listener registries ─────────────────────────────────────────────────────
+
   final List<Function(String orderId, OrderStatus status)> _orderListeners = [];
-
-  // Listener registry for store updates
   final List<Function(String storeId, bool isOpen)> _storeListeners = [];
-
-  // Listener registry for role updates
   final List<Function(String newRole)> _roleListeners = [];
+  final List<Function(Map<String, dynamic> payload)> _notificationListeners =
+      [];
 
-  // Listener registry for generic notifications
-  final List<Function(Map<String, dynamic> payload)> _notificationListeners = [];
+  // ── Init ────────────────────────────────────────────────────────────────────
 
   Future<void> initAbly(String userId) async {
-    // Prevent duplicate concurrent init calls
     if (_isConnecting) return;
 
-    // If already connected with the same user, we're good
     if (_realtime != null && _currentUserId == userId) {
-      _subscribeChannel(userId);
+      _subscribeUserChannel(userId);
       return;
     }
 
-    // If userId changed or was null, we should disconnect first if we had a connection
     if (_realtime != null && _currentUserId != userId) {
       disconnect();
     }
@@ -55,7 +54,7 @@ class AblyService {
 
     try {
       final token = await apiService.storage.read(key: 'launch-fast-token');
-      
+
       final clientOptions = ably.ClientOptions()
         ..authUrl = '${ApiService.baseUrl}/ably/auth'
         ..authHeaders = {
@@ -66,96 +65,97 @@ class AblyService {
 
       _realtime = ably.Realtime(options: clientOptions);
 
-      _connectionSubscription = _realtime!.connection.on().listen((
-        ably.ConnectionStateChange stateChange,
-      ) {
-        if (stateChange.current == ably.ConnectionState.connected) {
-          _subscribeChannel(userId);
-        }
-      });
+      _subscriptions.add(
+        _realtime!.connection.on().listen((ably.ConnectionStateChange change) {
+          if (change.current == ably.ConnectionState.connected) {
+            _subscribeUserChannel(userId);
+            _subscribeStoresChannel();
+          }
+        }),
+      );
     } catch (e) {
       _isConnecting = false;
       _currentUserId = null;
+      debugPrint('[AblyService] initAbly failed: $e');
       rethrow;
     } finally {
       _isConnecting = false;
     }
   }
 
-  void _subscribeChannel(String userId) {
+  // ── Private channel helpers ─────────────────────────────────────────────────
+
+  void _subscribeUserChannel(String userId) {
     if (_realtime == null) return;
 
-    // Cancel any existing subscription before re-subscribing
-    _channelSubscription?.cancel();
-    _channelSubscription = null;
+    final channel = _realtime!.channels.get('user:$userId');
 
-    _userChannel = _realtime!.channels.get('user:$userId');
-    _channelSubscription = _userChannel!.subscribe(name: 'order-update').listen(
-      (ably.Message message) {
+    _subscriptions.add(
+      channel.subscribe(name: 'order-update').listen((ably.Message msg) {
         try {
-          final data = message.data as Map;
+          final data = msg.data as Map;
           final orderId = data['orderId'] as String;
-          final statusStr = data['status'] as String;
-          final status = OrderStatusExtension.fromString(statusStr);
+          final status =
+              OrderStatusExtension.fromString(data['status'] as String);
           for (final cb in _orderListeners) {
             cb(orderId, status);
           }
         } catch (e) {
-          // print('Error processing order update message: $e');
+          debugPrint('[AblyService] order-update parse error: $e');
         }
-      },
+      }),
     );
 
-    // Subscribe to role-update events on the user's personal channel
-    _roleSubscription?.cancel();
-    _roleSubscription = _userChannel!.subscribe(name: 'role-update').listen((ably.Message message) {
-      try {
-        final data = message.data as Map;
-        final newRole = data['newRole'] as String;
-        for (final cb in _roleListeners) {
-          cb(newRole);
-        }
-      } catch (e) {
-        // print("Error processing role update message: $e");
-      }
-    });
-
-    // Subscribe to general-notification events on the user's personal channel
-    _notificationSubscription?.cancel();
-    _notificationSubscription = _userChannel!.subscribe(name: 'general-notification').listen((ably.Message message) {
-      try {
-        final data = Map<String, dynamic>.from(message.data as Map);
-        for (final cb in _notificationListeners) {
-          cb(data);
-        }
-      } catch (e) {
-        // print("Error processing generic notification message: $e");
-      }
-    });
-
-    // Subscribe to public stores channel
-    _storesSubscription?.cancel();
-    _storesChannel = _realtime!.channels.get('public:stores');
-    _storesSubscription = _storesChannel!
-        .subscribe(name: 'store-toggle')
-        .listen((ably.Message message) {
-          try {
-            final data = message.data as Map;
-            final storeId = data['storeId'] as String;
-            final isOpen = data['isOpen'] as bool;
-
-            // Notify store listeners
-            for (final cb in _storeListeners) {
-              cb(storeId, isOpen);
-            }
-          } catch (e) {
-            // print('Error processing store toggle message: $e');
+    _subscriptions.add(
+      channel.subscribe(name: 'role-update').listen((ably.Message msg) {
+        try {
+          final newRole = (msg.data as Map)['newRole'] as String;
+          for (final cb in _roleListeners) {
+            cb(newRole);
           }
-        });
+        } catch (e) {
+          debugPrint('[AblyService] role-update parse error: $e');
+        }
+      }),
+    );
 
-    // Subscribe to rider channel if role is rider
-    // This is handled via explicit calls to subscribeToRiderChannel
+    _subscriptions.add(
+      channel
+          .subscribe(name: 'general-notification')
+          .listen((ably.Message msg) {
+        try {
+          final data = Map<String, dynamic>.from(msg.data as Map);
+          for (final cb in _notificationListeners) {
+            cb(data);
+          }
+        } catch (e) {
+          debugPrint('[AblyService] general-notification parse error: $e');
+        }
+      }),
+    );
   }
+
+  void _subscribeStoresChannel() {
+    if (_realtime == null) return;
+
+    final channel = _realtime!.channels.get('public:stores');
+    _subscriptions.add(
+      channel.subscribe(name: 'store-toggle').listen((ably.Message msg) {
+        try {
+          final data = msg.data as Map;
+          final storeId = data['storeId'] as String;
+          final isOpen = data['isOpen'] as bool;
+          for (final cb in _storeListeners) {
+            cb(storeId, isOpen);
+          }
+        } catch (e) {
+          debugPrint('[AblyService] store-toggle parse error: $e');
+        }
+      }),
+    );
+  }
+
+  // ── Public subscription API ─────────────────────────────────────────────────
 
   void subscribeToRiderChannel(
     String riderId, {
@@ -164,107 +164,50 @@ class AblyService {
   }) {
     if (_realtime == null) return;
 
-    // 1. Specific Rider Updates (e.g. status changes of assigned orders)
-    _riderSubscription?.cancel();
-    _riderChannel = _realtime!.channels.get('rider:$riderId');
-    _riderSubscription = _riderChannel!.subscribe(name: 'order-update').listen((
-      message,
-    ) {
-      if (onOrderUpdate != null) {
-        onOrderUpdate(message.data as Map);
-      }
-    });
+    final riderChannel = _realtime!.channels.get('rider:$riderId');
+    _subscriptions.add(
+      riderChannel.subscribe(name: 'order-update').listen((msg) {
+        onOrderUpdate?.call(msg.data as Map);
+      }),
+    );
 
-    // 2. Global Available Jobs
-    _jobsSubscription?.cancel();
-    _jobsChannel = _realtime!.channels.get('riders:available');
-    _jobsSubscription = _jobsChannel!.subscribe(name: 'new-job').listen((
-      message,
-    ) {
-      if (onNewJob != null) {
-        onNewJob(message.data as Map);
-      }
-    });
+    final jobsChannel = _realtime!.channels.get('riders:available');
+    _subscriptions.add(
+      jobsChannel.subscribe(name: 'new-job').listen((msg) {
+        onNewJob?.call(msg.data as Map);
+      }),
+    );
   }
 
   void subscribeToStoreOrders(String storeId) {
     if (_realtime == null) return;
 
-    final channelName = 'store:$storeId:orders';
-    final channel = _realtime!.channels.get(channelName);
+    final channel = _realtime!.channels.get('store:$storeId:orders');
 
-    // Listen for new orders
-    channel.subscribe(name: 'new-order').listen((message) {
-      try {
-        final data = message.data as Map;
-        final orderId = data['id'] as String;
-        // Notify order listeners
-        for (final cb in _orderListeners) {
-          cb(orderId, OrderStatus.pending);
-        }
-      } catch (_) {}
-    });
+    _subscriptions.add(
+      channel.subscribe(name: 'new-order').listen((msg) {
+        try {
+          final orderId = (msg.data as Map)['id'] as String;
+          for (final cb in _orderListeners) {
+            cb(orderId, OrderStatus.pending);
+          }
+        } catch (_) {}
+      }),
+    );
 
-    // Listen for status updates
-    channel.subscribe(name: 'order-update').listen((message) {
-      try {
-        final data = message.data as Map;
-        final orderId = data['orderId'] as String;
-        final statusStr = data['status'] as String;
-        final status = OrderStatusExtension.fromString(statusStr);
-
-        // Notify order listeners
-        for (final cb in _orderListeners) {
-          cb(orderId, status);
-        }
-      } catch (_) {}
-    });
-  }
-
-  // Order listeners
-  void addOrderListener(Function(String orderId, OrderStatus status) listener) {
-    if (!_orderListeners.contains(listener)) {
-      _orderListeners.add(listener);
-    }
-  }
-
-  void removeOrderListener(
-    Function(String orderId, OrderStatus status) listener,
-  ) {
-    _orderListeners.remove(listener);
-  }
-
-  // Store listeners
-  void addStoreListener(Function(String storeId, bool isOpen) listener) {
-    if (!_storeListeners.contains(listener)) {
-      _storeListeners.add(listener);
-    }
-  }
-
-  void removeStoreListener(Function(String storeId, bool isOpen) listener) {
-    _storeListeners.remove(listener);
-  }
-
-  // Role listeners — called instantly when admin changes this user's role
-  void addRoleListener(Function(String newRole) listener) {
-    if (!_roleListeners.contains(listener)) {
-      _roleListeners.add(listener);
-    }
-  }
-
-  void removeRoleListener(Function(String newRole) listener) {
-    _roleListeners.remove(listener);
-  }
-
-  // Notification listeners
-  void addNotificationListener(Function(Map<String, dynamic> payload) listener) {
-    if (!_notificationListeners.contains(listener)) {
-      _notificationListeners.add(listener);
-    }
-  }
-
-  void removeNotificationListener(Function(Map<String, dynamic> payload) listener) {
-    _notificationListeners.remove(listener);
+    _subscriptions.add(
+      channel.subscribe(name: 'order-update').listen((msg) {
+        try {
+          final data = msg.data as Map;
+          final orderId = data['orderId'] as String;
+          final status =
+              OrderStatusExtension.fromString(data['status'] as String);
+          for (final cb in _orderListeners) {
+            cb(orderId, status);
+          }
+        } catch (_) {}
+      }),
+    );
   }
 
   void subscribeToUserOrders(
@@ -272,41 +215,61 @@ class AblyService {
     Function(String orderId, OrderStatus status) onUpdate,
   ) {
     addOrderListener(onUpdate);
-    // If already connected, subscribe immediately
     if (_realtime != null) {
-      _subscribeChannel(userId);
+      _subscribeUserChannel(userId);
     }
-    // Otherwise, initAbly will call _subscribeChannel once connected
   }
 
+  // ── Listener management ─────────────────────────────────────────────────────
+
+  void addOrderListener(Function(String orderId, OrderStatus status) l) {
+    if (!_orderListeners.contains(l)) _orderListeners.add(l);
+  }
+
+  void removeOrderListener(Function(String orderId, OrderStatus status) l) =>
+      _orderListeners.remove(l);
+
+  void addStoreListener(Function(String storeId, bool isOpen) l) {
+    if (!_storeListeners.contains(l)) _storeListeners.add(l);
+  }
+
+  void removeStoreListener(Function(String storeId, bool isOpen) l) =>
+      _storeListeners.remove(l);
+
+  void addRoleListener(Function(String newRole) l) {
+    if (!_roleListeners.contains(l)) _roleListeners.add(l);
+  }
+
+  void removeRoleListener(Function(String newRole) l) =>
+      _roleListeners.remove(l);
+
+  void addNotificationListener(Function(Map<String, dynamic> payload) l) {
+    if (!_notificationListeners.contains(l)) _notificationListeners.add(l);
+  }
+
+  void removeNotificationListener(Function(Map<String, dynamic> payload) l) =>
+      _notificationListeners.remove(l);
+
+  // ── Teardown ────────────────────────────────────────────────────────────────
+
+  /// Cancels every subscription atomically, then closes the Ably connection.
   void disconnect() {
-    _channelSubscription?.cancel();
-    _channelSubscription = null;
-    _riderSubscription?.cancel();
-    _riderSubscription = null;
-    _jobsSubscription?.cancel();
-    _jobsSubscription = null;
-    _storesSubscription?.cancel();
-    _storesSubscription = null;
-    _roleSubscription?.cancel();
-    _roleSubscription = null;
-    _notificationSubscription?.cancel();
-    _notificationSubscription = null;
-    _connectionSubscription?.cancel();
-    _connectionSubscription = null;
-    _userChannel = null;
-    _riderChannel = null;
-    _jobsChannel = null;
-    _storesChannel = null;
+    _cancelAllSubscriptions();
     _realtime?.close();
     _realtime = null;
     _currentUserId = null;
     _orderListeners.clear();
     _storeListeners.clear();
     _roleListeners.clear();
+    _notificationListeners.clear();
     _isConnecting = false;
-    // print('Ably disconnected and listeners cleared');
+    debugPrint('[AblyService] Disconnected and listeners cleared.');
+  }
+
+  void _cancelAllSubscriptions() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    _subscriptions.clear();
   }
 }
-
-final ablyService = AblyService();

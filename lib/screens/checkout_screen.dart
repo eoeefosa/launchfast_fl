@@ -18,47 +18,9 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  String _deliveryType = 'bulk';
+  DeliveryType _deliveryType = DeliveryType.bulk;
   bool _isSuccess = false;
-  String _deliveryTime = 'Bulk Delivery';
   String _paymentMethod = 'Wallet';
-
-  // ── Computed delivery values ────────────────────────────────────────────────
-
-  IconData get _deliveryIcon {
-    switch (_deliveryType) {
-      case 'priority':
-        return Icons.bolt_rounded;
-      case 'pickup':
-        return Icons.store_rounded;
-      default:
-        return Icons.local_shipping_rounded;
-    }
-  }
-
-  double get _deliveryCharge {
-    switch (_deliveryType) {
-      case 'priority':
-        return 1300;
-      case 'pickup':
-        return 0;
-      default:
-        return 300;
-    }
-  }
-
-  String get _deliveryPrice {
-    switch (_deliveryType) {
-      case 'priority':
-        return '₦1,300';
-      case 'pickup':
-        return 'FREE';
-      default:
-        return '₦300';
-    }
-  }
-
-  // ── Build ───────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +28,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final orderProvider = context.watch<OrderProvider>();
     final auth = context.read<AuthProvider>();
 
-    final total = cart.subTotal + cart.serviceFees + _deliveryCharge;
+    final total = cart.totalFor(_deliveryType);
     final hasQueuedItems = cart.items.any((i) => !i.menuItem.isReady);
 
     if (_isSuccess) return _successView(context);
@@ -89,9 +51,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: _sectionCard(
                   title: 'Delivery Type',
                   child: ListTile(
-                    leading: _iconContainer(_deliveryIcon),
-                    title: Text(_deliveryTime),
-                    subtitle: Text(_deliveryPrice),
+                    leading: _iconContainer(_iconForDeliveryType(_deliveryType)),
+                    title: Text(_deliveryType.label),
+                    subtitle: Text(_deliveryType.priceLabel),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: _showDeliverySheet,
                   ),
@@ -241,16 +203,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         const SizedBox(height: 4),
         _row('Subtotal', cart.subTotal),
         _row('Service Charge', cart.serviceFees),
-        _row(
-          'Delivery Charge',
-          _deliveryCharge,
-          valueLabel: _deliveryCharge == 0 ? 'FREE' : null,
-        ),
+        _row('Delivery Charge', _deliveryType.charge,
+            valueLabel: _deliveryType.charge == 0 ? 'FREE' : null),
       ],
     );
   }
 
   // ── Reusable widgets ────────────────────────────────────────────────────────
+
+  IconData _iconForDeliveryType(DeliveryType type) {
+    switch (type) {
+      case DeliveryType.priority:
+        return Icons.bolt_rounded;
+      case DeliveryType.pickup:
+        return Icons.store_rounded;
+      case DeliveryType.bulk:
+        return Icons.local_shipping_rounded;
+    }
+  }
 
   Widget _iconContainer(IconData icon, {bool error = false}) {
     final color = error ? Colors.red : Theme.of(context).colorScheme.primary;
@@ -357,45 +327,31 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         title: 'Delivery Type',
         options: [
           _option(
-            'Bulk Delivery',
+            DeliveryType.bulk,
             '₦300 • Wait for nearby packages',
-            Icons.local_shipping_rounded,
-            'bulk',
           ),
           _option(
-            'Priority Delivery',
+            DeliveryType.priority,
             '₦1,300 • Processed immediately',
-            Icons.bolt_rounded,
-            'priority',
           ),
           _option(
-            'Pick Up',
+            DeliveryType.pickup,
             'FREE • Collect from the store',
-            Icons.store_rounded,
-            'pickup',
           ),
         ],
       ),
     );
   }
 
-  _SelectionOption _option(
-    String title,
-    String subtitle,
-    IconData icon,
-    String type,
-  ) {
+  _SelectionOption _option(DeliveryType type, String subtitle) {
     return _SelectionOption(
-      title: title,
+      title: type.label,
       subtitle: subtitle,
-      icon: icon,
+      icon: _iconForDeliveryType(type),
       isSelected: _deliveryType == type,
       onTap: () {
         HapticFeedback.selectionClick();
-        setState(() {
-          _deliveryType = type;
-          _deliveryTime = title;
-        });
+        setState(() => _deliveryType = type);
         Navigator.pop(context);
       },
     );
@@ -404,6 +360,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void _showPaymentSheet(double total) {
     final auth = context.read<AuthProvider>();
     final balance = auth.user?.walletBalance ?? 0;
+    final cart = context.read<CartProvider>();
+    final total = cart.totalFor(_deliveryType);
     final isInsufficient = balance < total;
     HapticFeedback.lightImpact();
 
@@ -759,7 +717,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final orderData = {
         'items': cart.items.map((i) => i.toJson()).toList(),
         'total': total,
-        'deliveryType': _deliveryType,
+        'deliveryType': _deliveryType.name,
         'paymentMethod': _paymentMethod,
         'userId': auth.user!.id,
       };

@@ -8,6 +8,21 @@ enum NotificationType {
   promotion,
 }
 
+extension NotificationTypeX on NotificationType {
+  /// Stable string key used for serialisation. Decoupled from enum index so
+  /// reordering enum values never corrupts stored notifications.
+  String get key => name; // uses Dart's built-in enum.name (e.g. 'orderUpdate')
+}
+
+/// Reverse lookup: string → NotificationType, with a safe fallback.
+NotificationType _typeFromString(String? value) {
+  if (value == null) return NotificationType.serverAlert;
+  return NotificationType.values.firstWhere(
+    (t) => t.name == value,
+    orElse: () => NotificationType.serverAlert,
+  );
+}
+
 class NotificationItem {
   final String id;
   final String title;
@@ -52,10 +67,12 @@ class NotificationItem {
       'id': id,
       'title': title,
       'message': message,
-      'type': type.index,
+      // Serialise as a stable string name, not a fragile integer index.
+      'type': type.key,
       'timestamp': timestamp.toIso8601String(),
       'isRead': isRead,
-      'metadata': metadata != null ? jsonEncode(metadata) : null,
+      // Store metadata as a nested map — no extra jsonEncode layer needed.
+      'metadata': metadata,
     };
   }
 
@@ -64,15 +81,18 @@ class NotificationItem {
       id: map['id'] ?? '',
       title: map['title'] ?? '',
       message: map['message'] ?? '',
-      type: NotificationType.values[map['type'] ?? 0],
-      timestamp: DateTime.parse(map['timestamp']),
+      // Safe string lookup — immune to enum reordering.
+      type: _typeFromString(map['type'] as String?),
+      timestamp: DateTime.parse(map['timestamp'] as String),
       isRead: map['isRead'] ?? false,
-      metadata: map['metadata'] != null ? jsonDecode(map['metadata']) : null,
+      metadata: map['metadata'] != null
+          ? Map<String, dynamic>.from(map['metadata'] as Map)
+          : null,
     );
   }
 
   String toJson() => json.encode(toMap());
 
   factory NotificationItem.fromJson(String source) =>
-      NotificationItem.fromMap(json.decode(source));
+      NotificationItem.fromMap(json.decode(source) as Map<String, dynamic>);
 }

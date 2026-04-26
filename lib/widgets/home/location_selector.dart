@@ -20,17 +20,11 @@ class LocationSelector extends StatelessWidget {
           decoration: BoxDecoration(
             color: scheme.onSurface.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: scheme.onSurface.withValues(alpha: 0.1),
-            ),
+            border: Border.all(color: scheme.onSurface.withValues(alpha: 0.1)),
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.location_on_rounded,
-                size: 20,
-                color: scheme.primary,
-              ),
+              Icon(Icons.location_on_rounded, size: 20, color: scheme.primary),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -66,6 +60,7 @@ class LocationSelector extends StatelessWidget {
       'Hall 7',
       'Hall 8',
       'Faculty',
+      'Admin',
     ];
 
     showModalBottomSheet(
