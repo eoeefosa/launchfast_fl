@@ -128,10 +128,10 @@ class MenuItemCard extends StatelessWidget {
                               color: Theme.of(context).colorScheme.primary,
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Add',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onPrimary,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 12,
                               ),

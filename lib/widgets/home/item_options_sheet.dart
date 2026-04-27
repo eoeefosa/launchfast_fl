@@ -32,7 +32,6 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
   Widget build(BuildContext context) {
     final storeProvider = context.watch<StoreProvider>();
     final cartProvider = context.read<CartProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final availableSoups = widget.item.category == 'Swallow'
         ? storeProvider.menuItems
@@ -55,6 +54,8 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
       selectedSoupId: _selectedSoupId,
       availableSoups: availableSoups,
       availableAddons: availableAddons,
+      meatPrices: storeProvider.meatPrices,
+      saladPrice: storeProvider.saladPrice,
     );
 
     return Container(

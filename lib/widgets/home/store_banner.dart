@@ -8,11 +8,12 @@ class StoreBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       height: 140,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -45,7 +46,7 @@ class StoreBanner extends StatelessWidget {
                     store.tagline,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[600],
+                      color: scheme.onSurface.withValues(alpha: 0.6),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -73,20 +74,23 @@ class StoreBanner extends StatelessWidget {
   }
 
   Widget _buildInfo(IconData icon, String text, {Color? color}) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: color ?? Colors.grey[600]),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: color != null ? Colors.black87 : Colors.grey[600],
+    return Builder(builder: (context) {
+      final scheme = Theme.of(context).colorScheme;
+      return Row(
+        children: [
+          Icon(icon, size: 14, color: color ?? scheme.onSurface.withValues(alpha: 0.6)),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: color ?? scheme.onSurface.withValues(alpha: 0.6),
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 
   Widget _buildStatus(bool isOpen) {

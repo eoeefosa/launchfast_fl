@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import '../../providers/store_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/notification_provider.dart';
@@ -51,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = context.read<AuthProvider>();
     final userId = auth.user?.id;
     if (userId != null) {
-      locator<AblyService>().initAbly(userId);
+      // Ably connection is managed by AuthProvider — we only add listeners here.
       _roleListener = (String newRole) {
         if (mounted) context.read<AuthProvider>().updateRole(newRole);
       };

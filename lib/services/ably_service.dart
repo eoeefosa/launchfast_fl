@@ -39,7 +39,6 @@ class AblyService {
     if (_isConnecting) return;
 
     if (_realtime != null && _currentUserId == userId) {
-      _subscribeUserChannel(userId);
       return;
     }
 

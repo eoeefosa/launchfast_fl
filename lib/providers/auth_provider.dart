@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../locator.dart';
+import '../services/ably_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user.dart';
@@ -70,6 +71,15 @@ class AuthProvider with ChangeNotifier {
     fetchLocations();
   }
 
+  /// Initializes the Ably real-time connection for the authenticated user.
+  /// This is the ONLY place initAbly should be called from.
+  void _initializeAbly() {
+    final userId = _user?.id;
+    if (userId != null) {
+      locator<AblyService>().initAbly(userId);
+    }
+  }
+
   Future<void> _loadAuth() async {
     _isLoading = true;
     notifyListeners();
@@ -89,6 +99,7 @@ class AuthProvider with ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+      _initializeAbly();
     }
   }
 
@@ -107,10 +118,11 @@ class AuthProvider with ChangeNotifier {
           key: 'launch-fast-user',
           value: jsonEncode(_user!.toJson()),
         );
+        _initializeAbly();
       }
     } catch (e) {
       debugPrint('[AuthProvider] login failed: $e');
-      rethrow; // Let the UI display the error.
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -132,10 +144,11 @@ class AuthProvider with ChangeNotifier {
           key: 'launch-fast-user',
           value: jsonEncode(_user!.toJson()),
         );
+        _initializeAbly();
       }
     } catch (e) {
       debugPrint('[AuthProvider] register failed: $e');
-      rethrow; // Let the UI display the error.
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -172,6 +185,7 @@ class AuthProvider with ChangeNotifier {
           key: 'launch-fast-user',
           value: jsonEncode(_user!.toJson()),
         );
+        _initializeAbly();
       }
     } catch (e) {
       debugPrint('[AuthProvider] Google Sign-In error: $e');
@@ -184,6 +198,7 @@ class AuthProvider with ChangeNotifier {
 
 
   Future<void> logout() async {
+    locator<AblyService>().disconnect();
     _user = null;
     _token = null;
     _adminStoreId = null;

@@ -32,13 +32,35 @@ class OrderSummary extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          _SummaryRow(label: 'Subtotal', value: cart.subTotal),
-          const SizedBox(height: 12),
-          _SummaryRow(label: 'Delivery Fee', value: cart.deliveryFees),
-          const SizedBox(height: 12),
-          _SummaryRow(label: 'Service Fee', value: cart.serviceFees),
+          _SummaryRow(label: 'Items Subtotal', value: cart.subTotal),
+          const SizedBox(height: 16),
+          
+          // Logistics Section
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                _SummaryRow(
+                  label: 'Delivery Fee', 
+                  value: cart.deliveryFees,
+                  dimmed: true,
+                ),
+                const SizedBox(height: 10),
+                _SummaryRow(
+                  label: 'Service Fee', 
+                  value: cart.serviceFees,
+                  dimmed: true,
+                ),
+              ],
+            ),
+          ),
+          
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
+            padding: EdgeInsets.symmetric(vertical: 20),
             child: Divider(height: 1),
           ),
           _SummaryRow(label: 'Total', value: cart.cartTotal, isTotal: true),
@@ -52,11 +74,13 @@ class _SummaryRow extends StatelessWidget {
   final String label;
   final double value;
   final bool isTotal;
+  final bool dimmed;
 
   const _SummaryRow({
     required this.label,
     required this.value,
     this.isTotal = false,
+    this.dimmed = false,
   });
 
   @override
@@ -67,23 +91,23 @@ class _SummaryRow extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: isTotal ? 18 : 15,
-            fontWeight: isTotal ? FontWeight.w900 : FontWeight.w500,
+            fontSize: isTotal ? 18 : 14,
+            fontWeight: isTotal ? FontWeight.w900 : FontWeight.w600,
             color: isTotal
                 ? Theme.of(context).colorScheme.onSurface
                 : Theme.of(
                     context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.5),
+                  ).colorScheme.onSurface.withValues(alpha: dimmed ? 0.4 : 0.6),
           ),
         ),
         Text(
-          '₦${value.toStringAsFixed(2)}',
+          '₦${value.toStringAsFixed(0)}',
           style: TextStyle(
-            fontSize: isTotal ? 20 : 15,
+            fontSize: isTotal ? 20 : 14,
             fontWeight: isTotal ? FontWeight.w900 : FontWeight.w700,
             color: isTotal
                 ? AppColors.primary
-                : Theme.of(context).colorScheme.onSurface,
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: dimmed ? 0.6 : 1.0),
           ),
         ),
       ],

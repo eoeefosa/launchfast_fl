@@ -94,7 +94,7 @@ class _CategoryChip extends StatelessWidget {
               icon,
               size: 20,
               color: isActive
-                  ? Colors.white
+                  ? scheme.onPrimary
                   : scheme.onSurface.withValues(alpha: 0.5),
             ),
             const SizedBox(width: 10),
@@ -102,7 +102,7 @@ class _CategoryChip extends StatelessWidget {
               label,
               style: TextStyle(
                 color: isActive
-                    ? Colors.white
+                    ? scheme.onPrimary
                     : scheme.onSurface.withValues(alpha: 0.8),
                 fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
                 fontSize: 14,

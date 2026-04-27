@@ -10,20 +10,14 @@ import '../services/ably_service.dart';
 class OrderProvider with ChangeNotifier {
   List<Order> _orders = [];
   bool _isLoading = false;
+  String? _error;
 
   List<Order> get orders => _orders;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
   OrderProvider() {
     _loadLocalOrders();
-  }
-
-  void initializeAbly(String userId) {
-    locator<AblyService>().initAbly(userId).then((_) {
-      locator<AblyService>().subscribeToUserOrders(userId, (orderId, status) {
-        updateOrderStatus(orderId, status);
-      });
-    });
   }
 
   Future<void> _loadLocalOrders() async {
@@ -35,7 +29,7 @@ class OrderProvider with ChangeNotifier {
       notifyListeners();
     }
 
-    // Initialize Ably if user is logged in
+    // Subscribe to real-time order updates if user is logged in
     const storage = FlutterSecureStorage();
     final userStr = await storage.read(key: 'launch-fast-user');
     if (userStr != null) {
@@ -43,10 +37,12 @@ class OrderProvider with ChangeNotifier {
         final userData = jsonDecode(userStr);
         final userId = userData['id'] as String?;
         if (userId != null) {
-          initializeAbly(userId);
+          locator<AblyService>().subscribeToUserOrders(userId, (orderId, status) {
+            updateOrderStatus(orderId, status);
+          });
         }
       } catch (e) {
-        // print('Error initializing Ably from stored user: $e');
+        debugPrint('[OrderProvider] Error subscribing to order updates: $e');
       }
     }
   }
@@ -57,23 +53,15 @@ class OrderProvider with ChangeNotifier {
     try {
       final fetchedOrders = await locator<OrderRepository>().getMyOrders();
       _orders = fetchedOrders;
+      _error = null;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
         'launch-fast-orders',
         jsonEncode(_orders.map((o) => o.toJson()).toList()),
       );
-
-      const storage = FlutterSecureStorage();
-      final userStr = await storage.read(key: 'launch-fast-user');
-      if (userStr != null) {
-        final userData = jsonDecode(userStr);
-        final userId = userData['id'] as String?;
-        // locator<AblyService>().initAbly already handles redundant calls for the same user,
-        // but it's good to keep this logic clean.
-        if (userId != null) initializeAbly(userId);
-      }
     } catch (e) {
-      // print('Failed to refresh orders: $e');
+      _error = 'Failed to refresh orders. Please try again.';
+      debugPrint('[OrderProvider] Failed to refresh orders: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -86,6 +74,7 @@ class OrderProvider with ChangeNotifier {
     try {
       final newOrder = await locator<OrderRepository>().placeOrder(orderData);
       _orders.insert(0, newOrder);
+      _error = null;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
         'launch-fast-orders',
@@ -93,8 +82,9 @@ class OrderProvider with ChangeNotifier {
       );
       return newOrder;
     } catch (e) {
-      // print('Place order error: $e');
-      return null;
+      _error = 'Failed to place order. Please try again.';
+      debugPrint('[OrderProvider] Place order error: $e');
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -110,6 +100,7 @@ class OrderProvider with ChangeNotifier {
       if (index != -1) {
         _orders[index] = updatedOrder;
       }
+      _error = null;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
         'launch-fast-orders',
@@ -117,8 +108,9 @@ class OrderProvider with ChangeNotifier {
       );
       return updatedOrder;
     } catch (e) {
-      // print('Update order error: $e');
-      return null;
+      _error = 'Failed to update order. Please try again.';
+      debugPrint('[OrderProvider] Update order error: $e');
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

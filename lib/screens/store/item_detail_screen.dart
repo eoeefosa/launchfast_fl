@@ -130,6 +130,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       selectedSoupId: _selectedSoupId,
       availableSoups: availableSoups,
       availableAddons: availableAddons,
+      meatPrices: storeProvider.meatPrices,
+      saladPrice: storeProvider.saladPrice,
     );
 
     return AnnotatedRegion<SystemUiOverlayStyle>(

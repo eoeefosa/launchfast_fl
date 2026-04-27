@@ -96,7 +96,7 @@ class StoresScreen extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: scheme.surfaceContainerLowest,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -107,18 +107,18 @@ class StoresScreen extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.access_time_filled_rounded,
                             size: 14,
-                            color: Colors.black87,
+                            color: scheme.onSurface,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             store.deliveryTime,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w900,
-                              color: Colors.black87,
+                              color: scheme.onSurface,
                             ),
                           ),
                         ],
@@ -137,13 +137,13 @@ class StoresScreen extends StatelessWidget {
                               vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: scheme.surface,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
+                            child: Text(
                               'CLOSED',
                               style: TextStyle(
-                                color: Colors.black,
+                                color: scheme.onSurface,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 2,

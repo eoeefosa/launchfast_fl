@@ -1,33 +1,40 @@
+import 'package:collection/collection.dart';
 import '../models/menu_item.dart';
 import '../models/cart_item.dart';
-import '../constants/static_data.dart';
 
 /// Pure-Dart utility for calculating the total price of a menu item 
 /// and its selected options.
+///
+/// All pricing data (meat prices, salad price, menu items for addon lookup)
+/// is passed in as parameters — this class has ZERO dependency on StaticData.
+/// The caller (typically a Provider or UI widget) is responsible for supplying
+/// the correct, up-to-date values.
 abstract final class PriceCalculator {
   /// Calculates the price for a [CartItem] based on its selections.
-  static double calculateCartItemPrice(CartItem item) {
+  static double calculateCartItemPrice(
+    CartItem item, {
+    required Map<String, double> meatPrices,
+    required double saladPrice,
+    required List<MenuItem> allMenuItems,
+  }) {
     double price = item.menuItem.price;
 
     if (item.selectedMeats != null) {
       item.selectedMeats!.forEach((type, count) {
-        price += (StaticData.meatPrices[type] ?? 0) * count;
+        price += (meatPrices[type] ?? 0) * count;
       });
     }
 
     if (item.hasSalad) {
-      price += StaticData.saladPrice;
+      price += saladPrice;
     }
 
     if (item.selectedAddons != null) {
       item.selectedAddons!.forEach((addonId, count) {
-        // We look up addon prices in the master list. 
-        // In a real app, these prices would come from a Repository.
-        final addonItem = StaticData.menuItems.firstWhere(
-          (m) => m.id == addonId,
-          orElse: () => item.menuItem,
-        );
-        price += addonItem.price * count;
+        final addonItem = allMenuItems.firstWhereOrNull((m) => m.id == addonId);
+        if (addonItem != null) {
+          price += addonItem.price * count;
+        }
       });
     }
 
@@ -43,30 +50,39 @@ abstract final class PriceCalculator {
     required String? selectedSoupId,
     required List<MenuItem> availableSoups,
     required List<MenuItem> availableAddons,
+    required Map<String, double> meatPrices,
+    required double saladPrice,
   }) {
     var total = item.price;
     
     selectedMeats.forEach(
-      (type, count) => total += (StaticData.meatPrices[type] ?? 0) * count,
+      (type, count) => total += (meatPrices[type] ?? 0) * count,
     );
     
-    if (hasSalad) total += StaticData.saladPrice;
+    if (hasSalad) total += saladPrice;
     
     if (selectedSoupId != null) {
-      final soup = availableSoups.firstWhere((s) => s.id == selectedSoupId);
-      if (!soup.isFreeWithSwallow) total += soup.price;
+      final soup = availableSoups.firstWhereOrNull((s) => s.id == selectedSoupId);
+      if (soup != null && !soup.isFreeWithSwallow) {
+        total += soup.price;
+      }
     }
     
     selectedAddons.forEach((id, count) {
-      final addon = availableAddons.firstWhere((m) => m.id == id);
-      total += addon.price * count;
+      final addon = availableAddons.firstWhereOrNull((m) => m.id == id);
+      if (addon != null) {
+        total += addon.price * count;
+      }
     });
     
     return total * quantity;
   }
 
-  /// Returns a comma-separated string describing the [CartItem]'s customizations.
-  static String getCustomizationSummary(CartItem item) {
+  /// Returns a dot-separated string describing the [CartItem]'s customizations.
+  static String getCustomizationSummary(
+    CartItem item, {
+    required List<MenuItem> allMenuItems,
+  }) {
     final List<String> parts = [];
 
     if (item.selectedMeats != null) {
@@ -82,7 +98,10 @@ abstract final class PriceCalculator {
     if (item.selectedAddons != null) {
       item.selectedAddons!.forEach((id, count) {
         if (count > 0) {
-          final addon = StaticData.menuItems.firstWhere((m) => m.id == id);
+          final addon = allMenuItems.firstWhere(
+            (m) => m.id == id,
+            orElse: () => item.menuItem,
+          );
           parts.add('$count x ${addon.name}');
         }
       });

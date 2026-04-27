@@ -4,6 +4,7 @@ import '../models/order.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/menu_item.dart';
 import '../constants/static_data.dart';
+import '../utils/price_calculator.dart';
 
 // ── Delivery pricing constants ─────────────────────────────────────────────────
 // Centralised here so CheckoutScreen only reads state; it never calculates fees.
@@ -225,8 +226,35 @@ class CartProvider with ChangeNotifier {
 
   // ── Fee calculations (business logic lives here, not in the UI) ─────────────
 
-  double get subTotal {
-    double total = _items.fold(0, (sum, item) => sum + item.totalPrice);
+  /// Computes the item price for a [CartItem] using the given pricing context.
+  double itemPrice(
+    CartItem item, {
+    required Map<String, double> meatPrices,
+    required double saladPrice,
+    required List<MenuItem> allMenuItems,
+  }) {
+    return PriceCalculator.calculateCartItemPrice(
+      item,
+      meatPrices: meatPrices,
+      saladPrice: saladPrice,
+      allMenuItems: allMenuItems,
+    );
+  }
+
+  double subTotalWith({
+    required Map<String, double> meatPrices,
+    required double saladPrice,
+    required List<MenuItem> allMenuItems,
+  }) {
+    double total = _items.fold(
+      0,
+      (sum, item) => sum + itemPrice(
+        item,
+        meatPrices: meatPrices,
+        saladPrice: saladPrice,
+        allMenuItems: allMenuItems,
+      ),
+    );
 
     final swallowCount = _items
         .where((i) => i.menuItem.category == 'Swallow')
@@ -246,6 +274,14 @@ class CartProvider with ChangeNotifier {
 
     return total - discount;
   }
+
+  /// Convenience getter that uses StaticData as fallback.
+  /// Widgets that have access to StoreProvider should prefer [subTotalWith].
+  double get subTotal => subTotalWith(
+    meatPrices: StaticData.meatPrices,
+    saladPrice: StaticData.saladPrice,
+    allMenuItems: StaticData.menuItems,
+  );
 
   double get deliveryFees {
     if (_items.isEmpty) return 0;

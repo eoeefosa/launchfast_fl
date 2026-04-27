@@ -12,10 +12,16 @@ class StoreProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
+  // Pricing config — seeded from StaticData, ready for backend-driven values.
+  Map<String, double> _meatPrices = Map.from(StaticData.meatPrices);
+  double _saladPrice = StaticData.saladPrice;
+
   List<Store> get stores => _stores;
   List<MenuItem> get menuItems => _menuItems;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  Map<String, double> get meatPrices => _meatPrices;
+  double get saladPrice => _saladPrice;
 
   StoreProvider() {
     refreshData();
@@ -46,8 +52,8 @@ class StoreProvider with ChangeNotifier {
       final fetchedStores = await locator<MenuRepository>().getStores();
       final fetchedMenu = await locator<MenuRepository>().getMenuItems();
 
-      if (fetchedStores.isNotEmpty) _stores = fetchedStores;
-      if (fetchedMenu.isNotEmpty) _menuItems = fetchedMenu;
+      _stores = fetchedStores;
+      _menuItems = fetchedMenu;
     } catch (e) {
       _error = 'Failed to fetch data from API';
       // print('Fetch error: $e');
@@ -61,9 +67,12 @@ class StoreProvider with ChangeNotifier {
     try {
       final newItem = await locator<MenuRepository>().createMenuItem(data);
       _menuItems.add(newItem);
+      _error = null;
       notifyListeners();
     } catch (e) {
-      // print('Add item error: $e');
+      _error = 'Failed to add menu item: $e';
+      notifyListeners();
+      rethrow;
     }
   }
 
@@ -73,10 +82,13 @@ class StoreProvider with ChangeNotifier {
       final index = _menuItems.indexWhere((item) => item.id == id);
       if (index != -1) {
         _menuItems[index] = updated;
+        _error = null;
         notifyListeners();
       }
     } catch (e) {
-      // print('Update item error: $e');
+      _error = 'Failed to update menu item: $e';
+      notifyListeners();
+      rethrow;
     }
   }
 
@@ -84,9 +96,12 @@ class StoreProvider with ChangeNotifier {
     try {
       await locator<MenuRepository>().deleteMenuItem(id);
       _menuItems.removeWhere((item) => item.id == id);
+      _error = null;
       notifyListeners();
     } catch (e) {
-      // print('Delete item error: $e');
+      _error = 'Failed to delete menu item: $e';
+      notifyListeners();
+      rethrow;
     }
   }
 }

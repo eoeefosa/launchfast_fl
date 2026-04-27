@@ -1,7 +1,8 @@
+import 'dart:math';
 import 'menu_item.dart';
-import '../utils/price_calculator.dart';
 
 class CartItem {
+  final String id;
   final MenuItem menuItem;
   int quantity;
   final List<String>? extras;
@@ -10,13 +11,14 @@ class CartItem {
   final Map<String, int>? selectedAddons;
 
   CartItem({
+    String? id,
     required this.menuItem,
     required this.quantity,
     this.extras,
     this.selectedMeats,
     this.hasSalad = false,
     this.selectedAddons,
-  });
+  }) : id = id ?? '${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(10000)}';
 
   // ── Structural equality ─────────────────────────────────────────────────────
   // Compares two nullable Map<String,int> maps for value equality without
@@ -82,6 +84,7 @@ class CartItem {
     final addonsData = json['selectedAddons'] as Map<String, dynamic>?;
 
     return CartItem(
+      id: json['id'],
       menuItem: MenuItem.fromJson(menuItemData),
       quantity: json['quantity'] ?? 1,
       extras: json['extras'] != null ? List<String>.from(json['extras']) : null,
@@ -95,6 +98,7 @@ class CartItem {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'menuItem': menuItem.toJson(),
       'quantity': quantity,
       'extras': extras,
@@ -103,8 +107,4 @@ class CartItem {
       'selectedAddons': selectedAddons,
     };
   }
-
-  // ── Computed price ──────────────────────────────────────────────────────────
-
-  double get totalPrice => PriceCalculator.calculateCartItemPrice(this);
 }

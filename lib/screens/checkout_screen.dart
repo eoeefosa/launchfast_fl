@@ -3,14 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:dio/dio.dart';
 
 import '../theme/app_spacing.dart';
-import '../utils/checkout_coordinator.dart';
 
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/store_provider.dart';
 import '../models/order.dart';
+import '../utils/price_calculator.dart';
 import '../widgets/home/location_selector.dart';
 import '../widgets/checkout/top_up_sheet.dart';
 
@@ -198,7 +200,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ),
-                Text('₦${item.totalPrice.toStringAsFixed(0)}'),
+                Text('₦${PriceCalculator.calculateCartItemPrice(
+                  item,
+                  meatPrices: context.read<StoreProvider>().meatPrices,
+                  saladPrice: context.read<StoreProvider>().saladPrice,
+                  allMenuItems: context.read<StoreProvider>().menuItems,
+                ).toStringAsFixed(0)}'),
               ],
             ),
           ),
@@ -733,8 +740,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         cart.clearCart();
         setState(() => _isSuccess = true);
       } else {
-        _showErrorDialog('Your order could not be placed. Please try again.');
+        _showErrorDialog(orderProvider.error ?? 'Your order could not be placed. Please try again.');
       }
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final data = e.response?.data;
+      String? message;
+      if (data is Map) {
+        message = data['message'] ?? data['error'];
+      }
+      _showErrorDialog(message ?? 'An error occurred during checkout. Please try again.');
     } catch (e) {
       if (!mounted) return;
       _showErrorDialog(

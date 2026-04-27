@@ -12,13 +12,14 @@ class HomeSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: Colors.white,
+      color: scheme.surface,
       child: Container(
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(10),
         ),
         child: TextField(

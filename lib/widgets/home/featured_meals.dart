@@ -16,7 +16,7 @@ class FeaturedMeals extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
+       Padding(
           padding: EdgeInsets.fromLTRB(20, 24, 20, 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -27,9 +27,14 @@ class FeaturedMeals extends StatelessWidget {
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              Icon(Icons.arrow_forward, size: 18, color: Colors.grey),
+              Icon(
+                Icons.arrow_forward,
+                size: 18,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
             ],
           ),
         ),
@@ -50,9 +55,11 @@ class FeaturedMeals extends StatelessWidget {
   }
 
   Widget _buildFeaturedCard(BuildContext context, MenuItem item) {
-    return Container(
-      width: 280,
-      margin: const EdgeInsets.only(right: 20),
+    return Semantics(
+      label: 'Featured Meal: ${item.name}, Price: ₦${item.price.toStringAsFixed(0)}',
+      child: Container(
+        width: 280,
+        margin: const EdgeInsets.only(right: 20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
@@ -139,18 +146,22 @@ class FeaturedMeals extends StatelessWidget {
                             ],
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () => onAdd(item),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.add_rounded,
-                              color: Theme.of(context).primaryColor,
-                              size: 20,
+                        Semantics(
+                          button: true,
+                          label: 'Add ${item.name} to cart',
+                          child: GestureDetector(
+                            onTap: () => onAdd(item),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.add_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ),
@@ -198,6 +209,6 @@ class FeaturedMeals extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 }

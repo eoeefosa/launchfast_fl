@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/cart_item.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/store_provider.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/price_calculator.dart';
 
@@ -19,8 +20,18 @@ class CartItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = context.read<CartProvider>();
+    final storeProvider = context.read<StoreProvider>();
     final isIOS = Platform.isIOS;
-    final customizationSummary = PriceCalculator.getCustomizationSummary(item);
+    final customizationSummary = PriceCalculator.getCustomizationSummary(
+      item,
+      allMenuItems: storeProvider.menuItems,
+    );
+    final itemTotal = PriceCalculator.calculateCartItemPrice(
+      item,
+      meatPrices: storeProvider.meatPrices,
+      saladPrice: storeProvider.saladPrice,
+      allMenuItems: storeProvider.menuItems,
+    );
 
     return Container(
           margin: const EdgeInsets.only(bottom: 16),
@@ -42,7 +53,7 @@ class CartItemTile extends StatelessWidget {
                 children: [
                   // Image Section
                   Hero(
-                    tag: 'cart_item_${item.menuItem.id}_${item.hashCode}',
+                    tag: 'cart_item_${item.id}',
                     child: CachedNetworkImage(
                       imageUrl: item.menuItem.image,
                       width: 100,
@@ -92,7 +103,7 @@ class CartItemTile extends StatelessWidget {
                           Row(
                             children: [
                               Text(
-                                '₦${item.totalPrice.toStringAsFixed(0)}',
+                                '₦${itemTotal.toStringAsFixed(0)}',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,

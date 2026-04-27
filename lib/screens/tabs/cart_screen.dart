@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -11,6 +11,7 @@ import '../../widgets/cart/order_summary.dart';
 import '../../widgets/cart/checkout_bar.dart';
 import '../../widgets/cart/empty_cart_view.dart';
 import '../../widgets/cart/editing_banner.dart';
+import '../../widgets/cart/frequently_added_section.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -20,33 +21,42 @@ class CartScreen extends StatelessWidget {
     final cart = context.watch<CartProvider>();
     final isIOS = Platform.isIOS;
 
-    if (cart.items.isEmpty) return const EmptyCartView();
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: cart.items.isEmpty
+          ? const EmptyCartView(key: ValueKey('empty_cart'))
+          : Scaffold(
+              key: const ValueKey('cart_scaffold'),
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              appBar: _buildAppBar(context, isIOS, cart),
+              body: _CartBody(
+                cart: cart,
+                accentColor: _getAccentColor(cart),
+              ),
+              bottomNavigationBar: CheckoutBar(total: cart.cartTotal),
+            ),
+    );
+  }
 
+  Color _getAccentColor(CartProvider cart) {
+    if (cart.items.isEmpty) return Colors.orange;
     final store = StaticData.stores.firstWhere(
       (s) => s.id == cart.currentStoreId,
+      orElse: () => StaticData.stores.first,
     );
-
-    final accentColor = store.accentColor;
-
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: _buildAppBar(context, isIOS, store, accentColor, cart),
-      body: _CartBody(
-        cart: cart,
-        storeName: store.name,
-        accentColor: accentColor,
-      ),
-      bottomNavigationBar: CheckoutBar(total: cart.cartTotal),
-    );
+    return store.accentColor;
   }
 
   PreferredSizeWidget _buildAppBar(
     BuildContext context,
     bool isIOS,
-    dynamic store,
-    Color accentColor,
     CartProvider cart,
   ) {
+    final store = StaticData.stores.firstWhere(
+      (s) => s.id == cart.currentStoreId,
+      orElse: () => StaticData.stores.first,
+    );
+    final accentColor = store.accentColor;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
@@ -101,18 +111,22 @@ class CartScreen extends StatelessWidget {
 
 class _CartBody extends StatelessWidget {
   final CartProvider cart;
-  final String storeName;
   final Color accentColor;
 
   const _CartBody({
     required this.cart,
-    required this.storeName,
     required this.accentColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final store = StaticData.stores.firstWhere(
+      (s) => s.id == cart.currentStoreId,
+      orElse: () => StaticData.stores.first,
+    );
+    final storeName = store.name;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
       children: [
@@ -133,22 +147,36 @@ class _CartBody extends StatelessWidget {
             children: [
               Icon(Icons.store_rounded, color: accentColor, size: 20),
               const SizedBox(width: 12),
-              RichText(
-                text: TextSpan(
-                  style: TextStyle(
-                    color: scheme.onSurface,
-                    fontSize: 14,
-                  ),
-                  children: [
-                    const TextSpan(text: 'Ordering from '),
-                    TextSpan(
-                      text: storeName,
-                      style: TextStyle(
-                        color: accentColor,
-                        fontWeight: FontWeight.w900,
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    style: TextStyle(color: scheme.onSurface, fontSize: 14),
+                    children: [
+                      const TextSpan(text: 'Ordering from '),
+                      TextSpan(
+                        text: storeName,
+                        style: TextStyle(
+                          color: accentColor,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  store.deliveryTime,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: accentColor,
+                  ),
                 ),
               ),
             ],
@@ -158,9 +186,20 @@ class _CartBody extends StatelessWidget {
         const SizedBox(height: 24),
 
         // Cart Items
-        ...cart.items.map((item) => CartItemTile(item: item)),
+        ...cart.items.map((item) => CartItemTile(
+              key: ValueKey(item.id),
+              item: item,
+            )),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 24),
+
+        // Frequently Added Carousel
+        FrequentlyAddedSection(
+          storeId: cart.currentStoreId!,
+          accentColor: accentColor,
+        ),
+
+        const SizedBox(height: 24),
 
         // Summary
         const OrderSummary(),
@@ -173,9 +212,7 @@ class _CartBody extends StatelessWidget {
           decoration: BoxDecoration(
             color: scheme.surface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: scheme.onSurface.withValues(alpha: 0.1),
-            ),
+            border: Border.all(color: scheme.onSurface.withValues(alpha: 0.1)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.03),

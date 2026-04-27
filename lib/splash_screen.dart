@@ -23,7 +23,6 @@ class _LaunchFastSplashScreenState extends State<LaunchFastSplashScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: scheme.surface,
