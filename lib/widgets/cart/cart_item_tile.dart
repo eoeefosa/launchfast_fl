@@ -4,37 +4,23 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import '../../models/cart_item.dart';
 import '../../providers/cart_provider.dart';
-import '../../constants/static_data.dart';
 import '../../constants/app_colors.dart';
+import '../../utils/price_calculator.dart';
 
 class CartItemTile extends StatelessWidget {
   final CartItem item;
 
   const CartItemTile({super.key, required this.item});
 
-  double _calculatePrice() {
-    double total = item.menuItem.price;
-
-    item.selectedMeats?.forEach((type, count) {
-      total += (StaticData.meatPrices[type] ?? 0) * count;
-    });
-
-    if (item.hasSalad) total += StaticData.saladPrice;
-
-    item.selectedAddons?.forEach((id, count) {
-      final addon = StaticData.menuItems.firstWhere((m) => m.id == id);
-      total += addon.price * count;
-    });
-
-    return total;
-  }
-
   @override
   Widget build(BuildContext context) {
     final cart = context.read<CartProvider>();
     final isIOS = Platform.isIOS;
+    final customizationSummary = PriceCalculator.getCustomizationSummary(item);
 
     return Container(
           margin: const EdgeInsets.only(bottom: 16),
@@ -56,7 +42,7 @@ class CartItemTile extends StatelessWidget {
                 children: [
                   // Image Section
                   Hero(
-                    tag: 'cart_item_${item.menuItem.id}',
+                    tag: 'cart_item_${item.menuItem.id}_${item.hashCode}',
                     child: CachedNetworkImage(
                       imageUrl: item.menuItem.image,
                       width: 100,
@@ -76,7 +62,7 @@ class CartItemTile extends StatelessWidget {
                   // Details Section
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -89,14 +75,49 @@ class CartItemTile extends StatelessWidget {
                               letterSpacing: -0.5,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '₦${_calculatePrice().toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
+                          if (customizationSummary.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              customizationSummary,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ],
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text(
+                                '₦${item.totalPrice.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  // In a real app, we'd pass the item to edit.
+                                  // For now, we just navigate to the detail page.
+                                  context.push('/item/${item.menuItem.id}');
+                                },
+                                child: Text(
+                                  'Edit',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -110,7 +131,7 @@ class CartItemTile extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Theme.of(
                           context,
-                        ).colorScheme.surfaceVariant.withValues(alpha: 0.5),
+                        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
@@ -118,10 +139,13 @@ class CartItemTile extends StatelessWidget {
                         children: [
                           _QuantityButton(
                             icon: isIOS ? CupertinoIcons.minus : Icons.remove,
-                            onPressed: () => cart.updateQuantity(
-                              item.menuItem.id,
-                              item.quantity - 1,
-                            ),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              cart.updateQuantity(
+                                item.menuItem.id,
+                                item.quantity - 1,
+                              );
+                            },
                           ),
                           Padding(
                                 padding: const EdgeInsets.symmetric(
@@ -142,10 +166,13 @@ class CartItemTile extends StatelessWidget {
                               ),
                           _QuantityButton(
                             icon: isIOS ? CupertinoIcons.plus : Icons.add,
-                            onPressed: () => cart.updateQuantity(
-                              item.menuItem.id,
-                              item.quantity + 1,
-                            ),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              cart.updateQuantity(
+                                item.menuItem.id,
+                                item.quantity + 1,
+                              );
+                            },
                           ),
                         ],
                       ),

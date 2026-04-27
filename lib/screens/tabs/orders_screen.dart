@@ -7,7 +7,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../models/order.dart';
-import '../../constants/app_colors.dart';
 import '../../widgets/orders/active_order_tracker.dart';
 import '../../widgets/orders/order_history_card.dart';
 import '../../widgets/orders/login_required_view.dart';
@@ -24,7 +23,7 @@ class OrdersScreen extends StatelessWidget {
 
     if (!auth.isAuthenticated) {
       return Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: _OrdersAppBar(isIOS: _isIOS),
         body: const LoginRequiredView(),
       );
@@ -34,7 +33,7 @@ class OrdersScreen extends StatelessWidget {
     final hasActiveOrder = _isActive(activeOrder);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _OrdersAppBar(isIOS: _isIOS),
       body: _OrdersBody(
         orderProvider: orderProvider,
@@ -241,7 +240,7 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.receipt_long_rounded,
             size: 80,
-            color: Theme.of(context).colorScheme.surfaceVariant,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
           const SizedBox(height: 24),
           const Text(

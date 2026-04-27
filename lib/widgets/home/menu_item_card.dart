@@ -49,7 +49,7 @@ class MenuItemCard extends StatelessWidget {
                   height: 90,
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   ),
                 ),
               ),

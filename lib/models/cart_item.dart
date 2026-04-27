@@ -1,6 +1,5 @@
-import 'package:collection/collection.dart';
 import 'menu_item.dart';
-import '../constants/static_data.dart';
+import '../utils/price_calculator.dart';
 
 class CartItem {
   final MenuItem menuItem;
@@ -107,29 +106,5 @@ class CartItem {
 
   // ── Computed price ──────────────────────────────────────────────────────────
 
-  double get totalPrice {
-    double price = menuItem.price;
-
-    if (selectedMeats != null) {
-      selectedMeats!.forEach((type, count) {
-        price += (StaticData.meatPrices[type] ?? 0) * count;
-      });
-    }
-
-    if (hasSalad) {
-      price += StaticData.saladPrice;
-    }
-
-    if (selectedAddons != null) {
-      selectedAddons!.forEach((addonId, count) {
-        final addonItem = StaticData.menuItems.firstWhere(
-          (m) => m.id == addonId,
-          orElse: () => menuItem,
-        );
-        price += addonItem.price * count;
-      });
-    }
-
-    return price * quantity;
-  }
+  double get totalPrice => PriceCalculator.calculateCartItemPrice(this);
 }

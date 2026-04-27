@@ -4,5 +4,6 @@
     "flutterTools.displayMobxContextMenu": false,
     "flutterTools.displayRiverpodContextMenu": false,
     "flutterTools.displayModularContextMenu": false,
-    "flutterTools.displaySignalsContextMenu": false
+    "flutterTools.displaySignalsContextMenu": false,
+    "cmake.sourceDirectory": "/Users/admin/Downloads/code/nodejs/project/launchfast-fl/linux"
 }

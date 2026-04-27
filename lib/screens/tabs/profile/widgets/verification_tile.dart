@@ -17,7 +17,6 @@ class VerificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final color = verified ? Colors.green : Colors.orangeAccent;
 
     return ProfileSettingsTile(

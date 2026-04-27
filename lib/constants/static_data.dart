@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import '../models/store.dart';
 import '../models/menu_item.dart';
 import '../models/rider.dart';
@@ -232,4 +231,17 @@ class StaticData {
   };
 
   static const double saladPrice = 200;
+
+  static const List<String> halls = [
+    'Hall 1',
+    'Hall 2',
+    'Hall 3',
+    'Hall 4',
+    'Hall 5',
+    'Hall 6',
+    'Hall 7',
+    'Hall 8',
+    'Faculty',
+    'Admin',
+  ];
 }

@@ -18,12 +18,29 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _adminStoreId;
   String? _guestAddress;
+  List<String> _locations = [];
 
   UserProfile? get user => _user;
   String? get token => _token;
   bool get isLoading => _isLoading;
   String? get guestAddress => _guestAddress;
   String? get currentAddress => _user?.address ?? _guestAddress;
+  List<String> get locations => _locations.isEmpty ? StaticData.halls : _locations;
+
+  Future<void> fetchLocations() async {
+    try {
+      final res = await apiService.dio.get('/locations');
+      if (res.data != null && res.data is List) {
+        _locations = List<String>.from(res.data);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[AuthProvider] fetchLocations failed: $e');
+      // Fallback to static data if API fails
+      _locations = StaticData.halls;
+      notifyListeners();
+    }
+  }
   
   bool get isAdmin => _user?.role == 'admin';
   bool get isStoreOwner => _user?.role == 'store_owner';
@@ -32,6 +49,11 @@ class AuthProvider with ChangeNotifier {
   Store? get adminStore => _adminStoreId != null
       ? StaticData.stores.firstWhere((s) => s.id == _adminStoreId)
       : null;
+
+  /// Returns true if the user has enough money in their wallet to cover the [total].
+  bool hasSufficientFunds(double total) {
+    return (_user?.walletBalance ?? 0) >= total;
+  }
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     // By passing clientId directly, we prevent a native crash on iOS if GoogleService-Info.plist is missing.
@@ -45,6 +67,7 @@ class AuthProvider with ChangeNotifier {
 
   AuthProvider() {
     _loadAuth();
+    fetchLocations();
   }
 
   Future<void> _loadAuth() async {

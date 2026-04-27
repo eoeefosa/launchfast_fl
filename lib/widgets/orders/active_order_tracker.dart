@@ -148,8 +148,9 @@ class _StatusIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     IconData icon = Icons.timer_rounded;
     if (status == OrderStatus.preparing) icon = Icons.restaurant_rounded;
-    if (status == OrderStatus.outForDelivery)
+    if (status == OrderStatus.outForDelivery) {
       icon = Icons.delivery_dining_rounded;
+    }
     if (status == OrderStatus.delivered) icon = Icons.check_circle_rounded;
 
     return Container(
@@ -189,7 +190,7 @@ class _RiderCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withValues(alpha: 0.5),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         border: Border(
           top: BorderSide(color: AppColors.lightBorder.withValues(alpha: 0.5)),
         ),

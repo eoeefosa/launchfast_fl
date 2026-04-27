@@ -57,7 +57,7 @@ class Store {
       'name': name,
       'tagline': tagline,
       // Serialize Color back to a 6-digit hex string for network/storage.
-      'accentColor': '#${ColorMapper.argbToHex(accentColor.value)}',
+      'accentColor': '#${ColorMapper.argbToHex(accentColor.toARGB32())}',
       'deliveryTime': deliveryTime,
       'rating': rating,
       'isOpen': isOpen,

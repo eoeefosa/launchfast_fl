@@ -40,7 +40,7 @@ class AppTextField extends StatelessWidget {
         ),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: Theme.of(context).colorScheme.surfaceVariant.withValues(alpha: 0.3),
+        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
-import '../../constants/app_colors.dart';
 
 class OrderTimeline extends StatelessWidget {
   final OrderStatus status;
@@ -38,7 +37,7 @@ class OrderTimeline extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isCompleted
                           ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(context).colorScheme.surfaceVariant.withValues(alpha: 0.5),
+                          : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                       boxShadow: isCurrent
                           ? [

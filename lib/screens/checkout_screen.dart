@@ -12,6 +12,7 @@ import '../providers/order_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/order.dart';
 import '../widgets/home/location_selector.dart';
+import '../widgets/checkout/top_up_sheet.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -140,7 +141,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Widget _buildPaymentTile(AuthProvider auth, double total) {
     final balance = auth.user?.walletBalance ?? 0;
-    final isInsufficient = _paymentMethod == 'Wallet' && balance < total;
+    final isInsufficient = _paymentMethod == 'Wallet' && !auth.hasSufficientFunds(total);
 
     return ListTile(
       leading: _iconContainer(
@@ -359,7 +360,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final balance = auth.user?.walletBalance ?? 0;
     final cart = context.read<CartProvider>();
     final total = cart.totalFor(_deliveryType);
-    final isInsufficient = balance < total;
+    final isInsufficient = !auth.hasSufficientFunds(total);
     HapticFeedback.lightImpact();
 
     showDialog(
@@ -488,8 +489,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          onPressed: () {
-                            CheckoutCoordinator.handleInsufficientFunds(screenContext);
+                          onPressed: () async {
+                            Navigator.pop(dialogContext);
+                            final result = await showModalBottomSheet<bool>(
+                              context: screenContext,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => TopUpSheet(initialAmount: shortfall),
+                            );
+                            if (result == true) {
+                              // Wallet balance should be updated by AuthProvider, 
+                              // which will trigger a rebuild of this screen.
+                            }
                           },
                           child: const Text(
                             'Top Up Wallet',
@@ -552,7 +563,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     bool hasQueuedItems,
   ) {
     final balance = auth.user?.walletBalance ?? 0;
-    final isWalletInsufficient = _paymentMethod == 'Wallet' && balance < total;
+    final isWalletInsufficient = _paymentMethod == 'Wallet' && !auth.hasSufficientFunds(total);
 
     return Positioned(
       bottom: 0,
@@ -695,7 +706,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Final wallet check
     if (_paymentMethod == 'Wallet') {
       final balance = auth.user?.walletBalance ?? 0;
-      if (balance < total) {
+      if (!auth.hasSufficientFunds(total)) {
         _showInsufficientFundsDialog(balance, total);
         return;
       }
@@ -709,6 +720,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'deliveryType': _deliveryType.name,
         'paymentMethod': _paymentMethod,
         'userId': auth.user!.id,
+        'stores': cart.items.map((i) => i.menuItem.storeId).toSet().toList(),
+        'isPriority': _deliveryType == DeliveryType.priority,
       };
 
       final Order? success = await orderProvider.placeOrder(orderData);

@@ -172,7 +172,7 @@ class TabsShell extends StatelessWidget {
                 activeColor: activeColor,
               ),
               selectedIcon: _AnimatedIcon(
-                icon: item.activeIcon ?? item.icon,
+                icon: item.activeIcon,
                 isActive: isActive,
                 activeColor: activeColor,
               ),

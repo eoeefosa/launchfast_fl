@@ -14,7 +14,9 @@ import '../../widgets/home/store_section.dart';
 import '../../widgets/home/menu_grouped_list.dart';
 import '../../widgets/home/category_selector.dart';
 import '../../widgets/home/cart_bar.dart';
+import '../../widgets/home/item_options_sheet.dart';
 import '../../services/ably_service.dart';
+import '../../locator.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -49,11 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = context.read<AuthProvider>();
     final userId = auth.user?.id;
     if (userId != null) {
-      AblyService.instance.initAbly(userId);
+      locator<AblyService>().initAbly(userId);
       _roleListener = (String newRole) {
         if (mounted) context.read<AuthProvider>().updateRole(newRole);
       };
-      AblyService.instance.addRoleListener(_roleListener);
+      locator<AblyService>().addRoleListener(_roleListener);
 
       _notificationListener = (Map<String, dynamic> payload) {
         if (mounted) {
@@ -71,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
           context.read<NotificationProvider>().addNotification(item);
         }
       };
-      AblyService.instance.addNotificationListener(_notificationListener);
+      locator<AblyService>().addNotificationListener(_notificationListener);
 
       _ablyOrderListener = (String orderId, OrderStatus status) {
         if (mounted) {
@@ -86,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
           context.read<NotificationProvider>().addNotification(item);
         }
       };
-      AblyService.instance.addOrderListener(_ablyOrderListener);
+      locator<AblyService>().addOrderListener(_ablyOrderListener);
     } else {
       _roleListener = (_) {};
       _notificationListener = (_) {};
@@ -96,9 +98,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    AblyService.instance.removeRoleListener(_roleListener);
-    AblyService.instance.removeNotificationListener(_notificationListener);
-    AblyService.instance.removeOrderListener(_ablyOrderListener);
+    locator<AblyService>().removeRoleListener(_roleListener);
+    locator<AblyService>().removeNotificationListener(_notificationListener);
+    locator<AblyService>().removeOrderListener(_ablyOrderListener);
     super.dispose();
   }
 
@@ -247,20 +249,40 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _handleAddItem(BuildContext context, MenuItem item) {
+  void _handleAddItem(BuildContext context, MenuItem item) async {
     final cartProvider = context.read<CartProvider>();
+    final storeProvider = context.read<StoreProvider>();
+    final store = storeProvider.stores.firstWhere((s) => s.id == item.storeId);
+
     if (item.category == 'Swallow' ||
         (item.addonIds != null && item.addonIds!.isNotEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select options for this item')),
+      // Use ModalBottomSheet for quick configuration instead of SnackBars and navigation
+      final result = await showModalBottomSheet<String>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => ItemOptionsSheet(
+          item: item,
+          accentColor: store.accentColor,
+        ),
       );
-      context.push('/item/${item.id}');
+
+      if (result == 'CLEAR_REQUIRED') {
+        if (context.mounted) _showClearCartDialog(context, item);
+      }
     } else {
       final success = cartProvider.addToCart(item: item, quantity: 1);
       if (success) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('${item.name} added to cart')));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${item.name} added to cart'),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 1),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
       }
       if (!success) _showClearCartDialog(context, item);
     }

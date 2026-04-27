@@ -25,7 +25,7 @@ class EmptyCartView extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(
                     context,
-                  ).colorScheme.surfaceVariant.withValues(alpha: 0.5),
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

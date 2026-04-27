@@ -23,7 +23,7 @@ class StoreProvider with ChangeNotifier {
   }
 
   void _setupListeners() {
-    AblyService.instance.addStoreListener((storeId, isOpen) {
+    locator<AblyService>().addStoreListener((storeId, isOpen) {
       final index = _stores.indexWhere((s) => s.id == storeId);
       if (index != -1) {
         _stores[index] = _stores[index].copyWith(isOpen: isOpen);
@@ -34,7 +34,7 @@ class StoreProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    // AblyService.instance.removeStoreListener(_onStoreUpdate);
+    // locator<AblyService>().removeStoreListener(_onStoreUpdate);
     super.dispose();
   }
 
