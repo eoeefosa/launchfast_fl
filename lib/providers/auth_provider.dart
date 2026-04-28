@@ -26,11 +26,15 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get guestAddress => _guestAddress;
   String? get currentAddress => _user?.address ?? _guestAddress;
-  List<String> get locations => _locations.isEmpty ? StaticData.halls : _locations;
+  List<String> get locations =>
+      _locations.isEmpty ? StaticData.halls : _locations;
 
   Future<void> fetchLocations() async {
+    debugPrint('[AuthProvider] fetchLocations');
     try {
       final res = await apiService.dio.get('/locations');
+      debugPrint('[AuthProvider] fetchLocations response: $res');
+
       if (res.data != null && res.data is List) {
         _locations = List<String>.from(res.data);
         notifyListeners();
@@ -42,7 +46,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   bool get isAdmin => _user?.role == 'admin';
   bool get isStoreOwner => _user?.role == 'store_owner';
   bool get isRider => _user?.role == 'rider';
@@ -196,7 +200,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-
   Future<void> logout() async {
     locator<AblyService>().disconnect();
     _user = null;
@@ -269,7 +272,7 @@ class AuthProvider with ChangeNotifier {
       final res = await apiService.dio.get('/auth/me');
       if (res.data != null) {
         Map<String, dynamic>? userData;
-        
+
         if (res.data is Map) {
           final dataMap = res.data as Map;
           if (dataMap.containsKey('user') && dataMap['user'] is Map) {
@@ -279,7 +282,9 @@ class AuthProvider with ChangeNotifier {
           }
         }
 
-        if (userData != null && userData.containsKey('id') && userData['id'] != null) {
+        if (userData != null &&
+            userData.containsKey('id') &&
+            userData['id'] != null) {
           _user = UserProfile.fromJson(userData);
           await storage.write(
             key: 'launch-fast-user',
@@ -306,11 +311,11 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> toggleOnlineStatus(bool isOnline) async {
     if (_user == null) return;
-    
+
     // Optimistic update
     final oldStatus = _user!.isOnline;
     updateUser({'isOnline': isOnline});
-    
+
     try {
       await locator<AuthRepository>().updateProfile({'isOnline': isOnline});
     } catch (e) {
