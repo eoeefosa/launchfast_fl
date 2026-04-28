@@ -59,7 +59,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       orderProvider.refreshOrders();
-      router.go('/');
+      router.go('/home');
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.toString())));
     }
@@ -90,7 +90,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   'Join Launch Fast — carefully crafted for your campus needs.',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                     height: 1.5,
                   ),
                 ),

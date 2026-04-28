@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await action();
       orderProvider.refreshOrders();
-      router.go('/');
+      router.go('/home');
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.toString())));
     }

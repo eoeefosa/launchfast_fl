@@ -127,6 +127,8 @@ class _HeaderActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       children: [
         Semantics(
@@ -146,7 +148,9 @@ class _HeaderActions extends StatelessWidget {
                       color: scheme.onSurface.withValues(alpha: 0.05),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.1),
                         width: 1,
                       ),
                     ),
@@ -158,7 +162,8 @@ class _HeaderActions extends StatelessWidget {
                   ),
                   Consumer<NotificationProvider>(
                     builder: (context, provider, child) {
-                      if (provider.unreadCount == 0) return const SizedBox.shrink();
+                      if (provider.unreadCount == 0)
+                        return const SizedBox.shrink();
                       return Positioned(
                         right: -2,
                         top: -2,
@@ -205,20 +210,25 @@ class _HeaderActions extends StatelessWidget {
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
+                    // Use a solid, visible border in both modes
                     border: Border.all(
-                      color: primaryColor.withValues(alpha: 0.2),
+                      color: primaryColor.withValues(alpha: isDark ? 0.6 : 0.3),
                       width: 2,
                     ),
                   ),
                   child: CircleAvatar(
                     radius: 20,
-                    backgroundColor: primaryColor.withValues(alpha: 0.1),
+                    // Solid background that's visible in both light and dark
+                    backgroundColor: isDark
+                        ? primaryColor.withValues(alpha: 0.25)
+                        : primaryColor.withValues(alpha: 0.12),
                     child: Text(
                       (user?.name != null && user!.name.trim().isNotEmpty)
                           ? user!.name.trim()[0].toUpperCase()
                           : '?',
                       style: TextStyle(
-                        color: primaryColor,
+                        // Always use primaryColor for the letter — visible on both backgrounds
+                        color: isDark ? Colors.white : primaryColor,
                         fontWeight: FontWeight.w900,
                         fontSize: 16,
                       ),
