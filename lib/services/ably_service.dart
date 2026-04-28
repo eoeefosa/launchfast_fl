@@ -25,6 +25,9 @@ class AblyService {
   /// All active subscriptions. Cancelled atomically by [_cancelAllSubscriptions].
   final List<StreamSubscription> _subscriptions = [];
 
+  /// Track unique subscription keys (e.g., 'channelName:eventName') to prevent duplicate listeners.
+  final Set<String> _activeSubscriptionKeys = {};
+
   // ── Listener registries ─────────────────────────────────────────────────────
 
   final List<Function(String orderId, OrderStatus status)> _orderListeners = [];
@@ -85,61 +88,85 @@ class AblyService {
   void _subscribeUserChannel(String userId) {
     if (_realtime == null) return;
 
-    final channel = _realtime!.channels.get('user:$userId');
+    final channelName = 'user:$userId';
+    final channel = _realtime!.channels.get(channelName);
 
-    _subscriptions.add(
-      channel.subscribe(name: 'order-update').listen((ably.Message msg) {
-        try {
-          final data = msg.data as Map;
-          final orderId = data['orderId'] as String;
-          final status =
-              OrderStatusExtension.fromString(data['status'] as String);
-          for (final cb in _orderListeners) {
-            cb(orderId, status);
+    // 1. Order updates
+    final orderKey = '$channelName:order-update';
+    if (!_activeSubscriptionKeys.contains(orderKey)) {
+      _activeSubscriptionKeys.add(orderKey);
+      _subscriptions.add(
+        channel.subscribe(name: 'order-update').listen((ably.Message msg) {
+          try {
+            final data = Map<String, dynamic>.from(msg.data as Map);
+            final orderId = data['orderId'] as String;
+            final status =
+                OrderStatusExtension.fromString(data['status'] as String);
+            for (final cb in _orderListeners) {
+              cb(orderId, status);
+            }
+          } catch (e) {
+            debugPrint('[AblyService] order-update parse error: $e');
           }
-        } catch (e) {
-          debugPrint('[AblyService] order-update parse error: $e');
-        }
-      }),
-    );
+        }),
+      );
+    }
 
-    _subscriptions.add(
-      channel.subscribe(name: 'role-update').listen((ably.Message msg) {
-        try {
-          final newRole = (msg.data as Map)['newRole'] as String;
-          for (final cb in _roleListeners) {
-            cb(newRole);
+    // 2. Role updates
+    final roleKey = '$channelName:role-update';
+    if (!_activeSubscriptionKeys.contains(roleKey)) {
+      _activeSubscriptionKeys.add(roleKey);
+      _subscriptions.add(
+        channel.subscribe(name: 'role-update').listen((ably.Message msg) {
+          try {
+            final data = Map<String, dynamic>.from(msg.data as Map);
+            final newRole = data['newRole'] as String;
+            for (final cb in _roleListeners) {
+              cb(newRole);
+            }
+          } catch (e) {
+            debugPrint('[AblyService] role-update parse error: $e');
           }
-        } catch (e) {
-          debugPrint('[AblyService] role-update parse error: $e');
-        }
-      }),
-    );
+        }),
+      );
+    }
 
-    _subscriptions.add(
-      channel
-          .subscribe(name: 'general-notification')
-          .listen((ably.Message msg) {
-        try {
-          final data = Map<String, dynamic>.from(msg.data as Map);
-          for (final cb in _notificationListeners) {
-            cb(data);
+    // 3. General notifications
+    final notificationKey = '$channelName:general-notification';
+    if (!_activeSubscriptionKeys.contains(notificationKey)) {
+      _activeSubscriptionKeys.add(notificationKey);
+      _subscriptions.add(
+        channel
+            .subscribe(name: 'general-notification')
+            .listen((ably.Message msg) {
+          try {
+            final data = Map<String, dynamic>.from(msg.data as Map);
+            for (final cb in _notificationListeners) {
+              cb(data);
+            }
+          } catch (e) {
+            debugPrint('[AblyService] general-notification parse error: $e');
           }
-        } catch (e) {
-          debugPrint('[AblyService] general-notification parse error: $e');
-        }
-      }),
-    );
+        }),
+      );
+    }
   }
 
   void _subscribeStoresChannel() {
     if (_realtime == null) return;
 
-    final channel = _realtime!.channels.get('public:stores');
+    const channelName = 'public:stores';
+    const eventName = 'store-toggle';
+    const key = '$channelName:$eventName';
+
+    if (_activeSubscriptionKeys.contains(key)) return;
+    _activeSubscriptionKeys.add(key);
+
+    final channel = _realtime!.channels.get(channelName);
     _subscriptions.add(
-      channel.subscribe(name: 'store-toggle').listen((ably.Message msg) {
+      channel.subscribe(name: eventName).listen((ably.Message msg) {
         try {
-          final data = msg.data as Map;
+          final data = Map<String, dynamic>.from(msg.data as Map);
           final storeId = data['storeId'] as String;
           final isOpen = data['isOpen'] as bool;
           for (final cb in _storeListeners) {
@@ -156,55 +183,85 @@ class AblyService {
 
   void subscribeToRiderChannel(
     String riderId, {
-    Function(Map data)? onOrderUpdate,
-    Function(Map data)? onNewJob,
+    Function(Map<String, dynamic> data)? onOrderUpdate,
+    Function(Map<String, dynamic> data)? onNewJob,
   }) {
     if (_realtime == null) return;
 
-    final riderChannel = _realtime!.channels.get('rider:$riderId');
-    _subscriptions.add(
-      riderChannel.subscribe(name: 'order-update').listen((msg) {
-        onOrderUpdate?.call(msg.data as Map);
-      }),
-    );
+    final riderChannelName = 'rider:$riderId';
+    final riderKey = '$riderChannelName:order-update';
 
-    final jobsChannel = _realtime!.channels.get('riders:available');
-    _subscriptions.add(
-      jobsChannel.subscribe(name: 'new-job').listen((msg) {
-        onNewJob?.call(msg.data as Map);
-      }),
-    );
+    if (!_activeSubscriptionKeys.contains(riderKey)) {
+      _activeSubscriptionKeys.add(riderKey);
+      final riderChannel = _realtime!.channels.get(riderChannelName);
+      _subscriptions.add(
+        riderChannel.subscribe(name: 'order-update').listen((msg) {
+          final data = Map<String, dynamic>.from(msg.data as Map);
+          onOrderUpdate?.call(data);
+        }),
+      );
+    }
+
+    const jobsChannelName = 'riders:available';
+    const jobsKey = '$jobsChannelName:new-job';
+
+    if (!_activeSubscriptionKeys.contains(jobsKey)) {
+      _activeSubscriptionKeys.add(jobsKey);
+      final jobsChannel = _realtime!.channels.get(jobsChannelName);
+      _subscriptions.add(
+        jobsChannel.subscribe(name: 'new-job').listen((msg) {
+          final data = Map<String, dynamic>.from(msg.data as Map);
+          onNewJob?.call(data);
+        }),
+      );
+    }
   }
 
   void subscribeToStoreOrders(String storeId) {
     if (_realtime == null) return;
 
-    final channel = _realtime!.channels.get('store:$storeId:orders');
+    final channelName = 'store:$storeId:orders';
+    final channel = _realtime!.channels.get(channelName);
 
-    _subscriptions.add(
-      channel.subscribe(name: 'new-order').listen((msg) {
-        try {
-          final orderId = (msg.data as Map)['id'] as String;
-          for (final cb in _orderListeners) {
-            cb(orderId, OrderStatus.pending);
+    // 1. New orders
+    final newOrderKey = '$channelName:new-order';
+    if (!_activeSubscriptionKeys.contains(newOrderKey)) {
+      _activeSubscriptionKeys.add(newOrderKey);
+      _subscriptions.add(
+        channel.subscribe(name: 'new-order').listen((msg) {
+          try {
+            final data = Map<String, dynamic>.from(msg.data as Map);
+            final orderId = data['id'] as String;
+            for (final cb in _orderListeners) {
+              cb(orderId, OrderStatus.pending);
+            }
+          } catch (e) {
+            debugPrint('[AblyService] new-order parse error: $e');
           }
-        } catch (_) {}
-      }),
-    );
+        }),
+      );
+    }
 
-    _subscriptions.add(
-      channel.subscribe(name: 'order-update').listen((msg) {
-        try {
-          final data = msg.data as Map;
-          final orderId = data['orderId'] as String;
-          final status =
-              OrderStatusExtension.fromString(data['status'] as String);
-          for (final cb in _orderListeners) {
-            cb(orderId, status);
+    // 2. Order updates
+    final orderUpdateKey = '$channelName:order-update';
+    if (!_activeSubscriptionKeys.contains(orderUpdateKey)) {
+      _activeSubscriptionKeys.add(orderUpdateKey);
+      _subscriptions.add(
+        channel.subscribe(name: 'order-update').listen((msg) {
+          try {
+            final data = Map<String, dynamic>.from(msg.data as Map);
+            final orderId = data['orderId'] as String;
+            final status =
+                OrderStatusExtension.fromString(data['status'] as String);
+            for (final cb in _orderListeners) {
+              cb(orderId, status);
+            }
+          } catch (e) {
+            debugPrint('[AblyService] order-update (store) parse error: $e');
           }
-        } catch (_) {}
-      }),
-    );
+        }),
+      );
+    }
   }
 
   void subscribeToUserOrders(
@@ -268,5 +325,6 @@ class AblyService {
       sub.cancel();
     }
     _subscriptions.clear();
+    _activeSubscriptionKeys.clear();
   }
 }

@@ -6,11 +6,8 @@ class ApiService {
   late Dio dio;
   final storage = const FlutterSecureStorage();
 
-  // Use 10.0.2.2 for Android Emulator, localhost for iOS simulator
   static const String baseUrl = 'https://backend-lauchfast.vercel.app/api';
 
-  // To test production, uncomment this instead:
-  // static const String baseUrl = 'https://backend-lauchfast.vercel.app/api';
 
   ApiService() {
     dio = Dio(

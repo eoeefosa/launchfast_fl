@@ -10,7 +10,7 @@ final locator = GetIt.instance;
 void setupLocator() {
   // Services
   locator.registerLazySingleton<AblyService>(() => AblyService());
-  
+
   // Repositories
   locator.registerLazySingleton<AuthRepository>(() => AuthRepository());
   locator.registerLazySingleton<MenuRepository>(() => MenuRepository());
