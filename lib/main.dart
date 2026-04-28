@@ -14,6 +14,7 @@ import 'providers/theme_provider.dart';
 import 'locator.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   setupLocator();
   runApp(
     MultiProvider(
