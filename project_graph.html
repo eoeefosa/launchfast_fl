@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Graphify - LaunchFast</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --primary-color: #38bdf8;
+            --secondary-color: #818cf8;
+            --accent-color: #f472b6;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        #graph-container {
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+
+        #graph-container:active {
+            cursor: grabbing;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+            pointer-events: auto;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(20px);
+            z-index: 10;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        #info-panel h2 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: var(--primary-color);
+        }
+
+        #info-panel p {
+            margin: 5px 0;
+            font-size: 13px;
+            line-height: 1.5;
+            opacity: 0.8;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-right: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .node circle {
+            stroke: var(--bg-color);
+            stroke-width: 2px;
+            transition: r 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .link {
+            stroke: var(--text-color);
+            stroke-opacity: 0.15;
+            stroke-width: 1.5px;
+            transition: stroke-opacity 0.3s;
+        }
+
+        .node text {
+            font-size: 10px;
+            pointer-events: none;
+            fill: var(--text-color);
+            opacity: 0.6;
+            transition: opacity 0.3s, font-size 0.3s;
+        }
+
+        .node:hover circle {
+            r: 8px;
+        }
+
+        .node:hover text {
+            opacity: 1;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .highlighted-link {
+            stroke-opacity: 0.8 !important;
+            stroke: var(--primary-color) !important;
+            stroke-width: 2.5px !important;
+        }
+
+        .dimmed {
+            opacity: 0.1 !important;
+        }
+
+        .search-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            width: 400px;
+        }
+
+        #search-input {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #search-input:focus {
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Graphify Lib</h1>
+        <p>Flutter Architecture Visualization</p>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Search files or directories...">
+    </div>
+
+    <div id="info-panel">
+        <h2 id="info-title">File Name</h2>
+        <p id="info-path">path/to/file</p>
+        <div id="info-tags"></div>
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
+        <p id="info-deps">Dependencies: 0</p>
+        <p id="info-usage">Used by: 0</p>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="resetZoom()">Reset View</button>
+        <button class="btn" onclick="toggleLabels()">Toggle Labels</button>
+        <button class="btn" onclick="clusterByFolder()">Cluster View</button>
+    </div>
+
+    <svg id="graph-container"></svg>
+
+    <script>
+        const svg = d3.select("#graph-container");
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        let showLabels = true;
+
+        const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
+
+        const g = svg.append("g");
+
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 8])
+            .on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            });
+
+        svg.call(zoom);
+
+        function resetZoom() {
+            svg.transition().duration(750).call(
+                zoom.transform,
+                d3.zoomIdentity.translate(width / 2, height / 2).scale(0.8)
+            );
+        }
+
+        d3.json("graph_data.json").then(data => {
+            const nodes = data.nodes;
+            const links = data.links;
+
+            // Prepare dependency counts
+            nodes.forEach(n => {
+                n.dependencies = links.filter(l => l.source === n.id).length;
+                n.usedBy = links.filter(l => l.target === n.id).length;
+                const parts = n.id.split('/');
+                n.folder = parts.length > 1 ? parts.slice(0, -1).join('/') : 'root';
+            });
+
+            const simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).id(d => d.id).distance(100).strength(0.5))
+                .force("charge", d3.forceManyBody().strength(-150))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collision", d3.forceCollide().radius(30));
+
+            const link = g.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(links)
+                .enter().append("line")
+                .attr("class", "link");
+
+            const node = g.append("g")
+                .attr("class", "nodes")
+                .selectAll(".node")
+                .data(nodes)
+                .enter().append("g")
+                .attr("class", "node")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+
+            node.append("circle")
+                .attr("r", d => d.isDir ? 8 : 5)
+                .attr("fill", d => d.isDir ? "#64748b" : colorScale(d.folder))
+                .on("mouseover", handleMouseOver)
+                .on("mouseout", handleMouseOut)
+                .on("click", handleClick);
+
+            node.append("text")
+                .attr("dx", 12)
+                .attr("dy", ".35em")
+                .text(d => d.name)
+                .style("display", showLabels ? "block" : "none");
+
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                node
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+
+            function handleMouseOver(event, d) {
+                const connectedIds = new Set();
+                connectedIds.add(d.id);
+                
+                links.forEach(l => {
+                    if (l.source.id === d.id) connectedIds.add(l.target.id);
+                    if (l.target.id === d.id) connectedIds.add(l.source.id);
+                });
+
+                node.classed("dimmed", n => !connectedIds.has(n.id));
+                link.classed("highlighted-link", l => l.source.id === d.id || l.target.id === d.id);
+                link.classed("dimmed", l => l.source.id !== d.id && l.target.id !== d.id);
+            }
+
+            function handleMouseOut() {
+                node.classed("dimmed", false);
+                link.classed("highlighted-link", false);
+                link.classed("dimmed", false);
+            }
+
+            function handleClick(event, d) {
+                const panel = d3.select("#info-panel");
+                panel.style("display", "block");
+                d3.select("#info-title").text(d.name);
+                d3.select("#info-path").text(d.id);
+                d3.select("#info-deps").text(`Dependencies: ${d.dependencies}`);
+                d3.select("#info-usage").text(`Used by: ${d.usedBy}`);
+                
+                const tags = d3.select("#info-tags");
+                tags.html("");
+                tags.append("span").attr("class", "tag").text(d.isDir ? "Directory" : "File");
+                tags.append("span").attr("class", "tag").text(d.folder);
+            }
+
+            // Search implementation
+            d3.select("#search-input").on("input", function() {
+                const searchTerm = this.value.toLowerCase();
+                if (!searchTerm) {
+                    node.classed("dimmed", false);
+                    return;
+                }
+                node.classed("dimmed", d => !d.name.toLowerCase().includes(searchTerm) && !d.id.toLowerCase().includes(searchTerm));
+            });
+
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+
+            window.toggleLabels = function() {
+                showLabels = !showLabels;
+                node.select("text").style("display", showLabels ? "block" : "none");
+            };
+
+            window.clusterByFolder = function() {
+                simulation.force("x", d3.forceX(d => {
+                    // Simple logic to cluster by top level folder
+                    const topFolder = d.id.split('/')[1] || 'root';
+                    const index = [...new Set(nodes.map(n => n.id.split('/')[1] || 'root'))].indexOf(topFolder);
+                    return (width / 5) * (index % 5 + 1);
+                }).strength(0.1));
+                
+                simulation.force("y", d3.forceY(d => {
+                    const topFolder = d.id.split('/')[1] || 'root';
+                    const index = [...new Set(nodes.map(n => n.id.split('/')[1] || 'root'))].indexOf(topFolder);
+                    return (height / 3) * (Math.floor(index / 5) + 1);
+                }).strength(0.1));
+                
+                simulation.alpha(1).restart();
+            };
+
+            resetZoom();
+        });
+
+        window.addEventListener('resize', () => {
+            // Update center force on resize
+            // simulation.force("center", d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2));
+        });
+    </script>
+</body>
+</html>

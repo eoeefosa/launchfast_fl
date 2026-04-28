@@ -13,8 +13,8 @@ class StoreProvider with ChangeNotifier {
   String? _error;
 
   // Pricing config — seeded from StaticData, ready for backend-driven values.
-  Map<String, double> _meatPrices = Map.from(StaticData.meatPrices);
-  double _saladPrice = StaticData.saladPrice;
+  final Map<String, double> _meatPrices = Map.from(StaticData.meatPrices);
+  final double _saladPrice = StaticData.saladPrice;
 
   List<Store> get stores => _stores;
   List<MenuItem> get menuItems => _menuItems;

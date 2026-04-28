@@ -1,0 +1,1528 @@
+{
+  "nodes": [
+    {
+      "id": "lib/constants",
+      "name": "constants",
+      "isDir": true,
+      "parentId": null
+    },
+    {
+      "id": "lib/constants/app_colors.dart",
+      "name": "app_colors.dart",
+      "isDir": false,
+      "parentId": "lib/constants"
+    },
+    {
+      "id": "lib/constants/static_data.dart",
+      "name": "static_data.dart",
+      "isDir": false,
+      "parentId": "lib/constants"
+    },
+    {
+      "id": "lib/locator.dart",
+      "name": "locator.dart",
+      "isDir": false,
+      "parentId": null
+    },
+    {
+      "id": "lib/main.dart",
+      "name": "main.dart",
+      "isDir": false,
+      "parentId": null
+    },
+    {
+      "id": "lib/models",
+      "name": "models",
+      "isDir": true,
+      "parentId": null
+    },
+    {
+      "id": "lib/models/cart_item.dart",
+      "name": "cart_item.dart",
+      "isDir": false,
+      "parentId": "lib/models"
+    },
+    {
+      "id": "lib/models/menu_item.dart",
+      "name": "menu_item.dart",
+      "isDir": false,
+      "parentId": "lib/models"
+    },
+    {
+      "id": "lib/models/notification_item.dart",
+      "name": "notification_item.dart",
+      "isDir": false,
+      "parentId": "lib/models"
+    },
+    {
+      "id": "lib/models/order.dart",
+      "name": "order.dart",
+      "isDir": false,
+      "parentId": "lib/models"
+    },
+    {
+      "id": "lib/models/rider.dart",
+      "name": "rider.dart",
+      "isDir": false,
+      "parentId": "lib/models"
+    },
+    {
+      "id": "lib/models/store.dart",
+      "name": "store.dart",
+      "isDir": false,
+      "parentId": "lib/models"
+    },
+    {
+      "id": "lib/models/user.dart",
+      "name": "user.dart",
+      "isDir": false,
+      "parentId": "lib/models"
+    },
+    {
+      "id": "lib/providers",
+      "name": "providers",
+      "isDir": true,
+      "parentId": null
+    },
+    {
+      "id": "lib/providers/auth_provider.dart",
+      "name": "auth_provider.dart",
+      "isDir": false,
+      "parentId": "lib/providers"
+    },
+    {
+      "id": "lib/providers/cart_provider.dart",
+      "name": "cart_provider.dart",
+      "isDir": false,
+      "parentId": "lib/providers"
+    },
+    {
+      "id": "lib/providers/notification_provider.dart",
+      "name": "notification_provider.dart",
+      "isDir": false,
+      "parentId": "lib/providers"
+    },
+    {
+      "id": "lib/providers/order_provider.dart",
+      "name": "order_provider.dart",
+      "isDir": false,
+      "parentId": "lib/providers"
+    },
+    {
+      "id": "lib/providers/store_provider.dart",
+      "name": "store_provider.dart",
+      "isDir": false,
+      "parentId": "lib/providers"
+    },
+    {
+      "id": "lib/providers/theme_provider.dart",
+      "name": "theme_provider.dart",
+      "isDir": false,
+      "parentId": "lib/providers"
+    },
+    {
+      "id": "lib/repositories",
+      "name": "repositories",
+      "isDir": true,
+      "parentId": null
+    },
+    {
+      "id": "lib/repositories/auth_repository.dart",
+      "name": "auth_repository.dart",
+      "isDir": false,
+      "parentId": "lib/repositories"
+    },
+    {
+      "id": "lib/repositories/menu_repository.dart",
+      "name": "menu_repository.dart",
+      "isDir": false,
+      "parentId": "lib/repositories"
+    },
+    {
+      "id": "lib/repositories/order_repository.dart",
+      "name": "order_repository.dart",
+      "isDir": false,
+      "parentId": "lib/repositories"
+    },
+    {
+      "id": "lib/router.dart",
+      "name": "router.dart",
+      "isDir": false,
+      "parentId": null
+    },
+    {
+      "id": "lib/screens",
+      "name": "screens",
+      "isDir": true,
+      "parentId": null
+    },
+    {
+      "id": "lib/screens/auth",
+      "name": "auth",
+      "isDir": true,
+      "parentId": "lib/screens"
+    },
+    {
+      "id": "lib/screens/auth/forgot_password_screen.dart",
+      "name": "forgot_password_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens/auth"
+    },
+    {
+      "id": "lib/screens/auth/login_screen.dart",
+      "name": "login_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens/auth"
+    },
+    {
+      "id": "lib/screens/auth/register_screen.dart",
+      "name": "register_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens/auth"
+    },
+    {
+      "id": "lib/screens/auth/widgets",
+      "name": "widgets",
+      "isDir": true,
+      "parentId": "lib/screens/auth"
+    },
+    {
+      "id": "lib/screens/auth/widgets/apptextfield.dart",
+      "name": "apptextfield.dart",
+      "isDir": false,
+      "parentId": "lib/screens/auth/widgets"
+    },
+    {
+      "id": "lib/screens/auth/widgets/auth_prompt.dart",
+      "name": "auth_prompt.dart",
+      "isDir": false,
+      "parentId": "lib/screens/auth/widgets"
+    },
+    {
+      "id": "lib/screens/auth/widgets/backbutton.dart",
+      "name": "backbutton.dart",
+      "isDir": false,
+      "parentId": "lib/screens/auth/widgets"
+    },
+    {
+      "id": "lib/screens/auth/widgets/constants.dart",
+      "name": "constants.dart",
+      "isDir": false,
+      "parentId": "lib/screens/auth/widgets"
+    },
+    {
+      "id": "lib/screens/auth/widgets/custom_button.dart",
+      "name": "custom_button.dart",
+      "isDir": false,
+      "parentId": "lib/screens/auth/widgets"
+    },
+    {
+      "id": "lib/screens/auth/widgets/password_toggle.dart",
+      "name": "password_toggle.dart",
+      "isDir": false,
+      "parentId": "lib/screens/auth/widgets"
+    },
+    {
+      "id": "lib/screens/checkout_screen.dart",
+      "name": "checkout_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens"
+    },
+    {
+      "id": "lib/screens/notifications_screen.dart",
+      "name": "notifications_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens"
+    },
+    {
+      "id": "lib/screens/search_screen.dart",
+      "name": "search_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens"
+    },
+    {
+      "id": "lib/screens/store",
+      "name": "store",
+      "isDir": true,
+      "parentId": "lib/screens"
+    },
+    {
+      "id": "lib/screens/store/components",
+      "name": "components",
+      "isDir": true,
+      "parentId": "lib/screens/store"
+    },
+    {
+      "id": "lib/screens/store/components/item_detail_dialogs.dart",
+      "name": "item_detail_dialogs.dart",
+      "isDir": false,
+      "parentId": "lib/screens/store/components"
+    },
+    {
+      "id": "lib/screens/store/components/item_detail_footer.dart",
+      "name": "item_detail_footer.dart",
+      "isDir": false,
+      "parentId": "lib/screens/store/components"
+    },
+    {
+      "id": "lib/screens/store/components/item_detail_header.dart",
+      "name": "item_detail_header.dart",
+      "isDir": false,
+      "parentId": "lib/screens/store/components"
+    },
+    {
+      "id": "lib/screens/store/components/item_detail_hero.dart",
+      "name": "item_detail_hero.dart",
+      "isDir": false,
+      "parentId": "lib/screens/store/components"
+    },
+    {
+      "id": "lib/screens/store/components/item_detail_options.dart",
+      "name": "item_detail_options.dart",
+      "isDir": false,
+      "parentId": "lib/screens/store/components"
+    },
+    {
+      "id": "lib/screens/store/components/item_detail_scroll_body.dart",
+      "name": "item_detail_scroll_body.dart",
+      "isDir": false,
+      "parentId": "lib/screens/store/components"
+    },
+    {
+      "id": "lib/screens/store/item_detail_screen.dart",
+      "name": "item_detail_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens/store"
+    },
+    {
+      "id": "lib/screens/store/store_detail_screen.dart",
+      "name": "store_detail_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens/store"
+    },
+    {
+      "id": "lib/screens/stores_screen.dart",
+      "name": "stores_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens"
+    },
+    {
+      "id": "lib/screens/tabs",
+      "name": "tabs",
+      "isDir": true,
+      "parentId": "lib/screens"
+    },
+    {
+      "id": "lib/screens/tabs/cart_screen.dart",
+      "name": "cart_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs"
+    },
+    {
+      "id": "lib/screens/tabs/home_screen.dart",
+      "name": "home_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs"
+    },
+    {
+      "id": "lib/screens/tabs/orders_screen.dart",
+      "name": "orders_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs"
+    },
+    {
+      "id": "lib/screens/tabs/profile",
+      "name": "profile",
+      "isDir": true,
+      "parentId": "lib/screens/tabs"
+    },
+    {
+      "id": "lib/screens/tabs/profile/sheets",
+      "name": "sheets",
+      "isDir": true,
+      "parentId": "lib/screens/tabs/profile"
+    },
+    {
+      "id": "lib/screens/tabs/profile/sheets/edit_profile_sheet.dart",
+      "name": "edit_profile_sheet.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs/profile/sheets"
+    },
+    {
+      "id": "lib/screens/tabs/profile/sheets/top_up_sheet.dart",
+      "name": "top_up_sheet.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs/profile/sheets"
+    },
+    {
+      "id": "lib/screens/tabs/profile/sheets/verification_sheet.dart",
+      "name": "verification_sheet.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs/profile/sheets"
+    },
+    {
+      "id": "lib/screens/tabs/profile/widgets",
+      "name": "widgets",
+      "isDir": true,
+      "parentId": "lib/screens/tabs/profile"
+    },
+    {
+      "id": "lib/screens/tabs/profile/widgets/bottom_sheet_scaffold.dart",
+      "name": "bottom_sheet_scaffold.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs/profile/widgets"
+    },
+    {
+      "id": "lib/screens/tabs/profile/widgets/profile_header.dart",
+      "name": "profile_header.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs/profile/widgets"
+    },
+    {
+      "id": "lib/screens/tabs/profile/widgets/settings_tile.dart",
+      "name": "settings_tile.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs/profile/widgets"
+    },
+    {
+      "id": "lib/screens/tabs/profile/widgets/unauthenticated_view.dart",
+      "name": "unauthenticated_view.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs/profile/widgets"
+    },
+    {
+      "id": "lib/screens/tabs/profile/widgets/verification_tile.dart",
+      "name": "verification_tile.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs/profile/widgets"
+    },
+    {
+      "id": "lib/screens/tabs/profile/widgets/wallet_card.dart",
+      "name": "wallet_card.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs/profile/widgets"
+    },
+    {
+      "id": "lib/screens/tabs/profile_screen.dart",
+      "name": "profile_screen.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs"
+    },
+    {
+      "id": "lib/screens/tabs/tabs_shell.dart",
+      "name": "tabs_shell.dart",
+      "isDir": false,
+      "parentId": "lib/screens/tabs"
+    },
+    {
+      "id": "lib/services",
+      "name": "services",
+      "isDir": true,
+      "parentId": null
+    },
+    {
+      "id": "lib/services/ably_service.dart",
+      "name": "ably_service.dart",
+      "isDir": false,
+      "parentId": "lib/services"
+    },
+    {
+      "id": "lib/services/api_service.dart",
+      "name": "api_service.dart",
+      "isDir": false,
+      "parentId": "lib/services"
+    },
+    {
+      "id": "lib/splash_screen.dart",
+      "name": "splash_screen.dart",
+      "isDir": false,
+      "parentId": null
+    },
+    {
+      "id": "lib/theme",
+      "name": "theme",
+      "isDir": true,
+      "parentId": null
+    },
+    {
+      "id": "lib/theme/app_spacing.dart",
+      "name": "app_spacing.dart",
+      "isDir": false,
+      "parentId": "lib/theme"
+    },
+    {
+      "id": "lib/utils",
+      "name": "utils",
+      "isDir": true,
+      "parentId": null
+    },
+    {
+      "id": "lib/utils/checkout_coordinator.dart",
+      "name": "checkout_coordinator.dart",
+      "isDir": false,
+      "parentId": "lib/utils"
+    },
+    {
+      "id": "lib/utils/color_mapper.dart",
+      "name": "color_mapper.dart",
+      "isDir": false,
+      "parentId": "lib/utils"
+    },
+    {
+      "id": "lib/utils/price_calculator.dart",
+      "name": "price_calculator.dart",
+      "isDir": false,
+      "parentId": "lib/utils"
+    },
+    {
+      "id": "lib/widgets",
+      "name": "widgets",
+      "isDir": true,
+      "parentId": null
+    },
+    {
+      "id": "lib/widgets/cart",
+      "name": "cart",
+      "isDir": true,
+      "parentId": "lib/widgets"
+    },
+    {
+      "id": "lib/widgets/cart/cart_item_tile.dart",
+      "name": "cart_item_tile.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/cart"
+    },
+    {
+      "id": "lib/widgets/cart/checkout_bar.dart",
+      "name": "checkout_bar.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/cart"
+    },
+    {
+      "id": "lib/widgets/cart/editing_banner.dart",
+      "name": "editing_banner.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/cart"
+    },
+    {
+      "id": "lib/widgets/cart/empty_cart_view.dart",
+      "name": "empty_cart_view.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/cart"
+    },
+    {
+      "id": "lib/widgets/cart/frequently_added_section.dart",
+      "name": "frequently_added_section.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/cart"
+    },
+    {
+      "id": "lib/widgets/cart/order_summary.dart",
+      "name": "order_summary.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/cart"
+    },
+    {
+      "id": "lib/widgets/checkout",
+      "name": "checkout",
+      "isDir": true,
+      "parentId": "lib/widgets"
+    },
+    {
+      "id": "lib/widgets/checkout/top_up_sheet.dart",
+      "name": "top_up_sheet.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/checkout"
+    },
+    {
+      "id": "lib/widgets/home",
+      "name": "home",
+      "isDir": true,
+      "parentId": "lib/widgets"
+    },
+    {
+      "id": "lib/widgets/home/cart_bar.dart",
+      "name": "cart_bar.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/home/category_selector.dart",
+      "name": "category_selector.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/home/featured_meals.dart",
+      "name": "featured_meals.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/home/home_header.dart",
+      "name": "home_header.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/home/item_options_sheet.dart",
+      "name": "item_options_sheet.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/home/location_selector.dart",
+      "name": "location_selector.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/home/menu_grouped_list.dart",
+      "name": "menu_grouped_list.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/home/menu_item_card.dart",
+      "name": "menu_item_card.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/home/search_bar.dart",
+      "name": "search_bar.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/home/store_banner.dart",
+      "name": "store_banner.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/home/store_section.dart",
+      "name": "store_section.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/home/store_tabs.dart",
+      "name": "store_tabs.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/home"
+    },
+    {
+      "id": "lib/widgets/orders",
+      "name": "orders",
+      "isDir": true,
+      "parentId": "lib/widgets"
+    },
+    {
+      "id": "lib/widgets/orders/active_order_tracker.dart",
+      "name": "active_order_tracker.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/orders"
+    },
+    {
+      "id": "lib/widgets/orders/login_required_view.dart",
+      "name": "login_required_view.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/orders"
+    },
+    {
+      "id": "lib/widgets/orders/order_history_card.dart",
+      "name": "order_history_card.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/orders"
+    },
+    {
+      "id": "lib/widgets/orders/order_timeline.dart",
+      "name": "order_timeline.dart",
+      "isDir": false,
+      "parentId": "lib/widgets/orders"
+    }
+  ],
+  "links": [
+    {
+      "source": "lib/constants/static_data.dart",
+      "target": "lib/models/store.dart"
+    },
+    {
+      "source": "lib/constants/static_data.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/constants/static_data.dart",
+      "target": "lib/models/rider.dart"
+    },
+    {
+      "source": "lib/constants/static_data.dart",
+      "target": "lib/constants/app_colors.dart"
+    },
+    {
+      "source": "lib/locator.dart",
+      "target": "lib/services/ably_service.dart"
+    },
+    {
+      "source": "lib/locator.dart",
+      "target": "lib/repositories/auth_repository.dart"
+    },
+    {
+      "source": "lib/locator.dart",
+      "target": "lib/repositories/menu_repository.dart"
+    },
+    {
+      "source": "lib/locator.dart",
+      "target": "lib/repositories/order_repository.dart"
+    },
+    {
+      "source": "lib/main.dart",
+      "target": "lib/router.dart"
+    },
+    {
+      "source": "lib/main.dart",
+      "target": "lib/constants/app_colors.dart"
+    },
+    {
+      "source": "lib/main.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/main.dart",
+      "target": "lib/providers/store_provider.dart"
+    },
+    {
+      "source": "lib/main.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/main.dart",
+      "target": "lib/providers/order_provider.dart"
+    },
+    {
+      "source": "lib/main.dart",
+      "target": "lib/providers/notification_provider.dart"
+    },
+    {
+      "source": "lib/main.dart",
+      "target": "lib/providers/theme_provider.dart"
+    },
+    {
+      "source": "lib/main.dart",
+      "target": "lib/locator.dart"
+    },
+    {
+      "source": "lib/models/cart_item.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/models/order.dart",
+      "target": "lib/models/cart_item.dart"
+    },
+    {
+      "source": "lib/models/order.dart",
+      "target": "lib/models/user.dart"
+    },
+    {
+      "source": "lib/models/order.dart",
+      "target": "lib/models/store.dart"
+    },
+    {
+      "source": "lib/models/store.dart",
+      "target": "lib/utils/color_mapper.dart"
+    },
+    {
+      "source": "lib/providers/auth_provider.dart",
+      "target": "lib/locator.dart"
+    },
+    {
+      "source": "lib/providers/auth_provider.dart",
+      "target": "lib/services/ably_service.dart"
+    },
+    {
+      "source": "lib/providers/auth_provider.dart",
+      "target": "lib/models/user.dart"
+    },
+    {
+      "source": "lib/providers/auth_provider.dart",
+      "target": "lib/models/store.dart"
+    },
+    {
+      "source": "lib/providers/auth_provider.dart",
+      "target": "lib/repositories/auth_repository.dart"
+    },
+    {
+      "source": "lib/providers/auth_provider.dart",
+      "target": "lib/constants/static_data.dart"
+    },
+    {
+      "source": "lib/providers/auth_provider.dart",
+      "target": "lib/services/api_service.dart"
+    },
+    {
+      "source": "lib/providers/cart_provider.dart",
+      "target": "lib/models/order.dart"
+    },
+    {
+      "source": "lib/providers/cart_provider.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/providers/cart_provider.dart",
+      "target": "lib/constants/static_data.dart"
+    },
+    {
+      "source": "lib/providers/cart_provider.dart",
+      "target": "lib/utils/price_calculator.dart"
+    },
+    {
+      "source": "lib/providers/notification_provider.dart",
+      "target": "lib/models/notification_item.dart"
+    },
+    {
+      "source": "lib/providers/order_provider.dart",
+      "target": "lib/locator.dart"
+    },
+    {
+      "source": "lib/providers/order_provider.dart",
+      "target": "lib/models/order.dart"
+    },
+    {
+      "source": "lib/providers/order_provider.dart",
+      "target": "lib/repositories/order_repository.dart"
+    },
+    {
+      "source": "lib/providers/order_provider.dart",
+      "target": "lib/services/ably_service.dart"
+    },
+    {
+      "source": "lib/providers/store_provider.dart",
+      "target": "lib/locator.dart"
+    },
+    {
+      "source": "lib/providers/store_provider.dart",
+      "target": "lib/models/store.dart"
+    },
+    {
+      "source": "lib/providers/store_provider.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/providers/store_provider.dart",
+      "target": "lib/repositories/menu_repository.dart"
+    },
+    {
+      "source": "lib/providers/store_provider.dart",
+      "target": "lib/constants/static_data.dart"
+    },
+    {
+      "source": "lib/providers/store_provider.dart",
+      "target": "lib/services/ably_service.dart"
+    },
+    {
+      "source": "lib/repositories/auth_repository.dart",
+      "target": "lib/services/api_service.dart"
+    },
+    {
+      "source": "lib/repositories/menu_repository.dart",
+      "target": "lib/services/api_service.dart"
+    },
+    {
+      "source": "lib/repositories/menu_repository.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/repositories/menu_repository.dart",
+      "target": "lib/models/store.dart"
+    },
+    {
+      "source": "lib/repositories/order_repository.dart",
+      "target": "lib/services/api_service.dart"
+    },
+    {
+      "source": "lib/repositories/order_repository.dart",
+      "target": "lib/models/order.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/auth/forgot_password_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/auth/login_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/auth/register_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/stores_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/tabs/home_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/tabs/orders_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/tabs/profile_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/tabs/tabs_shell.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/tabs/cart_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/store/store_detail_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/store/item_detail_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/checkout_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/search_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/screens/notifications_screen.dart"
+    },
+    {
+      "source": "lib/router.dart",
+      "target": "lib/splash_screen.dart"
+    },
+    {
+      "source": "lib/screens/auth/forgot_password_screen.dart",
+      "target": "lib/services/api_service.dart"
+    },
+    {
+      "source": "lib/screens/auth/forgot_password_screen.dart",
+      "target": "lib/constants/app_colors.dart"
+    },
+    {
+      "source": "lib/screens/auth/forgot_password_screen.dart",
+      "target": "lib/screens/auth/widgets/apptextfield.dart"
+    },
+    {
+      "source": "lib/screens/auth/forgot_password_screen.dart",
+      "target": "lib/screens/auth/widgets/constants.dart"
+    },
+    {
+      "source": "lib/screens/auth/login_screen.dart",
+      "target": "lib/screens/auth/widgets/apptextfield.dart"
+    },
+    {
+      "source": "lib/screens/auth/login_screen.dart",
+      "target": "lib/screens/auth/widgets/auth_prompt.dart"
+    },
+    {
+      "source": "lib/screens/auth/login_screen.dart",
+      "target": "lib/screens/auth/widgets/constants.dart"
+    },
+    {
+      "source": "lib/screens/auth/login_screen.dart",
+      "target": "lib/screens/auth/widgets/custom_button.dart"
+    },
+    {
+      "source": "lib/screens/auth/login_screen.dart",
+      "target": "lib/screens/auth/widgets/password_toggle.dart"
+    },
+    {
+      "source": "lib/screens/auth/login_screen.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/screens/auth/login_screen.dart",
+      "target": "lib/providers/order_provider.dart"
+    },
+    {
+      "source": "lib/screens/auth/register_screen.dart",
+      "target": "lib/screens/auth/widgets/apptextfield.dart"
+    },
+    {
+      "source": "lib/screens/auth/register_screen.dart",
+      "target": "lib/screens/auth/widgets/auth_prompt.dart"
+    },
+    {
+      "source": "lib/screens/auth/register_screen.dart",
+      "target": "lib/screens/auth/widgets/constants.dart"
+    },
+    {
+      "source": "lib/screens/auth/register_screen.dart",
+      "target": "lib/screens/auth/widgets/custom_button.dart"
+    },
+    {
+      "source": "lib/screens/auth/register_screen.dart",
+      "target": "lib/screens/auth/widgets/password_toggle.dart"
+    },
+    {
+      "source": "lib/screens/auth/register_screen.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/screens/auth/register_screen.dart",
+      "target": "lib/providers/order_provider.dart"
+    },
+    {
+      "source": "lib/screens/checkout_screen.dart",
+      "target": "lib/theme/app_spacing.dart"
+    },
+    {
+      "source": "lib/screens/checkout_screen.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/screens/checkout_screen.dart",
+      "target": "lib/providers/order_provider.dart"
+    },
+    {
+      "source": "lib/screens/checkout_screen.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/screens/checkout_screen.dart",
+      "target": "lib/providers/store_provider.dart"
+    },
+    {
+      "source": "lib/screens/checkout_screen.dart",
+      "target": "lib/models/order.dart"
+    },
+    {
+      "source": "lib/screens/checkout_screen.dart",
+      "target": "lib/utils/price_calculator.dart"
+    },
+    {
+      "source": "lib/screens/checkout_screen.dart",
+      "target": "lib/widgets/home/location_selector.dart"
+    },
+    {
+      "source": "lib/screens/checkout_screen.dart",
+      "target": "lib/widgets/checkout/top_up_sheet.dart"
+    },
+    {
+      "source": "lib/screens/notifications_screen.dart",
+      "target": "lib/providers/notification_provider.dart"
+    },
+    {
+      "source": "lib/screens/notifications_screen.dart",
+      "target": "lib/models/notification_item.dart"
+    },
+    {
+      "source": "lib/screens/store/components/item_detail_footer.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/screens/store/components/item_detail_footer.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/screens/store/components/item_detail_header.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/screens/store/components/item_detail_options.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/screens/store/components/item_detail_options.dart",
+      "target": "lib/constants/static_data.dart"
+    },
+    {
+      "source": "lib/screens/store/components/item_detail_scroll_body.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/screens/store/components/item_detail_scroll_body.dart",
+      "target": "lib/constants/static_data.dart"
+    },
+    {
+      "source": "lib/screens/store/components/item_detail_scroll_body.dart",
+      "target": "lib/screens/store/components/item_detail_hero.dart"
+    },
+    {
+      "source": "lib/screens/store/components/item_detail_scroll_body.dart",
+      "target": "lib/screens/store/components/item_detail_header.dart"
+    },
+    {
+      "source": "lib/screens/store/components/item_detail_scroll_body.dart",
+      "target": "lib/screens/store/components/item_detail_options.dart"
+    },
+    {
+      "source": "lib/screens/store/item_detail_screen.dart",
+      "target": "lib/utils/price_calculator.dart"
+    },
+    {
+      "source": "lib/screens/store/item_detail_screen.dart",
+      "target": "lib/providers/store_provider.dart"
+    },
+    {
+      "source": "lib/screens/store/item_detail_screen.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/screens/store/item_detail_screen.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/screens/store/item_detail_screen.dart",
+      "target": "lib/constants/static_data.dart"
+    },
+    {
+      "source": "lib/screens/store/item_detail_screen.dart",
+      "target": "lib/screens/store/components/item_detail_scroll_body.dart"
+    },
+    {
+      "source": "lib/screens/store/item_detail_screen.dart",
+      "target": "lib/screens/store/components/item_detail_footer.dart"
+    },
+    {
+      "source": "lib/screens/store/item_detail_screen.dart",
+      "target": "lib/screens/store/components/item_detail_dialogs.dart"
+    },
+    {
+      "source": "lib/screens/store/store_detail_screen.dart",
+      "target": "lib/providers/store_provider.dart"
+    },
+    {
+      "source": "lib/screens/store/store_detail_screen.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/screens/store/store_detail_screen.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/screens/stores_screen.dart",
+      "target": "lib/providers/store_provider.dart"
+    },
+    {
+      "source": "lib/screens/stores_screen.dart",
+      "target": "lib/models/store.dart"
+    },
+    {
+      "source": "lib/screens/tabs/cart_screen.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/cart_screen.dart",
+      "target": "lib/constants/static_data.dart"
+    },
+    {
+      "source": "lib/screens/tabs/cart_screen.dart",
+      "target": "lib/widgets/cart/cart_item_tile.dart"
+    },
+    {
+      "source": "lib/screens/tabs/cart_screen.dart",
+      "target": "lib/widgets/cart/order_summary.dart"
+    },
+    {
+      "source": "lib/screens/tabs/cart_screen.dart",
+      "target": "lib/widgets/cart/checkout_bar.dart"
+    },
+    {
+      "source": "lib/screens/tabs/cart_screen.dart",
+      "target": "lib/widgets/cart/empty_cart_view.dart"
+    },
+    {
+      "source": "lib/screens/tabs/cart_screen.dart",
+      "target": "lib/widgets/cart/editing_banner.dart"
+    },
+    {
+      "source": "lib/screens/tabs/cart_screen.dart",
+      "target": "lib/widgets/cart/frequently_added_section.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/providers/store_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/providers/notification_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/models/notification_item.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/models/order.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/widgets/home/home_header.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/widgets/home/store_section.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/widgets/home/menu_grouped_list.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/widgets/home/category_selector.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/widgets/home/cart_bar.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/widgets/home/item_options_sheet.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/services/ably_service.dart"
+    },
+    {
+      "source": "lib/screens/tabs/home_screen.dart",
+      "target": "lib/locator.dart"
+    },
+    {
+      "source": "lib/screens/tabs/orders_screen.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/orders_screen.dart",
+      "target": "lib/providers/order_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/orders_screen.dart",
+      "target": "lib/models/order.dart"
+    },
+    {
+      "source": "lib/screens/tabs/orders_screen.dart",
+      "target": "lib/widgets/orders/active_order_tracker.dart"
+    },
+    {
+      "source": "lib/screens/tabs/orders_screen.dart",
+      "target": "lib/widgets/orders/order_history_card.dart"
+    },
+    {
+      "source": "lib/screens/tabs/orders_screen.dart",
+      "target": "lib/widgets/orders/login_required_view.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/edit_profile_sheet.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/edit_profile_sheet.dart",
+      "target": "lib/screens/auth/widgets/custom_button.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/edit_profile_sheet.dart",
+      "target": "lib/widgets/home/location_selector.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/edit_profile_sheet.dart",
+      "target": "lib/screens/tabs/profile/widgets/bottom_sheet_scaffold.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/top_up_sheet.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/top_up_sheet.dart",
+      "target": "lib/screens/auth/widgets/custom_button.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/top_up_sheet.dart",
+      "target": "lib/screens/tabs/profile/widgets/bottom_sheet_scaffold.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/verification_sheet.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/verification_sheet.dart",
+      "target": "lib/services/api_service.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/verification_sheet.dart",
+      "target": "lib/screens/auth/widgets/constants.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/verification_sheet.dart",
+      "target": "lib/screens/auth/widgets/custom_button.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/sheets/verification_sheet.dart",
+      "target": "lib/screens/tabs/profile/widgets/bottom_sheet_scaffold.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/widgets/profile_header.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/widgets/profile_header.dart",
+      "target": "lib/screens/tabs/profile/sheets/edit_profile_sheet.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/widgets/verification_tile.dart",
+      "target": "lib/screens/tabs/profile/widgets/settings_tile.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/widgets/wallet_card.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile/widgets/wallet_card.dart",
+      "target": "lib/screens/tabs/profile/sheets/top_up_sheet.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile_screen.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile_screen.dart",
+      "target": "lib/providers/order_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile_screen.dart",
+      "target": "lib/providers/theme_provider.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile_screen.dart",
+      "target": "lib/widgets/home/location_selector.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile_screen.dart",
+      "target": "lib/screens/tabs/profile/widgets/profile_header.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile_screen.dart",
+      "target": "lib/screens/tabs/profile/widgets/wallet_card.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile_screen.dart",
+      "target": "lib/screens/tabs/profile/widgets/settings_tile.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile_screen.dart",
+      "target": "lib/screens/tabs/profile/widgets/verification_tile.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile_screen.dart",
+      "target": "lib/screens/tabs/profile/widgets/unauthenticated_view.dart"
+    },
+    {
+      "source": "lib/screens/tabs/profile_screen.dart",
+      "target": "lib/screens/tabs/profile/sheets/verification_sheet.dart"
+    },
+    {
+      "source": "lib/screens/tabs/tabs_shell.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/services/ably_service.dart",
+      "target": "lib/services/api_service.dart"
+    },
+    {
+      "source": "lib/services/ably_service.dart",
+      "target": "lib/models/order.dart"
+    },
+    {
+      "source": "lib/utils/price_calculator.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/utils/price_calculator.dart",
+      "target": "lib/models/cart_item.dart"
+    },
+    {
+      "source": "lib/widgets/cart/cart_item_tile.dart",
+      "target": "lib/models/cart_item.dart"
+    },
+    {
+      "source": "lib/widgets/cart/cart_item_tile.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/widgets/cart/cart_item_tile.dart",
+      "target": "lib/providers/store_provider.dart"
+    },
+    {
+      "source": "lib/widgets/cart/cart_item_tile.dart",
+      "target": "lib/constants/app_colors.dart"
+    },
+    {
+      "source": "lib/widgets/cart/cart_item_tile.dart",
+      "target": "lib/utils/price_calculator.dart"
+    },
+    {
+      "source": "lib/widgets/cart/checkout_bar.dart",
+      "target": "lib/constants/app_colors.dart"
+    },
+    {
+      "source": "lib/widgets/cart/editing_banner.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/widgets/cart/empty_cart_view.dart",
+      "target": "lib/constants/static_data.dart"
+    },
+    {
+      "source": "lib/widgets/cart/frequently_added_section.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/widgets/cart/frequently_added_section.dart",
+      "target": "lib/providers/store_provider.dart"
+    },
+    {
+      "source": "lib/widgets/cart/frequently_added_section.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/widgets/cart/order_summary.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/widgets/cart/order_summary.dart",
+      "target": "lib/constants/app_colors.dart"
+    },
+    {
+      "source": "lib/widgets/checkout/top_up_sheet.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/widgets/home/cart_bar.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/widgets/home/featured_meals.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/widgets/home/home_header.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/widgets/home/home_header.dart",
+      "target": "lib/providers/notification_provider.dart"
+    },
+    {
+      "source": "lib/widgets/home/home_header.dart",
+      "target": "lib/widgets/home/location_selector.dart"
+    },
+    {
+      "source": "lib/widgets/home/item_options_sheet.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/widgets/home/item_options_sheet.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/widgets/home/item_options_sheet.dart",
+      "target": "lib/providers/store_provider.dart"
+    },
+    {
+      "source": "lib/widgets/home/item_options_sheet.dart",
+      "target": "lib/utils/price_calculator.dart"
+    },
+    {
+      "source": "lib/widgets/home/item_options_sheet.dart",
+      "target": "lib/constants/static_data.dart"
+    },
+    {
+      "source": "lib/widgets/home/item_options_sheet.dart",
+      "target": "lib/screens/store/components/item_detail_options.dart"
+    },
+    {
+      "source": "lib/widgets/home/location_selector.dart",
+      "target": "lib/providers/auth_provider.dart"
+    },
+    {
+      "source": "lib/widgets/home/menu_grouped_list.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/widgets/home/menu_grouped_list.dart",
+      "target": "lib/widgets/home/menu_item_card.dart"
+    },
+    {
+      "source": "lib/widgets/home/menu_item_card.dart",
+      "target": "lib/models/menu_item.dart"
+    },
+    {
+      "source": "lib/widgets/home/store_banner.dart",
+      "target": "lib/models/store.dart"
+    },
+    {
+      "source": "lib/widgets/home/store_section.dart",
+      "target": "lib/models/store.dart"
+    },
+    {
+      "source": "lib/widgets/home/store_section.dart",
+      "target": "lib/widgets/home/store_tabs.dart"
+    },
+    {
+      "source": "lib/widgets/home/store_tabs.dart",
+      "target": "lib/models/store.dart"
+    },
+    {
+      "source": "lib/widgets/orders/active_order_tracker.dart",
+      "target": "lib/models/order.dart"
+    },
+    {
+      "source": "lib/widgets/orders/active_order_tracker.dart",
+      "target": "lib/constants/static_data.dart"
+    },
+    {
+      "source": "lib/widgets/orders/active_order_tracker.dart",
+      "target": "lib/constants/app_colors.dart"
+    },
+    {
+      "source": "lib/widgets/orders/active_order_tracker.dart",
+      "target": "lib/widgets/orders/order_timeline.dart"
+    },
+    {
+      "source": "lib/widgets/orders/login_required_view.dart",
+      "target": "lib/constants/app_colors.dart"
+    },
+    {
+      "source": "lib/widgets/orders/order_history_card.dart",
+      "target": "lib/models/order.dart"
+    },
+    {
+      "source": "lib/widgets/orders/order_history_card.dart",
+      "target": "lib/providers/cart_provider.dart"
+    },
+    {
+      "source": "lib/widgets/orders/order_history_card.dart",
+      "target": "lib/constants/app_colors.dart"
+    },
+    {
+      "source": "lib/widgets/orders/order_timeline.dart",
+      "target": "lib/models/order.dart"
+    }
+  ]
+}
