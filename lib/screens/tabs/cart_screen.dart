@@ -29,10 +29,7 @@ class CartScreen extends StatelessWidget {
               key: const ValueKey('cart_scaffold'),
               backgroundColor: Theme.of(context).colorScheme.surface,
               appBar: _buildAppBar(context, isIOS, cart),
-              body: _CartBody(
-                cart: cart,
-                accentColor: _getAccentColor(cart),
-              ),
+              body: _CartBody(cart: cart, accentColor: _getAccentColor(cart)),
               bottomNavigationBar: CheckoutBar(total: cart.cartTotal),
             ),
     );
@@ -52,11 +49,6 @@ class CartScreen extends StatelessWidget {
     bool isIOS,
     CartProvider cart,
   ) {
-    final store = StaticData.stores.firstWhere(
-      (s) => s.id == cart.currentStoreId,
-      orElse: () => StaticData.stores.first,
-    );
-    final accentColor = store.accentColor;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
@@ -113,10 +105,7 @@ class _CartBody extends StatelessWidget {
   final CartProvider cart;
   final Color accentColor;
 
-  const _CartBody({
-    required this.cart,
-    required this.accentColor,
-  });
+  const _CartBody({required this.cart, required this.accentColor});
 
   @override
   Widget build(BuildContext context) {
@@ -186,10 +175,9 @@ class _CartBody extends StatelessWidget {
         const SizedBox(height: 24),
 
         // Cart Items
-        ...cart.items.map((item) => CartItemTile(
-              key: ValueKey(item.id),
-              item: item,
-            )),
+        ...cart.items.map(
+          (item) => CartItemTile(key: ValueKey(item.id), item: item),
+        ),
 
         const SizedBox(height: 24),
 

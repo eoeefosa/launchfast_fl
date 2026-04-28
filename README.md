@@ -42,6 +42,7 @@ Located in `lib/models/`, using JSON serialization for data consistency:
 - **AblyService:** The backbone for real-time features. It handles channel subscriptions for user-specific and order-specific updates.
 - **AuthRepository:** Handles API calls for login, registration, and logout.
 - **MenuRepository:** Manages data fetching for stores and their menus.
+- **OrderRepository:** Manages data fetching for orders.
 
 ---
 
