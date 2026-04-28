@@ -10,7 +10,7 @@ import 'package:launchfast/screens/tabs/tabs_shell.dart';
 import 'screens/tabs/cart_screen.dart';
 import 'screens/store/store_detail_screen.dart';
 import 'screens/store/item_detail_screen.dart';
-import 'screens/checkout_screen.dart';
+import 'screens/checkout/checkout_screen.dart';
 import 'screens/search_screen.dart';
 import 'package:launchfast/screens/notifications_screen.dart';
 import 'package:launchfast/splash_screen.dart';
