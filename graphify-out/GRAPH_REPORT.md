@@ -4244,11 +4244,11 @@ Nodes (0):
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `package:flutter/material.dart` connect `Community 0` to `Community 2`, `Community 4`?**
-  _High betweenness centrality (0.021) - this node is a cross-community bridge._
-- **Why does `GTMSessionFetcherSessionDelegateDispatcher` connect `Community 9` to `Community 12`?**
-  _High betweenness centrality (0.007) - this node is a cross-community bridge._
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **Why does `xd3_encode_secondary()` connect `Community 1` to `Community 14`, `Community 7`?**
-  _High betweenness centrality (0.006) - this node is a cross-community bridge._
+  _High betweenness centrality (0.008) - this node is a cross-community bridge._
+- **Why does `AuthSession` connect `Community 7` to `Community 9`?**
+  _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **What connects `main`, `main`, `package:flutter_test/flutter_test.dart` to the rest of the system?**
   _3176 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
