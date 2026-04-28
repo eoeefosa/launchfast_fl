@@ -1,7 +1,7 @@
 # Graph Report - /Users/admin/Downloads/code/nodejs/project/launchfast-fl  (2026-04-28)
 
 ## Corpus Check
-- 793 files · ~494,222 words
+- 793 files · ~728,533 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -693,10 +693,10 @@
   ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-djw.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3.c
 - `djw_destroy()` --calls--> `xd3_free()`  [INFERRED]
   ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-djw.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3.c
-- `msgpack_unpacker_reserve_buffer()` --calls--> `msgpack_unpacker_expand_buffer()`  [INFERRED]
-  ios/Pods/msgpack/Pod/Classes/msgpack_src/msgpack/unpack.h → ios/Pods/msgpack/Pod/Classes/msgpack_src/unpack.c
-- `xd3_encode_huff()` --calls--> `xd3_bit_state_encode_init()`  [INFERRED]
-  ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-djw.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-second.h
+- `msgpack_unpacker_expand_buffer()` --calls--> `msgpack_unpacker_reserve_buffer()`  [INFERRED]
+  ios/Pods/msgpack/Pod/Classes/msgpack_src/unpack.c → ios/Pods/msgpack/Pod/Classes/msgpack_src/msgpack/unpack.h
+- `xd3_bit_state_encode_init()` --calls--> `xd3_encode_huff()`  [INFERRED]
+  ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-second.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-djw.h
 - `xd3_decode_secondary()` --calls--> `xd3_read_size()`  [INFERRED]
   ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-second.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-internal.h
 
@@ -4244,11 +4244,11 @@ Nodes (0):
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `package:flutter/material.dart` connect `Community 0` to `Community 2`, `Community 4`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Why does `xd3_encode_secondary()` connect `Community 1` to `Community 14`, `Community 7`?**
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Why does `AuthSession` connect `Community 7` to `Community 9`?**
-  _High betweenness centrality (0.005) - this node is a cross-community bridge._
+  _High betweenness centrality (0.006) - this node is a cross-community bridge._
 - **What connects `main`, `main`, `package:flutter_test/flutter_test.dart` to the rest of the system?**
   _3176 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
