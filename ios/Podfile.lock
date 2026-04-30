@@ -16,6 +16,17 @@ PODS:
     - GoogleUtilities/Environment (~> 8.0)
     - GoogleUtilities/UserDefaults (~> 8.0)
     - PromisesObjC (~> 2.4)
+  - Firebase/CoreOnly (12.12.0):
+    - FirebaseCore (~> 12.12.0)
+  - firebase_core (4.7.0):
+    - Firebase/CoreOnly (= 12.12.0)
+    - Flutter
+  - FirebaseCore (12.12.1):
+    - FirebaseCoreInternal (~> 12.12.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/Logger (~> 8.1)
+  - FirebaseCoreInternal (12.12.0):
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
   - Flutter (1.0.0)
   - flutter_secure_storage (6.0.0):
     - Flutter
@@ -34,6 +45,8 @@ PODS:
     - GoogleUtilities/Privacy
   - GoogleUtilities/Logger (8.1.0):
     - GoogleUtilities/Environment
+    - GoogleUtilities/Privacy
+  - "GoogleUtilities/NSData+zlib (8.1.0)":
     - GoogleUtilities/Privacy
   - GoogleUtilities/Privacy (8.1.0)
   - GoogleUtilities/UserDefaults (8.1.0):
@@ -60,6 +73,7 @@ PODS:
 
 DEPENDENCIES:
   - ably_flutter (from `.symlinks/plugins/ably_flutter/ios`)
+  - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - Flutter (from `Flutter`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
   - google_sign_in_ios (from `.symlinks/plugins/google_sign_in_ios/darwin`)
@@ -73,6 +87,9 @@ SPEC REPOS:
     - AblyDeltaCodec
     - AppAuth
     - AppCheckCore
+    - Firebase
+    - FirebaseCore
+    - FirebaseCoreInternal
     - GoogleSignIn
     - GoogleUtilities
     - GTMAppAuth
@@ -83,6 +100,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   ably_flutter:
     :path: ".symlinks/plugins/ably_flutter/ios"
+  firebase_core:
+    :path: ".symlinks/plugins/firebase_core/ios"
   Flutter:
     :path: Flutter
   flutter_secure_storage:
@@ -102,6 +121,10 @@ SPEC CHECKSUMS:
   AblyDeltaCodec: add5d06a756b3581b12aab5b5500a320b8c55bea
   AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
+  Firebase: aa154fee4e9b8eac17aa42344988865b3e857d33
+  firebase_core: 9156a152117c843440b0b990c785aa0259bc5447
+  FirebaseCore: 86241206e656f5c80c995e370e6c975913b9b284
+  FirebaseCoreInternal: 7c12fc3011d889085e765e317d7b9fd1cef97af9
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_secure_storage: 1ed9476fba7e7a782b22888f956cce43e2c62f13
   google_sign_in_ios: b48bb9af78576358a168361173155596c845f0b9
@@ -115,6 +138,6 @@ SPEC CHECKSUMS:
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
 
-PODFILE CHECKSUM: f79e1872da79a29354b04cf03619f8f3d69fe58e
+PODFILE CHECKSUM: 4b015915ec662986b54bf30ab778da63f7dda016
 
 COCOAPODS: 1.16.2

@@ -75,17 +75,34 @@ class CartItem {
     // The backend sends proper nested JSON objects, not JSON-encoded strings.
     // Guard against both shapes defensively, but the canonical path is Map.
     final rawItem = json['menuItem'];
-    if (rawItem == null || rawItem is! Map) {
-      throw FormatException('CartItem.fromJson: missing or invalid "menuItem" field');
+    final menuItemId = json['menuItemId']?.toString();
+    
+    MenuItem? menuItem;
+    if (rawItem is Map<String, dynamic>) {
+      menuItem = MenuItem.fromJson(rawItem);
+    } else if (menuItemId != null) {
+      // Fallback: Create a placeholder MenuItem with the ID
+      menuItem = MenuItem(
+        id: menuItemId,
+        storeId: '',
+        name: 'Item $menuItemId',
+        description: '',
+        price: 0,
+        category: 'Others',
+        image: '',
+      );
     }
-    final menuItemData = Map<String, dynamic>.from(rawItem);
+
+    if (menuItem == null) {
+      throw FormatException('CartItem.fromJson: missing both "menuItem" and "menuItemId"');
+    }
 
     final meatsData = json['selectedMeats'] as Map<String, dynamic>?;
     final addonsData = json['selectedAddons'] as Map<String, dynamic>?;
 
     return CartItem(
       id: json['id'],
-      menuItem: MenuItem.fromJson(menuItemData),
+      menuItem: menuItem,
       quantity: json['quantity'] ?? 1,
       extras: json['extras'] != null ? List<String>.from(json['extras']) : null,
       selectedMeats:

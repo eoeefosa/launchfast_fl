@@ -33,13 +33,15 @@ class MenuItem {
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
     return MenuItem(
-      id: json['id'],
-      storeId: json['storeId'],
-      name: json['name'],
-      description: json['description'],
-      price: (json['price'] as num).toDouble(),
-      category: json['category'],
-      image: json['image'],
+      id: json['id'] ?? '',
+      storeId: json['storeId'] ?? json['store'] ?? '',
+      name: json['name'] ?? 'Unknown Item',
+      description: json['description'] ?? '',
+      price: (json['price'] ?? 0.0) is num 
+          ? (json['price'] as num).toDouble() 
+          : 0.0,
+      category: json['category'] ?? 'Others',
+      image: json['image'] ?? '',
       popular: json['popular'] ?? false,
       isPerPortion: json['isPerPortion'] ?? false,
       isFreeWithSwallow: json['isFreeWithSwallow'] ?? false,

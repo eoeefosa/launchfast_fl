@@ -13,8 +13,8 @@ class ApiService {
     dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
         headers: {'Content-Type': 'application/json'},
       ),
     );
@@ -39,9 +39,17 @@ class ApiService {
         },
         onError: (DioException e, handler) {
           debugPrint(
-            '❌ [API] ${e.response?.statusCode ?? 'Timeout'} ${e.requestOptions.path}',
+            '❌ [API] ${e.response?.statusCode ?? 'Network Error'} ${e.requestOptions.path}',
           );
-          debugPrint('Message: ${e.response?.data?['error'] ?? e.message}');
+          
+          String message = e.message ?? 'Unknown error';
+          if (e.response?.data is Map) {
+            message = e.response?.data['message'] ?? e.response?.data['error'] ?? message;
+          } else if (e.response?.data is String && (e.response?.data as String).isNotEmpty) {
+            message = e.response?.data;
+          }
+          
+          debugPrint('Message: $message');
           return handler.next(e);
         },
       ),

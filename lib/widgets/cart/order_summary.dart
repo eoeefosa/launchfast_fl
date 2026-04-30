@@ -34,31 +34,28 @@ class OrderSummary extends StatelessWidget {
           const SizedBox(height: 20),
           _SummaryRow(label: 'Items Subtotal', value: cart.subTotal),
           const SizedBox(height: 16),
-          
+
           // Logistics Section
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.03),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               children: [
-                _SummaryRow(
-                  label: 'Delivery Fee', 
-                  value: cart.deliveryFees,
-                  dimmed: true,
-                ),
                 const SizedBox(height: 10),
                 _SummaryRow(
-                  label: 'Service Fee', 
+                  label: 'Service Fee',
                   value: cart.serviceFees,
                   dimmed: true,
                 ),
               ],
             ),
           ),
-          
+
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
             child: Divider(height: 1),
@@ -107,7 +104,9 @@ class _SummaryRow extends StatelessWidget {
             fontWeight: isTotal ? FontWeight.w900 : FontWeight.w700,
             color: isTotal
                 ? AppColors.primary
-                : Theme.of(context).colorScheme.onSurface.withValues(alpha: dimmed ? 0.6 : 1.0),
+                : Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: dimmed ? 0.6 : 1.0),
           ),
         ),
       ],

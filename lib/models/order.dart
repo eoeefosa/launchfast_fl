@@ -1,3 +1,5 @@
+import 'dart:math';
+import 'dart:ui';
 import 'cart_item.dart';
 import 'user.dart';
 import 'store.dart';
@@ -110,7 +112,23 @@ class Order {
       date: json['date']?.toString() ?? '',
       stores:
           (json['stores'] as List?)
-              ?.map((s) => Store.fromJson(s as Map<String, dynamic>))
+              ?.map((s) {
+                if (s is Map<String, dynamic>) {
+                  return Store.fromJson(s);
+                }
+                // Fallback for when only IDs are returned
+                return Store(
+                  id: s.toString(),
+                  name: 'Store ${s.toString().substring(0, min(4, s.toString().length))}',
+                  tagline: '',
+                  accentColor: const Color(0xFFFF6B2C),
+                  deliveryTime: '',
+                  rating: 5.0,
+                  isOpen: true,
+                  deliveryFee: 0,
+                  image: '',
+                );
+              })
               .toList() ??
           [],
       isPriority: json['isPriority'] ?? false,
@@ -126,7 +144,7 @@ class Order {
       'total': total,
       'status': status.name,
       'date': date,
-      'stores': stores,
+      'stores': stores.map((s) => s.toJson()).toList(),
       'isPriority': isPriority,
       'riderId': riderId,
     };

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import '../common/universal_image.dart';
 import '../../models/menu_item.dart';
 
 class MenuItemCard extends StatelessWidget {
@@ -43,12 +44,12 @@ class MenuItemCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: CachedNetworkImage(
+                child: UniversalImage(
                   imageUrl: item.image,
                   width: 90,
                   height: 90,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
+                  placeholder: Container(
                     color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   ),
                 ),

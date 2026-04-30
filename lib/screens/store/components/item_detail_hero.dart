@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import '../../../widgets/common/universal_image.dart';
 
 // ─────────────────────────────────────────────
 //  Hero image with gradient overlay
@@ -25,21 +26,19 @@ class ItemDetailHero extends StatelessWidget {
         children: [
           ScaleTransition(
             scale: heroScale,
-            child: CachedNetworkImage(
+            child: UniversalImage(
               imageUrl: imageUrl,
               fit: BoxFit.cover,
-              placeholder:
-                  (_, _) => Container(
-                    color: Colors.grey.withValues(alpha: 0.15),
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-              errorWidget:
-                  (_, _, _) => Container(
-                    color: Colors.grey.withValues(alpha: 0.15),
-                    child: const Icon(Icons.broken_image_outlined, size: 48),
-                  ),
+              placeholder: Container(
+                color: Colors.grey.withValues(alpha: 0.15),
+                child: const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+              errorWidget: Container(
+                color: Colors.grey.withValues(alpha: 0.15),
+                child: const Icon(Icons.broken_image_outlined, size: 48),
+              ),
             ),
           ),
           // Gradient overlay for legibility

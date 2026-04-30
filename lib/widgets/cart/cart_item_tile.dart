@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../common/universal_image.dart';
 import '../../models/cart_item.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
@@ -54,12 +55,12 @@ class CartItemTile extends StatelessWidget {
                   // Image Section
                   Hero(
                     tag: 'cart_item_${item.id}',
-                    child: CachedNetworkImage(
+                    child: UniversalImage(
                       imageUrl: item.menuItem.image,
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
+                      placeholder: Container(
                         color: AppColors.lightSurface,
                         child: const Center(
                           child: CupertinoActivityIndicator(),

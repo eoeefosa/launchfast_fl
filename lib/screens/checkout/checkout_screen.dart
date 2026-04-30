@@ -309,7 +309,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       HapticFeedback.mediumImpact();
       final orderData = {
-        'items': cart.items.map((i) => i.toJson()).toList(),
+        'items': cart.items.map((i) => {
+          'menuItemId': i.menuItem.id,
+          'quantity': i.quantity,
+          'extras': i.extras,
+          'selectedMeats': i.selectedMeats,
+          'hasSalad': i.hasSalad,
+          'selectedAddons': i.selectedAddons,
+        }).toList(),
         'total': total,
         'deliveryType': _deliveryType.name,
         'paymentMethod': _paymentMethod,
@@ -331,16 +338,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     } on DioException catch (e) {
       if (!mounted) return;
-      final data = e.response?.data;
-      String? message;
-      if (data is Map) {
-        message = data['message'] ?? data['error'];
+      String message = 'An error occurred during checkout. Please try again.';
+      
+      if (e.type == DioExceptionType.connectionTimeout || 
+          e.type == DioExceptionType.receiveTimeout) {
+        message = 'The connection timed out. Please check your internet and try again.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        message = 'Could not connect to the server. Please check your internet.';
+      } else if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? e.response?.data['error'] ?? message;
       }
-      _showErrorDialog(message ?? 'An error occurred during checkout. Please try again.');
+      
+      _showErrorDialog(message);
     } catch (e) {
       if (!mounted) return;
       _showErrorDialog(
-        'An unexpected error occurred. Please check your connection and try again.',
+        'An unexpected error occurred. Please try again.',
       );
     }
   }

@@ -104,7 +104,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     final item = storeProvider.menuItems.firstWhere((m) => m.id == widget.id);
-    final store = StaticData.stores.firstWhere((s) => s.id == item.storeId);
+    final store = storeProvider.stores.firstWhere(
+      (s) => s.id == item.storeId,
+      orElse: () => storeProvider.stores.first,
+    );
     final accentColor = store.accentColor;
 
     final availableSoups =

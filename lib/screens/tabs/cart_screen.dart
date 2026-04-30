@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:launchfast/providers/store_provider.dart';
 import 'dart:io';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../providers/cart_provider.dart';
-import '../../constants/static_data.dart';
 import '../../widgets/cart/cart_item_tile.dart';
 import '../../widgets/cart/order_summary.dart';
 import '../../widgets/cart/checkout_bar.dart';
@@ -29,17 +29,18 @@ class CartScreen extends StatelessWidget {
               key: const ValueKey('cart_scaffold'),
               backgroundColor: Theme.of(context).colorScheme.surface,
               appBar: _buildAppBar(context, isIOS, cart),
-              body: _CartBody(cart: cart, accentColor: _getAccentColor(cart)),
+              body: _CartBody(cart: cart, accentColor: _getAccentColor(context, cart)),
               bottomNavigationBar: CheckoutBar(total: cart.cartTotal),
             ),
     );
   }
 
-  Color _getAccentColor(CartProvider cart) {
+  Color _getAccentColor(BuildContext context, CartProvider cart) {
     if (cart.items.isEmpty) return Colors.orange;
-    final store = StaticData.stores.firstWhere(
+    final stores = context.read<StoreProvider>().stores;
+    final store = stores.firstWhere(
       (s) => s.id == cart.currentStoreId,
-      orElse: () => StaticData.stores.first,
+      orElse: () => stores.first,
     );
     return store.accentColor;
   }
@@ -110,9 +111,10 @@ class _CartBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final store = StaticData.stores.firstWhere(
+    final stores = context.read<StoreProvider>().stores;
+    final store = stores.firstWhere(
       (s) => s.id == cart.currentStoreId,
-      orElse: () => StaticData.stores.first,
+      orElse: () => stores.first,
     );
     final storeName = store.name;
 

@@ -176,10 +176,7 @@ class CartProvider with ChangeNotifier {
   }) {
     // Uses CartItem._mapsEqual indirectly via sameSlotAs — no jsonEncode.
     final index = _items.indexWhere(
-      (i) => i.sameSlotAs(
-        menuItemId: itemId,
-        selectedMeats: selectedMeats,
-      ),
+      (i) => i.sameSlotAs(menuItemId: itemId, selectedMeats: selectedMeats),
     );
 
     if (index != -1) {
@@ -248,22 +245,25 @@ class CartProvider with ChangeNotifier {
   }) {
     double total = _items.fold(
       0,
-      (sum, item) => sum + itemPrice(
-        item,
-        meatPrices: meatPrices,
-        saladPrice: saladPrice,
-        allMenuItems: allMenuItems,
-      ),
+      (sum, item) =>
+          sum +
+          itemPrice(
+            item,
+            meatPrices: meatPrices,
+            saladPrice: saladPrice,
+            allMenuItems: allMenuItems,
+          ),
     );
 
     final swallowCount = _items
         .where((i) => i.menuItem.category == 'Swallow')
         .fold(0, (sum, i) => sum + i.quantity);
-    final freeEligibleSoups = _items
-        .where((i) => i.menuItem.isFreeWithSwallow)
-        .expand((i) => List.filled(i.quantity, i.menuItem.price))
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
+    final freeEligibleSoups =
+        _items
+            .where((i) => i.menuItem.isFreeWithSwallow)
+            .expand((i) => List.filled(i.quantity, i.menuItem.price))
+            .toList()
+          ..sort((a, b) => b.compareTo(a));
 
     final discountCount = swallowCount < freeEligibleSoups.length
         ? swallowCount
@@ -287,7 +287,10 @@ class CartProvider with ChangeNotifier {
     if (_items.isEmpty) return 0;
     final storeIds = _items.map((i) => i.menuItem.storeId).toSet();
     return storeIds.fold(0, (sum, id) {
-      final store = StaticData.stores.firstWhere((s) => s.id == id);
+      final store = StaticData.stores.firstWhere(
+        (s) => s.id == id,
+        orElse: () => StaticData.stores.first,
+      );
       return sum + store.deliveryFee;
     });
   }
@@ -308,5 +311,5 @@ class CartProvider with ChangeNotifier {
   double totalFor(DeliveryType deliveryType) =>
       subTotal + serviceFees + deliveryChargeFor(deliveryType);
 
-  double get cartTotal => subTotal + deliveryFees + serviceFees;
+  double get cartTotal => subTotal + serviceFees;
 }
