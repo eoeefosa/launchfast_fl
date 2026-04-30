@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:launchfast/widgets/orders/active_order_tracker/rider_card.dart';
+import 'package:launchfast/widgets/orders/active_order_tracker/status_icons.dart';
 import 'dart:io';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/order.dart';
 import '../../constants/static_data.dart';
@@ -93,7 +93,7 @@ class ActiveOrderTracker extends StatelessWidget {
                           ],
                         ),
                       ),
-                      _StatusIcon(status: order.status),
+                      StatusIcon(status: order.status),
                     ],
                   ),
                   const SizedBox(height: 40),
@@ -101,7 +101,7 @@ class ActiveOrderTracker extends StatelessWidget {
                 ],
               ),
             ),
-            if (rider != null) _RiderCard(rider: rider, isIOS: isIOS),
+            if (rider != null) RiderCard(rider: rider, isIOS: isIOS),
           ],
         ),
       ),
@@ -136,150 +136,5 @@ class ActiveOrderTracker extends StatelessWidget {
       default:
         return 'Processing your order...';
     }
-  }
-}
-
-class _StatusIcon extends StatelessWidget {
-  final OrderStatus status;
-
-  const _StatusIcon({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    IconData icon = Icons.timer_rounded;
-    if (status == OrderStatus.preparing) icon = Icons.restaurant_rounded;
-    if (status == OrderStatus.outForDelivery) {
-      icon = Icons.delivery_dining_rounded;
-    }
-    if (status == OrderStatus.delivered) icon = Icons.check_circle_rounded;
-
-    return Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.onSurface,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Icon(icon, color: Theme.of(context).colorScheme.surface, size: 40),
-        )
-        .animate(onPlay: (controller) => controller.repeat(reverse: true))
-        .scale(
-          begin: const Offset(1, 1),
-          end: const Offset(1.05, 1.05),
-          duration: 2.seconds,
-          curve: Curves.easeInOut,
-        );
-  }
-}
-
-class _RiderCard extends StatelessWidget {
-  final dynamic rider;
-  final bool isIOS;
-
-  const _RiderCard({required this.rider, required this.isIOS});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        border: Border(
-          top: BorderSide(color: AppColors.lightBorder.withValues(alpha: 0.5)),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Theme.of(context).colorScheme.surface,
-              border: Border.all(color: AppColors.primary, width: 2),
-              image: const DecorationImage(
-                image: NetworkImage(
-                  'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&auto=format&fit=crop',
-                ),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Delivery Partner',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.lightMuted,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  rider.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _CallButton(phoneNumber: rider.phoneNumber, isIOS: isIOS),
-        ],
-      ),
-    );
-  }
-}
-
-class _CallButton extends StatelessWidget {
-  final String phoneNumber;
-  final bool isIOS;
-
-  const _CallButton({required this.phoneNumber, required this.isIOS});
-
-  @override
-  Widget build(BuildContext context) {
-    if (isIOS) {
-      return CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: () => launchUrl(Uri.parse('tel:$phoneNumber')),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.onSurface,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Icon(
-            CupertinoIcons.phone_fill,
-            color: Theme.of(context).colorScheme.surface,
-            size: 20,
-          ),
-        ),
-      );
-    }
-
-    return IconButton(
-      onPressed: () => launchUrl(Uri.parse('tel:$phoneNumber')),
-      icon: Icon(Icons.phone_in_talk_rounded, color: Theme.of(context).colorScheme.surface),
-      style: IconButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.onSurface,
-        padding: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-    );
   }
 }

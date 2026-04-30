@@ -84,11 +84,11 @@ class EmptyCartView extends StatelessWidget {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: StaticData.stores.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 16),
+                  separatorBuilder: (_, _) => const SizedBox(width: 16),
                   itemBuilder: (context, index) {
                     final store = StaticData.stores[index];
                     return GestureDetector(
-                      onTap: () => context.go('/order'),
+                      onTap: () => context.push('/store/${store.id}'),
                       child: Container(
                         width: 220,
                         decoration: BoxDecoration(

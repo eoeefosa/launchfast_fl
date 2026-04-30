@@ -70,6 +70,12 @@ class AblyService {
           if (change.current == ably.ConnectionState.connected) {
             _subscribeUserChannel(userId);
             _subscribeStoresChannel();
+            
+            try {
+              _realtime!.push.activate();
+            } catch (e) {
+              debugPrint('[AblyService] Error activating push: $e');
+            }
           }
         }),
       );

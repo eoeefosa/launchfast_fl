@@ -1,0 +1,41 @@
+{
+  "project_info": {
+    "project_number": "471745302305",
+    "project_id": "try-auth-f5762",
+    "storage_bucket": "try-auth-f5762.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:471745302305:android:c990b131458efeab117860",
+        "android_client_info": {
+          "package_name": "com.launchfast.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkGr9_24ZB1ifXAGVAJIs1990dQYpSgSw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "471745302305-tts3kroutn6jofuvcldfckjk4j7et6l2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "471745302305-6t0j04g0d2j0u101392nsd5he7p7m936.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.appAuth"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -162,8 +162,9 @@ class _HeaderActions extends StatelessWidget {
                   ),
                   Consumer<NotificationProvider>(
                     builder: (context, provider, child) {
-                      if (provider.unreadCount == 0)
+                      if (provider.unreadCount == 0) {
                         return const SizedBox.shrink();
+                      }
                       return Positioned(
                         right: -2,
                         top: -2,

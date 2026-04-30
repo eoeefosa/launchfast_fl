@@ -1,11 +1,11 @@
-# Graph Report - /Users/admin/Downloads/code/nodejs/project/launchfast-fl  (2026-04-28)
+# Graph Report - /Users/admin/Downloads/code/nodejs/project/launchfast-fl  (2026-04-29)
 
 ## Corpus Check
-- 793 files · ~728,656 words
+- 799 files · ~728,694 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4825 nodes · 4970 edges · 666 communities detected
+- 4855 nodes · 5007 edges · 665 communities detected
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 172 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
@@ -675,13 +675,12 @@
 - [[_COMMUNITY_Community 662|Community 662]]
 - [[_COMMUNITY_Community 663|Community 663]]
 - [[_COMMUNITY_Community 664|Community 664]]
-- [[_COMMUNITY_Community 665|Community 665]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `GTMSessionFetcher` - 181 edges
 2. `GTMSessionUploadFetcher` - 94 edges
 3. `ARTJsonLikeEncoder` - 93 edges
-4. `package:flutter/material.dart` - 82 edges
+4. `package:flutter/material.dart` - 88 edges
 5. `ARTRealtimeInternal` - 81 edges
 6. `ARTRealtimeChannelInternal` - 69 edges
 7. `ARTSRWebSocket` - 61 edges
@@ -690,106 +689,106 @@
 10. `ARTRealtimeChannel` - 41 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `main_input()` --calls--> `xd3_abort_stream()`  [INFERRED]
-  ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-main.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3.c
+- `djw_alloc()` --calls--> `xd3_alloc()`  [INFERRED]
+  ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-djw.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3.c
+- `djw_destroy()` --calls--> `xd3_free()`  [INFERRED]
+  ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-djw.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3.c
 - `msgpack_unpacker_expand_buffer()` --calls--> `msgpack_unpacker_reserve_buffer()`  [INFERRED]
   ios/Pods/msgpack/Pod/Classes/msgpack_src/unpack.c → ios/Pods/msgpack/Pod/Classes/msgpack_src/msgpack/unpack.h
 - `xd3_bit_state_encode_init()` --calls--> `xd3_encode_huff()`  [INFERRED]
   ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-second.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-djw.h
-- `xd3_test_clean_bits()` --calls--> `xd3_decode_huff()`  [INFERRED]
-  ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-second.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-djw.h
-- `xd3_decode_allocate()` --calls--> `main_recode_copy()`  [INFERRED]
-  ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-decode.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-main.h
+- `xd3_decode_secondary()` --calls--> `xd3_read_size()`  [INFERRED]
+  ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-second.h → ios/Pods/AblyDeltaCodec/xdelta/xdelta3/xdelta3-internal.h
 
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.01
-Nodes (427): components/item_detail_dialogs.dart, components/item_detail_footer.dart, components/item_detail_scroll_body.dart, ../../constants/app_colors.dart, dart:io, AppColors, build, main (+419 more)
+Cohesion: 0.0
+Nodes (524): components/item_detail_dialogs.dart, components/item_detail_footer.dart, components/item_detail_scroll_body.dart, ../../constants/app_colors.dart, dart:io, dart:ui, AppColors, build (+516 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.01
-Nodes (174): api_service.dart, app_colors.dart, ../../constants/static_data.dart, dart:async, dart:convert, dart:ui, item_detail_header.dart, item_detail_hero.dart (+166 more)
+Cohesion: 0.02
+Nodes (214): adler32(), main_getblk_func(), main_getblk_lru(), main_lru_cleanup(), main_lru_reset(), main_read_seek_source(), main_set_source(), xd3_decode_allocate() (+206 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.01
-Nodes (192): GTMSessionFetcher, -activePersistedBackgroundSessions, -addPersistedBackgroundSessionToDefaults, -addPropertiesFromDictionary, -appAllowsInsecureRequests, -appendLoggedStreamData, -applicationhandleEventsForBackgroundURLSessioncompletionHandler, -applyDecoratorsAtRequestDidFinishwithDataerrorstartingAtIndexshouldReleaseCallbacks (+184 more)
+Nodes (186): api_service.dart, app_colors.dart, ../../constants/static_data.dart, dart:async, dart:convert, item_detail_header.dart, item_detail_hero.dart, item_detail_options.dart (+178 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.03
-Nodes (167): adler32(), xd3_decode_allocate(), xd3_decode_byte(), xd3_decode_bytes(), xd3_decode_emit(), xd3_decode_finish_window(), xd3_decode_init_window(), xd3_decode_input() (+159 more)
+Cohesion: 0.01
+Nodes (181): GTMSessionFetcher, -activePersistedBackgroundSessions, -addPersistedBackgroundSessionToDefaults, -addPropertiesFromDictionary, -appAllowsInsecureRequests, -appendLoggedStreamData, -applicationhandleEventsForBackgroundURLSessioncompletionHandler, -applyDecoratorsAtRequestDidFinishwithDataerrorstartingAtIndexshouldReleaseCallbacks (+173 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.02
-Nodes (119): ../../../auth/widgets/constants.dart, ../../../auth/widgets/custom_button.dart, _appBar, build, _buildPaymentTile, CheckoutScreen, _CheckoutScreenState, Container (+111 more)
+Nodes (107): ARTConnectionStateChange, -setRetryIn, ARTRealtime, -auth, -channels, -clientId, -close, -connect (+99 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.02
-Nodes (107): ARTConnectionStateChange, -setRetryIn, ARTRealtime, -auth, -channels, -clientId, -close, -connect (+99 more)
-
-### Community 6 - "Community 6"
-Cohesion: 0.02
 Nodes (105): GTMSessionFetcher, -beginFetchForRetry, -completionHandlerWithTargetdidFinishSelector, -createSessionIdentifierWithMetadata, -invokeOnCallbackQueueafterUserStoppedblock, -parentUploadFetcher, -releaseCallbacks, -retryTimer (+97 more)
 
-### Community 7 - "Community 7"
+### Community 6 - "Community 6"
 Cohesion: 0.03
 Nodes (57): AuthorizationArguments, AuthSession, CallbackStyle, completion, delegate, Error, accessTokenEmptyForRequest, cannotAuthorizeRequest (+49 more)
 
-### Community 8 - "Community 8"
+### Community 7 - "Community 7"
 Cohesion: 0.02
 Nodes (93): ARTJsonLikeEncoder, -annotationActionFromInt, -annotationFromDictionary, -annotationsFromArray, -annotationsToArray, -annotationToDictionary, -authDetailsFromDictionary, -authDetailsToDictionary (+85 more)
 
-### Community 9 - "Community 9"
+### Community 8 - "Community 8"
 Cohesion: 0.02
 Nodes (72): PodsDummy_Ably, PodsDummy_ably_flutter, PodsDummy_AblyDeltaCodec, PodsDummy_AppAuth, PodsDummy_AppCheckCore, PodsDummy_flutter_secure_storage, GACAppCheckBackoffOperationFailure, -init (+64 more)
 
-### Community 10 - "Community 10"
-Cohesion: 0.06
-Nodes (81): main_getblk_func(), main_getblk_lru(), main_lru_cleanup(), main_lru_reset(), main_read_seek_source(), main_set_source(), get_errno(), get_millisecs_now() (+73 more)
-
-### Community 11 - "Community 11"
+### Community 9 - "Community 9"
 Cohesion: 0.04
 Nodes (38): decl_count(), get_count(), incr_count(), init_count(), msgpack_unpack_next(), msgpack_unpacked_destroy(), msgpack_unpacker_data(), msgpack_unpacker_destroy() (+30 more)
 
-### Community 12 - "Community 12"
+### Community 10 - "Community 10"
 Cohesion: 0.03
 Nodes (69): ARTRealtimeChannelInternal, -annotations, -attach, -attachAfterChecks, -canBeReattached, -clientId_nosync, -connectionId, -detach (+61 more)
 
-### Community 13 - "Community 13"
+### Community 11 - "Community 11"
 Cohesion: 0.03
 Nodes (63): GTMSessionFetcher, -beginFetchMayDelaymayAuthorizemayDecorate, GTMSessionFetcherService, -abandonDispatcher, -addDecorator, -addDelayedFetcherforHost, -addRunningFetcherforHost, -authorizer (+55 more)
 
-### Community 14 - "Community 14"
+### Community 12 - "Community 12"
 Cohesion: 0.03
 Nodes (61): ARTSRWebSocket, -_addConsumerWithDataLengthcallbackreadToCurrentFrameunmaskBytes, -_addConsumerWithScannercallback, -_addConsumerWithScannercallbackdataLength, -assertOnWorkQueue, -automaticallyNotifiesObserversOfReadyState, -_checkHandshake, -_cleanupSelfReference (+53 more)
 
-### Community 15 - "Community 15"
+### Community 13 - "Community 13"
+Cohesion: 0.07
+Nodes (54): djw_alloc(), djw_build_codes(), djw_build_decoder(), djw_build_prefix(), djw_compute_mtf_1_2(), djw_compute_multi_prefix(), djw_compute_prefix_1_2(), djw_compute_selector_1_2() (+46 more)
+
+### Community 14 - "Community 14"
 Cohesion: 0.03
 Nodes (57): ARTConnection, -close, -connect, -createRecoveryKey, -errorReason, -id, -initWithInternalqueuedDealloc, -internal_nosync (+49 more)
 
-### Community 16 - "Community 16"
+### Community 15 - "Community 15"
 Cohesion: 0.04
 Nodes (55): ARTRest, -auth, -channels, -createWithKey, -createWithOptions, -createWithToken, -device, -device_nosync (+47 more)
 
-### Community 17 - "Community 17"
+### Community 16 - "Community 16"
 Cohesion: 0.04
 Nodes (46): ARTChannelProperties, -initWithAttachSerialchannelSerial, ARTEvent, -initWithChannelEvent, -newWithChannelEvent, ARTRealtimeChannel, -annotations, -attach (+38 more)
 
-### Community 18 - "Community 18"
+### Community 17 - "Community 17"
 Cohesion: 0.04
 Nodes (46): ARTCancellableFromCallback, -cancel, -init, -initWithCallback, -invokeWithResulterror, -new, ARTChannelDetails, -initWithChannelIdstatus (+38 more)
 
-### Community 19 - "Community 19"
+### Community 18 - "Community 18"
 Cohesion: 0.04
 Nodes (46): GIDAuthFlow, GIDSignIn, -addCompletionCallback, -addDecodeIdTokenCallback, -additionalParametersFromOptions, -addSaveAuthCallback, -addScopespresentingViewControllercompletion, -addScopespresentingWindowcompletion (+38 more)
 
-### Community 20 - "Community 20"
+### Community 19 - "Community 19"
 Cohesion: 0.04
 Nodes (45): ARTEvent, -identification, -initWithString, -newWithString, ARTEventEmitter, -addObjecttoArrayWithKey, -emitwith, -initWithQueue (+37 more)
 
-### Community 21 - "Community 21"
+### Community 20 - "Community 20"
 Cohesion: 0.05
 Nodes (37): FBLPromise, -onQueuewrap2ObjectsOrErrorCompletion, -onQueuewrapBoolCompletion, -onQueuewrapBoolOrErrorCompletion, -onQueuewrapCompletion, -onQueuewrapDoubleCompletion, -onQueuewrapDoubleOrErrorCompletion, -onQueuewrapErrorCompletion (+29 more)
+
+### Community 21 - "Community 21"
+Cohesion: 0.06
+Nodes (34): ../../../auth/widgets/constants.dart, ../../../auth/widgets/custom_button.dart, BottomSheetScaffold, build, _buildTextField, dispose, EditProfileSheet, _EditProfileSheetState (+26 more)
 
 ### Community 22 - "Community 22"
 Cohesion: 0.06
@@ -833,59 +832,59 @@ Nodes (28): ARTCbcCipher, -cbcCipherWithParamslogger, -cipherName, -decryptoutpu
 
 ### Community 32 - "Community 32"
 Cohesion: 0.07
-Nodes (28): GIDSignInButton, -buttonText, -buttonTextFont, -drawButtonBackground, -drawButtonText, -drawRect, -encodeWithCoder, -initWithCoder (+20 more)
+Nodes (28): GTMSessionCookieStorage, -cookieAcceptPolicy, -cookieMatchingCookie, -cookies, -cookiesForURL, -deleteCookie, -getCookiesForTaskcompletionHandler, -hasCookieExpired (+20 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.07
-Nodes (27): ARTClientOptions, -copyWithZone, -description, -getDefaultIdempotentRestPublishingForVersion, -hasCustomPort, -hasCustomRealtimeHost, -hasCustomRestHost, -hasCustomTlsPort (+19 more)
+Nodes (28): GIDSignInButton, -buttonText, -buttonTextFont, -drawButtonBackground, -drawButtonText, -drawRect, -encodeWithCoder, -initWithCoder (+20 more)
 
 ### Community 34 - "Community 34"
 Cohesion: 0.07
-Nodes (27): ARTRealtimeAnnotations, -deleteForMessageannotationcallback, -deleteForMessageSerialannotationcallback, -getForMessagequerycallback, -getForMessageSerialquerycallback, -initWithInternalqueuedDealloc, -publishForMessageannotationcallback, -publishForMessageSerialannotationcallback (+19 more)
+Nodes (27): ARTClientOptions, -copyWithZone, -description, -getDefaultIdempotentRestPublishingForVersion, -hasCustomPort, -hasCustomRealtimeHost, -hasCustomRestHost, -hasCustomTlsPort (+19 more)
 
 ### Community 35 - "Community 35"
 Cohesion: 0.07
-Nodes (26): ARTLog, -captured, -debug, -debuglinemessage, -debugMode, -error, -errorMode, -history (+18 more)
+Nodes (27): ARTRealtimeAnnotations, -deleteForMessageannotationcallback, -deleteForMessageSerialannotationcallback, -getForMessagequerycallback, -getForMessageSerialquerycallback, -initWithInternalqueuedDealloc, -publishForMessageannotationcallback, -publishForMessageSerialannotationcallback (+19 more)
 
 ### Community 36 - "Community 36"
 Cohesion: 0.07
-Nodes (26): GTMReadMonitorInputStream, -inputStreamWithStream, GTMSessionFetcher, -formattedStringFromDatacontentTypeJSON, -headersStringForDictionary, -htmlFileName, -inputStreamreadIntoBufferlength, -isLoggingEnabled (+18 more)
+Nodes (26): ARTLog, -captured, -debug, -debuglinemessage, -debugMode, -error, -errorMode, -history (+18 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.08
-Nodes (25): ARTWrapperSDKProxyRealtimePresence, -enter, -entercallback, -enterClientdata, -enterClientdatacallback, -get, -getcallback, -history (+17 more)
+Cohesion: 0.07
+Nodes (26): GTMReadMonitorInputStream, -inputStreamWithStream, GTMSessionFetcher, -formattedStringFromDatacontentTypeJSON, -headersStringForDictionary, -htmlFileName, -inputStreamreadIntoBufferlength, -isLoggingEnabled (+18 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.08
-Nodes (23): ARTSummaryClientIdCounts, -copyWithZone, -createFromDictionary, -description, -initWithDictionary, -initWithTotalclientIds, -initWithTotalclientIdsclippedtotalUnidentifiedtotalClientIds, -writeToDictionary (+15 more)
+Nodes (25): ARTWrapperSDKProxyRealtimePresence, -enter, -entercallback, -enterClientdata, -enterClientdatacallback, -get, -getcallback, -history (+17 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.08
-Nodes (23): FBLPromise, -addPendingObject, -chainOnQueuechainedFulfillchainedReject, -dealloc, -defaultDispatchQueue, -description, -error, -fulfill (+15 more)
+Nodes (23): ARTSummaryClientIdCounts, -copyWithZone, -createFromDictionary, -description, -initWithDictionary, -initWithTotalclientIds, -initWithTotalclientIdsclippedtotalUnidentifiedtotalClientIds, -writeToDictionary (+15 more)
 
 ### Community 40 - "Community 40"
-Cohesion: 0.09
-Nodes (22): ARTChannel, -encodeMessageIfNeedederror, -exceedMaxSize, -historyWithWrapperSDKAgentscompletion, -initWithNameandOptionsrestlogger, -internalPostMessagescallback, -options, -options_nosync (+14 more)
+Cohesion: 0.08
+Nodes (23): FBLPromise, -addPendingObject, -chainOnQueuechainedFulfillchainedReject, -dealloc, -defaultDispatchQueue, -description, -error, -fulfill (+15 more)
 
 ### Community 41 - "Community 41"
 Cohesion: 0.09
-Nodes (21): ARTDefault, -apiVersion, -connectionStateTtl, -fallbackHosts, -fallbackHostsWithEnvironment, -libraryAgent, -libraryVersion, -maxMessageSize (+13 more)
+Nodes (22): ARTChannel, -encodeMessageIfNeedederror, -exceedMaxSize, -historyWithWrapperSDKAgentscompletion, -initWithNameandOptionsrestlogger, -internalPostMessagescallback, -options, -options_nosync (+14 more)
 
 ### Community 42 - "Community 42"
 Cohesion: 0.09
-Nodes (21): GTMReadMonitorInputStream, -close, -delegate, -forwardInvocation, -getBufferlength, -hasBytesAvailable, -init, -initWithStream (+13 more)
+Nodes (21): ARTDefault, -apiVersion, -connectionStateTtl, -fallbackHosts, -fallbackHostsWithEnvironment, -libraryAgent, -libraryVersion, -maxMessageSize (+13 more)
 
 ### Community 43 - "Community 43"
-Cohesion: 0.1
-Nodes (20): ARTRealtimeChannels, -exists, -get, -getoptions, -initWithInternalrealtimeInternalqueuedDealloc, -iterate, -release, -releasecallback (+12 more)
+Cohesion: 0.09
+Nodes (21): GTMReadMonitorInputStream, -close, -delegate, -forwardInvocation, -getBufferlength, -hasBytesAvailable, -init, -initWithStream (+13 more)
 
 ### Community 44 - "Community 44"
 Cohesion: 0.1
-Nodes (20): ARTPushChannel, -initWithInternalqueuedDealloc, -listSubscriptionscallbackerror, -subscribeClient, -subscribeDevice, -unsubscribeClient, -unsubscribeDevice, ARTPushChannelInternal (+12 more)
+Nodes (20): ARTRealtimeChannels, -exists, -get, -getoptions, -initWithInternalrealtimeInternalqueuedDealloc, -iterate, -release, -releasecallback (+12 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.18
-Nodes (20): fgk_alloc(), fgk_decode_bit(), fgk_decode_data(), fgk_destroy(), fgk_eliminate_zero(), fgk_encode_data(), fgk_factor_remaining(), fgk_find_nth_zero() (+12 more)
+Cohesion: 0.1
+Nodes (20): ARTPushChannel, -initWithInternalqueuedDealloc, -listSubscriptionscallbackerror, -subscribeClient, -subscribeDevice, -unsubscribeClient, -unsubscribeDevice, ARTPushChannelInternal (+12 more)
 
 ### Community 46 - "Community 46"
 Cohesion: 0.1
@@ -913,755 +912,755 @@ Nodes (16): ARTRestChannels, -exists, -get, -getoptions, -initWithInternalqueued
 
 ### Community 52 - "Community 52"
 Cohesion: 0.12
-Nodes (17): GTMSessionCookieStorage, -cookieAcceptPolicy, -cookieMatchingCookie, -cookies, -cookiesForURL, -deleteCookie, -getCookiesForTaskcompletionHandler, -hasCookieExpired (+9 more)
+Nodes (15): ARTLocalDevice, -apnsDeviceToken, -apnsDeviceTokenOfTypefromStorage, -deviceWithStoragelogger, -generateAndPersistPairOfDeviceIdAndSecret, -generateId, -generateSecret, -initWithStoragelogger (+7 more)
 
 ### Community 53 - "Community 53"
 Cohesion: 0.12
-Nodes (15): ARTLocalDevice, -apnsDeviceToken, -apnsDeviceTokenOfTypefromStorage, -deviceWithStoragelogger, -generateAndPersistPairOfDeviceIdAndSecret, -generateId, -generateSecret, -initWithStoragelogger (+7 more)
+Nodes (15): ARTEvent, -initWithPresenceAction, -newWithPresenceAction, ARTPresenceMessage, -copyWithZone, -description, -hash, -indexFromId (+7 more)
 
 ### Community 54 - "Community 54"
 Cohesion: 0.12
-Nodes (15): ARTEvent, -initWithPresenceAction, -newWithPresenceAction, ARTPresenceMessage, -copyWithZone, -description, -hash, -indexFromId (+7 more)
+Nodes (15): ARTProtocolMessage, -ackRequired, -channelModes, -clientIdsAreDifferent, -copyWithZone, -description, -getConnectionDetails, -getConnectionKey (+7 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.12
-Nodes (15): ARTProtocolMessage, -ackRequired, -channelModes, -clientIdsAreDifferent, -copyWithZone, -description, -getConnectionDetails, -getConnectionKey (+7 more)
-
-### Community 56 - "Community 56"
-Cohesion: 0.12
 Nodes (15): GIDGoogleUser, -authState, -configuration, -didChangeState, -emmSupport, -encodeWithCoder, -grantedScopes, -hostedDomain (+7 more)
 
-### Community 57 - "Community 57"
+### Community 56 - "Community 56"
 Cohesion: 0.13
 Nodes (14): ARTAuthOptions, -copyWithZone, -description, -init, -initDefaults, -initWithKey, -initWithToken, -initWithTokenDetails (+6 more)
 
-### Community 58 - "Community 58"
+### Community 57 - "Community 57"
 Cohesion: 0.13
 Nodes (14): ARTPushChannelSubscriptions, -initWithInternalqueuedDealloc, -listcallback, -listChannels, -removecallback, -removeWherecallback, -savecallback, ARTPushChannelSubscriptionsInternal (+6 more)
 
-### Community 59 - "Community 59"
+### Community 58 - "Community 58"
 Cohesion: 0.13
 Nodes (14): ARTAuth, -authorize, -authorizeoptionscallback, -clientId, -createTokenRequest, -createTokenRequestoptionscallback, -initWithInternalqueuedDealloc, -internalAsync (+6 more)
 
-### Community 60 - "Community 60"
+### Community 59 - "Community 59"
 Cohesion: 0.13
 Nodes (14): ARTPushDeviceRegistrations, -getcallback, -initWithInternalqueuedDealloc, -listcallback, -removecallback, -removeWherecallback, -savecallback, ARTPushDeviceRegistrationsInternal (+6 more)
 
-### Community 61 - "Community 61"
+### Community 60 - "Community 60"
 Cohesion: 0.13
 Nodes (14): ARTPluginAPI, -callbackQueueForClient, -internalQueueForClient, -loggerForChannel, -logwithLevelfilelinelogger, -nosync_pluginDataValueForKeychannel, -nosync_sendObjectWithObjectMessageschannelcompletion, -nosync_setPluginDataValueforKeychannel (+6 more)
 
-### Community 62 - "Community 62"
+### Community 61 - "Community 61"
 Cohesion: 0.13
 Nodes (14): GACAppAttestAPIService, -attestKeyWithAttestationkeyIDchallengelimitedUse, -backgroundQueue, -base64StringWithData, -getAppCheckTokenWithArtifactchallengeassertionlimitedUse, -getRandomChallenge, -HTTPBodyWithArtifactchallengeassertionlimitedUse, -HTTPBodyWithAttestationkeyIDchallengelimitedUse (+6 more)
 
-### Community 63 - "Community 63"
+### Community 62 - "Community 62"
 Cohesion: 0.13
 Nodes (14): OIDURLQueryComponent, -addParameters, -addParametervalue, -description, -dictionaryValue, -init, -initWithURL, -parameters (+6 more)
 
-### Community 64 - "Community 64"
+### Community 63 - "Community 63"
 Cohesion: 0.13
 Nodes (14): GULAppEnvironmentUtil, -appleDevicePlatform, -applePlatform, -deploymentType, -deviceModel, -deviceSimulatorModel, -getSysctlEntry, -isAppClip (+6 more)
 
-### Community 65 - "Community 65"
+### Community 64 - "Community 64"
 Cohesion: 0.14
 Nodes (13): ARTDataEncoder, -cipherEncoding, -decodeencoding, -decodeidentifierencoding, -encode, -initWithCipherParamsloggererror, -setDeltaCodecBaseidentifier, ARTDataEncoderOutput (+5 more)
 
-### Community 66 - "Community 66"
+### Community 65 - "Community 65"
 Cohesion: 0.14
 Nodes (13): ARTWrapperSDKProxyRealtime, -auth, -clientId, -close, -connect, -connection, -device, -initWithRealtimeproxyOptions (+5 more)
 
-### Community 67 - "Community 67"
+### Community 66 - "Community 66"
 Cohesion: 0.15
 Nodes (12): ARTPresenceQuery, -asQueryItems, -init, -initWithClientIdconnectionId, -initWithLimitclientIdconnectionId, ARTRestPresence, -get, -getcallbackerror (+4 more)
 
-### Community 68 - "Community 68"
+### Community 67 - "Community 67"
 Cohesion: 0.15
 Nodes (12): ARTWrapperSDKProxyPush, -activate, -deactivate, -didFailToRegisterForLocationNotificationsWithErrorrealtime, -didFailToRegisterForLocationNotificationsWithErrorrest, -didFailToRegisterForRemoteNotificationsWithErrorrealtime, -didFailToRegisterForRemoteNotificationsWithErrorrest, -didRegisterForLocationNotificationsWithDeviceTokenrealtime (+4 more)
 
-### Community 69 - "Community 69"
+### Community 68 - "Community 68"
 Cohesion: 0.15
 Nodes (12): ARTWrapperSDKProxyRealtimeAnnotations, -deleteForMessageannotationcallback, -deleteForMessageSerialannotationcallback, -getForMessagequerycallback, -getForMessageSerialquerycallback, -initWithRealtimeAnnotationsproxyOptions, -publishForMessageannotationcallback, -publishForMessageSerialannotationcallback (+4 more)
 
-### Community 70 - "Community 70"
+### Community 69 - "Community 69"
 Cohesion: 0.15
 Nodes (12): ARTLocalDeviceStorage, -initWithLogger, -keychainDeletePasswordForServiceaccounterror, -keychainErrorWithCode, -keychainGetPasswordForServiceaccounterror, -keychainSetPasswordforServiceaccounterror, -newKeychainQueryForServiceaccount, -newWithLogger (+4 more)
 
-### Community 71 - "Community 71"
+### Community 70 - "Community 70"
 Cohesion: 0.15
 Nodes (12): ARTAnnotationsQuery, -asQueryItems, -init, -initWithLimit, ARTRestAnnotations, -deleteForMessageannotationcallback, -deleteForMessageSerialannotationcallback, -getForMessagequerycallback (+4 more)
 
-### Community 72 - "Community 72"
+### Community 71 - "Community 71"
 Cohesion: 0.21
 Nodes (7): msgpack_vrefbuffer_append_copy(), msgpack_vrefbuffer_append_ref(), msgpack_vrefbuffer_destroy(), msgpack_vrefbuffer_free(), msgpack_vrefbuffer_init(), msgpack_vrefbuffer_new(), msgpack_vrefbuffer_write()
 
-### Community 73 - "Community 73"
+### Community 72 - "Community 72"
 Cohesion: 0.22
 Nodes (9): msgpack_zbuffer_destroy(), msgpack_zbuffer_expand(), msgpack_zbuffer_flush(), msgpack_zbuffer_free(), msgpack_zbuffer_init(), msgpack_zbuffer_new(), msgpack_zbuffer_reset(), msgpack_zbuffer_reset_buffer() (+1 more)
 
-### Community 74 - "Community 74"
+### Community 73 - "Community 73"
 Cohesion: 0.15
 Nodes (12): GIDMDMPasscodeCache, -applicationDidEnterBackground, -dealloc, -hasKeychain, -hasLocalAuthentication, -info, -init, -obtainKeychainInfo (+4 more)
 
-### Community 75 - "Community 75"
+### Community 74 - "Community 74"
 Cohesion: 0.17
 Nodes (11): ARTClientInformation, -agentIdentifierForAgents, -agentIdentifierWithAdditionalAgents, -agents, -deviceModel, -libraryAgent, -libraryAgentIdentifier, -osName (+3 more)
 
-### Community 76 - "Community 76"
+### Community 75 - "Community 75"
 Cohesion: 0.17
 Nodes (11): ARTChannels, -addPrefix, -copyIntoIteratorWithMapper, -exists, -get, -getChanneloptions, -_getChanneloptionsaddPrefix, -getNosyncIterable (+3 more)
 
-### Community 77 - "Community 77"
+### Community 76 - "Community 76"
 Cohesion: 0.17
 Nodes (11): ARTAnnotation, -annotationSize, -copyWithZone, -decodeDataWithEncodererror, -description, -encodeDataWithEncodererror, -initWithIdactionclientIdnamecountdataencodingtimestampserialmessageSerialtypeextras, -isIdEmpty (+3 more)
 
-### Community 78 - "Community 78"
+### Community 77 - "Community 77"
 Cohesion: 0.17
 Nodes (11): GACAppCheck, -createRetrieveOrRefreshTokenPromiseForcingRefresh, -getCachedValidTokenForcingRefresh, -initWithServiceNameappCheckProviderstoragetokenRefreshersettingstokenDelegate, -initWithServiceNameresourceNameappCheckProvidersettingstokenDelegatekeychainAccessGroup, -limitedUseToken, -limitedUseTokenWithCompletion, -periodicTokenRefreshWithCompletion (+3 more)
 
-### Community 79 - "Community 79"
+### Community 78 - "Community 78"
 Cohesion: 0.18
 Nodes (10): NSDictionary, -artArray, -artBoolean, -artDictionary, -artInteger, -artMap, -artNumber, -artString (+2 more)
 
-### Community 80 - "Community 80"
+### Community 79 - "Community 79"
 Cohesion: 0.18
 Nodes (10): ARTHTTPPaginatedResponse, -errorCode, -errorMessage, -executePaginatedwithRequestwrapperSDKAgentsloggercallback, -first, -headers, -initWithResponseitemsrestrelFirstrelCurrentrelNextresponseProcessorwrapperSDKAgentslogger, -next (+2 more)
 
-### Community 81 - "Community 81"
+### Community 80 - "Community 80"
 Cohesion: 0.18
 Nodes (10): ARTPaginatedResult, -executePaginatedwithRequestandResponseProcessorwrapperSDKAgentsloggercallback, -first, -hasNext, -init, -initializedViaInitCheck, -initWithItemsrestrelFirstrelCurrentrelNextresponseProcessorwrapperSDKAgentslogger, -isLast (+2 more)
 
-### Community 82 - "Community 82"
+### Community 81 - "Community 81"
 Cohesion: 0.18
 Nodes (10): ARTRealtimeChannelOptions, -attachOnSubscribe, -copyWithZone, -init, -initWithCipher, -modes, -params, -setAttachOnSubscribe (+2 more)
 
-### Community 83 - "Community 83"
+### Community 82 - "Community 82"
 Cohesion: 0.18
 Nodes (10): FBLPromise, -attemptsdelayconditionretry, -attemptsretry, -onQueueattemptsdelayconditionretry, -onQueueattemptsretry, -onQueueretry, -retry, -retryAgain (+2 more)
 
-### Community 84 - "Community 84"
+### Community 83 - "Community 83"
 Cohesion: 0.18
 Nodes (10): GIDAppCheck, -appAttestProvider, -appAttestResourceName, -appCheckUsingAppAttestProvider, -appCheckUsingDebugProviderWithAPIKey, -debugAppCheckProviderWithAPIKey, -getLimitedUseTokenWithCompletion, -initWithAppCheckProvideruserDefaults (+2 more)
 
-### Community 85 - "Community 85"
+### Community 84 - "Community 84"
 Cohesion: 0.2
 Nodes (9): ARTInternalLog, -initWithClientOptions, -initWithCore, -initWithLogger, -logLevel, -logwithLevelfileline, -logWithLevelfilelineformat, -setLogLevel (+1 more)
 
-### Community 86 - "Community 86"
+### Community 85 - "Community 85"
 Cohesion: 0.2
 Nodes (9): ARTWrapperSDKProxyRealtimeChannels, -addingAgentToOptions, -exists, -get, -getmaybeOptions, -getoptions, -initWithChannelsproxyOptions, -release (+1 more)
 
-### Community 87 - "Community 87"
+### Community 86 - "Community 86"
 Cohesion: 0.2
 Nodes (9): OIDExternalUserAgentIOS, -cleanUp, -dismissExternalUserAgentAnimatedcompletion, -init, -initWithPresentingViewController, -initWithPresentingViewControllerprefersEphemeralSession, -presentationAnchorForWebAuthenticationSession, -presentExternalUserAgentRequestsession (+1 more)
 
-### Community 88 - "Community 88"
+### Community 87 - "Community 87"
 Cohesion: 0.2
 Nodes (9): OIDErrorUtilities, -errorWithCodeunderlyingErrordescription, -HTTPErrorWithHTTPResponsedata, -isOAuthErrorDomain, -OAuthErrorCodeFromString, -OAuthErrorWithDomainOAuthResponseunderlyingError, -raiseException, -raiseExceptionmessage (+1 more)
 
-### Community 89 - "Community 89"
+### Community 88 - "Community 88"
 Cohesion: 0.2
 Nodes (9): GULKeychainStorage, -getObjectForKeyobjectClassaccessGroupcompletionHandler, -getObjectFromKeychainForKeyobjectClassaccessGroupcompletionHandler, -initWithService, -initWithServicecache, -keychainQueryWithKeyaccessGroup, -removeObjectForKeyaccessGroupcompletionHandler, -resetInMemoryCache (+1 more)
 
-### Community 90 - "Community 90"
+### Community 89 - "Community 89"
 Cohesion: 0.2
 Nodes (9): GIDProfileData, -copyWithZone, -encodeWithCoder, -hasImage, -imageURLWithDimension, -initWithCoder, -initWithEmailnamegivenNamefamilyNameimageURL, -isFIFEAvatarURL (+1 more)
 
-### Community 91 - "Community 91"
+### Community 90 - "Community 90"
 Cohesion: 0.22
 Nodes (8): ARTHttp, -dealloc, -debugDescriptionOfBodyWithData, -executeRequestcompletion, -initWithQueuelogger, -logger, -queue, -setURLSessionClass
 
-### Community 92 - "Community 92"
+### Community 91 - "Community 91"
 Cohesion: 0.22
 Nodes (8): ARTDeviceDetails, -copyWithZone, -description, -hash, -init, -initWithId, -isEqual, -isEqualToDeviceDetail
 
-### Community 93 - "Community 93"
+### Community 92 - "Community 92"
 Cohesion: 0.22
 Nodes (8): ARTBaseMessage, -copyWithZone, -decodeWithEncodererror, -description, -encodeWithEncodererror, -isIdEmpty, -messageSize, -setClientId
 
-### Community 94 - "Community 94"
+### Community 93 - "Community 93"
 Cohesion: 0.22
 Nodes (8): ARTPushChannelSubscription, -copyWithZone, -description, -hash, -initWithClientIdchannel, -initWithDeviceIdchannel, -isEqual, -isEqualToChannelSubscription
 
-### Community 95 - "Community 95"
+### Community 94 - "Community 94"
 Cohesion: 0.22
 Nodes (8): ARTPushAdmin, -channelSubscriptions, -deviceRegistrations, -initWithInternalqueuedDealloc, -publishdatacallback, ARTPushAdminInternal, -initWithRestlogger, -publishdatawrapperSDKAgentscallback
 
-### Community 96 - "Community 96"
+### Community 95 - "Community 95"
 Cohesion: 0.22
 Nodes (8): ARTMessage, -copyWithZone, -description, -fromEncodedArraychannelOptionserror, -fromEncodedchannelOptionserror, -initWithNamedata, -initWithNamedataclientId, -messageSize
 
-### Community 97 - "Community 97"
+### Community 96 - "Community 96"
 Cohesion: 0.22
 Nodes (8): GACAppCheckAPIService, -appCheckTokenWithAPIResponse, -defaultQueue, -initWithURLSessionbaseURLAPIKeyrequestHooks, -requestWithURLHTTPMethodbodyadditionalHeaders, -sendRequestWithURLHTTPMethodbodyadditionalHeaders, -sendURLRequest, -validateHTTPResponseStatusCode
 
-### Community 98 - "Community 98"
+### Community 97 - "Community 97"
 Cohesion: 0.22
 Nodes (8): GACAppCheckDebugProvider, -currentDebugToken, -getLimitedUseTokenWithCompletion, -getTokenWithCompletion, -getTokenWithLimitedUsecompletion, -initWithAPIService, -initWithServiceNameresourceNamebaseURLAPIKeyrequestHooks, -localDebugToken
 
-### Community 99 - "Community 99"
+### Community 98 - "Community 98"
 Cohesion: 0.22
 Nodes (8): OIDRegistrationResponse, -copyWithZone, -description, -encodeWithCoder, -fieldMap, -initparameters, -initWithCoder, -supportsSecureCoding
 
-### Community 100 - "Community 100"
+### Community 99 - "Community 99"
 Cohesion: 0.25
 Nodes (7): ARTWrapperSDKProxyPushChannel, -initWithPushChannelproxyOptions, -listSubscriptionscallbackerror, -subscribeClient, -subscribeDevice, -unsubscribeClient, -unsubscribeDevice
 
-### Community 101 - "Community 101"
+### Community 100 - "Community 100"
 Cohesion: 0.25
 Nodes (7): ARTWrapperSDKProxyPushDeviceRegistrations, -getcallback, -initWithPushDeviceRegistrationsproxyOptions, -listcallback, -removecallback, -removeWherecallback, -savecallback
 
-### Community 102 - "Community 102"
+### Community 101 - "Community 101"
 Cohesion: 0.25
 Nodes (7): ARTWrapperSDKProxyPushChannelSubscriptions, -initWithPushChannelSubscriptionsproxyOptions, -listcallback, -listChannels, -removecallback, -removeWherecallback, -savecallback
 
-### Community 103 - "Community 103"
+### Community 102 - "Community 102"
 Cohesion: 0.25
 Nodes (7): ARTStringifiable, -initWithBool, -initWithNumber, -initWithString, -withBool, -withNumber, -withString
 
-### Community 104 - "Community 104"
+### Community 103 - "Community 103"
 Cohesion: 0.29
 Nodes (2): msgpack_sbuffer_destroy(), msgpack_sbuffer_free()
 
-### Community 105 - "Community 105"
+### Community 104 - "Community 104"
 Cohesion: 0.25
 Nodes (7): GACAppCheckHTTPError, -copyWithZone, -encodeWithCoder, -initWithCoder, -initWithHTTPResponsedata, -supportsSecureCoding, -userInfoWithHTTPResponsedata
 
-### Community 106 - "Community 106"
+### Community 105 - "Community 105"
 Cohesion: 0.25
 Nodes (7): GACAppAttestKeyIDStorage, -appAttestKeyIDFromStorage, -getAppAttestKeyID, -initWithKeySuffix, -keyIDStorageKey, -setAppAttestKeyID, -storeAppAttestKeyID
 
-### Community 107 - "Community 107"
+### Community 106 - "Community 106"
 Cohesion: 0.25
 Nodes (7): GACAppAttestArtifactStorage, -artifactKey, -getArtifactForKey, -initWithKeySuffixaccessGroup, -initWithKeySuffixkeychainStorageaccessGroup, -setArtifactforKey, -storeArtifactforKey
 
-### Community 108 - "Community 108"
+### Community 107 - "Community 107"
 Cohesion: 0.25
 Nodes (7): OIDExternalUserAgentCatalyst, -cleanUp, -dismissExternalUserAgentAnimatedcompletion, -initWithPresentingViewController, -initWithPresentingViewControllerprefersEphemeralSession, -presentationAnchorForWebAuthenticationSession, -presentExternalUserAgentRequestsession
 
-### Community 109 - "Community 109"
+### Community 108 - "Community 108"
 Cohesion: 0.25
 Nodes (7): GIDEMMSupport, -additionalTokenRefreshParametersForAuthSession, -handleTokenFetchEMMErrorcompletion, -init, -parametersWithParametersemmSupportisPasscodeInfoRequired, -updatedEMMParametersWithParameters, -updateErrorForAuthSessionoriginalErrorcompletion
 
-### Community 110 - "Community 110"
+### Community 109 - "Community 109"
 Cohesion: 0.29
 Nodes (6): ARTChannelOptions, -cipher, -copyWithZone, -initWithCipher, -initWithCipherKey, -setCipher
 
-### Community 111 - "Community 111"
+### Community 110 - "Community 110"
 Cohesion: 0.29
 Nodes (6): ARTMsgPackEncoder, -decodeerror, -encodeerror, -format, -formatAsString, -mimeType
 
-### Community 112 - "Community 112"
+### Community 111 - "Community 111"
 Cohesion: 0.29
 Nodes (6): ARTDefaultInternalLogCore, -initWithClientOptions, -initWithLogger, -logLevel, -logwithLevelfileline, -setLogLevel
 
-### Community 113 - "Community 113"
+### Community 112 - "Community 112"
 Cohesion: 0.29
 Nodes (6): ARTQueuedMessage, -ackCallback, -description, -initWithProtocolMessagesentCallbackackCallback, -mergeFrommaxSizesentCallbackackCallback, -sentCallback
 
-### Community 114 - "Community 114"
+### Community 113 - "Community 113"
 Cohesion: 0.29
 Nodes (6): ARTJsonEncoder, -decodeerror, -encodeerror, -format, -formatAsString, -mimeType
 
-### Community 115 - "Community 115"
+### Community 114 - "Community 114"
 Cohesion: 0.29
 Nodes (6): ARTMessageAnnotations, -copyWithZone, -createFromDictionary, -description, -init, -writeToDictionary
 
-### Community 116 - "Community 116"
+### Community 115 - "Community 115"
 Cohesion: 0.29
 Nodes (6): ARTMessageVersion, -copyWithZone, -createFromDictionary, -description, -init, -writeToDictionary
 
-### Community 117 - "Community 117"
+### Community 116 - "Community 116"
 Cohesion: 0.29
 Nodes (6): GACAppCheckStorage, -getToken, -initWithTokenKeyaccessGroup, -initWithTokenKeykeychainStorageaccessGroup, -setToken, -storeToken
 
-### Community 118 - "Community 118"
+### Community 117 - "Community 117"
 Cohesion: 0.29
 Nodes (6): GACAppAttestStoredArtifact, -encodeWithCoder, -initWithCoder, -initWithKeyIDartifact, -storageVersion, -supportsSecureCoding
 
-### Community 119 - "Community 119"
+### Community 118 - "Community 118"
 Cohesion: 0.29
 Nodes (6): GULKeychainUtils, -getItemWithQueryerror, -keychainErrorWithFunctionstatus, -multiplatformQueryWithQuery, -removeItemWithQueryerror, -setItemwithQueryerror
 
-### Community 120 - "Community 120"
+### Community 119 - "Community 119"
 Cohesion: 0.29
 Nodes (6): GIDAuthStateMigration, -extractAuthSessionWithTokenURLcallbackPath, -init, -initWithKeychainStore, -migrateIfNeededWithTokenURLcallbackPathkeychainNameisFreshInstall, -passwordForService
 
-### Community 121 - "Community 121"
+### Community 120 - "Community 120"
 Cohesion: 0.29
 Nodes (6): GIDTimedLoader, -initWithPresentingViewController, -presentLoadingViewController, -remainingDurationToAnimate, -startTiming, -stopTimingWithCompletion
 
-### Community 122 - "Community 122"
+### Community 121 - "Community 121"
 Cohesion: 0.29
 Nodes (6): cart_item.dart, copyWith, fromString, Order, store.dart, user.dart
 
-### Community 123 - "Community 123"
+### Community 122 - "Community 122"
 Cohesion: 0.29
 Nodes (6): dart:math, CartItem, FormatException, _mapsEqual, sameSlotAs, menu_item.dart
 
-### Community 124 - "Community 124"
+### Community 123 - "Community 123"
 Cohesion: 0.33
 Nodes (3): AppDelegate, FlutterAppDelegate, FlutterImplicitEngineDelegate
 
-### Community 125 - "Community 125"
+### Community 124 - "Community 124"
 Cohesion: 0.33
 Nodes (5): NSMutableURLRequest, -setDeviceAuthentication, -setDeviceAuthenticationlocalDevice, -setDeviceAuthenticationlocalDevicelogger, -setDeviceAuthenticationlogger
 
-### Community 126 - "Community 126"
+### Community 125 - "Community 125"
 Cohesion: 0.33
 Nodes (5): NSDate, -artDateFromIntegerMs, -artDateFromNumberMs, -artToIntegerMs, -artToNumberMs
 
-### Community 127 - "Community 127"
+### Community 126 - "Community 126"
 Cohesion: 0.33
 Nodes (5): ARTDataQuery, -asQueryItems, -init, ARTRealtimeHistoryQuery, -asQueryItems
 
-### Community 128 - "Community 128"
+### Community 127 - "Community 127"
 Cohesion: 0.33
 Nodes (5): ARTContinuousClock, -addingDurationtoInstant, -now, ARTContinuousClockInstant, -initWithTimeNS_DESIGNATED_INITIALIZER
 
-### Community 129 - "Community 129"
+### Community 128 - "Community 128"
 Cohesion: 0.33
 Nodes (5): ARTRealtimeTransportError, -description, -initWithErrorbadResponseCodeurl, -initWithErrortypeurl, -typeDescription
 
-### Community 130 - "Community 130"
+### Community 129 - "Community 129"
 Cohesion: 0.33
 Nodes (5): ARTLogAdapter, -initWithLogger, -logLevel, -logwithLevelfileline, -setLogLevel
 
-### Community 131 - "Community 131"
+### Community 130 - "Community 130"
 Cohesion: 0.33
 Nodes (5): ARTChannelStateChangeParams, -initWithState, -initWithStateerrorInfo, -initWithStateerrorInfostoreErrorInfo, -initWithStateerrorInfostoreErrorInforetryAttempt
 
-### Community 132 - "Community 132"
+### Community 131 - "Community 131"
 Cohesion: 0.33
 Nodes (5): ARTOSReachability, -dealloc, -initWithLoggerqueue, -listenForHostcallback, -off
 
-### Community 133 - "Community 133"
+### Community 132 - "Community 132"
 Cohesion: 0.33
 Nodes (5): ARTURLSessionServerTrust, -finishTasksAndInvalidate, -getcompletion, -init, -queue
 
-### Community 134 - "Community 134"
+### Community 133 - "Community 133"
 Cohesion: 0.33
 Nodes (5): ARTSRRunLoopThread, -init, -main, -runLoop, -sharedThread
 
-### Community 135 - "Community 135"
+### Community 134 - "Community 134"
 Cohesion: 0.33
 Nodes (5): ARTSRIOConsumerPool, -consumerWithScannerhandlerbytesNeededreadToCurrentFrameunmaskBytes, -init, -initWithBufferCapacity, -returnConsumer
 
-### Community 136 - "Community 136"
+### Community 135 - "Community 135"
 Cohesion: 0.33
 Nodes (5): MessagePackParser, -createUnpackedObject, -feed, -init, -next
 
-### Community 137 - "Community 137"
+### Community 136 - "Community 136"
 Cohesion: 0.33
 Nodes (5): FBLPromise, -onQueuereducecombine, -reduce, -reducecombine, -reduceOn
 
-### Community 138 - "Community 138"
+### Community 137 - "Community 137"
 Cohesion: 0.33
 Nodes (5): GACAppCheckDebugProviderAPIService, -appCheckTokenWithDebugTokenlimitedUse, -backgroundQueue, -HTTPBodyWithDebugTokenlimitedUse, -initWithAPIServiceresourceName
 
-### Community 139 - "Community 139"
+### Community 138 - "Community 138"
 Cohesion: 0.33
 Nodes (5): GACDeviceCheckAPIService, -appCheckTokenWithDeviceTokenlimitedUse, -backgroundQueue, -HTTPBodyWithDeviceTokenlimitedUse, -initWithAPIServiceresourceName
 
-### Community 140 - "Community 140"
+### Community 139 - "Community 139"
 Cohesion: 0.33
 Nodes (5): GACAppAttestProviderState, -initUnsupportedWithError, -initWithGeneratedKeyID, -initWithRegisteredKeyIDartifact, -initWithSupportedInitialState
 
-### Community 141 - "Community 141"
+### Community 140 - "Community 140"
 Cohesion: 0.33
 Nodes (5): ARTDeltaCodec, -applyDeltadeltaIdbaseIderror, -applyDeltapreviouserror, -isDelta, -setBasewithId
 
-### Community 142 - "Community 142"
+### Community 141 - "Community 141"
 Cohesion: 0.33
 Nodes (5): GIDAuthentication, -encodeWithCoder, -initWithAuthState, -initWithCoder, -supportsSecureCoding
 
-### Community 143 - "Community 143"
+### Community 142 - "Community 142"
 Cohesion: 0.4
 Nodes (2): GeneratedPluginRegistrant, -registerWithRegistry
 
-### Community 144 - "Community 144"
+### Community 143 - "Community 143"
 Cohesion: 0.4
 Nodes (4): ARTAttachRetryState, -addRetryAttempt, -channelWillTransitionToState, -initWithRetryDelayCalculatorloggerlogMessagePrefix
 
-### Community 145 - "Community 145"
+### Community 144 - "Community 144"
 Cohesion: 0.4
 Nodes (4): ARTAttachRequestParams, -initWithReason, -initWithReasonchannelSerial, -initWithReasonchannelSerialretryAttempt
 
-### Community 146 - "Community 146"
+### Community 145 - "Community 145"
 Cohesion: 0.4
 Nodes (4): ARTBackoffRetryDelayCalculator, -backoffCoefficientForRetryNumber, -delayForRetryNumber, -initWithInitialRetryTimeoutjitterCoefficientGenerator
 
-### Community 147 - "Community 147"
+### Community 146 - "Community 146"
 Cohesion: 0.4
 Nodes (4): ARTDevicePushDetails, -copyWithZone, -description, -init
 
-### Community 148 - "Community 148"
+### Community 147 - "Community 147"
 Cohesion: 0.4
 Nodes (4): ARTScheduledBlockHandle, -cancel, -dealloc, -initWithDelayqueueblock
 
-### Community 149 - "Community 149"
+### Community 148 - "Community 148"
 Cohesion: 0.4
 Nodes (4): ARTFallback, -initWithFallbackHostsshuffleArray, -isEmpty, -popFallbackHost
 
-### Community 150 - "Community 150"
+### Community 149 - "Community 149"
 Cohesion: 0.4
 Nodes (4): ARTConnectionStateChangeParams, -init, -initWithErrorInfo, -initWithErrorInforetryAttempt
 
-### Community 151 - "Community 151"
+### Community 150 - "Community 150"
 Cohesion: 0.4
 Nodes (4): ARTConnectRetryState, -addRetryAttempt, -connectionWillTransitionToState, -initWithRetryDelayCalculatorloggerlogMessagePrefix
 
-### Community 152 - "Community 152"
+### Community 151 - "Community 151"
 Cohesion: 0.4
 Nodes (4): NSString, -isEmptyString, -isNotEmptyString, -nilToEmpty
 
-### Community 153 - "Community 153"
+### Community 152 - "Community 152"
 Cohesion: 0.4
 Nodes (4): ARTAuthDetails, -copyWithZone, -description, -initWithToken
 
-### Community 154 - "Community 154"
+### Community 153 - "Community 153"
 Cohesion: 0.4
 Nodes (4): NSMutableURLRequest, -setARTSR_SSLPinnedCertificates, NSURLRequest, -ARTSR_SSLPinnedCertificates
 
-### Community 155 - "Community 155"
+### Community 154 - "Community 154"
 Cohesion: 0.4
 Nodes (4): MessagePackPacker, -pack, -packNumberinto, -packObjectinto
 
-### Community 156 - "Community 156"
+### Community 155 - "Community 155"
 Cohesion: 0.4
 Nodes (4): MessagePackParser, -createUnpackedObject, -parseData, -unpacker
 
-### Community 157 - "Community 157"
+### Community 156 - "Community 156"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -do, -doOn, -onQueuedo
 
-### Community 158 - "Community 158"
+### Community 157 - "Community 157"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -delay, -delayOn, -onQueuedelay
 
-### Community 159 - "Community 159"
+### Community 158 - "Community 158"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -onQueuethen, -then, -thenOn
 
-### Community 160 - "Community 160"
+### Community 159 - "Community 159"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -onQueuetimeout, -timeout, -timeoutOn
 
-### Community 161 - "Community 161"
+### Community 160 - "Community 160"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -any, -anyOn, -onQueueany
 
-### Community 162 - "Community 162"
+### Community 161 - "Community 161"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -async, -asyncOn, -onQueueasync
 
-### Community 163 - "Community 163"
+### Community 162 - "Community 162"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -always, -alwaysOn, -onQueuealways
 
-### Community 164 - "Community 164"
+### Community 163 - "Community 163"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -catch, -catchOn, -onQueuecatch
 
-### Community 165 - "Community 165"
+### Community 164 - "Community 164"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -onQueuerecover, -recover, -recoverOn
 
-### Community 166 - "Community 166"
+### Community 165 - "Community 165"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -onQueuerace, -race, -raceOn
 
-### Community 167 - "Community 167"
+### Community 166 - "Community 166"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -all, -allOn, -onQueueall
 
-### Community 168 - "Community 168"
+### Community 167 - "Community 167"
 Cohesion: 0.4
 Nodes (4): FBLPromise, -onQueuevalidate, -validate, -validateOn
 
-### Community 169 - "Community 169"
+### Community 168 - "Community 168"
 Cohesion: 0.4
 Nodes (4): GACAppCheckLogger, -load, -logLevel, -setLogLevel
 
-### Community 170 - "Community 170"
+### Community 169 - "Community 169"
 Cohesion: 0.4
 Nodes (4): OIDAuthState, -authStateByPresentingAuthorizationRequestcallback, -authStateByPresentingAuthorizationRequestpresentingViewControllercallback, -authStateByPresentingAuthorizationRequestpresentingViewControllerprefersEphemeralSessioncallback
 
-### Community 171 - "Community 171"
+### Community 170 - "Community 170"
 Cohesion: 0.4
 Nodes (4): OIDScopeUtilities, -disallowedScopeCharacters, -scopesArrayWithString, -scopesWithArray
 
-### Community 172 - "Community 172"
+### Community 171 - "Community 171"
 Cohesion: 0.4
 Nodes (4): GIDSignInStrings, -localizedStringForKeytext, -signInString, -signInWithGoogleString
 
-### Community 173 - "Community 173"
+### Community 172 - "Community 172"
 Cohesion: 0.4
 Nodes (4): GIDSignInPreferences, -googleAuthorizationServer, -googleTokenServer, -googleUserInfoServer
 
-### Community 174 - "Community 174"
+### Community 173 - "Community 173"
 Cohesion: 0.4
 Nodes (4): GIDAppCheckProviderFake, -getLimitedUseTokenWithCompletion, -getTokenWithCompletion, -initWithAppCheckTokenerror
 
-### Community 175 - "Community 175"
+### Community 174 - "Community 174"
 Cohesion: 0.5
 Nodes (2): RunnerTests, XCTestCase
 
-### Community 176 - "Community 176"
+### Community 175 - "Community 175"
 Cohesion: 0.5
 Nodes (2): handle_new_rx_page(), Intercept NOTIFY_DEBUGGER_ABOUT_RX_PAGES and touch the pages.
 
-### Community 177 - "Community 177"
+### Community 176 - "Community 176"
 Cohesion: 0.5
 Nodes (3): NSError, -copyFromErrorwithRequestId, -requestId
 
-### Community 178 - "Community 178"
+### Community 177 - "Community 177"
 Cohesion: 0.5
 Nodes (3): NSMutableURLRequest, -appendQueryItem, -replaceHostWith
 
-### Community 179 - "Community 179"
+### Community 178 - "Community 178"
 Cohesion: 0.5
 Nodes (3): ARTTestClientOptions, -copyWithZone, -init
 
-### Community 180 - "Community 180"
+### Community 179 - "Community 179"
 Cohesion: 0.5
 Nodes (3): ARTOutboundAnnotation, -copyWithZone, -initWithIdtypeclientIdnamecountdataextras
 
-### Community 181 - "Community 181"
+### Community 180 - "Community 180"
 Cohesion: 0.5
 Nodes (3): ARTConnectionDetails, -initWithClientIdconnectionKeymaxMessageSizemaxFrameSizemaxInboundRateconnectionStateTtlserverIdmaxIdleInterval, -setMaxIdleInterval
 
-### Community 182 - "Community 182"
+### Community 181 - "Community 181"
 Cohesion: 0.5
 Nodes (3): ARTQueuedDealloc, -dealloc, -initqueue
 
-### Community 183 - "Community 183"
+### Community 182 - "Community 182"
 Cohesion: 0.5
 Nodes (3): ARTEvent, -initWithTransportState, -newWithTransportState
 
-### Community 184 - "Community 184"
+### Community 183 - "Community 183"
 Cohesion: 0.5
 Nodes (3): NSArray, -artFilter, -artMap
 
-### Community 185 - "Community 185"
+### Community 184 - "Community 184"
 Cohesion: 0.5
 Nodes (3): ARTWrapperSDKProxyPushAdmin, -initWithPushAdminproxyOptions, -publishdatacallback
 
-### Community 186 - "Community 186"
+### Community 185 - "Community 185"
 Cohesion: 0.5
 Nodes (2): ARTSRIOConsumer, -resetWithScannerhandlerbytesNeededreadToCurrentFrameunmaskBytes
 
-### Community 187 - "Community 187"
+### Community 186 - "Community 186"
 Cohesion: 0.5
 Nodes (3): NSData, -messagePack, -messagePackParse
+
+### Community 187 - "Community 187"
+Cohesion: 0.5
+Nodes (0): 
 
 ### Community 188 - "Community 188"
 Cohesion: 0.5
 Nodes (0): 
 
 ### Community 189 - "Community 189"
-Cohesion: 0.5
-Nodes (0): 
-
-### Community 190 - "Community 190"
 Cohesion: 0.67
 Nodes (2): msgpack_packer_init(), msgpack_packer_new()
 
-### Community 191 - "Community 191"
+### Community 190 - "Community 190"
 Cohesion: 0.5
 Nodes (3): GACAppAttestAttestationResponse, -initWithArtifacttoken, -initWithResponseDatarequestDateerror
 
-### Community 192 - "Community 192"
+### Community 191 - "Community 191"
 Cohesion: 0.5
 Nodes (3): GACAppAttestRejectionError, -initWithUnderlyingError, -underlyingError
 
-### Community 193 - "Community 193"
+### Community 192 - "Community 192"
 Cohesion: 0.5
 Nodes (3): OIDURLSessionProvider, -session, -setSession
 
-### Community 194 - "Community 194"
+### Community 193 - "Community 193"
 Cohesion: 0.5
 Nodes (3): GULNetworkInfo, -getNetworkRadioType, -getNetworkType
 
-### Community 195 - "Community 195"
+### Community 194 - "Community 194"
 Cohesion: 0.5
 Nodes (3): NSBundle, -gid_frameworkBundle, -gid_registerFonts
 
-### Community 196 - "Community 196"
+### Community 195 - "Community 195"
 Cohesion: 0.67
 Nodes (2): FlutterSceneDelegate, SceneDelegate
 
-### Community 197 - "Community 197"
+### Community 196 - "Community 196"
 Cohesion: 0.67
 Nodes (2): NSURL, -copyFromURLwithHost
 
-### Community 198 - "Community 198"
+### Community 197 - "Community 197"
 Cohesion: 0.67
 Nodes (2): ARTPresence, -history
 
-### Community 199 - "Community 199"
+### Community 198 - "Community 198"
 Cohesion: 0.67
 Nodes (2): ARTPendingMessage, -initWithProtocolMessageackCallback
 
-### Community 200 - "Community 200"
+### Community 199 - "Community 199"
 Cohesion: 0.67
 Nodes (2): ARTDefaultErrorChecker, -isTokenError
 
-### Community 201 - "Community 201"
+### Community 200 - "Community 200"
 Cohesion: 0.67
 Nodes (2): NSURLQueryItem, -itemWithNamevalue
 
-### Community 202 - "Community 202"
+### Community 201 - "Community 201"
 Cohesion: 0.67
 Nodes (2): ARTFallbackHosts, -hostsFromOptions
 
-### Community 203 - "Community 203"
+### Community 202 - "Community 202"
 Cohesion: 0.67
 Nodes (2): ARTPluginDecodingContext, -initWithParentIDparentConnectionIDparentTimestampindexInParent
 
-### Community 204 - "Community 204"
+### Community 203 - "Community 203"
 Cohesion: 0.67
 Nodes (2): NSMutableDictionary, -addValueAsURLQueryItemforKey
 
-### Community 205 - "Community 205"
+### Community 204 - "Community 204"
 Cohesion: 0.67
 Nodes (2): ARTDefaultJitterCoefficientGenerator, -generateJitterCoefficient
 
-### Community 206 - "Community 206"
+### Community 205 - "Community 205"
 Cohesion: 0.67
 Nodes (2): ARTDefaultRealtimeTransportFactory, -transportWithRestoptionsresumeKeylogger
 
-### Community 207 - "Community 207"
+### Community 206 - "Community 206"
 Cohesion: 0.67
 Nodes (2): APDefaultPublicRealtimeChannelUnderlyingObjects, -initWithClientchannel
 
-### Community 208 - "Community 208"
+### Community 207 - "Community 207"
 Cohesion: 0.67
 Nodes (2): ARTWrapperSDKProxyOptions, -initWithAgents
 
-### Community 209 - "Community 209"
+### Community 208 - "Community 208"
 Cohesion: 0.67
 Nodes (2): NSHTTPURLResponse, -extractLinks
 
-### Community 210 - "Community 210"
+### Community 209 - "Community 209"
 Cohesion: 0.67
 Nodes (2): NSMutableURLRequest, -setAcceptHeaderencoders
 
-### Community 211 - "Community 211"
+### Community 210 - "Community 210"
 Cohesion: 0.67
 Nodes (2): NSMutableURLRequest, -requestWithPathrelativeTo
 
-### Community 212 - "Community 212"
+### Community 211 - "Community 211"
 Cohesion: 0.67
 Nodes (2): ARTDefaultWebSocketFactory, -createWebSocketWithURLRequestlogger
 
-### Community 213 - "Community 213"
+### Community 212 - "Community 212"
 Cohesion: 0.67
 Nodes (2): NSRunLoop, -ARTSR_networkRunLoop
 
-### Community 214 - "Community 214"
+### Community 213 - "Community 213"
 Cohesion: 0.67
 Nodes (2): NSDictionary, -messagePack
 
-### Community 215 - "Community 215"
+### Community 214 - "Community 214"
 Cohesion: 0.67
 Nodes (2): NSNumber, -messagePack
 
-### Community 216 - "Community 216"
+### Community 215 - "Community 215"
 Cohesion: 0.67
 Nodes (2): NSNull, -messagePack
 
-### Community 217 - "Community 217"
+### Community 216 - "Community 216"
 Cohesion: 0.67
 Nodes (2): NSArray, -messagePack
 
-### Community 218 - "Community 218"
+### Community 217 - "Community 217"
 Cohesion: 0.67
 Nodes (2): NSString, -messagePack
 
-### Community 219 - "Community 219"
+### Community 218 - "Community 218"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 220 - "Community 220"
+### Community 219 - "Community 219"
 Cohesion: 0.67
 Nodes (2): FBLPromise, -dispatchGroup
 
-### Community 221 - "Community 221"
+### Community 220 - "Community 220"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 222 - "Community 222"
+### Community 221 - "Community 221"
 Cohesion: 0.67
 Nodes (2): GACAppCheckCryptoUtils, -sha256HashFromData
 
-### Community 223 - "Community 223"
+### Community 222 - "Community 222"
 Cohesion: 0.67
 Nodes (2): NSURLSession, -gac_dataTaskPromiseWithRequest
 
-### Community 224 - "Community 224"
+### Community 223 - "Community 223"
 Cohesion: 0.67
 Nodes (2): GACURLSessionDataResponse, -initWithResponseHTTPBody
 
-### Community 225 - "Community 225"
+### Community 224 - "Community 224"
 Cohesion: 0.67
 Nodes (2): GIDSignInResult, -initWithGoogleUserserverAuthCode
 
-### Community 226 - "Community 226"
+### Community 225 - "Community 225"
 Cohesion: 0.67
 Nodes (2): GIDScopes, -scopesWithBasicProfile
 
-### Community 227 - "Community 227"
+### Community 226 - "Community 226"
 Cohesion: 0.67
 Nodes (2): GIDActivityIndicatorViewController, -viewDidLoad
 
-### Community 228 - "Community 228"
+### Community 227 - "Community 227"
 Cohesion: 0.67
 Nodes (2): argbToHex, hexToArgb
 
-### Community 229 - "Community 229"
+### Community 228 - "Community 228"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 230 - "Community 230"
+### Community 229 - "Community 229"
 Cohesion: 1.0
 Nodes (1): main
 
-### Community 231 - "Community 231"
+### Community 230 - "Community 230"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 232 - "Community 232"
+### Community 231 - "Community 231"
 Cohesion: 1.0
 Nodes (1): DCAppAttestService
 
-### Community 233 - "Community 233"
+### Community 232 - "Community 232"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 234 - "Community 234"
+### Community 233 - "Community 233"
 Cohesion: 1.0
 Nodes (1): AuthSessionStore
 
-### Community 235 - "Community 235"
+### Community 234 - "Community 234"
 Cohesion: 1.0
 Nodes (1): AuthSessionDelegate
 
-### Community 236 - "Community 236"
+### Community 235 - "Community 235"
 Cohesion: 1.0
 Nodes (1): MainActivity
 
-### Community 237 - "Community 237"
+### Community 236 - "Community 236"
 Cohesion: 1.0
 Nodes (1): Rider
 
-### Community 238 - "Community 238"
+### Community 237 - "Community 237"
 Cohesion: 1.0
 Nodes (1): UserProfile
 
-### Community 239 - "Community 239"
+### Community 238 - "Community 238"
 Cohesion: 1.0
 Nodes (1): MenuItem
+
+### Community 239 - "Community 239"
+Cohesion: 1.0
+Nodes (0): 
 
 ### Community 240 - "Community 240"
 Cohesion: 1.0
@@ -3363,902 +3362,898 @@ Nodes (0):
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 665 - "Community 665"
-Cohesion: 1.0
-Nodes (0): 
-
 ## Knowledge Gaps
-- **3175 isolated node(s):** `main`, `main`, `package:flutter_test/flutter_test.dart`, `package:launchfast/main.dart`, `-registerWithRegistry` (+3170 more)
+- **3200 isolated node(s):** `main`, `main`, `package:flutter_test/flutter_test.dart`, `package:launchfast/main.dart`, `-registerWithRegistry` (+3195 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 229`** (2 nodes): `generate_graph.js`, `traverse()`
+- **Thin community `Community 228`** (2 nodes): `generate_graph.js`, `traverse()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 230`** (2 nodes): `test.dart`, `main`
+- **Thin community `Community 229`** (2 nodes): `test.dart`, `main`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 231`** (2 nodes): `artDispatchCancel()`, `ARTGCD.h`
+- **Thin community `Community 230`** (2 nodes): `artDispatchCancel()`, `ARTGCD.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 232`** (2 nodes): `DCAppAttestService`, `DCAppAttestService+GACAppAttestService.m`
+- **Thin community `Community 231`** (2 nodes): `DCAppAttestService`, `DCAppAttestService+GACAppAttestService.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 233`** (2 nodes): `NS_ENUM()`, `GULLoggerLevel.h`
+- **Thin community `Community 232`** (2 nodes): `NS_ENUM()`, `GULLoggerLevel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 234`** (2 nodes): `AuthSessionStore`, `AuthSessionStore.swift`
+- **Thin community `Community 233`** (2 nodes): `AuthSessionStore`, `AuthSessionStore.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 235`** (2 nodes): `AuthSessionDelegate`, `AuthSessionDelegate.swift`
+- **Thin community `Community 234`** (2 nodes): `AuthSessionDelegate`, `AuthSessionDelegate.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 236`** (2 nodes): `MainActivity.kt`, `MainActivity`
+- **Thin community `Community 235`** (2 nodes): `MainActivity.kt`, `MainActivity`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 237`** (2 nodes): `rider.dart`, `Rider`
+- **Thin community `Community 236`** (2 nodes): `rider.dart`, `Rider`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 238`** (2 nodes): `user.dart`, `UserProfile`
+- **Thin community `Community 237`** (2 nodes): `user.dart`, `UserProfile`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 239`** (2 nodes): `menu_item.dart`, `MenuItem`
+- **Thin community `Community 238`** (2 nodes): `menu_item.dart`, `MenuItem`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 240`** (1 nodes): `Runner-Bridging-Header.h`
+- **Thin community `Community 239`** (1 nodes): `Runner-Bridging-Header.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 241`** (1 nodes): `GeneratedPluginRegistrant.h`
+- **Thin community `Community 240`** (1 nodes): `GeneratedPluginRegistrant.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 242`** (1 nodes): `ARTConstants.m`
+- **Thin community `Community 241`** (1 nodes): `ARTConstants.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 243`** (1 nodes): `ARTWrapperSDKProxyRealtimeChannel.m`
+- **Thin community `Community 242`** (1 nodes): `ARTWrapperSDKProxyRealtimeChannel.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 244`** (1 nodes): `ARTRetrySequence.m`
+- **Thin community `Community 243`** (1 nodes): `ARTRetrySequence.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 245`** (1 nodes): `ARTPushActivationStateMachine.m`
+- **Thin community `Community 244`** (1 nodes): `ARTPushActivationStateMachine.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 246`** (1 nodes): `ARTFormEncode.m`
+- **Thin community `Community 245`** (1 nodes): `ARTFormEncode.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 247`** (1 nodes): `ARTChannelProtocol.m`
+- **Thin community `Community 246`** (1 nodes): `ARTChannelProtocol.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 248`** (1 nodes): `ARTPushActivationState.m`
+- **Thin community `Community 247`** (1 nodes): `ARTPushActivationState.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 249`** (1 nodes): `ARTAuth.h`
+- **Thin community `Community 248`** (1 nodes): `ARTAuth.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 250`** (1 nodes): `ARTWrapperSDKProxyRealtimeAnnotations.h`
+- **Thin community `Community 249`** (1 nodes): `ARTWrapperSDKProxyRealtimeAnnotations.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 251`** (1 nodes): `ARTPushChannelSubscriptions.h`
+- **Thin community `Community 250`** (1 nodes): `ARTPushChannelSubscriptions.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 252`** (1 nodes): `ARTPushChannelSubscription.h`
+- **Thin community `Community 251`** (1 nodes): `ARTPushChannelSubscription.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 253`** (1 nodes): `ARTRealtimeChannels.h`
+- **Thin community `Community 252`** (1 nodes): `ARTRealtimeChannels.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 254`** (1 nodes): `ARTWrapperSDKProxyPush.h`
+- **Thin community `Community 253`** (1 nodes): `ARTWrapperSDKProxyPush.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 255`** (1 nodes): `ARTWrapperSDKProxyRealtimePresence.h`
+- **Thin community `Community 254`** (1 nodes): `ARTWrapperSDKProxyRealtimePresence.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 256`** (1 nodes): `ARTAuthDetails.h`
+- **Thin community `Community 255`** (1 nodes): `ARTAuthDetails.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 257`** (1 nodes): `ARTAnnotation.h`
+- **Thin community `Community 256`** (1 nodes): `ARTAnnotation.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 258`** (1 nodes): `ARTWrapperSDKProxyPushAdmin.h`
+- **Thin community `Community 257`** (1 nodes): `ARTWrapperSDKProxyPushAdmin.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 259`** (1 nodes): `ARTWrapperSDKProxyPushDeviceRegistrations.h`
+- **Thin community `Community 258`** (1 nodes): `ARTWrapperSDKProxyPushDeviceRegistrations.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 260`** (1 nodes): `ARTRealtime+WrapperSDKProxy.h`
+- **Thin community `Community 259`** (1 nodes): `ARTRealtime+WrapperSDKProxy.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 261`** (1 nodes): `ARTPaginatedResult.h`
+- **Thin community `Community 260`** (1 nodes): `ARTPaginatedResult.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 262`** (1 nodes): `ARTChannelProtocol.h`
+- **Thin community `Community 261`** (1 nodes): `ARTChannelProtocol.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 263`** (1 nodes): `ARTPushDeviceRegistrations.h`
+- **Thin community `Community 262`** (1 nodes): `ARTPushDeviceRegistrations.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 264`** (1 nodes): `ARTEventEmitter.h`
+- **Thin community `Community 263`** (1 nodes): `ARTEventEmitter.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 265`** (1 nodes): `ARTRestAnnotations.h`
+- **Thin community `Community 264`** (1 nodes): `ARTRestAnnotations.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 266`** (1 nodes): `AblyInternal.h`
+- **Thin community `Community 265`** (1 nodes): `AblyInternal.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 267`** (1 nodes): `ARTWrapperSDKProxyPushChannelSubscriptions.h`
+- **Thin community `Community 266`** (1 nodes): `ARTWrapperSDKProxyPushChannelSubscriptions.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 268`** (1 nodes): `ARTPushChannel.h`
+- **Thin community `Community 267`** (1 nodes): `ARTPushChannel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 269`** (1 nodes): `ARTRealtimePresence.h`
+- **Thin community `Community 268`** (1 nodes): `ARTRealtimePresence.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 270`** (1 nodes): `ARTWrapperSDKProxyRealtimeChannels.h`
+- **Thin community `Community 269`** (1 nodes): `ARTWrapperSDKProxyRealtimeChannels.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 271`** (1 nodes): `ARTWrapperSDKProxyOptions.h`
+- **Thin community `Community 270`** (1 nodes): `ARTWrapperSDKProxyOptions.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 272`** (1 nodes): `ARTRealtimeAnnotations.h`
+- **Thin community `Community 271`** (1 nodes): `ARTRealtimeAnnotations.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 273`** (1 nodes): `ARTPush.h`
+- **Thin community `Community 272`** (1 nodes): `ARTPush.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 274`** (1 nodes): `ARTStats.h`
+- **Thin community `Community 273`** (1 nodes): `ARTStats.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 275`** (1 nodes): `ARTMessageVersion.h`
+- **Thin community `Community 274`** (1 nodes): `ARTMessageVersion.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 276`** (1 nodes): `ARTMessage.h`
+- **Thin community `Community 275`** (1 nodes): `ARTMessage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 277`** (1 nodes): `ARTStringifiable.h`
+- **Thin community `Community 276`** (1 nodes): `ARTStringifiable.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 278`** (1 nodes): `ARTMessageAnnotations.h`
+- **Thin community `Community 277`** (1 nodes): `ARTMessageAnnotations.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 279`** (1 nodes): `ARTPushAdmin.h`
+- **Thin community `Community 278`** (1 nodes): `ARTPushAdmin.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 280`** (1 nodes): `ARTRealtimeChannelOptions.h`
+- **Thin community `Community 279`** (1 nodes): `ARTRealtimeChannelOptions.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 281`** (1 nodes): `ARTClientInformation.h`
+- **Thin community `Community 280`** (1 nodes): `ARTClientInformation.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 282`** (1 nodes): `ARTWrapperSDKProxyRealtime.h`
+- **Thin community `Community 281`** (1 nodes): `ARTWrapperSDKProxyRealtime.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 283`** (1 nodes): `ARTDeviceDetails.h`
+- **Thin community `Community 282`** (1 nodes): `ARTDeviceDetails.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 284`** (1 nodes): `ARTChannelOptions.h`
+- **Thin community `Community 283`** (1 nodes): `ARTChannelOptions.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 285`** (1 nodes): `ARTPresence.h`
+- **Thin community `Community 284`** (1 nodes): `ARTPresence.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 286`** (1 nodes): `ARTTypes.h`
+- **Thin community `Community 285`** (1 nodes): `ARTTypes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 287`** (1 nodes): `ARTCrypto.h`
+- **Thin community `Community 286`** (1 nodes): `ARTCrypto.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 288`** (1 nodes): `ARTRealtimeChannel.h`
+- **Thin community `Community 287`** (1 nodes): `ARTRealtimeChannel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 289`** (1 nodes): `ARTBaseMessage.h`
+- **Thin community `Community 288`** (1 nodes): `ARTBaseMessage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 290`** (1 nodes): `ARTRest.h`
+- **Thin community `Community 289`** (1 nodes): `ARTRest.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 291`** (1 nodes): `ARTDataQuery.h`
+- **Thin community `Community 290`** (1 nodes): `ARTDataQuery.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 292`** (1 nodes): `ARTAuthOptions.h`
+- **Thin community `Community 291`** (1 nodes): `ARTAuthOptions.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 293`** (1 nodes): `ARTSummaryTypes.h`
+- **Thin community `Community 292`** (1 nodes): `ARTSummaryTypes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 294`** (1 nodes): `ARTRestChannels.h`
+- **Thin community `Community 293`** (1 nodes): `ARTRestChannels.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 295`** (1 nodes): `ARTWrapperSDKProxyPushChannel.h`
+- **Thin community `Community 294`** (1 nodes): `ARTWrapperSDKProxyPushChannel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 296`** (1 nodes): `ARTClientOptions.h`
+- **Thin community `Community 295`** (1 nodes): `ARTClientOptions.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 297`** (1 nodes): `ARTChannels.h`
+- **Thin community `Community 296`** (1 nodes): `ARTChannels.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 298`** (1 nodes): `Ably.h`
+- **Thin community `Community 297`** (1 nodes): `Ably.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 299`** (1 nodes): `ARTDevicePushDetails.h`
+- **Thin community `Community 298`** (1 nodes): `ARTDevicePushDetails.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 300`** (1 nodes): `ARTLog.h`
+- **Thin community `Community 299`** (1 nodes): `ARTLog.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 301`** (1 nodes): `ARTOutboundAnnotation.h`
+- **Thin community `Community 300`** (1 nodes): `ARTOutboundAnnotation.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 302`** (1 nodes): `ARTWrapperSDKProxyRealtimeChannel.h`
+- **Thin community `Community 301`** (1 nodes): `ARTWrapperSDKProxyRealtimeChannel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 303`** (1 nodes): `ARTHTTPPaginatedResponse.h`
+- **Thin community `Community 302`** (1 nodes): `ARTHTTPPaginatedResponse.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 304`** (1 nodes): `ARTDefault.h`
+- **Thin community `Community 303`** (1 nodes): `ARTDefault.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 305`** (1 nodes): `ARTRestChannel.h`
+- **Thin community `Community 304`** (1 nodes): `ARTRestChannel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 306`** (1 nodes): `AblyPublic.h`
+- **Thin community `Community 305`** (1 nodes): `AblyPublic.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 307`** (1 nodes): `ARTRestPresence.h`
+- **Thin community `Community 306`** (1 nodes): `ARTRestPresence.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 308`** (1 nodes): `ARTRealtime.h`
+- **Thin community `Community 307`** (1 nodes): `ARTRealtime.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 309`** (1 nodes): `ARTLocalDevice.h`
+- **Thin community `Community 308`** (1 nodes): `ARTLocalDevice.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 310`** (1 nodes): `ARTPresenceMessage.h`
+- **Thin community `Community 309`** (1 nodes): `ARTPresenceMessage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 311`** (1 nodes): `ARTStatus.h`
+- **Thin community `Community 310`** (1 nodes): `ARTStatus.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 312`** (1 nodes): `ARTConnection.h`
+- **Thin community `Community 311`** (1 nodes): `ARTConnection.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 313`** (1 nodes): `ARTChannelStateChangeParams.h`
+- **Thin community `Community 312`** (1 nodes): `ARTChannelStateChangeParams.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 314`** (1 nodes): `ARTWebSocket.h`
+- **Thin community `Community 313`** (1 nodes): `ARTWebSocket.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 315`** (1 nodes): `ARTPushActivationStateMachine+Private.h`
+- **Thin community `Community 314`** (1 nodes): `ARTPushActivationStateMachine+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 316`** (1 nodes): `ARTLogAdapter.h`
+- **Thin community `Community 315`** (1 nodes): `ARTLogAdapter.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 317`** (1 nodes): `ARTProtocolMessage.h`
+- **Thin community `Community 316`** (1 nodes): `ARTProtocolMessage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 318`** (1 nodes): `ARTLogAdapter+Testing.h`
+- **Thin community `Community 317`** (1 nodes): `ARTLogAdapter+Testing.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 319`** (1 nodes): `ARTRealtimeTransportFactory.h`
+- **Thin community `Community 318`** (1 nodes): `ARTRealtimeTransportFactory.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 320`** (1 nodes): `ARTCrypto+Private.h`
+- **Thin community `Community 319`** (1 nodes): `ARTCrypto+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 321`** (1 nodes): `ARTJitterCoefficientGenerator.h`
+- **Thin community `Community 320`** (1 nodes): `ARTJitterCoefficientGenerator.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 322`** (1 nodes): `ARTChannel.h`
+- **Thin community `Community 321`** (1 nodes): `ARTChannel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 323`** (1 nodes): `ARTJsonLikeEncoder.h`
+- **Thin community `Community 322`** (1 nodes): `ARTJsonLikeEncoder.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 324`** (1 nodes): `ARTClientOptions+TestConfiguration.h`
+- **Thin community `Community 323`** (1 nodes): `ARTClientOptions+TestConfiguration.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 325`** (1 nodes): `ARTDefault+Private.h`
+- **Thin community `Community 324`** (1 nodes): `ARTDefault+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 326`** (1 nodes): `ARTFallback+Private.h`
+- **Thin community `Community 325`** (1 nodes): `ARTFallback+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 327`** (1 nodes): `ARTLog+Private.h`
+- **Thin community `Community 326`** (1 nodes): `ARTLog+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 328`** (1 nodes): `ARTPresence+Private.h`
+- **Thin community `Community 327`** (1 nodes): `ARTPresence+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 329`** (1 nodes): `ARTChannels+Private.h`
+- **Thin community `Community 328`** (1 nodes): `ARTChannels+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 330`** (1 nodes): `ARTNSString+ARTUtil.h`
+- **Thin community `Community 329`** (1 nodes): `ARTNSString+ARTUtil.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 331`** (1 nodes): `ARTNSMutableDictionary+ARTDictionaryUtil.h`
+- **Thin community `Community 330`** (1 nodes): `ARTNSMutableDictionary+ARTDictionaryUtil.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 332`** (1 nodes): `ARTChannelOptions+Private.h`
+- **Thin community `Community 331`** (1 nodes): `ARTChannelOptions+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 333`** (1 nodes): `ARTConnection+Private.h`
+- **Thin community `Community 332`** (1 nodes): `ARTConnection+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 334`** (1 nodes): `ARTLocalDevice+Private.h`
+- **Thin community `Community 333`** (1 nodes): `ARTLocalDevice+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 335`** (1 nodes): `ARTMessageVersion+Private.h`
+- **Thin community `Community 334`** (1 nodes): `ARTMessageVersion+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 336`** (1 nodes): `ARTWebSocketTransport.h`
+- **Thin community `Community 335`** (1 nodes): `ARTWebSocketTransport.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 337`** (1 nodes): `ARTWebSocketTransport+Private.h`
+- **Thin community `Community 336`** (1 nodes): `ARTWebSocketTransport+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 338`** (1 nodes): `ARTLocalDeviceStorage.h`
+- **Thin community `Community 337`** (1 nodes): `ARTLocalDeviceStorage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 339`** (1 nodes): `ARTPushAdmin+Private.h`
+- **Thin community `Community 338`** (1 nodes): `ARTPushAdmin+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 340`** (1 nodes): `ARTDeviceDetails+Private.h`
+- **Thin community `Community 339`** (1 nodes): `ARTDeviceDetails+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 341`** (1 nodes): `ARTWrapperSDKProxyRealtimePresence+Private.h`
+- **Thin community `Community 340`** (1 nodes): `ARTWrapperSDKProxyRealtimePresence+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 342`** (1 nodes): `ARTNSArray+ARTFunctional.h`
+- **Thin community `Community 341`** (1 nodes): `ARTNSArray+ARTFunctional.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 343`** (1 nodes): `ARTWrapperSDKProxyRealtimeChannels+Private.h`
+- **Thin community `Community 342`** (1 nodes): `ARTWrapperSDKProxyRealtimeChannels+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 344`** (1 nodes): `ARTRetryDelayCalculator.h`
+- **Thin community `Community 343`** (1 nodes): `ARTRetryDelayCalculator.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 345`** (1 nodes): `ARTStringifiable+Private.h`
+- **Thin community `Community 344`** (1 nodes): `ARTStringifiable+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 346`** (1 nodes): `ARTPluginAPI.h`
+- **Thin community `Community 345`** (1 nodes): `ARTPluginAPI.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 347`** (1 nodes): `ARTPublicRealtimeChannelUnderlyingObjects.h`
+- **Thin community `Community 346`** (1 nodes): `ARTPublicRealtimeChannelUnderlyingObjects.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 348`** (1 nodes): `ARTOSReachability.h`
+- **Thin community `Community 347`** (1 nodes): `ARTOSReachability.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 349`** (1 nodes): `ARTNSMutableRequest+ARTRest.h`
+- **Thin community `Community 348`** (1 nodes): `ARTNSMutableRequest+ARTRest.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 350`** (1 nodes): `ARTWrapperSDKProxyPush+Private.h`
+- **Thin community `Community 349`** (1 nodes): `ARTWrapperSDKProxyPush+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 351`** (1 nodes): `ARTWrapperSDKProxyPushAdmin+Private.h`
+- **Thin community `Community 350`** (1 nodes): `ARTWrapperSDKProxyPushAdmin+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 352`** (1 nodes): `ARTNSHTTPURLResponse+ARTPaginated.h`
+- **Thin community `Community 351`** (1 nodes): `ARTNSHTTPURLResponse+ARTPaginated.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 353`** (1 nodes): `ARTHTTPPaginatedResponse+Private.h`
+- **Thin community `Community 352`** (1 nodes): `ARTHTTPPaginatedResponse+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 354`** (1 nodes): `ARTPushActivationState.h`
+- **Thin community `Community 353`** (1 nodes): `ARTPushActivationState.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 355`** (1 nodes): `ARTWrapperSDKProxyPushDeviceRegistrations+Private.h`
+- **Thin community `Community 354`** (1 nodes): `ARTWrapperSDKProxyPushDeviceRegistrations+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 356`** (1 nodes): `ARTURLSessionServerTrust.h`
+- **Thin community `Community 355`** (1 nodes): `ARTURLSessionServerTrust.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 357`** (1 nodes): `ARTURLSession.h`
+- **Thin community `Community 356`** (1 nodes): `ARTURLSession.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 358`** (1 nodes): `ARTPresenceMessage+Private.h`
+- **Thin community `Community 357`** (1 nodes): `ARTPresenceMessage+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 359`** (1 nodes): `ARTRestAnnotations+Private.h`
+- **Thin community `Community 358`** (1 nodes): `ARTRestAnnotations+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 360`** (1 nodes): `ARTWebSocketFactory.h`
+- **Thin community `Community 359`** (1 nodes): `ARTWebSocketFactory.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 361`** (1 nodes): `ARTReachability.h`
+- **Thin community `Community 360`** (1 nodes): `ARTReachability.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 362`** (1 nodes): `ARTWrapperSDKProxyRealtimeChannel+Private.h`
+- **Thin community `Community 361`** (1 nodes): `ARTWrapperSDKProxyRealtimeChannel+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 363`** (1 nodes): `ARTEventEmitter+Private.h`
+- **Thin community `Community 362`** (1 nodes): `ARTEventEmitter+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 364`** (1 nodes): `ARTNSMutableURLRequest+ARTPaginated.h`
+- **Thin community `Community 363`** (1 nodes): `ARTNSMutableURLRequest+ARTPaginated.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 365`** (1 nodes): `ARTRealtimePresence+Private.h`
+- **Thin community `Community 364`** (1 nodes): `ARTRealtimePresence+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 366`** (1 nodes): `ARTWrapperSDKProxyPushChannelSubscriptions+Private.h`
+- **Thin community `Community 365`** (1 nodes): `ARTWrapperSDKProxyPushChannelSubscriptions+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 367`** (1 nodes): `ARTRealtimeChannels+Private.h`
+- **Thin community `Community 366`** (1 nodes): `ARTRealtimeChannels+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 368`** (1 nodes): `ARTPush+Private.h`
+- **Thin community `Community 367`** (1 nodes): `ARTPush+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 369`** (1 nodes): `ARTInternalLog+Testing.h`
+- **Thin community `Community 368`** (1 nodes): `ARTInternalLog+Testing.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 370`** (1 nodes): `ARTRealtimeChannel+Private.h`
+- **Thin community `Community 369`** (1 nodes): `ARTRealtimeChannel+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 371`** (1 nodes): `ARTRest+Private.h`
+- **Thin community `Community 370`** (1 nodes): `ARTRest+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 372`** (1 nodes): `ARTBaseMessage+Private.h`
+- **Thin community `Community 371`** (1 nodes): `ARTBaseMessage+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 373`** (1 nodes): `ARTVersion2Log.h`
+- **Thin community `Community 372`** (1 nodes): `ARTVersion2Log.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 374`** (1 nodes): `ARTPushChannel+Private.h`
+- **Thin community `Community 373`** (1 nodes): `ARTPushChannel+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 375`** (1 nodes): `ARTMsgPackEncoder.h`
+- **Thin community `Community 374`** (1 nodes): `ARTMsgPackEncoder.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 376`** (1 nodes): `ARTPendingMessage.h`
+- **Thin community `Community 375`** (1 nodes): `ARTPendingMessage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 377`** (1 nodes): `ARTNSError+ARTUtils.h`
+- **Thin community `Community 376`** (1 nodes): `ARTNSError+ARTUtils.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 378`** (1 nodes): `ARTNSDate+ARTUtil.h`
+- **Thin community `Community 377`** (1 nodes): `ARTNSDate+ARTUtil.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 379`** (1 nodes): `ARTNSMutableRequest+ARTPush.h`
+- **Thin community `Community 378`** (1 nodes): `ARTNSMutableRequest+ARTPush.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 380`** (1 nodes): `ARTHttp.h`
+- **Thin community `Community 379`** (1 nodes): `ARTHttp.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 381`** (1 nodes): `ARTWrapperSDKProxyRealtime+Private.h`
+- **Thin community `Community 380`** (1 nodes): `ARTWrapperSDKProxyRealtime+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 382`** (1 nodes): `ARTPaginatedResult+Subclass.h`
+- **Thin community `Community 381`** (1 nodes): `ARTPaginatedResult+Subclass.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 383`** (1 nodes): `ARTAttachRetryState.h`
+- **Thin community `Community 382`** (1 nodes): `ARTAttachRetryState.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 384`** (1 nodes): `ARTDataEncoder.h`
+- **Thin community `Community 383`** (1 nodes): `ARTDataEncoder.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 385`** (1 nodes): `ARTNSURL+ARTUtils.h`
+- **Thin community `Community 384`** (1 nodes): `ARTNSURL+ARTUtils.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 386`** (1 nodes): `ARTConnectionDetails+Private.h`
+- **Thin community `Community 385`** (1 nodes): `ARTConnectionDetails+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 387`** (1 nodes): `NSURLQueryItem+Stringifiable.h`
+- **Thin community `Community 386`** (1 nodes): `NSURLQueryItem+Stringifiable.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 388`** (1 nodes): `ARTRealtimeAnnotations+Private.h`
+- **Thin community `Community 387`** (1 nodes): `ARTRealtimeAnnotations+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 389`** (1 nodes): `ARTWrapperSDKProxyRealtimeAnnotations+Private.h`
+- **Thin community `Community 388`** (1 nodes): `ARTWrapperSDKProxyRealtimeAnnotations+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 390`** (1 nodes): `ARTTestClientOptions.h`
+- **Thin community `Community 389`** (1 nodes): `ARTTestClientOptions.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 391`** (1 nodes): `ARTAuth+Private.h`
+- **Thin community `Community 390`** (1 nodes): `ARTAuth+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 392`** (1 nodes): `ARTNSMutableURLRequest+ARTUtils.h`
+- **Thin community `Community 391`** (1 nodes): `ARTNSMutableURLRequest+ARTUtils.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 393`** (1 nodes): `ARTInternalLogCore.h`
+- **Thin community `Community 392`** (1 nodes): `ARTInternalLogCore.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 394`** (1 nodes): `ARTPushActivationEvent.h`
+- **Thin community `Community 393`** (1 nodes): `ARTPushActivationEvent.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 395`** (1 nodes): `ARTEncoder.h`
+- **Thin community `Community 394`** (1 nodes): `ARTEncoder.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 396`** (1 nodes): `ARTPushDeviceRegistrations+Private.h`
+- **Thin community `Community 395`** (1 nodes): `ARTPushDeviceRegistrations+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 397`** (1 nodes): `ARTSummaryTypes+Private.h`
+- **Thin community `Community 396`** (1 nodes): `ARTSummaryTypes+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 398`** (1 nodes): `ARTConstants.h`
+- **Thin community `Community 397`** (1 nodes): `ARTConstants.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 399`** (1 nodes): `ARTInternalLogCore+Testing.h`
+- **Thin community `Community 398`** (1 nodes): `ARTInternalLogCore+Testing.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 400`** (1 nodes): `ARTMessageAnnotations+Private.h`
+- **Thin community `Community 399`** (1 nodes): `ARTMessageAnnotations+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 401`** (1 nodes): `ARTErrorChecker.h`
+- **Thin community `Community 400`** (1 nodes): `ARTErrorChecker.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 402`** (1 nodes): `ARTNSDictionary+ARTDictionaryUtil.h`
+- **Thin community `Community 401`** (1 nodes): `ARTNSDictionary+ARTDictionaryUtil.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 403`** (1 nodes): `ARTBackoffRetryDelayCalculator.h`
+- **Thin community `Community 402`** (1 nodes): `ARTBackoffRetryDelayCalculator.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 404`** (1 nodes): `ARTDevicePushDetails+Private.h`
+- **Thin community `Community 403`** (1 nodes): `ARTDevicePushDetails+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 405`** (1 nodes): `ARTPaginatedResult+Private.h`
+- **Thin community `Community 404`** (1 nodes): `ARTPaginatedResult+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 406`** (1 nodes): `ARTAttachRequestParams.h`
+- **Thin community `Community 405`** (1 nodes): `ARTAttachRequestParams.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 407`** (1 nodes): `ARTHttp+Private.h`
+- **Thin community `Community 406`** (1 nodes): `ARTHttp+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 408`** (1 nodes): `ARTPushChannelSubscriptions+Private.h`
+- **Thin community `Community 407`** (1 nodes): `ARTPushChannelSubscriptions+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 409`** (1 nodes): `ARTContinuousClock.h`
+- **Thin community `Community 408`** (1 nodes): `ARTContinuousClock.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 410`** (1 nodes): `ARTAnnotation+Private.h`
+- **Thin community `Community 409`** (1 nodes): `ARTAnnotation+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 411`** (1 nodes): `ARTSRWebSocket.h`
+- **Thin community `Community 410`** (1 nodes): `ARTSRWebSocket.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 412`** (1 nodes): `ARTDeviceStorage.h`
+- **Thin community `Community 411`** (1 nodes): `ARTDeviceStorage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 413`** (1 nodes): `ARTClientOptions+Private.h`
+- **Thin community `Community 412`** (1 nodes): `ARTClientOptions+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 414`** (1 nodes): `ARTRestChannel+Private.h`
+- **Thin community `Community 413`** (1 nodes): `ARTRestChannel+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 415`** (1 nodes): `ARTAuthOptions+Private.h`
+- **Thin community `Community 414`** (1 nodes): `ARTAuthOptions+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 416`** (1 nodes): `ARTRetrySequence.h`
+- **Thin community `Community 415`** (1 nodes): `ARTRetrySequence.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 417`** (1 nodes): `ARTErrorInfo+Private.h`
+- **Thin community `Community 416`** (1 nodes): `ARTErrorInfo+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 418`** (1 nodes): `ARTJsonEncoder.h`
+- **Thin community `Community 417`** (1 nodes): `ARTJsonEncoder.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 419`** (1 nodes): `ARTTypes+Private.h`
+- **Thin community `Community 418`** (1 nodes): `ARTTypes+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 420`** (1 nodes): `ARTRestChannels+Private.h`
+- **Thin community `Community 419`** (1 nodes): `ARTRestChannels+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 421`** (1 nodes): `ARTRealtime+Private.h`
+- **Thin community `Community 420`** (1 nodes): `ARTRealtime+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 422`** (1 nodes): `ARTRestPresence+Private.h`
+- **Thin community `Community 421`** (1 nodes): `ARTRestPresence+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 423`** (1 nodes): `ARTWrapperSDKProxyPushChannel+Private.h`
+- **Thin community `Community 422`** (1 nodes): `ARTWrapperSDKProxyPushChannel+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 424`** (1 nodes): `ARTQueuedMessage.h`
+- **Thin community `Community 423`** (1 nodes): `ARTQueuedMessage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 425`** (1 nodes): `ARTPluginDecodingContext.h`
+- **Thin community `Community 424`** (1 nodes): `ARTPluginDecodingContext.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 426`** (1 nodes): `ARTClientInformation+Private.h`
+- **Thin community `Community 425`** (1 nodes): `ARTClientInformation+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 427`** (1 nodes): `ARTConnectRetryState.h`
+- **Thin community `Community 426`** (1 nodes): `ARTConnectRetryState.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 428`** (1 nodes): `ARTChannel+Private.h`
+- **Thin community `Community 427`** (1 nodes): `ARTChannel+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 429`** (1 nodes): `ARTProtocolMessage+Private.h`
+- **Thin community `Community 428`** (1 nodes): `ARTProtocolMessage+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 430`** (1 nodes): `ARTConnectionStateChangeParams.h`
+- **Thin community `Community 429`** (1 nodes): `ARTConnectionStateChangeParams.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 431`** (1 nodes): `ARTQueuedDealloc.h`
+- **Thin community `Community 430`** (1 nodes): `ARTQueuedDealloc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 432`** (1 nodes): `ARTRealtimeTransport.h`
+- **Thin community `Community 431`** (1 nodes): `ARTRealtimeTransport.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 433`** (1 nodes): `ARTFormEncode.h`
+- **Thin community `Community 432`** (1 nodes): `ARTFormEncode.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 434`** (1 nodes): `ARTFallback.h`
+- **Thin community `Community 433`** (1 nodes): `ARTFallback.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 435`** (1 nodes): `ARTInternalLog.h`
+- **Thin community `Community 434`** (1 nodes): `ARTInternalLog.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 436`** (1 nodes): `ARTPushActivationStateMachine.h`
+- **Thin community `Community 435`** (1 nodes): `ARTPushActivationStateMachine.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 437`** (1 nodes): `ARTConnectionDetails.h`
+- **Thin community `Community 436`** (1 nodes): `ARTConnectionDetails.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 438`** (1 nodes): `ARTFallbackHosts.h`
+- **Thin community `Community 437`** (1 nodes): `ARTFallbackHosts.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 439`** (1 nodes): `ARTDataQuery+Private.h`
+- **Thin community `Community 438`** (1 nodes): `ARTDataQuery+Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 440`** (1 nodes): `NSRunLoop+ARTSRWebSocket.h`
+- **Thin community `Community 439`** (1 nodes): `NSRunLoop+ARTSRWebSocket.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 441`** (1 nodes): `ARTSRSecurityPolicy.m`
+- **Thin community `Community 440`** (1 nodes): `ARTSRSecurityPolicy.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 442`** (1 nodes): `NSURLRequest+ARTSRWebSocket.h`
+- **Thin community `Community 441`** (1 nodes): `NSURLRequest+ARTSRWebSocket.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 443`** (1 nodes): `ARTSRSecurityPolicy.h`
+- **Thin community `Community 442`** (1 nodes): `ARTSRSecurityPolicy.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 444`** (1 nodes): `NSRunLoop+ARTSRWebSocketPrivate.h`
+- **Thin community `Community 443`** (1 nodes): `NSRunLoop+ARTSRWebSocketPrivate.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 445`** (1 nodes): `ARTSRConstants.h`
+- **Thin community `Community 444`** (1 nodes): `ARTSRConstants.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 446`** (1 nodes): `NSURLRequest+ARTSRWebSocketPrivate.h`
+- **Thin community `Community 445`** (1 nodes): `NSURLRequest+ARTSRWebSocketPrivate.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 447`** (1 nodes): `ARTSRConstants.m`
+- **Thin community `Community 446`** (1 nodes): `ARTSRConstants.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 448`** (1 nodes): `ARTSRProxyConnect.h`
+- **Thin community `Community 447`** (1 nodes): `ARTSRProxyConnect.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 449`** (1 nodes): `ARTSRRunLoopThread.h`
+- **Thin community `Community 448`** (1 nodes): `ARTSRRunLoopThread.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 450`** (1 nodes): `ARTSRPinningSecurityPolicy.h`
+- **Thin community `Community 449`** (1 nodes): `ARTSRPinningSecurityPolicy.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 451`** (1 nodes): `ARTSRPinningSecurityPolicy.m`
+- **Thin community `Community 450`** (1 nodes): `ARTSRPinningSecurityPolicy.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 452`** (1 nodes): `ARTSRDelegateController.h`
+- **Thin community `Community 451`** (1 nodes): `ARTSRDelegateController.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 453`** (1 nodes): `ARTSRDelegateController.m`
+- **Thin community `Community 452`** (1 nodes): `ARTSRDelegateController.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 454`** (1 nodes): `ARTSRRandom.m`
+- **Thin community `Community 453`** (1 nodes): `ARTSRRandom.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 455`** (1 nodes): `ARTSRSIMDHelpers.h`
+- **Thin community `Community 454`** (1 nodes): `ARTSRSIMDHelpers.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 456`** (1 nodes): `ARTSRMutex.m`
+- **Thin community `Community 455`** (1 nodes): `ARTSRMutex.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 457`** (1 nodes): `ARTSRURLUtilities.h`
+- **Thin community `Community 456`** (1 nodes): `ARTSRURLUtilities.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 458`** (1 nodes): `ARTSRHash.m`
+- **Thin community `Community 457`** (1 nodes): `ARTSRHash.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 459`** (1 nodes): `ARTSRHTTPConnectMessage.h`
+- **Thin community `Community 458`** (1 nodes): `ARTSRHTTPConnectMessage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 460`** (1 nodes): `ARTSRError.h`
+- **Thin community `Community 459`** (1 nodes): `ARTSRError.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 461`** (1 nodes): `ARTSRLog.h`
+- **Thin community `Community 460`** (1 nodes): `ARTSRLog.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 462`** (1 nodes): `ARTSRMutex.h`
+- **Thin community `Community 461`** (1 nodes): `ARTSRMutex.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 463`** (1 nodes): `ARTSRSIMDHelpers.m`
+- **Thin community `Community 462`** (1 nodes): `ARTSRSIMDHelpers.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 464`** (1 nodes): `ARTSRRandom.h`
+- **Thin community `Community 463`** (1 nodes): `ARTSRRandom.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 465`** (1 nodes): `ARTSRHash.h`
+- **Thin community `Community 464`** (1 nodes): `ARTSRHash.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 466`** (1 nodes): `ARTSRURLUtilities.m`
+- **Thin community `Community 465`** (1 nodes): `ARTSRURLUtilities.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 467`** (1 nodes): `ARTSRHTTPConnectMessage.m`
+- **Thin community `Community 466`** (1 nodes): `ARTSRHTTPConnectMessage.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 468`** (1 nodes): `ARTSRError.m`
+- **Thin community `Community 467`** (1 nodes): `ARTSRError.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 469`** (1 nodes): `ARTSRIOConsumerPool.h`
+- **Thin community `Community 468`** (1 nodes): `ARTSRIOConsumerPool.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 470`** (1 nodes): `MessagePackPacker.h`
+- **Thin community `Community 469`** (1 nodes): `MessagePackPacker.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 471`** (1 nodes): `NSDictionary+MessagePack.h`
+- **Thin community `Community 470`** (1 nodes): `NSDictionary+MessagePack.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 472`** (1 nodes): `MessagePack.h`
+- **Thin community `Community 471`** (1 nodes): `MessagePack.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 473`** (1 nodes): `NSNull+MessagePack.h`
+- **Thin community `Community 472`** (1 nodes): `NSNull+MessagePack.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 474`** (1 nodes): `NSNumber+MessagePack.h`
+- **Thin community `Community 473`** (1 nodes): `NSNumber+MessagePack.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 475`** (1 nodes): `NSString+MessagePack.h`
+- **Thin community `Community 474`** (1 nodes): `NSString+MessagePack.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 476`** (1 nodes): `NSArray+MessagePack.h`
+- **Thin community `Community 475`** (1 nodes): `NSArray+MessagePack.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 477`** (1 nodes): `MessagePackParser.h`
+- **Thin community `Community 476`** (1 nodes): `MessagePackParser.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 478`** (1 nodes): `MessagePackParser+Streaming.h`
+- **Thin community `Community 477`** (1 nodes): `MessagePackParser+Streaming.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 479`** (1 nodes): `NSData+MessagePack.h`
+- **Thin community `Community 478`** (1 nodes): `NSData+MessagePack.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 480`** (1 nodes): `msgpack.h`
+- **Thin community `Community 479`** (1 nodes): `msgpack.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 481`** (1 nodes): `sysdep.h`
+- **Thin community `Community 480`** (1 nodes): `sysdep.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 482`** (1 nodes): `version.h`
+- **Thin community `Community 481`** (1 nodes): `version.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 483`** (1 nodes): `version_master.h`
+- **Thin community `Community 482`** (1 nodes): `version_master.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 484`** (1 nodes): `pack_define.h`
+- **Thin community `Community 483`** (1 nodes): `pack_define.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 485`** (1 nodes): `unpack_define.h`
+- **Thin community `Community 484`** (1 nodes): `unpack_define.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 486`** (1 nodes): `object.h`
+- **Thin community `Community 485`** (1 nodes): `object.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 487`** (1 nodes): `FBLPromise+Await.m`
+- **Thin community `Community 486`** (1 nodes): `FBLPromise+Await.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 488`** (1 nodes): `FBLPromiseError.m`
+- **Thin community `Community 487`** (1 nodes): `FBLPromiseError.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 489`** (1 nodes): `FBLPromise+Testing.h`
+- **Thin community `Community 488`** (1 nodes): `FBLPromise+Testing.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 490`** (1 nodes): `FBLPromise+Reduce.h`
+- **Thin community `Community 489`** (1 nodes): `FBLPromise+Reduce.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 491`** (1 nodes): `FBLPromise+Catch.h`
+- **Thin community `Community 490`** (1 nodes): `FBLPromise+Catch.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 492`** (1 nodes): `FBLPromise+Recover.h`
+- **Thin community `Community 491`** (1 nodes): `FBLPromise+Recover.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 493`** (1 nodes): `FBLPromise+Validate.h`
+- **Thin community `Community 492`** (1 nodes): `FBLPromise+Validate.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 494`** (1 nodes): `FBLPromise+All.h`
+- **Thin community `Community 493`** (1 nodes): `FBLPromise+All.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 495`** (1 nodes): `FBLPromise+Race.h`
+- **Thin community `Community 494`** (1 nodes): `FBLPromise+Race.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 496`** (1 nodes): `FBLPromise+Wrap.h`
+- **Thin community `Community 495`** (1 nodes): `FBLPromise+Wrap.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 497`** (1 nodes): `FBLPromise.h`
+- **Thin community `Community 496`** (1 nodes): `FBLPromise.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 498`** (1 nodes): `FBLPromises.h`
+- **Thin community `Community 497`** (1 nodes): `FBLPromises.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 499`** (1 nodes): `FBLPromisePrivate.h`
+- **Thin community `Community 498`** (1 nodes): `FBLPromisePrivate.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 500`** (1 nodes): `FBLPromise+Retry.h`
+- **Thin community `Community 499`** (1 nodes): `FBLPromise+Retry.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 501`** (1 nodes): `FBLPromise+Await.h`
+- **Thin community `Community 500`** (1 nodes): `FBLPromise+Await.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 502`** (1 nodes): `FBLPromise+Delay.h`
+- **Thin community `Community 501`** (1 nodes): `FBLPromise+Delay.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 503`** (1 nodes): `FBLPromise+Do.h`
+- **Thin community `Community 502`** (1 nodes): `FBLPromise+Do.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 504`** (1 nodes): `FBLPromise+Timeout.h`
+- **Thin community `Community 503`** (1 nodes): `FBLPromise+Timeout.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 505`** (1 nodes): `FBLPromise+Then.h`
+- **Thin community `Community 504`** (1 nodes): `FBLPromise+Then.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 506`** (1 nodes): `FBLPromise+Async.h`
+- **Thin community `Community 505`** (1 nodes): `FBLPromise+Async.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 507`** (1 nodes): `FBLPromise+Always.h`
+- **Thin community `Community 506`** (1 nodes): `FBLPromise+Always.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 508`** (1 nodes): `FBLPromise+Any.h`
+- **Thin community `Community 507`** (1 nodes): `FBLPromise+Any.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 509`** (1 nodes): `GACAppCheckLogger+Internal.h`
+- **Thin community `Community 508`** (1 nodes): `GACAppCheckLogger+Internal.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 510`** (1 nodes): `GACAppCheckSettings.m`
+- **Thin community `Community 509`** (1 nodes): `GACAppCheckSettings.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 511`** (1 nodes): `GACAppCheckBackoffWrapper.h`
+- **Thin community `Community 510`** (1 nodes): `GACAppCheckBackoffWrapper.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 512`** (1 nodes): `GACAppCheckCryptoUtils.h`
+- **Thin community `Community 511`** (1 nodes): `GACAppCheckCryptoUtils.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 513`** (1 nodes): `GACAppCheckStorage.h`
+- **Thin community `Community 512`** (1 nodes): `GACAppCheckStorage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 514`** (1 nodes): `GACAppCheckErrorUtil.h`
+- **Thin community `Community 513`** (1 nodes): `GACAppCheckErrorUtil.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 515`** (1 nodes): `GACAppCheckHTTPError.h`
+- **Thin community `Community 514`** (1 nodes): `GACAppCheckHTTPError.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 516`** (1 nodes): `GACAppCheckErrors.m`
+- **Thin community `Community 515`** (1 nodes): `GACAppCheckErrors.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 517`** (1 nodes): `GACAppCheckAPIService.h`
+- **Thin community `Community 516`** (1 nodes): `GACAppCheckAPIService.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 518`** (1 nodes): `GACURLSessionDataResponse.h`
+- **Thin community `Community 517`** (1 nodes): `GACURLSessionDataResponse.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 519`** (1 nodes): `NSURLSession+GACPromises.h`
+- **Thin community `Community 518`** (1 nodes): `NSURLSession+GACPromises.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 520`** (1 nodes): `GACAppCheckDebugProviderAPIService.h`
+- **Thin community `Community 519`** (1 nodes): `GACAppCheckDebugProviderAPIService.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 521`** (1 nodes): `GACDeviceCheckProvider.m`
+- **Thin community `Community 520`** (1 nodes): `GACDeviceCheckProvider.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 522`** (1 nodes): `GACDeviceCheckAPIService.h`
+- **Thin community `Community 521`** (1 nodes): `GACDeviceCheckAPIService.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 523`** (1 nodes): `GACAppCheckAvailability.h`
+- **Thin community `Community 522`** (1 nodes): `GACAppCheckAvailability.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 524`** (1 nodes): `GACAppCheck.h`
+- **Thin community `Community 523`** (1 nodes): `GACAppCheck.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 525`** (1 nodes): `GACDeviceCheckProvider.h`
+- **Thin community `Community 524`** (1 nodes): `GACDeviceCheckProvider.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 526`** (1 nodes): `GACAppCheckSettings.h`
+- **Thin community `Community 525`** (1 nodes): `GACAppCheckSettings.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 527`** (1 nodes): `GACAppCheckErrors.h`
+- **Thin community `Community 526`** (1 nodes): `GACAppCheckErrors.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 528`** (1 nodes): `GACAppCheckDebugProvider.h`
+- **Thin community `Community 527`** (1 nodes): `GACAppCheckDebugProvider.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 529`** (1 nodes): `AppCheckCore.h`
+- **Thin community `Community 528`** (1 nodes): `AppCheckCore.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 530`** (1 nodes): `GACAppCheckProvider.h`
+- **Thin community `Community 529`** (1 nodes): `GACAppCheckProvider.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 531`** (1 nodes): `GACAppCheckLogger.h`
+- **Thin community `Community 530`** (1 nodes): `GACAppCheckLogger.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 532`** (1 nodes): `GACAppAttestProvider.h`
+- **Thin community `Community 531`** (1 nodes): `GACAppAttestProvider.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 533`** (1 nodes): `GACAppAttestProvider.m`
+- **Thin community `Community 532`** (1 nodes): `GACAppAttestProvider.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 534`** (1 nodes): `GACAppAttestProviderState.h`
+- **Thin community `Community 533`** (1 nodes): `GACAppAttestProviderState.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 535`** (1 nodes): `DCAppAttestService+GACAppAttestService.h`
+- **Thin community `Community 534`** (1 nodes): `DCAppAttestService+GACAppAttestService.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 536`** (1 nodes): `GACAppAttestService.h`
+- **Thin community `Community 535`** (1 nodes): `GACAppAttestService.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 537`** (1 nodes): `GACAppAttestKeyIDStorage.h`
+- **Thin community `Community 536`** (1 nodes): `GACAppAttestKeyIDStorage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 538`** (1 nodes): `GACAppAttestArtifactStorage.h`
+- **Thin community `Community 537`** (1 nodes): `GACAppAttestArtifactStorage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 539`** (1 nodes): `GACAppAttestStoredArtifact.h`
+- **Thin community `Community 538`** (1 nodes): `GACAppAttestStoredArtifact.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 540`** (1 nodes): `GACAppAttestAttestationResponse.h`
+- **Thin community `Community 539`** (1 nodes): `GACAppAttestAttestationResponse.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 541`** (1 nodes): `GACAppAttestAPIService.h`
+- **Thin community `Community 540`** (1 nodes): `GACAppAttestAPIService.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 542`** (1 nodes): `GACAppAttestRejectionError.h`
+- **Thin community `Community 541`** (1 nodes): `GACAppAttestRejectionError.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 543`** (1 nodes): `AppAuth.h`
+- **Thin community `Community 542`** (1 nodes): `AppAuth.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 544`** (1 nodes): `AppAuthCore.h`
+- **Thin community `Community 543`** (1 nodes): `AppAuthCore.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 545`** (1 nodes): `OIDExternalUserAgentIOS.h`
+- **Thin community `Community 544`** (1 nodes): `OIDExternalUserAgentIOS.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 546`** (1 nodes): `OIDAuthorizationService+IOS.h`
+- **Thin community `Community 545`** (1 nodes): `OIDAuthorizationService+IOS.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 547`** (1 nodes): `OIDExternalUserAgentIOSCustomBrowser.m`
+- **Thin community `Community 546`** (1 nodes): `OIDExternalUserAgentIOSCustomBrowser.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 548`** (1 nodes): `OIDAuthorizationService+IOS.m`
+- **Thin community `Community 547`** (1 nodes): `OIDAuthorizationService+IOS.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 549`** (1 nodes): `OIDAuthState+IOS.h`
+- **Thin community `Community 548`** (1 nodes): `OIDAuthState+IOS.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 550`** (1 nodes): `OIDExternalUserAgentIOSCustomBrowser.h`
+- **Thin community `Community 549`** (1 nodes): `OIDExternalUserAgentIOSCustomBrowser.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 551`** (1 nodes): `OIDExternalUserAgentCatalyst.h`
+- **Thin community `Community 550`** (1 nodes): `OIDExternalUserAgentCatalyst.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 552`** (1 nodes): `OIDAuthorizationService.h`
+- **Thin community `Community 551`** (1 nodes): `OIDAuthorizationService.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 553`** (1 nodes): `OIDFieldMapping.m`
+- **Thin community `Community 552`** (1 nodes): `OIDFieldMapping.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 554`** (1 nodes): `OIDRegistrationRequest.m`
+- **Thin community `Community 553`** (1 nodes): `OIDRegistrationRequest.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 555`** (1 nodes): `OIDAuthStateChangeDelegate.h`
+- **Thin community `Community 554`** (1 nodes): `OIDAuthStateChangeDelegate.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 556`** (1 nodes): `OIDResponseTypes.h`
+- **Thin community `Community 555`** (1 nodes): `OIDResponseTypes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 557`** (1 nodes): `OIDAuthorizationRequest.m`
+- **Thin community `Community 556`** (1 nodes): `OIDAuthorizationRequest.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 558`** (1 nodes): `OIDScopes.m`
+- **Thin community `Community 557`** (1 nodes): `OIDScopes.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 559`** (1 nodes): `OIDError.m`
+- **Thin community `Community 558`** (1 nodes): `OIDError.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 560`** (1 nodes): `OIDExternalUserAgent.h`
+- **Thin community `Community 559`** (1 nodes): `OIDExternalUserAgent.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 561`** (1 nodes): `OIDGrantTypes.m`
+- **Thin community `Community 560`** (1 nodes): `OIDGrantTypes.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 562`** (1 nodes): `OIDEndSessionRequest.h`
+- **Thin community `Community 561`** (1 nodes): `OIDEndSessionRequest.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 563`** (1 nodes): `OIDServiceConfiguration.h`
+- **Thin community `Community 562`** (1 nodes): `OIDServiceConfiguration.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 564`** (1 nodes): `OIDServiceDiscovery.m`
+- **Thin community `Community 563`** (1 nodes): `OIDServiceDiscovery.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 565`** (1 nodes): `OIDURLQueryComponent.h`
+- **Thin community `Community 564`** (1 nodes): `OIDURLQueryComponent.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 566`** (1 nodes): `OIDClientMetadataParameters.h`
+- **Thin community `Community 565`** (1 nodes): `OIDClientMetadataParameters.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 567`** (1 nodes): `OIDEndSessionResponse.h`
+- **Thin community `Community 566`** (1 nodes): `OIDEndSessionResponse.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 568`** (1 nodes): `OIDErrorUtilities.h`
+- **Thin community `Community 567`** (1 nodes): `OIDErrorUtilities.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 569`** (1 nodes): `OIDRegistrationResponse.h`
+- **Thin community `Community 568`** (1 nodes): `OIDRegistrationResponse.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 570`** (1 nodes): `OIDAuthorizationResponse.h`
+- **Thin community `Community 569`** (1 nodes): `OIDAuthorizationResponse.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 571`** (1 nodes): `OIDResponseTypes.m`
+- **Thin community `Community 570`** (1 nodes): `OIDResponseTypes.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 572`** (1 nodes): `OIDAuthorizationRequest.h`
+- **Thin community `Community 571`** (1 nodes): `OIDAuthorizationRequest.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 573`** (1 nodes): `OIDRegistrationRequest.h`
+- **Thin community `Community 572`** (1 nodes): `OIDRegistrationRequest.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 574`** (1 nodes): `OIDAuthStateErrorDelegate.h`
+- **Thin community `Community 573`** (1 nodes): `OIDAuthStateErrorDelegate.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 575`** (1 nodes): `OIDFieldMapping.h`
+- **Thin community `Community 574`** (1 nodes): `OIDFieldMapping.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 576`** (1 nodes): `OIDScopeUtilities.h`
+- **Thin community `Community 575`** (1 nodes): `OIDScopeUtilities.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 577`** (1 nodes): `OIDAuthorizationService.m`
+- **Thin community `Community 576`** (1 nodes): `OIDAuthorizationService.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 578`** (1 nodes): `OIDAuthState.h`
+- **Thin community `Community 577`** (1 nodes): `OIDAuthState.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 579`** (1 nodes): `OIDError.h`
+- **Thin community `Community 578`** (1 nodes): `OIDError.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 580`** (1 nodes): `OIDScopes.h`
+- **Thin community `Community 579`** (1 nodes): `OIDScopes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 581`** (1 nodes): `OIDDefines.h`
+- **Thin community `Community 580`** (1 nodes): `OIDDefines.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 582`** (1 nodes): `OIDExternalUserAgentRequest.h`
+- **Thin community `Community 581`** (1 nodes): `OIDExternalUserAgentRequest.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 583`** (1 nodes): `OIDEndSessionRequest.m`
+- **Thin community `Community 582`** (1 nodes): `OIDEndSessionRequest.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 584`** (1 nodes): `OIDURLSessionProvider.h`
+- **Thin community `Community 583`** (1 nodes): `OIDURLSessionProvider.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 585`** (1 nodes): `OIDGrantTypes.h`
+- **Thin community `Community 584`** (1 nodes): `OIDGrantTypes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 586`** (1 nodes): `OIDExternalUserAgentSession.h`
+- **Thin community `Community 585`** (1 nodes): `OIDExternalUserAgentSession.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 587`** (1 nodes): `OIDEndSessionResponse.m`
+- **Thin community `Community 586`** (1 nodes): `OIDEndSessionResponse.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 588`** (1 nodes): `OIDClientMetadataParameters.m`
+- **Thin community `Community 587`** (1 nodes): `OIDClientMetadataParameters.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 589`** (1 nodes): `OIDServiceDiscovery.h`
+- **Thin community `Community 588`** (1 nodes): `OIDServiceDiscovery.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 590`** (1 nodes): `OIDServiceConfiguration.m`
+- **Thin community `Community 589`** (1 nodes): `OIDServiceConfiguration.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 591`** (1 nodes): `sqflite_darwin-umbrella.h`
+- **Thin community `Community 590`** (1 nodes): `sqflite_darwin-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 592`** (1 nodes): `PromisesObjC-umbrella.h`
+- **Thin community `Community 591`** (1 nodes): `PromisesObjC-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 593`** (1 nodes): `AppCheckCore-umbrella.h`
+- **Thin community `Community 592`** (1 nodes): `AppCheckCore-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 594`** (1 nodes): `url_launcher_ios-umbrella.h`
+- **Thin community `Community 593`** (1 nodes): `url_launcher_ios-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 595`** (1 nodes): `AppAuth-umbrella.h`
+- **Thin community `Community 594`** (1 nodes): `AppAuth-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 596`** (1 nodes): `flutter_secure_storage-umbrella.h`
+- **Thin community `Community 595`** (1 nodes): `flutter_secure_storage-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 597`** (1 nodes): `GTMSessionFetcher-umbrella.h`
+- **Thin community `Community 596`** (1 nodes): `GTMSessionFetcher-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 598`** (1 nodes): `AblyDeltaCodec-umbrella.h`
+- **Thin community `Community 597`** (1 nodes): `AblyDeltaCodec-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 599`** (1 nodes): `Pods-Runner-umbrella.h`
+- **Thin community `Community 598`** (1 nodes): `Pods-Runner-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 600`** (1 nodes): `shared_preferences_foundation-umbrella.h`
+- **Thin community `Community 599`** (1 nodes): `shared_preferences_foundation-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 601`** (1 nodes): `Pods-RunnerTests-umbrella.h`
+- **Thin community `Community 600`** (1 nodes): `Pods-RunnerTests-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 602`** (1 nodes): `GoogleUtilities-umbrella.h`
+- **Thin community `Community 601`** (1 nodes): `GoogleUtilities-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 603`** (1 nodes): `GoogleSignIn-umbrella.h`
+- **Thin community `Community 602`** (1 nodes): `GoogleSignIn-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 604`** (1 nodes): `ably_flutter-umbrella.h`
+- **Thin community `Community 603`** (1 nodes): `ably_flutter-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 605`** (1 nodes): `GTMAppAuth-umbrella.h`
+- **Thin community `Community 604`** (1 nodes): `GTMAppAuth-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 606`** (1 nodes): `GTMMIMEDocument.h`
+- **Thin community `Community 605`** (1 nodes): `GTMMIMEDocument.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 607`** (1 nodes): `GTMGatherInputStream.h`
+- **Thin community `Community 606`** (1 nodes): `GTMGatherInputStream.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 608`** (1 nodes): `GTMReadMonitorInputStream.h`
+- **Thin community `Community 607`** (1 nodes): `GTMReadMonitorInputStream.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 609`** (1 nodes): `GTMSessionFetcherService+Internal.h`
+- **Thin community `Community 608`** (1 nodes): `GTMSessionFetcherService+Internal.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 610`** (1 nodes): `GTMSessionFetcher.h`
+- **Thin community `Community 609`** (1 nodes): `GTMSessionFetcher.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 611`** (1 nodes): `GTMSessionUploadFetcher.h`
+- **Thin community `Community 610`** (1 nodes): `GTMSessionUploadFetcher.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 612`** (1 nodes): `GTMSessionFetcherLogging.h`
+- **Thin community `Community 611`** (1 nodes): `GTMSessionFetcherLogging.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 613`** (1 nodes): `GTMSessionFetcherService.h`
+- **Thin community `Community 612`** (1 nodes): `GTMSessionFetcherService.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 614`** (1 nodes): `config.h`
+- **Thin community `Community 613`** (1 nodes): `config.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 615`** (1 nodes): `ARTDeltaCodec.h`
+- **Thin community `Community 614`** (1 nodes): `ARTDeltaCodec.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 616`** (1 nodes): `AblyDeltaCodec.h`
+- **Thin community `Community 615`** (1 nodes): `AblyDeltaCodec.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 617`** (1 nodes): `xdelta3-cfgs.h`
+- **Thin community `Community 616`** (1 nodes): `xdelta3-cfgs.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 618`** (1 nodes): `xdelta3-list.h`
+- **Thin community `Community 617`** (1 nodes): `xdelta3-list.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 619`** (1 nodes): `IsAppEncrypted.m`
+- **Thin community `Community 618`** (1 nodes): `IsAppEncrypted.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 620`** (1 nodes): `IsAppEncrypted.h`
+- **Thin community `Community 619`** (1 nodes): `IsAppEncrypted.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 621`** (1 nodes): `GULUserDefaults.h`
+- **Thin community `Community 620`** (1 nodes): `GULUserDefaults.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 622`** (1 nodes): `GULLogger.m`
+- **Thin community `Community 621`** (1 nodes): `GULLogger.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 623`** (1 nodes): `GULLogger.h`
+- **Thin community `Community 622`** (1 nodes): `GULLogger.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 624`** (1 nodes): `GULAppEnvironmentUtil.h`
+- **Thin community `Community 623`** (1 nodes): `GULAppEnvironmentUtil.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 625`** (1 nodes): `GULKeychainStorage.h`
+- **Thin community `Community 624`** (1 nodes): `GULKeychainStorage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 626`** (1 nodes): `GULNetworkInfo.h`
+- **Thin community `Community 625`** (1 nodes): `GULNetworkInfo.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 627`** (1 nodes): `GULKeychainUtils.h`
+- **Thin community `Community 626`** (1 nodes): `GULKeychainUtils.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 628`** (1 nodes): `GIDCallbackQueue.m`
+- **Thin community `Community 627`** (1 nodes): `GIDCallbackQueue.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 629`** (1 nodes): `GIDSignIn_Private.h`
+- **Thin community `Community 628`** (1 nodes): `GIDSignIn_Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 630`** (1 nodes): `GIDScopes.h`
+- **Thin community `Community 629`** (1 nodes): `GIDScopes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 631`** (1 nodes): `GIDSignInInternalOptions.m`
+- **Thin community `Community 630`** (1 nodes): `GIDSignInInternalOptions.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 632`** (1 nodes): `NSBundle+GID3PAdditions.h`
+- **Thin community `Community 631`** (1 nodes): `NSBundle+GID3PAdditions.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 633`** (1 nodes): `GIDMDMPasscodeState.h`
+- **Thin community `Community 632`** (1 nodes): `GIDMDMPasscodeState.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 634`** (1 nodes): `GIDSignInCallbackSchemes.m`
+- **Thin community `Community 633`** (1 nodes): `GIDSignInCallbackSchemes.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 635`** (1 nodes): `GIDProfileData_Private.h`
+- **Thin community `Community 634`** (1 nodes): `GIDProfileData_Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 636`** (1 nodes): `GIDAuthentication.h`
+- **Thin community `Community 635`** (1 nodes): `GIDAuthentication.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 637`** (1 nodes): `GIDEMMErrorHandler.h`
+- **Thin community `Community 636`** (1 nodes): `GIDEMMErrorHandler.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 638`** (1 nodes): `GIDGoogleUser_Private.h`
+- **Thin community `Community 637`** (1 nodes): `GIDGoogleUser_Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 639`** (1 nodes): `GIDSignInResult_Private.h`
+- **Thin community `Community 638`** (1 nodes): `GIDSignInResult_Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 640`** (1 nodes): `GIDCallbackQueue.h`
+- **Thin community `Community 639`** (1 nodes): `GIDCallbackQueue.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 641`** (1 nodes): `GIDMDMPasscodeState.m`
+- **Thin community `Community 640`** (1 nodes): `GIDMDMPasscodeState.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 642`** (1 nodes): `GIDMDMPasscodeState_Private.h`
+- **Thin community `Community 641`** (1 nodes): `GIDMDMPasscodeState_Private.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 643`** (1 nodes): `GIDSignInInternalOptions.h`
+- **Thin community `Community 642`** (1 nodes): `GIDSignInInternalOptions.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 644`** (1 nodes): `GIDConfiguration.m`
+- **Thin community `Community 643`** (1 nodes): `GIDConfiguration.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 645`** (1 nodes): `GIDAuthStateMigration.h`
+- **Thin community `Community 644`** (1 nodes): `GIDAuthStateMigration.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 646`** (1 nodes): `GIDMDMPasscodeCache.h`
+- **Thin community `Community 645`** (1 nodes): `GIDMDMPasscodeCache.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 647`** (1 nodes): `GIDSignInCallbackSchemes.h`
+- **Thin community `Community 646`** (1 nodes): `GIDSignInCallbackSchemes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 648`** (1 nodes): `GIDSignInPreferences.h`
+- **Thin community `Community 647`** (1 nodes): `GIDSignInPreferences.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 649`** (1 nodes): `GIDEMMSupport.h`
+- **Thin community `Community 648`** (1 nodes): `GIDEMMSupport.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 650`** (1 nodes): `GIDSignInStrings.h`
+- **Thin community `Community 649`** (1 nodes): `GIDSignInStrings.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 651`** (1 nodes): `GIDTimedLoader.h`
+- **Thin community `Community 650`** (1 nodes): `GIDTimedLoader.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 652`** (1 nodes): `GIDSignInResult.h`
+- **Thin community `Community 651`** (1 nodes): `GIDSignInResult.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 653`** (1 nodes): `GIDGoogleUser.h`
+- **Thin community `Community 652`** (1 nodes): `GIDGoogleUser.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 654`** (1 nodes): `GIDConfiguration.h`
+- **Thin community `Community 653`** (1 nodes): `GIDConfiguration.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 655`** (1 nodes): `GIDAppCheckError.h`
+- **Thin community `Community 654`** (1 nodes): `GIDAppCheckError.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 656`** (1 nodes): `GoogleSignIn.h`
+- **Thin community `Community 655`** (1 nodes): `GoogleSignIn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 657`** (1 nodes): `GIDSignIn.h`
+- **Thin community `Community 656`** (1 nodes): `GIDSignIn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 658`** (1 nodes): `GIDSignInButton.h`
+- **Thin community `Community 657`** (1 nodes): `GIDSignInButton.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 659`** (1 nodes): `GIDProfileData.h`
+- **Thin community `Community 658`** (1 nodes): `GIDProfileData.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 660`** (1 nodes): `GIDActivityIndicatorViewController.h`
+- **Thin community `Community 659`** (1 nodes): `GIDActivityIndicatorViewController.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 661`** (1 nodes): `GIDAppCheck.h`
+- **Thin community `Community 660`** (1 nodes): `GIDAppCheck.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 662`** (1 nodes): `GIDAppCheckProviderFake.h`
+- **Thin community `Community 661`** (1 nodes): `GIDAppCheckProviderFake.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 663`** (1 nodes): `build.gradle.kts`
+- **Thin community `Community 662`** (1 nodes): `build.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 664`** (1 nodes): `settings.gradle.kts`
+- **Thin community `Community 663`** (1 nodes): `settings.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 665`** (1 nodes): `build.gradle.kts`
+- **Thin community `Community 664`** (1 nodes): `build.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `package:flutter/material.dart` connect `Community 0` to `Community 1`, `Community 4`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
-- **Why does `xd3_encode_secondary()` connect `Community 3` to `Community 7`?**
-  _High betweenness centrality (0.006) - this node is a cross-community bridge._
-- **Why does `AuthSession` connect `Community 7` to `Community 9`?**
-  _High betweenness centrality (0.006) - this node is a cross-community bridge._
+- **Why does `package:flutter/material.dart` connect `Community 0` to `Community 2`, `Community 21`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
+- **Why does `xd3_encode_secondary()` connect `Community 1` to `Community 13`, `Community 6`?**
+  _High betweenness centrality (0.010) - this node is a cross-community bridge._
+- **Why does `AuthSession` connect `Community 6` to `Community 8`?**
+  _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **What connects `main`, `main`, `package:flutter_test/flutter_test.dart` to the rest of the system?**
-  _3175 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _3200 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.01 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.01 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.02 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
   _Cohesion score 0.01 - nodes in this community are weakly interconnected._

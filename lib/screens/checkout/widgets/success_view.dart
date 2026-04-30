@@ -45,7 +45,7 @@ class SuccessView extends StatelessWidget {
             ),
             const SizedBox(height: 40),
             FilledButton.tonal(
-              onPressed: () => context.go('/order'),
+              onPressed: () => context.go('/orders'),
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Text('Back to Home'),

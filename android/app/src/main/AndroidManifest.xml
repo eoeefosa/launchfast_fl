@@ -31,6 +31,18 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Ably Push Notification Receiver -->
+        <receiver
+            android:name="io.ably.flutter.plugin.push.PushTrampolineReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="io.ably.broadcast.PUSH_ACTIVATE" />
+                <action android:name="io.ably.broadcast.PUSH_DEACTIVATE" />
+                <action android:name="io.ably.broadcast.PUSH_UPDATE_FAILED" />
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

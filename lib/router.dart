@@ -5,7 +5,7 @@ import 'package:launchfast/screens/auth/register_screen.dart';
 import 'package:launchfast/screens/stores_screen.dart';
 import 'package:launchfast/screens/tabs/home_screen.dart';
 import 'package:launchfast/screens/tabs/orders_screen.dart';
-import 'package:launchfast/screens/tabs/profile_screen.dart';
+import 'package:launchfast/screens/tabs/profile/profile_screen.dart';
 import 'package:launchfast/screens/tabs/tabs_shell.dart';
 import 'screens/tabs/cart_screen.dart';
 import 'screens/store/store_detail_screen.dart';
