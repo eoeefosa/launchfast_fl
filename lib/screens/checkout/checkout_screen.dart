@@ -310,7 +310,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       HapticFeedback.mediumImpact();
       final orderData = {
         'items': cart.items.map((i) => {
-          'menuItemId': i.menuItem.id,
+          'menuItem': {'id': i.menuItem.id},
           'quantity': i.quantity,
           'extras': i.extras,
           'selectedMeats': i.selectedMeats,

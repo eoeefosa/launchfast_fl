@@ -114,10 +114,13 @@ class OrderProvider with ChangeNotifier {
           _error = 'Connection timed out. Please try again.';
           debugPrint('[OrderProvider] placeOrder: DioException — TIMEOUT (${e.type})');
         } else {
-          _error = e.response?.data?['message'] ??
-              e.response?.data?['error'] ??
-              'Failed to place order.';
-          debugPrint('[OrderProvider] placeOrder: DioException — status=${e.response?.statusCode}, body=${e.response?.data}');
+          final data = e.response?.data;
+          if (data is Map) {
+            _error = data['message'] ?? data['error'] ?? 'Failed to place order.';
+          } else {
+            _error = 'Failed to place order. Server returned status ${e.response?.statusCode}.';
+          }
+          debugPrint('[OrderProvider] placeOrder: DioException — status=${e.response?.statusCode}, body=$data');
         }
       } else {
         _error = 'Failed to place order. Please try again.';
