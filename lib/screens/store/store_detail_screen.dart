@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -6,19 +7,75 @@ import '../../providers/store_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../models/menu_item.dart';
 
-class StoreDetailScreen extends StatelessWidget {
+class StoreDetailScreen extends StatefulWidget {
   final String id;
 
   const StoreDetailScreen({super.key, required this.id});
+
+  @override
+  State<StoreDetailScreen> createState() => _StoreDetailScreenState();
+}
+
+class _StoreDetailScreenState extends State<StoreDetailScreen> {
+  StreamSubscription? _alertSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupAlertListener();
+  }
+
+  void _setupAlertListener() {
+    final provider = context.read<StoreProvider>();
+    _alertSub = provider.alertStream.listen((alert) {
+      if (alert == 'STORE_CLOSED:${widget.id}') {
+        _showClosedDialog();
+      }
+    });
+  }
+
+  void _showClosedDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Store Closed', style: TextStyle(fontWeight: FontWeight.w900)),
+        content: const Text(
+          'This store just closed and is no longer accepting orders. You can still browse the menu, but items cannot be added to your cart.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('I Understand'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.go('/home');
+            },
+            child: const Text('Back to Home'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _alertSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final storeProvider = context.watch<StoreProvider>();
     final cartProvider = context.read<CartProvider>();
 
-    final store = storeProvider.stores.firstWhere((s) => s.id == id);
+    final store = storeProvider.stores.firstWhere((s) => s.id == widget.id);
     final items = storeProvider.menuItems
-        .where((m) => m.storeId == id)
+        .where((m) => m.storeId == widget.id)
         .toList();
 
     // Group items by category
@@ -356,10 +413,10 @@ class StoreDetailScreen extends StatelessWidget {
         label: 'View details for ${item.name}',
         hint: 'Opens item details',
         child: InkWell(
-          onTap: storeIsOpen ? () => context.push('/item/${item.id}') : null,
+          onTap: (storeIsOpen && item.isReady) ? () => context.push('/item/${item.id}') : null,
           borderRadius: BorderRadius.circular(24),
           child: Opacity(
-            opacity: storeIsOpen ? 1.0 : 0.6,
+            opacity: (storeIsOpen && item.isReady) ? 1.0 : 0.6,
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -415,7 +472,7 @@ class StoreDetailScreen extends StatelessWidget {
                                 color: scheme.onSurface,
                               ),
                             ),
-                            if (storeIsOpen)
+                            if (storeIsOpen && item.isReady)
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,

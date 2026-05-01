@@ -50,7 +50,7 @@ class _LaunchFastSplashScreenState extends State<LaunchFastSplashScreen> {
               children: [
                 // THE LOGO ICON
                 Semantics(
-                  label: 'Launch Fast Logo',
+                  label: 'Lunch Fast Logo',
                   image: true,
                   child: Image.asset(
                         'assets/appicon.png', // Just the cloche/rocket part
@@ -70,7 +70,7 @@ class _LaunchFastSplashScreenState extends State<LaunchFastSplashScreen> {
 
                 // THE BRAND NAME
                 Semantics(
-                  label: 'Launch Fast',
+                  label: 'Lunch Fast',
                   header: true,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

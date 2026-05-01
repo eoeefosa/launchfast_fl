@@ -83,7 +83,7 @@ class ProfileHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user.name.isNotEmpty ? user.name : 'LaunchFast User',
+                  user.name.isNotEmpty ? user.name : 'LunchFast User',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,

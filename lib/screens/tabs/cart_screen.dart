@@ -19,7 +19,16 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
+    final storeProvider = context.watch<StoreProvider>();
     final isIOS = Platform.isIOS;
+
+    final hasUnavailableItems = cart.items.any((item) {
+      final menuItem = storeProvider.menuItems.firstWhere(
+        (m) => m.id == item.menuItem.id,
+        orElse: () => item.menuItem,
+      );
+      return !menuItem.isReady;
+    });
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
@@ -30,7 +39,10 @@ class CartScreen extends StatelessWidget {
               backgroundColor: Theme.of(context).colorScheme.surface,
               appBar: _buildAppBar(context, isIOS, cart),
               body: _CartBody(cart: cart, accentColor: _getAccentColor(context, cart)),
-              bottomNavigationBar: CheckoutBar(total: cart.cartTotal),
+              bottomNavigationBar: CheckoutBar(
+                total: cart.cartTotal,
+                enabled: !hasUnavailableItems,
+              ),
             ),
     );
   }

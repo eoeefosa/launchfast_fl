@@ -55,7 +55,10 @@ class AblyService {
   final List<Function(String orderId, OrderStatus status)> _orderListeners = [];
   final List<Function(String storeId, bool isOpen)> _storeListeners = [];
   final List<Function(String newRole)> _roleListeners = [];
-  final List<Function(Map<String, dynamic> payload)> _notificationListeners = [];
+  final List<Function(Map<String, dynamic> payload)> _notificationListeners =
+      [];
+  final List<Function(String storeId, String? menuItemId, bool? isReady)>
+      _menuListeners = [];
 
   // ── Init ────────────────────────────────────────────────────────────────────
 
@@ -111,6 +114,9 @@ class AblyService {
             // and a catchError so exceptions are at least logged.
             unawaited(_subscribeStoresChannel().catchError((Object e) {
               debugPrint('[AblyService] _subscribeStoresChannel failed: $e');
+            }));
+            unawaited(_subscribeMenuChannel().catchError((Object e) {
+              debugPrint('[AblyService] _subscribeMenuChannel failed: $e');
             }));
 
             try {
@@ -219,6 +225,42 @@ class AblyService {
         final isOpen = data['isOpen'] as bool;
         for (final cb in _storeListeners) {
           cb(storeId, isOpen);
+        }
+      },
+    );
+  }
+
+  Future<void> _subscribeMenuChannel() async {
+    if (_realtime == null) return;
+
+    const channelName = 'public:menu';
+    final channel = _realtime!.channels.get(channelName);
+    await _attachPush(channel, channelName);
+
+    // 1. Specific menu item availability update
+    _attachListener(
+      channel: channel,
+      channelName: channelName,
+      eventName: 'menu-item-update',
+      onMessage: (data) {
+        final storeId = data['storeId'] as String;
+        final menuItemId = data['menuItemId'] as String;
+        final isReady = data['isReady'] as bool;
+        for (final cb in _menuListeners) {
+          cb(storeId, menuItemId, isReady);
+        }
+      },
+    );
+
+    // 2. Structural menu change (requires reload)
+    _attachListener(
+      channel: channel,
+      channelName: channelName,
+      eventName: 'menu-changed',
+      onMessage: (data) {
+        final storeId = data['storeId'] as String;
+        for (final cb in _menuListeners) {
+          cb(storeId, null, null);
         }
       },
     );
@@ -372,6 +414,18 @@ class AblyService {
 
   void removeOrderListener(Function(String orderId, OrderStatus status) l) =>
       _orderListeners.remove(l);
+
+  /// See [addOrderListener] for the stable-reference requirement.
+  void addMenuListener(
+    Function(String storeId, String? menuItemId, bool? isReady) l,
+  ) {
+    if (!_menuListeners.contains(l)) _menuListeners.add(l);
+  }
+
+  void removeMenuListener(
+    Function(String storeId, String? menuItemId, bool? isReady) l,
+  ) =>
+      _menuListeners.remove(l);
 
   /// See [addOrderListener] for the stable-reference requirement.
   void addStoreListener(Function(String storeId, bool isOpen) l) {

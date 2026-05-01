@@ -87,7 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Join Launch Fast — carefully crafted for your campus needs.',
+                  'Join Lunch Fast — carefully crafted for your campus needs.',
                   style: TextStyle(
                     fontSize: 16,
                     color: Theme.of(

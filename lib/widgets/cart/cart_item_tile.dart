@@ -33,11 +33,17 @@ class CartItemTile extends StatelessWidget {
       allMenuItems: storeProvider.menuItems,
     );
 
+    // Find current readiness from provider as model might be stale
+    final isReady = storeProvider.menuItems
+        .firstWhere((m) => m.id == item.menuItem.id, orElse: () => item.menuItem)
+        .isReady;
+
     return Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
+            border: !isReady ? Border.all(color: Colors.red.withValues(alpha: 0.5), width: 2) : null,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),
@@ -52,20 +58,33 @@ class CartItemTile extends StatelessWidget {
               child: Row(
                 children: [
                   // Image Section
-                  Hero(
-                    tag: 'cart_item_${item.id}',
-                    child: UniversalImage(
-                      imageUrl: item.menuItem.image,
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      placeholder: Container(
-                        color: AppColors.lightSurface,
-                        child: const Center(
-                          child: CupertinoActivityIndicator(),
+                  Stack(
+                    children: [
+                      Hero(
+                        tag: 'cart_item_${item.id}',
+                        child: UniversalImage(
+                          imageUrl: item.menuItem.image,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          placeholder: Container(
+                            color: AppColors.lightSurface,
+                            child: const Center(
+                              child: CupertinoActivityIndicator(),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      if (!isReady)
+                        Positioned.fill(
+                          child: Container(
+                            color: Colors.black45,
+                            child: const Center(
+                              child: Icon(Icons.warning_amber_rounded, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
 
                   const SizedBox(width: 16),
@@ -86,7 +105,16 @@ class CartItemTile extends StatelessWidget {
                               letterSpacing: -0.5,
                             ),
                           ),
-                          if (customizationSummary.isNotEmpty) ...[
+                          if (!isReady)
+                            const Text(
+                              'Item no longer available',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          else if (customizationSummary.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text(
                               customizationSummary,
@@ -110,24 +138,26 @@ class CartItemTile extends StatelessWidget {
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              GestureDetector(
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  // In a real app, we'd pass the item to edit.
-                                  // For now, we just navigate to the detail page.
-                                  context.push('/item/${item.menuItem.id}');
-                                },
-                                child: Text(
-                                  'Edit',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
-                                    decoration: TextDecoration.underline,
+                              if (isReady) ...[
+                                const SizedBox(width: 12),
+                                GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    // In a real app, we'd pass the item to edit.
+                                    // For now, we just navigate to the detail page.
+                                    context.push('/item/${item.menuItem.id}');
+                                  },
+                                  child: Text(
+                                    'Edit',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                                      decoration: TextDecoration.underline,
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ],
@@ -177,13 +207,13 @@ class CartItemTile extends StatelessWidget {
                               ),
                           _QuantityButton(
                             icon: isIOS ? CupertinoIcons.plus : Icons.add,
-                            onPressed: () {
+                            onPressed: isReady ? () {
                               HapticFeedback.lightImpact();
                               cart.updateQuantity(
                                 item.menuItem.id,
                                 item.quantity + 1,
                               );
-                            },
+                            } : null,
                           ),
                         ],
                       ),
@@ -202,9 +232,9 @@ class CartItemTile extends StatelessWidget {
 
 class _QuantityButton extends StatelessWidget {
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
-  const _QuantityButton({required this.icon, required this.onPressed});
+  const _QuantityButton({required this.icon, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +248,9 @@ class _QuantityButton extends StatelessWidget {
           child: Icon(
             icon,
             size: 18,
-            color: Theme.of(context).colorScheme.onSurface,
+            color: onPressed == null
+                ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)
+                : Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),

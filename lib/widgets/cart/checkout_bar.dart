@@ -7,8 +7,9 @@ import '../../constants/app_colors.dart';
 
 class CheckoutBar extends StatelessWidget {
   final double total;
+  final bool enabled;
 
-  const CheckoutBar({super.key, required this.total});
+  const CheckoutBar({super.key, required this.total, this.enabled = true});
 
   @override
   Widget build(BuildContext context) {
@@ -59,8 +60,9 @@ class CheckoutBar extends StatelessWidget {
               const SizedBox(width: 20),
               Expanded(
                 child: _CheckoutButton(
-                  onPressed: () => context.push('/checkout'),
+                  onPressed: enabled ? () => context.push('/checkout') : null,
                   isIOS: isIOS,
+                  enabled: enabled,
                 ),
               ),
             ],
@@ -72,10 +74,15 @@ class CheckoutBar extends StatelessWidget {
 }
 
 class _CheckoutButton extends StatelessWidget {
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isIOS;
+  final bool enabled;
 
-  const _CheckoutButton({required this.onPressed, required this.isIOS});
+  const _CheckoutButton({
+    required this.onPressed,
+    required this.isIOS,
+    this.enabled = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -86,22 +93,24 @@ class _CheckoutButton extends StatelessWidget {
         child: Container(
           height: 56,
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: enabled ? AppColors.primary : Colors.grey,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ]
+                : [],
           ),
-          child: const Center(
+          child: Center(
             child: Text(
-              'Checkout',
-              style: TextStyle(
+              enabled ? 'Checkout' : 'Items Unavailable',
+              style: const TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -113,16 +122,16 @@ class _CheckoutButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
+        backgroundColor: enabled ? AppColors.primary : Colors.grey,
         foregroundColor: Colors.white,
         minimumSize: const Size(double.infinity, 56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 8,
+        elevation: enabled ? 8 : 0,
         shadowColor: AppColors.primary.withValues(alpha: 0.4),
       ),
-      child: const Text(
-        'Checkout',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      child: Text(
+        enabled ? 'Checkout' : 'Items Unavailable',
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }

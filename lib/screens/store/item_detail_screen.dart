@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -12,10 +13,6 @@ import 'components/item_detail_scroll_body.dart';
 import 'components/item_detail_footer.dart';
 import 'components/item_detail_dialogs.dart';
 
-// ─────────────────────────────────────────────
-//  Entry point
-// ─────────────────────────────────────────────
-
 class ItemDetailScreen extends StatefulWidget {
   final String id;
 
@@ -27,14 +24,17 @@ class ItemDetailScreen extends StatefulWidget {
 
 class _ItemDetailScreenState extends State<ItemDetailScreen>
     with TickerProviderStateMixin {
-  // ── State ──────────────────────────────────
+  // ── State ──────────────────────────────────────────────────────────────────
+
   int _quantity = 1;
   String? _selectedSoupId;
   final Map<String, int> _selectedMeats = {'Small': 0, 'Big': 0};
   bool _hasSalad = false;
   final Map<String, int> _selectedAddons = {};
+  StreamSubscription<String>? _alertSub;
 
-  // ── Animation controllers ──────────────────
+  // ── Animation controllers ──────────────────────────────────────────────────
+
   late final AnimationController _heroController;
   late final AnimationController _contentController;
   late final AnimationController _footerController;
@@ -44,17 +44,23 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
   late final Animation<Offset> _contentSlide;
   late final Animation<Offset> _footerSlide;
 
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
+
   @override
   void initState() {
     super.initState();
+    _setupAnimations();
+    _setupAlertListener();
+  }
 
+  void _setupAnimations() {
     _heroController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
     _contentController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 400),
     );
     _footerController = AnimationController(
       vsync: this,
@@ -74,10 +80,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     ).animate(
       CurvedAnimation(parent: _contentController, curve: Curves.easeOutCubic),
     );
-    _footerSlide = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-        .animate(
-          CurvedAnimation(parent: _footerController, curve: Curves.easeOutBack),
-        );
+    _footerSlide = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _footerController, curve: Curves.easeOutBack),
+    );
 
     // Staggered entrance
     _heroController.forward();
@@ -85,15 +93,26 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     Future.delayed(const Duration(milliseconds: 320), _footerController.forward);
   }
 
+  void _setupAlertListener() {
+    // context.read is safe in initState — the widget is already in the tree
+    // and providers are mounted above it. Never use context.watch here.
+    _alertSub = context.read<StoreProvider>().alertStream.listen((alert) {
+      if (alert == 'ITEM_UNAVAILABLE:${widget.id}') {
+        _showUnavailableDialog();
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _alertSub?.cancel();
     _heroController.dispose();
     _contentController.dispose();
     _footerController.dispose();
     super.dispose();
   }
 
-  // ── Derived data ───────────────────────────
+  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -102,26 +121,24 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    // firstWhere without orElse is intentional — an invalid item ID at this
+    // point is a routing bug that should throw loudly in development.
+    // The router guard is responsible for ensuring this never happens in prod.
     final item = storeProvider.menuItems.firstWhere((m) => m.id == widget.id);
     final store = storeProvider.stores.firstWhere(
       (s) => s.id == item.storeId,
       orElse: () => storeProvider.stores.first,
     );
-    final accentColor = store.accentColor;
 
-    final availableSoups =
-        item.category == 'Swallow'
-            ? storeProvider.menuItems
-                .where((m) => m.category == 'Soup' && m.storeId == item.storeId)
-                .toList()
-            : <MenuItem>[];
+    final availableSoups = item.category == 'Swallow'
+        ? storeProvider.menuItems
+            .where((m) => m.category == 'Soup' && m.storeId == item.storeId)
+            .toList()
+        : <MenuItem>[];
 
-    final availableAddons =
-        item.addonIds != null
-            ? item.addonIds!
-                .map((id) => storeProvider.menuItems.firstWhere((m) => m.id == id))
-                .toList()
-            : <MenuItem>[];
+    final availableAddons = (item.addonIds ?? [])
+        .map((id) => storeProvider.menuItems.firstWhere((m) => m.id == id))
+        .toList();
 
     final totalPrice = PriceCalculator.computeTotal(
       item: item,
@@ -149,7 +166,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               contentSlide: _contentSlide,
               item: item,
               store: store,
-              accentColor: accentColor,
+              accentColor: store.accentColor,
               availableSoups: availableSoups,
               availableAddons: availableAddons,
               selectedMeats: _selectedMeats,
@@ -157,10 +174,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               hasSalad: _hasSalad,
               selectedSoupId: _selectedSoupId,
               isDark: isDark,
-              onMeatChanged:
-                  (type, count) => setState(() => _selectedMeats[type] = count),
-              onAddonChanged:
-                  (id, count) => setState(() => _selectedAddons[id] = count),
+              onMeatChanged: (type, count) =>
+                  setState(() => _selectedMeats[type] = count),
+              onAddonChanged: (id, count) =>
+                  setState(() => _selectedAddons[id] = count),
               onSaladChanged: (val) => setState(() => _hasSalad = val),
               onSoupSelected: (id) => setState(() => _selectedSoupId = id),
             ),
@@ -174,7 +191,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                   item: item,
                   quantity: _quantity,
                   totalPrice: totalPrice,
-                  accentColor: accentColor,
+                  accentColor: store.accentColor,
                   isDark: isDark,
                   selectedSoupId: _selectedSoupId,
                   selectedMeats: _selectedMeats,
@@ -183,13 +200,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                   availableSoups: availableSoups,
                   cartProvider: cartProvider,
                   onQuantityChanged: (q) => setState(() => _quantity = q),
-                  onAddToCart:
-                      () => _handleAddToCart(
-                        context,
-                        cartProvider,
-                        item,
-                        storeProvider,
-                      ),
+                  onAddToCart: () => _handleAddToCart(
+                    context,
+                    cartProvider,
+                    item,
+                    storeProvider,
+                  ),
                 ),
               ),
             ),
@@ -198,6 +214,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       ),
     );
   }
+
+  // ── Cart logic ─────────────────────────────────────────────────────────────
 
   void _handleAddToCart(
     BuildContext context,
@@ -234,12 +252,32 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     cartProvider.addToCart(item: soup, quantity: _quantity);
   }
 
-  void _showSnack(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  // ── Dialogs & snackbars ────────────────────────────────────────────────────
+
+  void _showUnavailableDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Item Unavailable',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+        content: const Text(
+          'We apologize, but this item has just become unavailable. '
+          'You will be returned to the store menu.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.pop();
+            },
+            child: const Text('Back to Menu'),
+          ),
+        ],
       ),
     );
   }
@@ -252,21 +290,30 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
   ) {
     showDialog(
       context: context,
-      builder:
-          (_) => ItemDetailClearCartDialog(
-            onConfirm: () {
-              cartProvider.forceClearAndAdd(
-                item: item,
-                quantity: _quantity,
-                selectedMeats: _selectedMeats,
-                hasSalad: _hasSalad,
-                selectedAddons: _selectedAddons,
-              );
-              _addSoupIfNeeded(cartProvider, storeProvider);
-              Navigator.pop(context);
-              context.pop();
-            },
-          ),
+      builder: (_) => ItemDetailClearCartDialog(
+        onConfirm: () {
+          cartProvider.forceClearAndAdd(
+            item: item,
+            quantity: _quantity,
+            selectedMeats: _selectedMeats,
+            hasSalad: _hasSalad,
+            selectedAddons: _selectedAddons,
+          );
+          _addSoupIfNeeded(cartProvider, storeProvider);
+          Navigator.pop(context);
+          context.pop();
+        },
+      ),
+    );
+  }
+
+  void _showSnack(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
     );
   }
 }
