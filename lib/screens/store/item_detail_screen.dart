@@ -7,7 +7,6 @@ import '../../utils/price_calculator.dart';
 import '../../providers/store_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../models/menu_item.dart';
-import '../../constants/static_data.dart';
 
 import 'components/item_detail_scroll_body.dart';
 import 'components/item_detail_footer.dart';

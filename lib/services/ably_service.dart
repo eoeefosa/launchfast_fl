@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:ably_flutter/ably_flutter.dart' as ably;
+import 'package:permission_handler/permission_handler.dart';
 import 'api_service.dart';
 import '../models/order.dart';
 
@@ -66,13 +67,16 @@ class AblyService {
       _realtime = ably.Realtime(options: clientOptions);
 
       _subscriptions.add(
-        _realtime!.connection.on().listen((ably.ConnectionStateChange change) {
+        _realtime!.connection.on().listen((ably.ConnectionStateChange change) async {
           if (change.current == ably.ConnectionState.connected) {
             _subscribeUserChannel(userId);
             _subscribeStoresChannel();
             
             try {
-              _realtime!.push.activate();
+              if (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) {
+                await Permission.notification.request();
+              }
+              await _realtime!.push.activate();
             } catch (e) {
               debugPrint('[AblyService] Error activating push: $e');
             }
@@ -91,11 +95,17 @@ class AblyService {
 
   // ── Private channel helpers ─────────────────────────────────────────────────
 
-  void _subscribeUserChannel(String userId) {
+  void _subscribeUserChannel(String userId) async {
     if (_realtime == null) return;
 
     final channelName = 'user:$userId';
     final channel = _realtime!.channels.get(channelName);
+
+    try {
+      await channel.push.subscribeClient();
+    } catch (e) {
+      debugPrint('[AblyService] Error subscribing push to user channel: $e');
+    }
 
     // 1. Order updates
     final orderKey = '$channelName:order-update';
@@ -158,7 +168,7 @@ class AblyService {
     }
   }
 
-  void _subscribeStoresChannel() {
+  Future<void> _subscribeStoresChannel() async {
     if (_realtime == null) return;
 
     const channelName = 'public:stores';
@@ -169,6 +179,11 @@ class AblyService {
     _activeSubscriptionKeys.add(key);
 
     final channel = _realtime!.channels.get(channelName);
+    try {
+      await channel.push.subscribeClient();
+    } catch (e) {
+      debugPrint('[AblyService] Error subscribing push to public stores channel: $e');
+    }
     _subscriptions.add(
       channel.subscribe(name: eventName).listen((ably.Message msg) {
         try {
@@ -187,11 +202,11 @@ class AblyService {
 
   // ── Public subscription API ─────────────────────────────────────────────────
 
-  void subscribeToRiderChannel(
+  Future<void> subscribeToRiderChannel(
     String riderId, {
     Function(Map<String, dynamic> data)? onOrderUpdate,
     Function(Map<String, dynamic> data)? onNewJob,
-  }) {
+  }) async {
     if (_realtime == null) return;
 
     final riderChannelName = 'rider:$riderId';
@@ -200,6 +215,11 @@ class AblyService {
     if (!_activeSubscriptionKeys.contains(riderKey)) {
       _activeSubscriptionKeys.add(riderKey);
       final riderChannel = _realtime!.channels.get(riderChannelName);
+      try {
+        await riderChannel.push.subscribeClient();
+      } catch (e) {
+        debugPrint('[AblyService] Error subscribing push to rider channel: $e');
+      }
       _subscriptions.add(
         riderChannel.subscribe(name: 'order-update').listen((msg) {
           final data = Map<String, dynamic>.from(msg.data as Map);
@@ -214,6 +234,11 @@ class AblyService {
     if (!_activeSubscriptionKeys.contains(jobsKey)) {
       _activeSubscriptionKeys.add(jobsKey);
       final jobsChannel = _realtime!.channels.get(jobsChannelName);
+      try {
+        await jobsChannel.push.subscribeClient();
+      } catch (e) {
+        debugPrint('[AblyService] Error subscribing push to jobs channel: $e');
+      }
       _subscriptions.add(
         jobsChannel.subscribe(name: 'new-job').listen((msg) {
           final data = Map<String, dynamic>.from(msg.data as Map);
@@ -223,11 +248,17 @@ class AblyService {
     }
   }
 
-  void subscribeToStoreOrders(String storeId) {
+  Future<void> subscribeToStoreOrders(String storeId) async {
     if (_realtime == null) return;
 
     final channelName = 'store:$storeId:orders';
     final channel = _realtime!.channels.get(channelName);
+
+    try {
+      await channel.push.subscribeClient();
+    } catch (e) {
+      debugPrint('[AblyService] Error subscribing push to store orders channel: $e');
+    }
 
     // 1. New orders
     final newOrderKey = '$channelName:new-order';

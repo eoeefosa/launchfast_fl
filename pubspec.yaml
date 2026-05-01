@@ -49,6 +49,7 @@ dependencies:
   get_it: ^7.7.0
   collection: ^1.18.0
   firebase_core: ^4.7.0
+  permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_test:
