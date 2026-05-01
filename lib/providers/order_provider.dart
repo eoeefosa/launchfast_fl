@@ -172,18 +172,7 @@ class OrderProvider with ChangeNotifier {
     final index = _orders.indexWhere((o) => o.id == orderId);
 
     if (index != -1) {
-      final order = _orders[index];
-      _orders[index] = Order(
-        id: order.id,
-        userId: order.userId,
-        items: order.items,
-        total: order.total,
-        status: status,
-        date: order.date,
-        stores: order.stores,
-        isPriority: order.isPriority,
-        riderId: order.riderId,
-      );
+      _orders[index] = _orders[index].copyWith(status: status);
       debugPrint('[OrderProvider] updateOrderStatus: local order updated at index=$index.');
       notifyListeners();
     } else {
@@ -196,16 +185,23 @@ class OrderProvider with ChangeNotifier {
     final index = _orders.indexWhere((o) => o.id == orderId);
 
     if (index != -1) {
-      final order = _orders[index];
-      _orders[index] = Order(
-        id: order.id,
-        userId: order.userId,
-        items: order.items,
-        total: order.total,
+      _orders.firstWhere((o) => o.id == orderId, orElse: () => Order(
+        id: 'EMPTY',
+        items: [],
+        subtotal: 0,
+        serviceFee: 0,
+        deliveryFee: 0,
+        platformDeliveryProfit: 0,
+        walletDeduction: 0,
+        total: 0,
+        deliveryType: 'pickup',
+        status: OrderStatus.cancelled,
+        date: '',
+        stores: [],
+        isPriority: false,
+      ));
+      _orders[index] = _orders[index].copyWith(
         status: OrderStatus.outForDelivery,
-        date: order.date,
-        stores: order.stores,
-        isPriority: order.isPriority,
         riderId: riderId,
       );
       debugPrint('[OrderProvider] assignRiderToOrder: rider assigned, status set to outForDelivery.');

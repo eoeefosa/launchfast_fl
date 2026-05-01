@@ -53,9 +53,15 @@ class OrdersScreen extends StatelessWidget {
           o.status != OrderStatus.delivered &&
           o.status != OrderStatus.cancelled,
       orElse: () => Order(
-        id: '',
+        id: 'EMPTY',
         items: [],
+        subtotal: 0,
+        serviceFee: 0,
+        deliveryFee: 0,
+        platformDeliveryProfit: 0,
+        walletDeduction: 0,
         total: 0,
+        deliveryType: 'pickup',
         status: OrderStatus.cancelled,
         date: '',
         stores: [],

@@ -297,7 +297,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    // Final wallet check
+    // Final wallet check — total is the grand total the user must pay.
     if (_paymentMethod == 'Wallet') {
       final balance = auth.user?.walletBalance ?? 0;
       if (!auth.hasSufficientFunds(total)) {
@@ -308,21 +308,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     try {
       HapticFeedback.mediumImpact();
+
+      // Only send the food subtotal — the backend recomputes service fee,
+      // delivery fee, and grand total server-side so the client cannot lie.
+      final subtotal = cart.subTotal;
+
       final orderData = {
         'items': cart.items.map((i) => {
-          'menuItem': {'id': i.menuItem.id},
-          'quantity': i.quantity,
-          'extras': i.extras,
+          'menuItem':      {'id': i.menuItem.id},
+          'quantity':      i.quantity,
+          'extras':        i.extras,
           'selectedMeats': i.selectedMeats,
-          'hasSalad': i.hasSalad,
+          'hasSalad':      i.hasSalad,
           'selectedAddons': i.selectedAddons,
         }).toList(),
-        'total': total,
-        'deliveryType': _deliveryType.name,
+        'subtotal':     subtotal,
+        'deliveryType': _deliveryType.name,     // 'bulk' | 'priority' | 'pickup'
         'paymentMethod': _paymentMethod,
-        'userId': auth.user!.id,
-        'stores': cart.items.map((i) => i.menuItem.storeId).toSet().toList(),
-        'isPriority': _deliveryType == DeliveryType.priority,
+        'userId':        auth.user!.id,
+        'stores':        cart.items.map((i) => i.menuItem.storeId).toSet().toList(),
       };
 
       final Order? success = await orderProvider.placeOrder(orderData);
@@ -331,6 +335,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       if (success != null) {
         HapticFeedback.heavyImpact();
+        // If wallet was used the backend already deducted; refresh local balance.
+        if (_paymentMethod == 'Wallet') {
+          await auth.refreshUser();
+        }
         cart.clearCart();
         setState(() => _isSuccess = true);
       } else {
@@ -339,8 +347,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     } on DioException catch (e) {
       if (!mounted) return;
       String message = 'An error occurred during checkout. Please try again.';
-      
-      if (e.type == DioExceptionType.connectionTimeout || 
+
+      if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
         message = 'The connection timed out. Please check your internet and try again.';
       } else if (e.type == DioExceptionType.connectionError) {
@@ -348,13 +356,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       } else if (e.response?.data is Map) {
         message = e.response?.data['message'] ?? e.response?.data['error'] ?? message;
       }
-      
+
       _showErrorDialog(message);
     } catch (e) {
       if (!mounted) return;
-      _showErrorDialog(
-        'An unexpected error occurred. Please try again.',
-      );
+      _showErrorDialog('An unexpected error occurred. Please try again.');
     }
   }
 }

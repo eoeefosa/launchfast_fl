@@ -77,7 +77,13 @@ class Order {
   final String? userId;
   final UserProfile? user;
   final List<CartItem> items;
+  final double subtotal;
+  final double serviceFee;
+  final double deliveryFee;
+  final double platformDeliveryProfit;
+  final double walletDeduction;
   final double total;
+  final String deliveryType;
   final OrderStatus status;
   final String date;
   final List<Store> stores;
@@ -89,7 +95,13 @@ class Order {
     this.userId,
     this.user,
     required this.items,
+    required this.subtotal,
+    required this.serviceFee,
+    required this.deliveryFee,
+    required this.platformDeliveryProfit,
+    required this.walletDeduction,
     required this.total,
+    required this.deliveryType,
     required this.status,
     required this.date,
     required this.stores,
@@ -107,7 +119,13 @@ class Order {
               ?.map((i) => CartItem.fromJson(i as Map<String, dynamic>))
               .toList() ??
           [],
+      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+      serviceFee: (json['serviceFee'] as num?)?.toDouble() ?? 0.0,
+      deliveryFee: (json['deliveryFee'] as num?)?.toDouble() ?? 0.0,
+      platformDeliveryProfit: (json['platformDeliveryProfit'] as num?)?.toDouble() ?? 0.0,
+      walletDeduction: (json['walletDeduction'] as num?)?.toDouble() ?? 0.0,
       total: (json['total'] as num?)?.toDouble() ?? 0.0,
+      deliveryType: json['deliveryType']?.toString() ?? 'bulk',
       status: OrderStatusExtension.fromString(json['status']?.toString() ?? ''),
       date: json['date']?.toString() ?? '',
       stores:
@@ -141,7 +159,13 @@ class Order {
       'id': id,
       'userId': userId,
       'items': items.map((i) => i.toJson()).toList(),
+      'subtotal': subtotal,
+      'serviceFee': serviceFee,
+      'deliveryFee': deliveryFee,
+      'platformDeliveryProfit': platformDeliveryProfit,
+      'walletDeduction': walletDeduction,
       'total': total,
+      'deliveryType': deliveryType,
       'status': status.name,
       'date': date,
       'stores': stores.map((s) => s.toJson()).toList(),
@@ -155,7 +179,13 @@ class Order {
     String? userId,
     UserProfile? user,
     List<CartItem>? items,
+    double? subtotal,
+    double? serviceFee,
+    double? deliveryFee,
+    double? platformDeliveryProfit,
+    double? walletDeduction,
     double? total,
+    String? deliveryType,
     OrderStatus? status,
     String? date,
     List<Store>? stores,
@@ -167,7 +197,13 @@ class Order {
       userId: userId ?? this.userId,
       user: user ?? this.user,
       items: items ?? this.items,
+      subtotal: subtotal ?? this.subtotal,
+      serviceFee: serviceFee ?? this.serviceFee,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      platformDeliveryProfit: platformDeliveryProfit ?? this.platformDeliveryProfit,
+      walletDeduction: walletDeduction ?? this.walletDeduction,
       total: total ?? this.total,
+      deliveryType: deliveryType ?? this.deliveryType,
       status: status ?? this.status,
       date: date ?? this.date,
       stores: stores ?? this.stores,
