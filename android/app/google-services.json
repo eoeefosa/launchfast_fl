@@ -7,7 +7,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:471745302305:android:c990b131458efeab117860",
+        "mobilesdk_app_id": "1:471745302305:android:5357d8fa9e69ced5117860",
         "android_client_info": {
           "package_name": "com.campuschow.app"
         }
@@ -22,7 +22,69 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "471745302305-tts3kroutn6jofuvcldfckjk4j7et6l2.apps.googleusercontent.com",
+              "client_id": "471745302305-jgs69lte05ua7ibf89pnmt6c02gi31fl.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "471745302305-6t0j04g0d2j0u101392nsd5he7p7m936.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.appAuth"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:471745302305:android:c990b131458efeab117860",
+        "android_client_info": {
+          "package_name": "com.launchfast.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkGr9_24ZB1ifXAGVAJIs1990dQYpSgSw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "471745302305-jgs69lte05ua7ibf89pnmt6c02gi31fl.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "471745302305-6t0j04g0d2j0u101392nsd5he7p7m936.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.appAuth"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:471745302305:android:12cba1bc74b2a02d117860",
+        "android_client_info": {
+          "package_name": "com.storelaunchfast.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkGr9_24ZB1ifXAGVAJIs1990dQYpSgSw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "471745302305-jgs69lte05ua7ibf89pnmt6c02gi31fl.apps.googleusercontent.com",
               "client_type": 3
             },
             {

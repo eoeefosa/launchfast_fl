@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     projectId: 'try-auth-f5762',
     storageBucket: 'try-auth-f5762.firebasestorage.app',
     androidClientId: '471745302305-dn3dbl2ks77jqkajs9u2nivhrh4vrum0.apps.googleusercontent.com',
-    iosClientId: '471745302305-blo2o5as66druvr2i8e48lbqd1vrn3tj.apps.googleusercontent.com',
+    iosClientId: '471745302305-n6okkh5s155equosej1tsiibbu0l09ua.apps.googleusercontent.com',
     iosBundleId: 'com.launchfast.app.launchfastFl',
   );
 }

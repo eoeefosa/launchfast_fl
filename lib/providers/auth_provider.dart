@@ -63,11 +63,11 @@ class AuthProvider with ChangeNotifier {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     // By passing clientId directly, we prevent a native crash on iOS if GoogleService-Info.plist is missing.
     clientId: Platform.isIOS
-        ? '471745302305-ja90tj0aatmq2e7i6rjei1v08bpb2nvp.apps.googleusercontent.com'
+        ? '471745302305-n6okkh5s155equosej1tsiibbu0l09ua.apps.googleusercontent.com'
         : '471745302305-lj75e24f9iabb6c9e3hkguha505omn9q.apps.googleusercontent.com',
     // The serverClientId is required to get an idToken for some backend verification flows
     serverClientId:
-        '471745302305-tts3kroutn6jofuvcldfckjk4j7et6l2.apps.googleusercontent.com',
+        '471745302305-jgs69lte05ua7ibf89pnmt6c02gi31fl.apps.googleusercontent.com',
   );
 
   AuthProvider() {

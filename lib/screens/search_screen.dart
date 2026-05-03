@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/store_provider.dart';
 import '../../models/menu_item.dart';
+import '../widgets/common/universal_image.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -276,15 +277,13 @@ class _SearchResultTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Row(
           children: [
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                image: DecorationImage(
-                  image: NetworkImage(item.image),
-                  fit: BoxFit.cover,
-                ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: UniversalImage(
+                imageUrl: item.image,
+                width: 70,
+                height: 70,
+                fit: BoxFit.cover,
               ),
             ),
             const SizedBox(width: 16),
