@@ -1,26 +1,26 @@
 import 'package:go_router/go_router.dart';
-import 'package:launchfast/screens/auth/forgot_password_screen.dart';
-import 'package:launchfast/screens/auth/login_screen.dart';
-import 'package:launchfast/screens/auth/register_screen.dart';
-import 'package:launchfast/screens/stores_screen.dart';
-import 'package:launchfast/screens/tabs/home_screen.dart';
-import 'package:launchfast/screens/tabs/orders_screen.dart';
-import 'package:launchfast/screens/tabs/profile/profile_screen.dart';
-import 'package:launchfast/screens/tabs/tabs_shell.dart';
+import 'package:campuschow/screens/auth/forgot_password_screen.dart';
+import 'package:campuschow/screens/auth/login_screen.dart';
+import 'package:campuschow/screens/auth/register_screen.dart';
+import 'package:campuschow/screens/stores_screen.dart';
+import 'package:campuschow/screens/tabs/home_screen.dart';
+import 'package:campuschow/screens/tabs/orders_screen.dart';
+import 'package:campuschow/screens/tabs/profile/profile_screen.dart';
+import 'package:campuschow/screens/tabs/tabs_shell.dart';
 import 'screens/tabs/cart_screen.dart';
 import 'screens/store/store_detail_screen.dart';
 import 'screens/store/item_detail_screen.dart';
 import 'screens/checkout/checkout_screen.dart';
 import 'screens/search_screen.dart';
-import 'package:launchfast/screens/notifications_screen.dart';
-import 'package:launchfast/splash_screen.dart';
+import 'package:campuschow/screens/notifications_screen.dart';
+import 'package:campuschow/splash_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const LaunchFastSplashScreen(),
+      builder: (context, state) => const CampusChowSplashScreen(),
     ),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
@@ -88,9 +88,6 @@ final router = GoRouter(
       path: '/checkout',
       builder: (context, state) => const CheckoutScreen(),
     ),
-    GoRoute(
-      path: '/search',
-      builder: (context, state) => const SearchScreen(),
-    ),
+    GoRoute(path: '/search', builder: (context, state) => const SearchScreen()),
   ],
 );

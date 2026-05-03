@@ -1,10 +1,10 @@
-# LaunchFast FL - Project Wiki
+# CampusChow - Project Wiki
 
-Welcome to the **LaunchFast FL** documentation. This project is a robust, multi-role delivery platform built with Flutter, designed to support Customers, Store Owners, and Riders in a unified ecosystem.
+Welcome to the **CampusChow** documentation. This project is a robust, multi-role delivery platform built with Flutter, designed to support Customers, Store Owners, and Riders in a unified ecosystem.
 
 ## 🚀 Project Overview
 
-LaunchFast FL is a feature-rich delivery application that leverages real-time communication and a modular architecture to provide a seamless experience across different user roles.
+CampusChow is a feature-rich delivery application that leverages real-time communication and a modular architecture to provide a seamless experience across different user roles.
 
 - **Customer:** Browse stores, add items to cart, place orders, and track them in real-time.
 - **Store Owner:** Manage menu items, accept/reject orders, and update order status.

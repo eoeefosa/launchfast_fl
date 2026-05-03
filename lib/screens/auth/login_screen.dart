@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast/screens/auth/widgets/apptextfield.dart';
-import 'package:launchfast/screens/auth/widgets/auth_prompt.dart';
-import 'package:launchfast/screens/auth/widgets/constants.dart';
-import 'package:launchfast/screens/auth/widgets/custom_button.dart';
-import 'package:launchfast/screens/auth/widgets/password_toggle.dart';
+import 'package:campuschow/screens/auth/widgets/apptextfield.dart';
+import 'package:campuschow/screens/auth/widgets/auth_prompt.dart';
+import 'package:campuschow/screens/auth/widgets/constants.dart';
+import 'package:campuschow/screens/auth/widgets/custom_button.dart';
+import 'package:campuschow/screens/auth/widgets/password_toggle.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
@@ -89,7 +89,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Sign in to continue ordering delicious campus food.',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                     height: 1.5,
                   ),
                 ),
@@ -140,18 +142,32 @@ class _LoginScreenState extends State<LoginScreen> {
                 /// Divider
                 Row(
                   children: [
-                    Expanded(child: Divider(color: Theme.of(context).dividerColor.withValues(alpha: 0.5))),
+                    Expanded(
+                      child: Divider(
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.5),
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         'OR',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.4),
                           fontSize: 14,
                         ),
                       ),
                     ),
-                    Expanded(child: Divider(color: Theme.of(context).dividerColor.withValues(alpha: 0.5))),
+                    Expanded(
+                      child: Divider(
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.5),
+                      ),
+                    ),
                   ],
                 ),
 

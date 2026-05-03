@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast/screens/auth/widgets/apptextfield.dart';
-import 'package:launchfast/screens/auth/widgets/auth_prompt.dart';
-import 'package:launchfast/screens/auth/widgets/constants.dart';
-import 'package:launchfast/screens/auth/widgets/custom_button.dart';
-import 'package:launchfast/screens/auth/widgets/password_toggle.dart';
+import 'package:campuschow/screens/auth/widgets/apptextfield.dart';
+import 'package:campuschow/screens/auth/widgets/auth_prompt.dart';
+import 'package:campuschow/screens/auth/widgets/constants.dart';
+import 'package:campuschow/screens/auth/widgets/custom_button.dart';
+import 'package:campuschow/screens/auth/widgets/password_toggle.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';

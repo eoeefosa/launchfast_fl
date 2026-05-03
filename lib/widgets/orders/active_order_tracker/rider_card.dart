@@ -1,7 +1,6 @@
-
 import 'package:flutter/material.dart';
-import 'package:launchfast/constants/app_colors.dart';
-import 'package:launchfast/widgets/orders/active_order_tracker/call_button.dart';
+import 'package:campuschow/constants/app_colors.dart';
+import 'package:campuschow/widgets/orders/active_order_tracker/call_button.dart';
 
 class RiderCard extends StatelessWidget {
   final dynamic rider;

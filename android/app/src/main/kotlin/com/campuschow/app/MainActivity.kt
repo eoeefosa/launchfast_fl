@@ -1,4 +1,4 @@
-package com.launchfast.app
+package com.campuschow.app
 
 import io.flutter.embedding.android.FlutterActivity
 

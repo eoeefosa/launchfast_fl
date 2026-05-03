@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:launchfast/services/api_service.dart';
-import 'package:launchfast/constants/app_colors.dart';
+import 'package:campuschow/services/api_service.dart';
+import 'package:campuschow/constants/app_colors.dart';
 import 'widgets/apptextfield.dart';
 import 'widgets/constants.dart';
 
@@ -118,7 +118,9 @@ class _FormView extends StatelessWidget {
             'Enter your account email and we\'ll send you a link to reset your password.',
             style: TextStyle(
               fontSize: 15,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
               height: 1.5,
             ),
           ),
@@ -229,7 +231,9 @@ class _SuccessView extends StatelessWidget {
           'If an account exists for $email, you\'ll receive a password reset link shortly.',
           style: TextStyle(
             fontSize: 15,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.6),
             height: 1.6,
           ),
           textAlign: TextAlign.center,
@@ -262,7 +266,9 @@ class _SuccessView extends StatelessWidget {
         Text(
           'Didn\'t receive it? Check your spam folder\nor contact support.',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.5),
             fontSize: 13,
           ),
           textAlign: TextAlign.center,

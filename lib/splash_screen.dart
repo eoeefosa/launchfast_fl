@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
-class LaunchFastSplashScreen extends StatefulWidget {
-  const LaunchFastSplashScreen({super.key});
+class CampusChowSplashScreen extends StatefulWidget {
+  const CampusChowSplashScreen({super.key});
 
   @override
-  State<LaunchFastSplashScreen> createState() => _LaunchFastSplashScreenState();
+  State<CampusChowSplashScreen> createState() => _CampusChowSplashScreenState();
 }
 
-class _LaunchFastSplashScreenState extends State<LaunchFastSplashScreen> {
+class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
   @override
   void initState() {
     super.initState();
@@ -52,18 +52,23 @@ class _LaunchFastSplashScreenState extends State<LaunchFastSplashScreen> {
                 Semantics(
                   label: 'Lunch Fast Logo',
                   image: true,
-                  child: Image.asset(
-                        'assets/appicon.png', // Just the cloche/rocket part
-                        height: 120,
-                      )
-                      .animate()
-                      .fadeIn(duration: 600.ms)
-                      .slideX(begin: -0.2, end: 0, curve: Curves.easeOutCubic)
-                      .shimmer(
-                        delay: 800.ms,
-                        duration: 1500.ms,
-                        color: Colors.white.withValues(alpha: 0.5),
-                      ),
+                  child:
+                      Image.asset(
+                            'assets/appicon.png', // Just the cloche/rocket part
+                            height: 120,
+                          )
+                          .animate()
+                          .fadeIn(duration: 600.ms)
+                          .slideX(
+                            begin: -0.2,
+                            end: 0,
+                            curve: Curves.easeOutCubic,
+                          )
+                          .shimmer(
+                            delay: 800.ms,
+                            duration: 1500.ms,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
                 ), // Premium shader sweep
 
                 const SizedBox(height: 24),
@@ -87,7 +92,7 @@ class _LaunchFastSplashScreenState extends State<LaunchFastSplashScreen> {
                           .animate()
                           .fadeIn(delay: 400.ms)
                           .slideY(begin: 0.2, end: 0),
-  
+
                       Text(
                             "fast",
                             style: TextStyle(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast/widgets/orders/active_order_tracker/rider_card.dart';
-import 'package:launchfast/widgets/orders/active_order_tracker/status_icons.dart';
+import 'package:campuschow/widgets/orders/active_order_tracker/rider_card.dart';
+import 'package:campuschow/widgets/orders/active_order_tracker/status_icons.dart';
 import 'dart:io';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/order.dart';

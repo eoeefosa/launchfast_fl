@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:launchfast/providers/theme_provider.dart';
-import 'package:launchfast/screens/tabs/profile/widgets/theme_option.dart';
+import 'package:campuschow/providers/theme_provider.dart';
+import 'package:campuschow/screens/tabs/profile/widgets/theme_option.dart';
 import 'package:provider/provider.dart';
 
 class ThemeSwitcher extends StatelessWidget {
@@ -86,19 +86,19 @@ class ThemeSwitcher extends StatelessWidget {
               padding: const EdgeInsets.all(4),
               child: Row(
                 children: [
-                ThemeOption(
+                  ThemeOption(
                     label: 'Light',
                     icon: Icons.light_mode_rounded,
                     selected: themeProvider.isLight,
                     onTap: () => themeProvider.setTheme(ThemeMode.light),
                   ),
-                ThemeOption(
+                  ThemeOption(
                     label: 'System',
                     icon: Icons.brightness_auto_rounded,
                     selected: themeProvider.isSystem,
                     onTap: () => themeProvider.setTheme(ThemeMode.system),
                   ),
-                ThemeOption(
+                  ThemeOption(
                     label: 'Dark',
                     icon: Icons.dark_mode_rounded,
                     selected: themeProvider.isDark,

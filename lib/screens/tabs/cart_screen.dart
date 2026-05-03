@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:launchfast/providers/store_provider.dart';
+import 'package:campuschow/providers/store_provider.dart';
 import 'dart:io';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -38,7 +38,10 @@ class CartScreen extends StatelessWidget {
               key: const ValueKey('cart_scaffold'),
               backgroundColor: Theme.of(context).colorScheme.surface,
               appBar: _buildAppBar(context, isIOS, cart),
-              body: _CartBody(cart: cart, accentColor: _getAccentColor(context, cart)),
+              body: _CartBody(
+                cart: cart,
+                accentColor: _getAccentColor(context, cart),
+              ),
               bottomNavigationBar: CheckoutBar(
                 total: cart.cartTotal,
                 enabled: !hasUnavailableItems,

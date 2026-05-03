@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:launchfast/models/order.dart';
+import 'package:campuschow/models/order.dart';
 
 class StatusIcon extends StatelessWidget {
   final OrderStatus status;

@@ -26,11 +26,11 @@ function traverse(dir, parentId = null) {
       const content = fs.readFileSync(fullPath, 'utf8');
       const lines = content.split('\n');
       lines.forEach(line => {
-        const match = line.match(/^import ['"](package:launchfast\/|.*\.dart)['"];/);
+        const match = line.match(/^import ['"](package:campuschow\/|.*\.dart)['"];/);
         if (match) {
           let target = match[1];
-          if (target.startsWith('package:launchfast/')) {
-            target = 'lib/' + target.replace('package:launchfast/', '');
+          if (target.startsWith('package:campuschow/')) {
+            target = 'lib/' + target.replace('package:campuschow/', '');
           } else {
             // Relative path
             target = path.normalize(path.join(path.dirname(id), target));

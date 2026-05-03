@@ -1,12 +1,11 @@
-
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:launchfast/providers/auth_provider.dart';
-import 'package:launchfast/providers/order_provider.dart';
+import 'package:campuschow/providers/auth_provider.dart';
+import 'package:campuschow/providers/order_provider.dart';
 import 'package:provider/provider.dart';
 
 class LogoutButton extends StatelessWidget {

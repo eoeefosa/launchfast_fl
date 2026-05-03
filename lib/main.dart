@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:launchfast/router.dart';
+import 'package:campuschow/router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -123,7 +123,7 @@ class MyApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (context, child) {
         return MaterialApp.router(
-          title: 'Lunch Fast',
+          title: 'CampusChow',
           debugShowCheckedModeBanner: false,
           theme: _lightTheme,
           darkTheme: _darkTheme,
