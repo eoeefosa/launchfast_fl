@@ -92,7 +92,7 @@ class WalletCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         const Text(
-                          'LunchFast Wallet',
+                          'CampusChow Wallet',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,

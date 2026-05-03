@@ -50,7 +50,7 @@ class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
               children: [
                 // THE LOGO ICON
                 Semantics(
-                  label: 'Lunch Fast Logo',
+                  label: 'Campus Chow Logo',
                   image: true,
                   child:
                       Image.asset(
@@ -75,7 +75,7 @@ class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
 
                 // THE BRAND NAME
                 Semantics(
-                  label: 'Lunch Fast',
+                  label: 'Campus Chow',
                   header: true,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
