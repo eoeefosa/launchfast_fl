@@ -107,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               ProfileSettingsTile(
                 icon: isIOS ? CupertinoIcons.info_circle : Icons.info_outline,
-                title: 'About LaunchFast',
+                title: 'About CampusChow',
                 onTap: () {
                   // Show about dialog
                 },

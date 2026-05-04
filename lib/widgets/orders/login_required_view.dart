@@ -35,7 +35,7 @@ class LoginRequiredView extends StatelessWidget {
             ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
             const SizedBox(height: 40),
             const Text(
-              'Join LaunchFast',
+              'Join CampusChow',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 26,
@@ -49,7 +49,9 @@ class LoginRequiredView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
                 height: 1.5,
               ),
             ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),

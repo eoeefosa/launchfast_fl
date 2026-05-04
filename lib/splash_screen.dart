@@ -81,7 +81,7 @@ class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                            "Launch",
+                            "Campus",
                             style: TextStyle(
                               fontSize: 42,
                               fontWeight: FontWeight.w800,
@@ -94,7 +94,7 @@ class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
                           .slideY(begin: 0.2, end: 0),
 
                       Text(
-                            "fast",
+                            "Chow",
                             style: TextStyle(
                               fontSize: 42,
                               fontWeight: FontWeight.w800,
