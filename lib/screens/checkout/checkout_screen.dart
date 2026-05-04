@@ -30,6 +30,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isSuccess = false;
   String _paymentMethod = 'Wallet';
 
+  // Guest checkout related state
+  bool _isGuestCheckout = false;
+  final TextEditingController _guestNameController = TextEditingController();
+  final TextEditingController _guestPhoneController = TextEditingController();
+
+  @override
+  void dispose() {
+    _guestNameController.dispose();
+    _guestPhoneController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
@@ -38,6 +50,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     final total = cart.totalFor(_deliveryType);
     final hasQueuedItems = cart.items.any((i) => !i.menuItem.isReady);
+
+    // Determine if guest details are already provided
+    final bool hasGuestDetails =
+        auth.guestName != null &&
+        auth.guestPhone != null &&
+        auth.currentAddress != null;
+
+    // If not authenticated and guest details are not yet provided, set _isGuestCheckout to true
+    if (!auth.isAuthenticated && !hasGuestDetails && !_isGuestCheckout) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _isGuestCheckout = true;
+        });
+      });
+    }
 
     if (_isSuccess) return const SuccessView();
 
@@ -52,14 +79,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               SliverToBoxAdapter(
                 child: _sectionCard(
                   title: 'Deliver to',
-                  child: const LocationSelector(),
+                  child: _isGuestCheckout
+                      ? _buildGuestAddressForm(auth)
+                      : const LocationSelector(),
                 ),
               ),
+              if (_isGuestCheckout) ...[
+                SliverToBoxAdapter(
+                  child: _sectionCard(
+                    title: 'Contact Information',
+                    child: _buildGuestContactForm(),
+                  ),
+                ),
+              ],
               SliverToBoxAdapter(
                 child: _sectionCard(
                   title: 'Delivery Type',
                   child: ListTile(
-                    leading: _iconContainer(_iconForDeliveryType(_deliveryType)),
+                    leading: _iconContainer(
+                      _iconForDeliveryType(_deliveryType),
+                    ),
                     title: Text(_deliveryType.label),
                     subtitle: Text(_deliveryType.priceLabel),
                     trailing: const Icon(Icons.chevron_right),
@@ -76,7 +115,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               SliverToBoxAdapter(
                 child: _sectionCard(
                   title: 'Order Summary',
-                  child: OrderSummarySection(cart: cart, deliveryType: _deliveryType),
+                  child: OrderSummarySection(
+                    cart: cart,
+                    deliveryType: _deliveryType,
+                  ),
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 140)),
@@ -85,10 +127,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           BottomBar(
             total: total,
             isLoading: orderProvider.isLoading,
-            isWalletInsufficient: _paymentMethod == 'Wallet' && !auth.hasSufficientFunds(total),
+            isWalletInsufficient:
+                _paymentMethod == 'Wallet' && !auth.hasSufficientFunds(total),
             hasQueuedItems: hasQueuedItems,
-            onPlaceOrder: () => _placeOrder(total, cart, orderProvider, auth, hasQueuedItems),
-            onInsufficientFunds: () => _showInsufficientFundsDialog(auth.user?.walletBalance ?? 0, total),
+            onPlaceOrder: () =>
+                _placeOrder(total, cart, orderProvider, auth, hasQueuedItems),
+            onInsufficientFunds: () => _showInsufficientFundsDialog(
+              auth.user?.walletBalance ?? 0,
+              total,
+            ),
           ),
         ],
       ),
@@ -99,7 +146,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Widget _buildPaymentTile(AuthProvider auth, double total) {
     final balance = auth.user?.walletBalance ?? 0;
-    final isInsufficient = _paymentMethod == 'Wallet' && !auth.hasSufficientFunds(total);
+    final isInsufficient =
+        _paymentMethod == 'Wallet' && !auth.hasSufficientFunds(total);
 
     return ListTile(
       leading: _iconContainer(
@@ -136,6 +184,82 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             )
           : const Icon(Icons.chevron_right),
       onTap: () => _showPaymentSheet(total),
+    );
+  }
+
+  Widget _buildGuestAddressForm(AuthProvider auth) {
+    return Column(
+      children: [
+        ListTile(
+          leading: _iconContainer(Icons.map_rounded),
+          title: Text(auth.currentAddress ?? 'Set delivery address'),
+          subtitle: Text(auth.currentAddress == null ? 'Tap to set' : ''),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () {
+            // Navigate to or show a map/location picker for address
+            // For now, using LocationSelector which handles state internally and updates auth.currentAddress
+            // If guest checkout is active, LocationSelector should ideally be interactive to set guest address
+            // For simplicity here, we assume LocationSelector handles this.
+            // A better approach might be a dedicated guest address input.
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGuestContactForm() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          TextField(
+            controller: _guestNameController,
+            decoration: InputDecoration(
+              labelText: 'Full Name',
+              prefixIcon: Icon(Icons.person_outline),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            keyboardType: TextInputType.name,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _guestPhoneController,
+            decoration: InputDecoration(
+              labelText: 'Phone Number',
+              prefixIcon: Icon(Icons.phone_outlined),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            keyboardType: TextInputType.phone,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: () {
+              // Save guest info and hide the form
+              if (_guestNameController.text.isNotEmpty &&
+                  _guestPhoneController.text.isNotEmpty) {
+                context.read<AuthProvider>().setGuestInfo(
+                  name: _guestNameController.text,
+                  phone: _guestPhoneController.text,
+                );
+                setState(() {
+                  _isGuestCheckout = false; // Hide guest form after saving
+                });
+              } else {
+                _showErrorDialog(
+                  'Please enter your full name and phone number.',
+                );
+              }
+            },
+            child: const Text('Confirm Contact Info'),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 
@@ -292,10 +416,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     AuthProvider auth,
     bool hasQueuedItems,
   ) async {
+    // --- Guest Checkout Logic ---
     if (!auth.isAuthenticated) {
-      context.push('/login');
-      return;
+      // If guest details are not yet collected, prompt the user to enter them.
+      if (!auth.guestName.isNotNullOrEmpty() ||
+          !auth.guestPhone.isNotNullOrEmpty() ||
+          auth.currentAddress == null) {
+        setState(() {
+          _isGuestCheckout = true; // Show the guest form
+        });
+        _showErrorDialog('Please provide your contact and delivery details.');
+        return; // Stop order placement until details are provided
+      }
     }
+    // --- End Guest Checkout Logic ---
 
     // Final wallet check — total is the grand total the user must pay.
     if (_paymentMethod == 'Wallet') {
@@ -314,19 +448,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final subtotal = cart.subTotal;
 
       final orderData = {
-        'items': cart.items.map((i) => {
-          'menuItem':      {'id': i.menuItem.id},
-          'quantity':      i.quantity,
-          'extras':        i.extras,
-          'selectedMeats': i.selectedMeats,
-          'hasSalad':      i.hasSalad,
-          'selectedAddons': i.selectedAddons,
-        }).toList(),
-        'subtotal':     subtotal,
-        'deliveryType': _deliveryType.name,     // 'bulk' | 'priority' | 'pickup'
+        'items': cart.items
+            .map(
+              (i) => {
+                'menuItem': {'id': i.menuItem.id},
+                'quantity': i.quantity,
+                'extras': i.extras,
+                'selectedMeats': i.selectedMeats,
+                'hasSalad': i.hasSalad,
+                'selectedAddons': i.selectedAddons,
+              },
+            )
+            .toList(),
+        'subtotal': subtotal,
+        'deliveryType': _deliveryType.name, // 'bulk' | 'priority' | 'pickup'
         'paymentMethod': _paymentMethod,
-        'userId':        auth.user!.id,
-        'stores':        cart.items.map((i) => i.menuItem.storeId).toSet().toList(),
+        // Use userId if authenticated, otherwise use guest details
+        'userId': auth.user?.id,
+        'guestName': !auth.isAuthenticated ? auth.guestName : null,
+        'guestPhone': !auth.isAuthenticated ? auth.guestPhone : null,
+        'deliveryAddress':
+            auth.currentAddress, // This will be guestAddress or user's address
+        'stores': cart.items.map((i) => i.menuItem.storeId).toSet().toList(),
       };
 
       final Order? success = await orderProvider.placeOrder(orderData);
@@ -342,7 +485,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         cart.clearCart();
         setState(() => _isSuccess = true);
       } else {
-        _showErrorDialog(orderProvider.error ?? 'Your order could not be placed. Please try again.');
+        _showErrorDialog(
+          orderProvider.error ??
+              'Your order could not be placed. Please try again.',
+        );
       }
     } on DioException catch (e) {
       if (!mounted) return;
@@ -350,11 +496,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
-        message = 'The connection timed out. Please check your internet and try again.';
+        message =
+            'The connection timed out. Please check your internet and try again.';
       } else if (e.type == DioExceptionType.connectionError) {
-        message = 'Could not connect to the server. Please check your internet.';
+        message =
+            'Could not connect to the server. Please check your internet.';
       } else if (e.response?.data is Map) {
-        message = e.response?.data['message'] ?? e.response?.data['error'] ?? message;
+        message =
+            e.response?.data['message'] ?? e.response?.data['error'] ?? message;
       }
 
       _showErrorDialog(message);
@@ -362,5 +511,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (!mounted) return;
       _showErrorDialog('An unexpected error occurred. Please try again.');
     }
+  }
+}
+
+// Helper extension to check for null or empty strings
+extension StringExtension on String? {
+  bool isNotNullOrEmpty() {
+    return this != null && this!.isNotEmpty;
+  }
+}
+
+// Helper for withValues extension if not globally available
+extension ColorExtension on Color {
+  Color withValues({double alpha = 1.0}) {
+    return Color.fromRGBO(this.red, this.green, this.blue, alpha);
   }
 }

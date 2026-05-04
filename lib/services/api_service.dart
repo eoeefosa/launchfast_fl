@@ -8,8 +8,7 @@ class ApiService {
   late Dio dio;
   final storage = const FlutterSecureStorage();
 
-  static const String baseUrl = 'https://backend-lauchfast.vercel.app/api';
-
+  static const String baseUrl = 'https://campus-chow-three.vercel.app/api';
 
   ApiService() {
     dio = Dio(
@@ -28,11 +27,11 @@ class ApiService {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-          
+
           // 🛠️ Generate Postman-ready cURL command
           final fullUrl = '${options.baseUrl}${options.path}';
           String curl = 'curl -X ${options.method.toUpperCase()} "$fullUrl"';
-          
+
           options.headers.forEach((key, value) {
             curl += ' -H "$key: $value"';
           });
@@ -50,23 +49,31 @@ class ApiService {
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          debugPrint('✅ [API] ${response.statusCode} ${response.requestOptions.path}');
+          debugPrint(
+            '✅ [API] ${response.statusCode} ${response.requestOptions.path}',
+          );
           if (response.data != null) {
             debugPrint('   Response: ${response.data}');
           }
           return handler.next(response);
         },
         onError: (DioException e, handler) {
-          debugPrint('❌ [API] ${e.response?.statusCode ?? 'Network Error'} ${e.requestOptions.path}');
-          
+          debugPrint(
+            '❌ [API] ${e.response?.statusCode ?? 'Network Error'} ${e.requestOptions.path}',
+          );
+
           String message = e.message ?? 'Unknown error';
           if (e.response?.data is Map) {
-            message = e.response?.data['message'] ?? e.response?.data['error'] ?? message;
+            message =
+                e.response?.data['message'] ??
+                e.response?.data['error'] ??
+                message;
             debugPrint('   Error Body: ${e.response?.data}');
-          } else if (e.response?.data is String && (e.response?.data as String).isNotEmpty) {
+          } else if (e.response?.data is String &&
+              (e.response?.data as String).isNotEmpty) {
             message = e.response?.data;
           }
-          
+
           debugPrint('   Message: $message');
           return handler.next(e);
         },

@@ -19,12 +19,16 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _adminStoreId;
   String? _guestAddress;
+  String? _guestName;
+  String? _guestPhone;
   List<String> _locations = [];
 
   UserProfile? get user => _user;
   String? get token => _token;
   bool get isLoading => _isLoading;
   String? get guestAddress => _guestAddress;
+  String? get guestName => _guestName;
+  String? get guestPhone => _guestPhone;
   String? get currentAddress => _user?.address ?? _guestAddress;
   List<String> get locations =>
       _locations.isEmpty ? StaticData.halls : _locations;
@@ -57,6 +61,7 @@ class AuthProvider with ChangeNotifier {
 
   /// Returns true if the user has enough money in their wallet to cover the [total].
   bool hasSufficientFunds(double total) {
+    if (_user == null) return false;
     return (_user?.walletBalance ?? 0) >= total;
   }
 
@@ -91,6 +96,9 @@ class AuthProvider with ChangeNotifier {
       _token = await storage.read(key: 'launch-fast-token');
       final userStr = await storage.read(key: 'launch-fast-user');
       final adminId = await storage.read(key: 'launch-fast-admin');
+      _guestName = await storage.read(key: 'launch-fast-guest-name');
+      _guestPhone = await storage.read(key: 'launch-fast-guest-phone');
+      _guestAddress = await storage.read(key: 'launch-fast-guest-address');
 
       if (userStr != null) {
         _user = UserProfile.fromJson(jsonDecode(userStr));
@@ -300,6 +308,19 @@ class AuthProvider with ChangeNotifier {
 
   void setGuestAddress(String address) {
     _guestAddress = address;
+    storage.write(key: 'launch-fast-guest-address', value: address);
+    notifyListeners();
+  }
+
+  void setGuestInfo({String? name, String? phone}) {
+    if (name != null) {
+      _guestName = name;
+      storage.write(key: 'launch-fast-guest-name', value: name);
+    }
+    if (phone != null) {
+      _guestPhone = phone;
+      storage.write(key: 'launch-fast-guest-phone', value: phone);
+    }
     notifyListeners();
   }
 
