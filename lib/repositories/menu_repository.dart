@@ -5,6 +5,7 @@ import '../models/store.dart';
 class MenuRepository {
   Future<List<MenuItem>> getMenuItems() async {
     final response = await apiService.dio.get('/menu');
+    // print(response);
     return (response.data as List).map((i) => MenuItem.fromJson(i)).toList();
   }
 
