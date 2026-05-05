@@ -8,7 +8,7 @@ class ApiService {
   late Dio dio;
   final storage = const FlutterSecureStorage();
 
-  static const String baseUrl = 'https://campus-chow-three.vercel.app/api';
+  static const String baseUrl = 'http://localhost:3000/api';
 
   ApiService() {
     dio = Dio(

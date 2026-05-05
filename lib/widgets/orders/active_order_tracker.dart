@@ -4,7 +4,6 @@ import 'package:campuschow/widgets/orders/active_order_tracker/status_icons.dart
 import 'dart:io';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/order.dart';
-import '../../constants/static_data.dart';
 import '../../constants/app_colors.dart';
 import 'order_timeline.dart';
 
@@ -19,12 +18,7 @@ class ActiveOrderTracker extends StatelessWidget {
     final statusText = _getStatusText(order.status);
     final statusDescription = _getStatusDescription(order.status);
 
-    final rider = order.riderId != null
-        ? StaticData.riders.cast<dynamic>().firstWhere(
-            (r) => r.id == order.riderId,
-            orElse: () => null,
-          )
-        : null;
+    final rider = order.rider;
 
     return Container(
       decoration: BoxDecoration(

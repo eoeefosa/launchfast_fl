@@ -5,8 +5,11 @@ import '../models/store.dart';
 class MenuRepository {
   Future<List<MenuItem>> getMenuItems() async {
     final response = await apiService.dio.get('/menu');
-    // print(response);
-    return (response.data as List).map((i) => MenuItem.fromJson(i)).toList();
+    final data = response.data;
+    if (data is Map && data.containsKey('items')) {
+      return (data['items'] as List).map((i) => MenuItem.fromJson(i)).toList();
+    }
+    return (data as List).map((i) => MenuItem.fromJson(i)).toList();
   }
 
   Future<MenuItem> updateMenuItem(String id, Map<String, dynamic> data) async {
@@ -16,7 +19,9 @@ class MenuRepository {
 
   Future<List<Store>> getStores() async {
     final response = await apiService.dio.get('/stores');
-    return (response.data as List).map((i) => Store.fromJson(i)).toList();
+    final data = response.data;
+    if (data is! List) return [];
+    return data.map((i) => Store.fromJson(i)).toList();
   }
 
   Future<Store> createStore(Map<String, dynamic> data) async {
@@ -31,5 +36,10 @@ class MenuRepository {
 
   Future<void> deleteMenuItem(String id) async {
     await apiService.dio.delete('/menu/$id');
+  }
+
+  Future<Map<String, dynamic>> getSettings() async {
+    final response = await apiService.dio.get('/platform/settings');
+    return response.data as Map<String, dynamic>;
   }
 }

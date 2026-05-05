@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:campuschow/repositories/location_repository.dart';
+
 import '../locator.dart';
 import '../services/ably_service.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +8,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user.dart';
 import '../models/store.dart';
 import '../repositories/auth_repository.dart';
-import '../constants/static_data.dart';
 import '../services/api_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:io';
@@ -30,23 +31,14 @@ class AuthProvider with ChangeNotifier {
   String? get guestName => _guestName;
   String? get guestPhone => _guestPhone;
   String? get currentAddress => _user?.address ?? _guestAddress;
-  List<String> get locations =>
-      _locations.isEmpty ? StaticData.halls : _locations;
+  List<String> get locations => _locations;
 
   Future<void> fetchLocations() async {
-    debugPrint('[AuthProvider] fetchLocations');
     try {
-      final res = await apiService.dio.get('/locations');
-      debugPrint('[AuthProvider] fetchLocations response: $res');
-
-      if (res.data != null && res.data is List) {
-        _locations = List<String>.from(res.data);
-        notifyListeners();
-      }
+      _locations = await locator<LocationRepository>().getLocations();
+      notifyListeners();
     } catch (e) {
       debugPrint('[AuthProvider] fetchLocations failed: $e');
-      // Fallback to static data if API fails
-      _locations = StaticData.halls;
       notifyListeners();
     }
   }
@@ -55,8 +47,8 @@ class AuthProvider with ChangeNotifier {
   bool get isStoreOwner => _user?.role == 'store_owner';
   bool get isRider => _user?.role == 'rider';
   bool get isAuthenticated => _token != null;
-  Store? get adminStore => _adminStoreId != null
-      ? StaticData.stores.firstWhere((s) => s.id == _adminStoreId)
+  Store? getAdminStore(List<Store> stores) => _adminStoreId != null
+      ? stores.firstWhere((s) => s.id == _adminStoreId)
       : null;
 
   /// Returns true if the user has enough money in their wallet to cover the [total].

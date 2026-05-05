@@ -2,23 +2,33 @@ import 'package:flutter/material.dart';
 
 class CategorySelector extends StatelessWidget {
   final String selectedCategory;
+  final List<String> categories;
   final Function(String) onCategorySelected;
 
   const CategorySelector({
     super.key,
     required this.selectedCategory,
+    required this.categories,
     required this.onCategorySelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    final categories = [
-      {'label': 'All', 'icon': Icons.restaurant_rounded},
-      {'label': 'Rice', 'icon': Icons.rice_bowl_rounded},
-      {'label': 'Swallow', 'icon': Icons.cookie_rounded},
-      {'label': 'Soup', 'icon': Icons.soup_kitchen_rounded},
-      {'label': 'Drinks', 'icon': Icons.local_drink_rounded},
-    ];
+    // Standard icon mapping
+    IconData getIcon(String label) {
+      switch (label.toLowerCase()) {
+        case 'all': return Icons.restaurant_rounded;
+        case 'rice': return Icons.rice_bowl_rounded;
+        case 'swallow': return Icons.cookie_rounded;
+        case 'soup': return Icons.soup_kitchen_rounded;
+        case 'drinks': return Icons.local_drink_rounded;
+        case 'extras': return Icons.add_circle_outline_rounded;
+        case 'others': return Icons.more_horiz_rounded;
+        default: return Icons.fastfood_rounded;
+      }
+    }
+
+    final allCategories = ['All', ...categories.where((c) => c != 'All')];
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -26,16 +36,14 @@ class CategorySelector extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(
-          children: categories.map((cat) {
-            final label = cat['label'] as String;
-            final icon = cat['icon'] as IconData;
+          children: allCategories.map((label) {
             final isActive = selectedCategory == label;
 
             return Padding(
               padding: const EdgeInsets.only(right: 12),
               child: _CategoryChip(
                 label: label,
-                icon: icon,
+                icon: getIcon(label),
                 isActive: isActive,
                 onTap: () => onCategorySelected(label),
               ),

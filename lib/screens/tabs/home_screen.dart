@@ -116,6 +116,12 @@ class _HomeScreenState extends State<HomeScreen> {
     // final user = authProvider.user;
 
     final storeProvider = context.watch<StoreProvider>();
+    
+    // Auto-select first store if none selected and stores are available
+    if (_activeStoreId.isEmpty && storeProvider.stores.isNotEmpty) {
+      _activeStoreId = storeProvider.stores.first.id;
+    }
+
     if (storeProvider.isLoading && storeProvider.stores.isEmpty) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator.adaptive()),
@@ -123,7 +129,21 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (storeProvider.stores.isEmpty) {
-      return const Scaffold(body: Center(child: Text('No stores available')));
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(storeProvider.error ?? 'No stores available'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => storeProvider.refreshData(),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     final activeStore = storeProvider.stores.firstWhere(
@@ -214,6 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: CategorySelector(
                         selectedCategory: _selectedCategory,
+                        categories: categories,
                         onCategorySelected: (cat) =>
                             setState(() => _selectedCategory = cat),
                       ),

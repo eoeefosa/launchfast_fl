@@ -9,6 +9,7 @@ class CartItem {
   final Map<String, int>? selectedMeats;
   final bool hasSalad;
   final Map<String, int>? selectedAddons;
+  final String? selectedSizeId;
 
   CartItem({
     String? id,
@@ -18,11 +19,10 @@ class CartItem {
     this.selectedMeats,
     this.hasSalad = false,
     this.selectedAddons,
+    this.selectedSizeId,
   }) : id = id ?? '${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(10000)}';
 
   // ── Structural equality ─────────────────────────────────────────────────────
-  // Compares two nullable Map<String,int> maps for value equality without
-  // serialising them — eliminates the pathological jsonEncode comparison.
   static bool _mapsEqual(Map<String, int>? a, Map<String, int>? b) {
     if (identical(a, b)) return true;
     if (a == null || b == null) return a == b;
@@ -33,18 +33,18 @@ class CartItem {
     return true;
   }
 
-  /// Two CartItems are "the same cart slot" when they share the same menu item,
-  /// meat selection, salad flag, and addon selection.
   bool sameSlotAs({
     required String menuItemId,
     Map<String, int>? selectedMeats,
     bool hasSalad = false,
     Map<String, int>? selectedAddons,
+    String? selectedSizeId,
   }) {
     return menuItem.id == menuItemId &&
         _mapsEqual(this.selectedMeats, selectedMeats) &&
         this.hasSalad == hasSalad &&
-        _mapsEqual(this.selectedAddons, selectedAddons);
+        _mapsEqual(this.selectedAddons, selectedAddons) &&
+        this.selectedSizeId == selectedSizeId;
   }
 
   @override
@@ -54,7 +54,8 @@ class CartItem {
         other.menuItem.id == menuItem.id &&
         _mapsEqual(other.selectedMeats, selectedMeats) &&
         other.hasSalad == hasSalad &&
-        _mapsEqual(other.selectedAddons, selectedAddons);
+        _mapsEqual(other.selectedAddons, selectedAddons) &&
+        other.selectedSizeId == selectedSizeId;
   }
 
   @override
@@ -67,13 +68,10 @@ class CartItem {
         Object.hashAllUnordered(
           selectedAddons?.entries.map((e) => Object.hash(e.key, e.value)) ?? [],
         ),
+        selectedSizeId,
       );
 
-  // ── Serialisation ───────────────────────────────────────────────────────────
-
   factory CartItem.fromJson(Map<String, dynamic> json) {
-    // The backend sends proper nested JSON objects, not JSON-encoded strings.
-    // Guard against both shapes defensively, but the canonical path is Map.
     final rawItem = json['menuItem'];
     final menuItemId = json['menuItemId']?.toString();
     
@@ -81,7 +79,6 @@ class CartItem {
     if (rawItem is Map<String, dynamic>) {
       menuItem = MenuItem.fromJson(rawItem);
     } else if (menuItemId != null) {
-      // Fallback: Create a placeholder MenuItem with the ID
       menuItem = MenuItem(
         id: menuItemId,
         storeId: '',
@@ -90,6 +87,15 @@ class CartItem {
         price: 0,
         category: 'Others',
         image: '',
+        popular: false,
+        isPerPortion: false,
+        isFreeWithSwallow: false,
+        prepTimeMinutes: 20,
+        isReady: true,
+        calories: 0,
+        addonIds: [],
+        sizes: [],
+        extras: [],
       );
     }
 
@@ -105,11 +111,10 @@ class CartItem {
       menuItem: menuItem,
       quantity: json['quantity'] ?? 1,
       extras: json['extras'] != null ? List<String>.from(json['extras']) : null,
-      selectedMeats:
-          meatsData != null ? Map<String, int>.from(meatsData) : null,
+      selectedMeats: meatsData != null ? Map<String, int>.from(meatsData) : null,
       hasSalad: json['hasSalad'] ?? false,
-      selectedAddons:
-          addonsData != null ? Map<String, int>.from(addonsData) : null,
+      selectedAddons: addonsData != null ? Map<String, int>.from(addonsData) : null,
+      selectedSizeId: json['selectedSizeId'],
     );
   }
 
@@ -122,6 +127,7 @@ class CartItem {
       'selectedMeats': selectedMeats,
       'hasSalad': hasSalad,
       'selectedAddons': selectedAddons,
+      'selectedSizeId': selectedSizeId,
     };
   }
 }

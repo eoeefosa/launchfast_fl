@@ -102,7 +102,7 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Contact Support',
                 subtitle: 'Chat with us on WhatsApp',
                 onTap: () {
-                  _launchWhatsApp;
+                  _launchWhatsApp();
                 },
               ),
               ProfileSettingsTile(

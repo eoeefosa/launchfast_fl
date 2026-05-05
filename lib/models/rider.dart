@@ -15,10 +15,10 @@ class Rider {
 
   factory Rider.fromJson(Map<String, dynamic> json) {
     return Rider(
-      id: json['id'],
-      name: json['name'],
-      phoneNumber: json['phoneNumber'],
-      capacity: json['capacity'],
+      id: json['id'] ?? json['_id'],
+      name: json['name'] ?? 'Rider',
+      phoneNumber: json['phoneNumber'] ?? json['phone'] ?? '',
+      capacity: json['capacity'] ?? 0,
       walletBalance: json['walletBalance'] != null ? (json['walletBalance'] as num).toDouble() : null,
     );
   }

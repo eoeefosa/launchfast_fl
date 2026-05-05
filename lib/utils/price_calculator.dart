@@ -2,22 +2,24 @@ import 'package:collection/collection.dart';
 import '../models/menu_item.dart';
 import '../models/cart_item.dart';
 
-/// Pure-Dart utility for calculating the total price of a menu item 
-/// and its selected options.
-///
-/// All pricing data (meat prices, salad price, menu items for addon lookup)
-/// is passed in as parameters — this class has ZERO dependency on StaticData.
-/// The caller (typically a Provider or UI widget) is responsible for supplying
-/// the correct, up-to-date values.
 abstract final class PriceCalculator {
-  /// Calculates the price for a [CartItem] based on its selections.
   static double calculateCartItemPrice(
     CartItem item, {
     required Map<String, double> meatPrices,
     required double saladPrice,
     required List<MenuItem> allMenuItems,
   }) {
-    double price = item.menuItem.price;
+    double basePrice = item.menuItem.price;
+    
+    // Use size price if selected
+    if (item.selectedSizeId != null) {
+      final size = item.menuItem.sizes.firstWhereOrNull((s) => s.id == item.selectedSizeId);
+      if (size != null) {
+        basePrice = size.price;
+      }
+    }
+
+    double price = basePrice;
 
     if (item.selectedMeats != null) {
       item.selectedMeats!.forEach((type, count) {
@@ -52,8 +54,21 @@ abstract final class PriceCalculator {
     required List<MenuItem> availableAddons,
     required Map<String, double> meatPrices,
     required double saladPrice,
+    String? selectedSizeId,
   }) {
-    var total = item.price;
+    double basePrice = item.price;
+
+    if (selectedSizeId != null) {
+      final size = item.sizes.firstWhereOrNull((s) => s.id == selectedSizeId);
+      if (size != null) {
+        basePrice = size.price;
+      }
+    } else if (item.sizes.isNotEmpty) {
+      // Default to first size if none selected but sizes exist
+      basePrice = item.sizes.first.price;
+    }
+
+    var total = basePrice;
     
     selectedMeats.forEach(
       (type, count) => total += (meatPrices[type] ?? 0) * count,
@@ -78,12 +93,18 @@ abstract final class PriceCalculator {
     return total * quantity;
   }
 
-  /// Returns a dot-separated string describing the [CartItem]'s customizations.
   static String getCustomizationSummary(
     CartItem item, {
     required List<MenuItem> allMenuItems,
   }) {
     final List<String> parts = [];
+
+    if (item.selectedSizeId != null) {
+      final size = item.menuItem.sizes.firstWhereOrNull((s) => s.id == item.selectedSizeId);
+      if (size != null) {
+        parts.add(size.name);
+      }
+    }
 
     if (item.selectedMeats != null) {
       item.selectedMeats!.forEach((type, count) {

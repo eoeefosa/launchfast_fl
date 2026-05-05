@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/order.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/store.dart';
 import '../models/menu_item.dart';
-import '../constants/static_data.dart';
 import '../utils/price_calculator.dart';
 
 // ── Delivery pricing constants ─────────────────────────────────────────────────
@@ -63,6 +63,10 @@ class CartProvider with ChangeNotifier {
   List<CartItem> _items = [];
   bool _isLoaded = false;
   String? _editingOrderId;
+  Map<String, double> _meatPrices = {};
+  double _saladPrice = 0;
+  List<MenuItem> _allMenuItems = [];
+  List<Store> _allStores = [];
 
   List<CartItem> get items => _items;
   String? get editingOrderId => _editingOrderId;
@@ -71,6 +75,19 @@ class CartProvider with ChangeNotifier {
       _items.isNotEmpty ? _items[0].menuItem.storeId : null;
 
   int get totalQuantity => _items.fold(0, (sum, item) => sum + item.quantity);
+
+  void updatePricing({
+    required Map<String, double> meatPrices,
+    required double saladPrice,
+    required List<MenuItem> allMenuItems,
+    required List<Store> allStores,
+  }) {
+    _meatPrices = meatPrices;
+    _saladPrice = saladPrice;
+    _allMenuItems = allMenuItems;
+    _allStores = allStores;
+    notifyListeners();
+  }
 
   CartProvider() {
     _loadCart();
@@ -113,18 +130,19 @@ class CartProvider with ChangeNotifier {
     Map<String, int>? selectedMeats,
     bool hasSalad = false,
     Map<String, int>? selectedAddons,
+    String? selectedSizeId,
   }) {
     if (currentStoreId != null && currentStoreId != item.storeId) {
       return false;
     }
 
-    // Uses CartItem.sameSlotAs() — no jsonEncode, pure map equality.
     final index = _items.indexWhere(
       (i) => i.sameSlotAs(
         menuItemId: item.id,
         selectedMeats: selectedMeats,
         hasSalad: hasSalad,
         selectedAddons: selectedAddons,
+        selectedSizeId: selectedSizeId,
       ),
     );
 
@@ -139,6 +157,7 @@ class CartProvider with ChangeNotifier {
           selectedMeats: selectedMeats,
           hasSalad: hasSalad,
           selectedAddons: selectedAddons,
+          selectedSizeId: selectedSizeId,
         ),
       );
     }
@@ -154,6 +173,7 @@ class CartProvider with ChangeNotifier {
     Map<String, int>? selectedMeats,
     bool hasSalad = false,
     Map<String, int>? selectedAddons,
+    String? selectedSizeId,
   }) {
     _items = [
       CartItem(
@@ -163,6 +183,7 @@ class CartProvider with ChangeNotifier {
         selectedMeats: selectedMeats,
         hasSalad: hasSalad,
         selectedAddons: selectedAddons,
+        selectedSizeId: selectedSizeId,
       ),
     ];
     _saveCart();
@@ -173,10 +194,14 @@ class CartProvider with ChangeNotifier {
     String itemId,
     int newQuantity, {
     Map<String, int>? selectedMeats,
+    String? selectedSizeId,
   }) {
-    // Uses CartItem._mapsEqual indirectly via sameSlotAs — no jsonEncode.
     final index = _items.indexWhere(
-      (i) => i.sameSlotAs(menuItemId: itemId, selectedMeats: selectedMeats),
+      (i) => i.sameSlotAs(
+        menuItemId: itemId, 
+        selectedMeats: selectedMeats,
+        selectedSizeId: selectedSizeId,
+      ),
     );
 
     if (index != -1) {
@@ -275,21 +300,30 @@ class CartProvider with ChangeNotifier {
     return total - discount;
   }
 
-  /// Convenience getter that uses StaticData as fallback.
-  /// Widgets that have access to StoreProvider should prefer [subTotalWith].
+  /// Convenience getter that uses updated local pricing.
   double get subTotal => subTotalWith(
-    meatPrices: StaticData.meatPrices,
-    saladPrice: StaticData.saladPrice,
-    allMenuItems: StaticData.menuItems,
+    meatPrices: _meatPrices,
+    saladPrice: _saladPrice,
+    allMenuItems: _allMenuItems,
   );
 
   double get deliveryFees {
     if (_items.isEmpty) return 0;
     final storeIds = _items.map((i) => i.menuItem.storeId).toSet();
     return storeIds.fold(0, (sum, id) {
-      final store = StaticData.stores.firstWhere(
+      final store = _allStores.firstWhere(
         (s) => s.id == id,
-        orElse: () => StaticData.stores.first,
+        orElse: () => _allStores.isNotEmpty ? _allStores.first : Store(
+          id: id,
+          name: 'Store',
+          tagline: 'Best food in town',
+          deliveryTime: '20-30 min',
+          rating: 0,
+          deliveryFee: 0,
+          isOpen: true,
+          accentColor: Colors.orange,
+          image: '',
+        ),
       );
       return sum + store.deliveryFee;
     });

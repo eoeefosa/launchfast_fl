@@ -32,22 +32,22 @@ class Store {
     // accentColor arrives from the backend as a hex string; parse safely using ColorMapper.
     Color parsedColor = const Color(0xFFFF6B2C);
     final colorVal = json['accentColor'];
-    if (colorVal is String) {
+    if (colorVal is String && colorVal.isNotEmpty) {
       parsedColor = Color(ColorMapper.hexToArgb(colorVal));
     }
 
     return Store(
-      id: json['id'],
-      name: json['name'],
-      tagline: json['tagline'],
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      name: json['name'] ?? 'Store',
+      tagline: json['tagline'] ?? json['description'] ?? '',
       accentColor: parsedColor,
-      deliveryTime: json['deliveryTime'],
-      rating: (json['rating'] as num).toDouble(),
-      isOpen: json['isOpen'] ?? false,
+      deliveryTime: json['deliveryTime'] ?? '20-30 min',
+      rating: (json['rating'] as num?)?.toDouble() ?? 5.0,
+      isOpen: json['isOpen'] ?? true,
       adminUsername: json['adminUsername'],
-      deliveryFee: (json['deliveryFee'] as num).toDouble(),
-      image: json['image'],
-      ownerId: json['ownerId'],
+      deliveryFee: (json['deliveryFee'] as num?)?.toDouble() ?? 0.0,
+      image: json['image'] ?? '',
+      ownerId: json['ownerId']?.toString(),
     );
   }
 

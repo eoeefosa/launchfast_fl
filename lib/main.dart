@@ -21,7 +21,18 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => StoreProvider()),
-        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProxyProvider<StoreProvider, CartProvider>(
+          create: (_) => CartProvider(),
+          update: (context, store, cart) {
+            cart!.updatePricing(
+              meatPrices: store.meatPrices,
+              saladPrice: store.saladPrice,
+              allMenuItems: store.menuItems,
+              allStores: store.stores,
+            );
+            return cart;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),

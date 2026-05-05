@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 import '../models/store.dart';
 import '../models/menu_item.dart';
 import '../repositories/menu_repository.dart';
-import '../constants/static_data.dart';
 import '../services/ably_service.dart';
 
 class StoreProvider with ChangeNotifier {
-  List<Store> _stores = StaticData.stores;
-  List<MenuItem> _menuItems = StaticData.menuItems;
+  List<Store> _stores = [];
+  List<MenuItem> _menuItems = [];
   bool _isLoading = false;
   String? _error;
 
@@ -17,9 +16,10 @@ class StoreProvider with ChangeNotifier {
   final _alertController = StreamController<String>.broadcast();
   Stream<String> get alertStream => _alertController.stream;
 
-  // Pricing config — seeded from StaticData, ready for backend-driven values.
-  final Map<String, double> _meatPrices = Map.from(StaticData.meatPrices);
-  final double _saladPrice = StaticData.saladPrice;
+  // Pricing config
+  Map<String, double> _meatPrices = {};
+  double _saladPrice = 0;
+  List<String> _halls = [];
 
   List<Store> get stores => _stores;
   List<MenuItem> get menuItems => _menuItems;
@@ -27,6 +27,7 @@ class StoreProvider with ChangeNotifier {
   String? get error => _error;
   Map<String, double> get meatPrices => _meatPrices;
   double get saladPrice => _saladPrice;
+  List<String> get halls => _halls;
 
   StoreProvider() {
     refreshData();
@@ -53,22 +54,7 @@ class StoreProvider with ChangeNotifier {
         final index = _menuItems.indexWhere((m) => m.id == menuItemId);
         if (index != -1) {
           final oldReady = _menuItems[index].isReady;
-          _menuItems[index] = MenuItem(
-            id: _menuItems[index].id,
-            storeId: _menuItems[index].storeId,
-            name: _menuItems[index].name,
-            description: _menuItems[index].description,
-            price: _menuItems[index].price,
-            category: _menuItems[index].category,
-            image: _menuItems[index].image,
-            popular: _menuItems[index].popular,
-            isPerPortion: _menuItems[index].isPerPortion,
-            isFreeWithSwallow: _menuItems[index].isFreeWithSwallow,
-            prepTimeMinutes: _menuItems[index].prepTimeMinutes,
-            isReady: isReady,
-            calories: _menuItems[index].calories,
-            addonIds: _menuItems[index].addonIds,
-          );
+          _menuItems[index] = _menuItems[index].copyWith(isReady: isReady);
           notifyListeners();
 
           if (oldReady && !isReady) {
@@ -96,9 +82,25 @@ class StoreProvider with ChangeNotifier {
     try {
       final fetchedStores = await locator<MenuRepository>().getStores();
       final fetchedMenu = await locator<MenuRepository>().getMenuItems();
+      final fetchedSettings = await locator<MenuRepository>().getSettings();
 
       _stores = fetchedStores;
       _menuItems = fetchedMenu;
+
+      // Update platform settings
+      if (fetchedSettings['meatPrices'] != null) {
+        _meatPrices = Map<String, double>.from(
+          (fetchedSettings['meatPrices'] as Map).map(
+            (k, v) => MapEntry(k.toString(), (v as num).toDouble()),
+          ),
+        );
+      }
+      if (fetchedSettings['saladPrice'] != null) {
+        _saladPrice = (fetchedSettings['saladPrice'] as num).toDouble();
+      }
+      if (fetchedSettings['halls'] != null) {
+        _halls = List<String>.from(fetchedSettings['halls'] as List);
+      }
     } catch (e) {
       _error = 'Failed to fetch data from API';
       // print('Fetch error: $e');

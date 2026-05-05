@@ -4,7 +4,6 @@ import '../../models/menu_item.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../utils/price_calculator.dart';
-import '../../constants/static_data.dart';
 import '../../screens/store/components/item_detail_options.dart';
 
 class ItemOptionsSheet extends StatefulWidget {
@@ -26,6 +25,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
   String? _selectedSoupId;
   final Map<String, int> _selectedMeats = {'Small': 0, 'Big': 0};
   bool _hasSalad = false;
+  String? _selectedSizeId;
   final Map<String, int> _selectedAddons = {};
 
   @override
@@ -35,14 +35,18 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
 
     final availableSoups = widget.item.category == 'Swallow'
         ? storeProvider.menuItems
-            .where((m) => m.category == 'Soup' && m.storeId == widget.item.storeId)
-            .toList()
+              .where(
+                (m) => m.category == 'Soup' && m.storeId == widget.item.storeId,
+              )
+              .toList()
         : <MenuItem>[];
 
     final availableAddons = widget.item.addonIds != null
         ? widget.item.addonIds!
-            .map((id) => storeProvider.menuItems.firstWhere((m) => m.id == id))
-            .toList()
+              .map(
+                (id) => storeProvider.menuItems.firstWhere((m) => m.id == id),
+              )
+              .toList()
         : <MenuItem>[];
 
     final totalPrice = PriceCalculator.computeTotal(
@@ -56,6 +60,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
       availableAddons: availableAddons,
       meatPrices: storeProvider.meatPrices,
       saladPrice: storeProvider.saladPrice,
+      selectedSizeId: _selectedSizeId,
     );
 
     return Container(
@@ -87,7 +92,9 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                       widget.item.description,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -99,7 +106,9 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.close_rounded),
                 style: IconButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.05),
                 ),
               ),
             ],
@@ -110,22 +119,44 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (widget.item.sizes.isNotEmpty) ...[
+                    ItemDetailOptionsSection(
+                      title: 'Select Size',
+                      subtitle: 'Required',
+                      children: widget.item.sizes.map((size) {
+                        return ListTile(
+                          title: Text(size.name),
+                          trailing: Text('₦${size.price.toStringAsFixed(0)}'),
+                          leading: Radio<String>(
+                            value: size.id,
+                            groupValue: _selectedSizeId ?? (widget.item.sizes.isNotEmpty ? widget.item.sizes.first.id : null),
+                            onChanged: (val) => setState(() => _selectedSizeId = val),
+                            activeColor: widget.accentColor,
+                          ),
+                          onTap: () => setState(() => _selectedSizeId = size.id),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   ItemDetailOptionsSection(
                     title: 'Add Meat',
                     children: [
                       ItemDetailMeatOption(
                         type: 'Small',
-                        price: StaticData.meatPrices['Small']!,
+                        price: storeProvider.meatPrices['Small']!,
                         count: _selectedMeats['Small']!,
                         accentColor: widget.accentColor,
-                        onChanged: (c) => setState(() => _selectedMeats['Small'] = c),
+                        onChanged: (c) =>
+                            setState(() => _selectedMeats['Small'] = c),
                       ),
                       ItemDetailMeatOption(
                         type: 'Big',
-                        price: StaticData.meatPrices['Big']!,
+                        price: storeProvider.meatPrices['Big']!,
                         count: _selectedMeats['Big']!,
                         accentColor: widget.accentColor,
-                        onChanged: (c) => setState(() => _selectedMeats['Big'] = c),
+                        onChanged: (c) =>
+                            setState(() => _selectedMeats['Big'] = c),
                       ),
                     ],
                   ),
@@ -139,19 +170,22 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                               addon: addon,
                               count: _selectedAddons[addon.id] ?? 0,
                               accentColor: widget.accentColor,
-                              onChanged: (c) => setState(() => _selectedAddons[addon.id] = c),
+                              onChanged: (c) =>
+                                  setState(() => _selectedAddons[addon.id] = c),
                             ),
                           )
                           .toList(),
                     ),
                   ],
-                  if (widget.item.category == 'Rice' || widget.item.name == 'Moi Moi') ...[
+                  if (widget.item.category == 'Rice' ||
+                      widget.item.name == 'Moi Moi') ...[
                     const SizedBox(height: 24),
                     ItemDetailOptionsSection(
                       title: 'Extras',
                       children: [
                         ItemDetailSaladOption(
                           hasSalad: _hasSalad,
+                          price: storeProvider.saladPrice,
                           accentColor: widget.accentColor,
                           onChanged: (val) => setState(() => _hasSalad = val),
                         ),
@@ -169,7 +203,8 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                               soup: soup,
                               isSelected: _selectedSoupId == soup.id,
                               accentColor: widget.accentColor,
-                              onTap: () => setState(() => _selectedSoupId = soup.id),
+                              onTap: () =>
+                                  setState(() => _selectedSoupId = soup.id),
                             ),
                           )
                           .toList(),
@@ -187,15 +222,21 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
               const SizedBox(width: 16),
               Expanded(
                 child: FilledButton(
-                  onPressed: () => _handleAddToCart(cartProvider, storeProvider),
+                  onPressed: () =>
+                      _handleAddToCart(cartProvider, storeProvider),
                   style: FilledButton.styleFrom(
                     backgroundColor: widget.accentColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   child: Text(
                     'Add to Cart • ₦${totalPrice.toStringAsFixed(0)}',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ),
@@ -231,7 +272,10 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
     );
   }
 
-  void _handleAddToCart(CartProvider cartProvider, StoreProvider storeProvider) {
+  void _handleAddToCart(
+    CartProvider cartProvider,
+    StoreProvider storeProvider,
+  ) {
     if (widget.item.category == 'Swallow' && _selectedSoupId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a soup first')),
@@ -249,13 +293,15 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
 
     if (success) {
       if (_selectedSoupId != null) {
-        final soup = storeProvider.menuItems.firstWhere((m) => m.id == _selectedSoupId);
+        final soup = storeProvider.menuItems.firstWhere(
+          (m) => m.id == _selectedSoupId,
+        );
         cartProvider.addToCart(item: soup, quantity: _quantity);
       }
       Navigator.pop(context);
     } else {
-      // Logic for different store would go here, 
-      // but for simplicity in the sheet we can just show a message 
+      // Logic for different store would go here,
+      // but for simplicity in the sheet we can just show a message
       // or let the HomeScreen handle the dialog.
       Navigator.pop(context, 'CLEAR_REQUIRED');
     }

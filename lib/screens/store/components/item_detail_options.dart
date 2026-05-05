@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../models/menu_item.dart';
-import '../../../constants/static_data.dart';
 
 // ─────────────────────────────────────────────
 //  Options section wrapper
@@ -299,12 +298,14 @@ class ItemDetailAddonOption extends StatelessWidget {
 
 class ItemDetailSaladOption extends StatelessWidget {
   final bool hasSalad;
+  final double price;
   final Color accentColor;
   final ValueChanged<bool> onChanged;
 
   const ItemDetailSaladOption({
     super.key,
     required this.hasSalad,
+    required this.price,
     required this.accentColor,
     required this.onChanged,
   });
@@ -313,7 +314,7 @@ class ItemDetailSaladOption extends StatelessWidget {
   Widget build(BuildContext context) {
     return ItemDetailSelectionCard(
       title: 'Fresh Salad',
-      subtitle: '+₦${StaticData.saladPrice.toStringAsFixed(2)}',
+      subtitle: '+₦${price.toStringAsFixed(2)}',
       isSelected: hasSalad,
       onTap: () => onChanged(!hasSalad),
       trailing: ItemDetailAnimatedCheckbox(

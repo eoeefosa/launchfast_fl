@@ -1,10 +1,10 @@
 import 'dart:io';
+import 'package:campuschow/providers/store_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../constants/static_data.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 
 class EmptyCartView extends StatelessWidget {
   const EmptyCartView({super.key});
@@ -79,72 +79,93 @@ class EmptyCartView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                height: 180,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: StaticData.stores.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 16),
-                  itemBuilder: (context, index) {
-                    final store = StaticData.stores[index];
-                    return GestureDetector(
-                      onTap: () => context.push('/store/${store.id}'),
-                      child: Container(
-                        width: 220,
-                        decoration: BoxDecoration(
-                          color: scheme.surface,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: scheme.onSurface.withValues(alpha: 0.05),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(24),
-                                ),
-                                child: CachedNetworkImage(
-                                  imageUrl: store.image,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
+              Consumer<StoreProvider>(
+                builder: (context, storeProvider, _) {
+                  final stores = storeProvider.stores;
+                  if (stores.isEmpty) return const SizedBox.shrink();
+
+                  return SizedBox(
+                    height: 180,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: stores.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 16),
+                      itemBuilder: (context, index) {
+                        final store = stores[index];
+                        return GestureDetector(
+                          onTap: () => context.push('/store/${store.id}'),
+                          child: Container(
+                            width: 220,
+                            decoration: BoxDecoration(
+                              color: scheme.surface,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: scheme.onSurface.withValues(alpha: 0.05),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    store.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    store.tagline,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: scheme.onSurface.withValues(
-                                        alpha: 0.5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(24),
+                                      ),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          store.accentColor,
+                                          store.accentColor.withValues(alpha: 0.8),
+                                        ],
                                       ),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.storefront_rounded,
+                                        size: 48,
+                                        color: Colors.white.withValues(alpha: 0.2),
+                                      ),
+                                    ),
                                   ),
-                                ],
-                              ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        store.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        store.tagline,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: scheme.onSurface.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
               ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1),
               const SizedBox(height: 32),
             ],

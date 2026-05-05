@@ -173,6 +173,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               selectedAddons: _selectedAddons,
               hasSalad: _hasSalad,
               selectedSoupId: _selectedSoupId,
+              meatPrices: storeProvider.meatPrices,
+              saladPrice: storeProvider.saladPrice,
               isDark: isDark,
               onMeatChanged: (type, count) =>
                   setState(() => _selectedMeats[type] = count),

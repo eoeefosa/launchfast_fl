@@ -4,6 +4,7 @@ import 'services/ably_service.dart';
 import 'repositories/auth_repository.dart';
 import 'repositories/menu_repository.dart';
 import 'repositories/order_repository.dart';
+import 'repositories/location_repository.dart';
 
 final locator = GetIt.instance;
 
@@ -15,4 +16,5 @@ void setupLocator() {
   locator.registerLazySingleton<AuthRepository>(() => AuthRepository());
   locator.registerLazySingleton<MenuRepository>(() => MenuRepository());
   locator.registerLazySingleton<OrderRepository>(() => OrderRepository());
+  locator.registerLazySingleton<LocationRepository>(() => LocationRepository());
 }

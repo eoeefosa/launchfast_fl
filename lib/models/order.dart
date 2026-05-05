@@ -1,5 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
+import 'package:campuschow/models/rider.dart';
+
 import 'cart_item.dart';
 import 'user.dart';
 import 'store.dart';
@@ -89,6 +91,7 @@ class Order {
   final List<Store> stores;
   final bool isPriority;
   final String? riderId;
+  final Rider? rider;
 
   Order({
     required this.id,
@@ -107,6 +110,7 @@ class Order {
     required this.stores,
     required this.isPriority,
     this.riderId,
+    this.rider,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -150,7 +154,10 @@ class Order {
               .toList() ??
           [],
       isPriority: json['isPriority'] ?? false,
-      riderId: json['riderId']?.toString(),
+      riderId: json['riderId'] is Map ? json['riderId']['id']?.toString() : json['riderId']?.toString(),
+      rider: json['rider'] != null 
+          ? Rider.fromJson(json['rider']) 
+          : (json['riderId'] is Map ? Rider.fromJson(json['riderId']) : null),
     );
   }
 

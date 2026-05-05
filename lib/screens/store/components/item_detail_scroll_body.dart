@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../models/menu_item.dart';
-import '../../../constants/static_data.dart';
 import 'item_detail_hero.dart';
 import 'item_detail_header.dart';
 import 'item_detail_options.dart';
@@ -25,6 +24,8 @@ class ItemDetailScrollBody extends StatelessWidget {
   final Map<String, int> selectedAddons;
   final bool hasSalad;
   final String? selectedSoupId;
+  final Map<String, double> meatPrices;
+  final double saladPrice;
   final bool isDark;
 
   final void Function(String type, int count) onMeatChanged;
@@ -47,6 +48,8 @@ class ItemDetailScrollBody extends StatelessWidget {
     required this.selectedAddons,
     required this.hasSalad,
     required this.selectedSoupId,
+    required this.meatPrices,
+    required this.saladPrice,
     required this.isDark,
     required this.onMeatChanged,
     required this.onAddonChanged,
@@ -83,14 +86,14 @@ class ItemDetailScrollBody extends StatelessWidget {
                       children: [
                         ItemDetailMeatOption(
                           type: 'Small',
-                          price: StaticData.meatPrices['Small']!,
+                          price: meatPrices['Small']!,
                           count: selectedMeats['Small']!,
                           accentColor: accentColor,
                           onChanged: (c) => onMeatChanged('Small', c),
                         ),
                         ItemDetailMeatOption(
                           type: 'Big',
-                          price: StaticData.meatPrices['Big']!,
+                          price: meatPrices['Big']!,
                           count: selectedMeats['Big']!,
                           accentColor: accentColor,
                           onChanged: (c) => onMeatChanged('Big', c),
@@ -120,6 +123,7 @@ class ItemDetailScrollBody extends StatelessWidget {
                         children: [
                           ItemDetailSaladOption(
                             hasSalad: hasSalad,
+                            price: saladPrice,
                             accentColor: accentColor,
                             onChanged: onSaladChanged,
                           ),
