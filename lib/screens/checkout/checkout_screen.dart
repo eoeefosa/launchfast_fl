@@ -26,9 +26,9 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  DeliveryType _deliveryType = DeliveryType.bulk;
+  DeliveryType _deliveryType = DeliveryType.priority;
   bool _isSuccess = false;
-  String _paymentMethod = 'Wallet';
+  String _paymentMethod = 'Paystack';
 
   // Guest checkout related state
   bool _isGuestCheckout = false;
@@ -271,8 +271,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return Icons.bolt_rounded;
       case DeliveryType.pickup:
         return Icons.store_rounded;
-      case DeliveryType.bulk:
-        return Icons.local_shipping_rounded;
     }
   }
 
@@ -478,12 +476,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       if (success != null) {
         HapticFeedback.heavyImpact();
-        
+
         if (_paymentMethod == 'Paystack') {
           try {
-            final paymentData = await orderProvider.initializePayment(success.id, 'Card');
+            final paymentData = await orderProvider.initializePayment(
+              success.id,
+              'Card',
+            );
             final authorizationUrl = paymentData['authorization_url'];
-            
+
             if (authorizationUrl != null) {
               final uri = Uri.parse(authorizationUrl);
               if (await canLaunchUrl(uri)) {
@@ -493,18 +494,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 return;
               }
             } else {
-              _showErrorDialog('Payment initialization failed. Please try again.');
+              _showErrorDialog(
+                'Payment initialization failed. Please try again.',
+              );
               return;
             }
           } catch (e) {
-            _showErrorDialog('Could not initialize payment. Please check your connection.');
+            _showErrorDialog(
+              'Could not initialize payment. Please check your connection.',
+            );
             return;
           }
         } else if (_paymentMethod == 'Wallet') {
           // If wallet was used the backend already deducted; refresh local balance.
           await auth.refreshUser();
         }
-        
+
         cart.clearCart();
         setState(() => _isSuccess = true);
       } else {

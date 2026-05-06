@@ -14,13 +14,15 @@ class DeliveryTypeSheet extends StatelessWidget {
     required this.onTypeSelected,
   });
 
-  static void show(BuildContext context, DeliveryType current, ValueChanged<DeliveryType> onSelected) {
+  static void show(
+    BuildContext context,
+    DeliveryType current,
+    ValueChanged<DeliveryType> onSelected,
+  ) {
     showDialog(
       context: context,
-      builder: (context) => DeliveryTypeSheet(
-        currentType: current,
-        onTypeSelected: onSelected,
-      ),
+      builder: (context) =>
+          DeliveryTypeSheet(currentType: current, onTypeSelected: onSelected),
     );
   }
 
@@ -29,14 +31,21 @@ class DeliveryTypeSheet extends StatelessWidget {
     return SelectionDialog(
       title: 'Delivery Type',
       options: [
-        _option(context, DeliveryType.bulk, '₦300 • Wait for nearby packages'),
-        _option(context, DeliveryType.priority, '₦1,300 • Processed immediately'),
+        _option(
+          context,
+          DeliveryType.priority,
+          '₦1,300 • Processed immediately',
+        ),
         _option(context, DeliveryType.pickup, 'FREE • Collect from the store'),
       ],
     );
   }
 
-  SelectionOption _option(BuildContext context, DeliveryType type, String subtitle) {
+  SelectionOption _option(
+    BuildContext context,
+    DeliveryType type,
+    String subtitle,
+  ) {
     return SelectionOption(
       title: type.label,
       subtitle: subtitle,
@@ -56,8 +65,6 @@ class DeliveryTypeSheet extends StatelessWidget {
         return Icons.bolt_rounded;
       case DeliveryType.pickup:
         return Icons.store_rounded;
-      case DeliveryType.bulk:
-        return Icons.local_shipping_rounded;
     }
   }
 }

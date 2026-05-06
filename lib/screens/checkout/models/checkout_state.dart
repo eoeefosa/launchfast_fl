@@ -6,8 +6,8 @@ class CheckoutState {
   final bool isSuccess;
 
   CheckoutState({
-    this.deliveryType = DeliveryType.bulk,
-    this.paymentMethod = 'Wallet',
+    this.deliveryType = DeliveryType.priority,
+    this.paymentMethod = 'Paystack',
     this.isSuccess = false,
   });
 

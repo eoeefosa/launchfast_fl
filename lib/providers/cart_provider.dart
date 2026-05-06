@@ -9,7 +9,7 @@ import '../utils/price_calculator.dart';
 // ── Delivery pricing constants ─────────────────────────────────────────────────
 // Centralised here so CheckoutScreen only reads state; it never calculates fees.
 
-enum DeliveryType { bulk, priority, pickup }
+enum DeliveryType { priority, pickup }
 
 extension DeliveryTypeX on DeliveryType {
   static DeliveryType fromString(String value) {
@@ -19,7 +19,7 @@ extension DeliveryTypeX on DeliveryType {
       case 'pickup':
         return DeliveryType.pickup;
       default:
-        return DeliveryType.bulk;
+        return DeliveryType.priority;
     }
   }
 
@@ -29,8 +29,6 @@ extension DeliveryTypeX on DeliveryType {
         return 1300;
       case DeliveryType.pickup:
         return 0;
-      case DeliveryType.bulk:
-        return 300;
     }
   }
 
@@ -40,8 +38,6 @@ extension DeliveryTypeX on DeliveryType {
         return 'Priority Delivery';
       case DeliveryType.pickup:
         return 'Pick Up';
-      case DeliveryType.bulk:
-        return 'Bulk Delivery';
     }
   }
 
@@ -51,8 +47,6 @@ extension DeliveryTypeX on DeliveryType {
         return '₦1,300';
       case DeliveryType.pickup:
         return 'FREE';
-      case DeliveryType.bulk:
-        return '₦300';
     }
   }
 }
@@ -198,7 +192,7 @@ class CartProvider with ChangeNotifier {
   }) {
     final index = _items.indexWhere(
       (i) => i.sameSlotAs(
-        menuItemId: itemId, 
+        menuItemId: itemId,
         selectedMeats: selectedMeats,
         selectedSizeId: selectedSizeId,
       ),
@@ -313,17 +307,19 @@ class CartProvider with ChangeNotifier {
     return storeIds.fold(0, (sum, id) {
       final store = _allStores.firstWhere(
         (s) => s.id == id,
-        orElse: () => _allStores.isNotEmpty ? _allStores.first : Store(
-          id: id,
-          name: 'Store',
-          tagline: 'Best food in town',
-          deliveryTime: '20-30 min',
-          rating: 0,
-          deliveryFee: 0,
-          isOpen: true,
-          accentColor: Colors.orange,
-          image: '',
-        ),
+        orElse: () => _allStores.isNotEmpty
+            ? _allStores.first
+            : Store(
+                id: id,
+                name: 'Store',
+                tagline: 'Best food in town',
+                deliveryTime: '20-30 min',
+                rating: 0,
+                deliveryFee: 0,
+                isOpen: true,
+                accentColor: Colors.orange,
+                image: '',
+              ),
       );
       return sum + store.deliveryFee;
     });
