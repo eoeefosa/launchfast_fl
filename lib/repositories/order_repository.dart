@@ -81,12 +81,13 @@ class OrderRepository {
     return (response.data as List).map((i) => Order.fromJson(i)).toList();
   }
 
-  Future<Map<String, dynamic>> initializePayment(String orderId, String method) async {
+  Future<Map<String, dynamic>> initializePayment(String orderId, String method, {String? email}) async {
     final response = await apiService.dio.post(
       '/payments/initialize',
       data: {
         'orderId': orderId,
         'method': method,
+        if (email != null) 'email': email,
       },
     );
     if (response.data is! Map) {

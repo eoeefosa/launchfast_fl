@@ -133,13 +133,13 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> initializePayment(String orderId, String method) async {
-    debugPrint('[OrderProvider] initializePayment: initiating — orderId=$orderId, method=$method');
+  Future<Map<String, dynamic>> initializePayment(String orderId, String method, {String? email}) async {
+    debugPrint('[OrderProvider] initializePayment: initiating — orderId=$orderId, method=$method, email=$email');
     _isLoading = true;
     notifyListeners();
 
     try {
-      final response = await locator<OrderRepository>().initializePayment(orderId, method);
+      final response = await locator<OrderRepository>().initializePayment(orderId, method, email: email);
       _error = null;
       debugPrint('[OrderProvider] initializePayment: success — $response');
       return response;

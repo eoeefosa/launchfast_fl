@@ -449,7 +449,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'items': cart.items
             .map(
               (i) => {
-                'menuItem': {'id': i.menuItem.id},
+                'menuItemId': i.menuItem.id,
+                'menuItem': {'id': i.menuItem.id, 'name': i.menuItem.name, 'price': i.menuItem.price},
                 'quantity': i.quantity,
                 'extras': i.extras,
                 'selectedMeats': i.selectedMeats,
@@ -459,14 +460,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             )
             .toList(),
         'subtotal': subtotal,
-        'deliveryType': _deliveryType.name, // 'bulk' | 'priority' | 'pickup'
+        'deliveryType': _deliveryType.name,
         'paymentMethod': _paymentMethod,
-        // Use userId if authenticated, otherwise use guest details
         'userId': auth.user?.id,
-        'guestName': !auth.isAuthenticated ? auth.guestName : null,
-        'guestPhone': !auth.isAuthenticated ? auth.guestPhone : null,
-        'deliveryAddress':
-            auth.currentAddress, // This will be guestAddress or user's address
+        'customerDetails': {
+          'name': auth.isAuthenticated
+              ? (auth.user?.name ?? '')
+              : (auth.guestName ?? ''),
+          'phone': auth.isAuthenticated
+              ? (auth.user?.phone ?? '')
+              : (auth.guestPhone ?? ''),
+          'email': auth.isAuthenticated
+              ? (auth.user?.email ?? 'user@campuschow.com')
+              : 'guest@campuschow.com',
+          'address': auth.currentAddress ?? '',
+        },
+        'deliveryAddress': auth.currentAddress,
         'stores': cart.items.map((i) => i.menuItem.storeId).toSet().toList(),
       };
 
@@ -479,9 +488,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
         if (_paymentMethod == 'Paystack') {
           try {
+            final customerEmail = auth.isAuthenticated
+                ? (auth.user?.email ?? 'user@campuschow.com')
+                : 'guest@campuschow.com';
             final paymentData = await orderProvider.initializePayment(
               success.id,
               'Card',
+              email: customerEmail,
             );
             final authorizationUrl = paymentData['authorization_url'];
 
