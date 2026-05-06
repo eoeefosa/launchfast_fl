@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../providers/auth_provider.dart';
+import '../../../../services/api_service.dart';
 import '../../../auth/widgets/custom_button.dart';
 import '../widgets/bottom_sheet_scaffold.dart';
 
@@ -15,6 +17,7 @@ class TopUpSheet extends StatefulWidget {
 class _TopUpSheetState extends State<TopUpSheet> {
   final _amountCtrl = TextEditingController();
   static const _quickAmounts = [1000, 2000, 5000];
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -22,22 +25,57 @@ class _TopUpSheetState extends State<TopUpSheet> {
     super.dispose();
   }
 
-  void _deposit() {
+  Future<void> _deposit() async {
     final amt = double.tryParse(_amountCtrl.text);
-    if (amt == null || amt <= 0) return;
-    widget.auth.topUpWallet(amt);
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '₦${amt.toStringAsFixed(0)} added to wallet!',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.green,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+    if (amt == null || amt <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid amount')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Initialize Paystack top-up transaction
+      final response = await apiService.dio.post(
+        '/payments/topup',
+        data: {'amount': amt},
+      );
+
+      final data = response.data;
+      // Paystack wraps result in a 'data' key
+      final paystackData = data['data'] as Map<String, dynamic>?;
+      final authorizationUrl = paystackData?['authorization_url'] as String?;
+
+      if (authorizationUrl == null) {
+        throw Exception('No authorization URL returned from server');
+      }
+
+      final uri = Uri.parse(authorizationUrl);
+      if (await canLaunchUrl(uri)) {
+        if (mounted) Navigator.pop(context); // close sheet before opening browser
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+        // After returning from browser, refresh user balance
+        await widget.auth.refreshUser();
+      } else {
+        throw Exception('Could not open payment portal');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment failed: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -83,8 +121,9 @@ class _TopUpSheetState extends State<TopUpSheet> {
               ),
               contentPadding: const EdgeInsets.all(24),
             ),
-            keyboardType: TextInputType.number,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             autofocus: true,
+            onChanged: (_) => setState(() {}), // rebuild to update chip border
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w900,
@@ -103,7 +142,8 @@ class _TopUpSheetState extends State<TopUpSheet> {
                         color: scheme.onSurface.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(16),
                         child: InkWell(
-                          onTap: () => setState(() => _amountCtrl.text = amt.toString()),
+                          onTap: () =>
+                              setState(() => _amountCtrl.text = amt.toString()),
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -135,12 +175,30 @@ class _TopUpSheetState extends State<TopUpSheet> {
                 )
                 .toList(),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              children: [
+                Icon(Icons.lock_outline_rounded, size: 14, color: scheme.onSurface.withValues(alpha: 0.4)),
+                const SizedBox(width: 6),
+                Text(
+                  'Secured by Paystack',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: scheme.onSurface.withValues(alpha: 0.4),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
           CustomButton(
-            isLoading: widget.auth.isLoading,
-            label: 'Deposit Now',
+            isLoading: _isLoading,
+            label: 'Deposit via Paystack',
             primaryColor: scheme.primary,
-            onPressed: widget.auth.isLoading ? null : _deposit,
+            onPressed: _isLoading ? null : _deposit,
           ),
         ],
       ),

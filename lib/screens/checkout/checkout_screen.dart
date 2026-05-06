@@ -496,7 +496,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               'Card',
               email: customerEmail,
             );
-            final authorizationUrl = paymentData['authorization_url'];
+            // Paystack wraps the result in a nested 'data' object
+            final paystackData = paymentData['data'] as Map<String, dynamic>?;
+            final authorizationUrl = paystackData?['authorization_url'] as String?;
 
             if (authorizationUrl != null) {
               final uri = Uri.parse(authorizationUrl);
