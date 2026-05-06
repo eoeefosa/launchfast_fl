@@ -9,12 +9,7 @@ class WalletCard extends StatelessWidget {
   final AuthProvider auth;
 
   void _showTopUpModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => TopUpSheet(auth: auth),
-    );
+    TopUpSheet.show(context, auth);
   }
 
   @override

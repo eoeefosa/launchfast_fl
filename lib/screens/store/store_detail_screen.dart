@@ -40,7 +40,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Store Closed', style: TextStyle(fontWeight: FontWeight.w900)),
         content: const Text(
           'This store just closed and is no longer accepting orders. You can still browse the menu, but items cannot be added to your cart.',

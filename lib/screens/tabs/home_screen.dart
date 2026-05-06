@@ -341,10 +341,14 @@ class _HomeScreenState extends State<HomeScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
           ),
-          title: const Text('Start new order?'),
+          title: const Text(
+            'Start new order?',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
           content: const Text(
             'Your cart contains items from another store. Clear cart and add this item?',
           ),

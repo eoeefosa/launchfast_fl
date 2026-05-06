@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../services/api_service.dart';
 import '../../../auth/widgets/custom_button.dart';
-import '../widgets/bottom_sheet_scaffold.dart';
 
 class TopUpSheet extends StatefulWidget {
   const TopUpSheet({super.key, required this.auth});
 
   final AuthProvider auth;
+
+  static Future<void> show(BuildContext context, AuthProvider auth) {
+    return showDialog(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (_) => TopUpSheet(auth: auth),
+    );
+  }
 
   @override
   State<TopUpSheet> createState() => _TopUpSheetState();
@@ -37,14 +45,12 @@ class _TopUpSheetState extends State<TopUpSheet> {
     setState(() => _isLoading = true);
 
     try {
-      // Initialize Paystack top-up transaction
       final response = await apiService.dio.post(
         '/payments/topup',
         data: {'amount': amt},
       );
 
       final data = response.data;
-      // Paystack wraps result in a 'data' key
       final paystackData = data['data'] as Map<String, dynamic>?;
       final authorizationUrl = paystackData?['authorization_url'] as String?;
 
@@ -54,10 +60,8 @@ class _TopUpSheetState extends State<TopUpSheet> {
 
       final uri = Uri.parse(authorizationUrl);
       if (await canLaunchUrl(uri)) {
-        if (mounted) Navigator.pop(context); // close sheet before opening browser
+        if (mounted) Navigator.pop(context);
         await launchUrl(uri, mode: LaunchMode.externalApplication);
-
-        // After returning from browser, refresh user balance
         await widget.auth.refreshUser();
       } else {
         throw Exception('Could not open payment portal');
@@ -66,10 +70,14 @@ class _TopUpSheetState extends State<TopUpSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Payment failed: ${e.toString().replaceAll('Exception: ', '')}'),
+            content: Text(
+              'Payment failed: ${e.toString().replaceAll('Exception: ', '')}',
+            ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -82,126 +90,197 @@ class _TopUpSheetState extends State<TopUpSheet> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return BottomSheetScaffold(
-      title: 'Top Up Wallet',
-      child: Column(
-        children: [
-          TextField(
-            controller: _amountCtrl,
-            decoration: InputDecoration(
-              labelText: 'Enter Amount',
-              labelStyle: TextStyle(
-                color: scheme.onSurface.withValues(alpha: 0.5),
-                fontWeight: FontWeight.w500,
-              ),
-              floatingLabelStyle: TextStyle(
-                color: scheme.primary,
-                fontWeight: FontWeight.w700,
-              ),
-              hintText: '0',
-              prefixText: '₦ ',
-              prefixStyle: TextStyle(
-                color: scheme.primary,
-                fontWeight: FontWeight.w900,
-                fontSize: 24,
-              ),
-              filled: true,
-              fillColor: scheme.onSurface.withValues(alpha: 0.05),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide(color: scheme.primary, width: 2),
-              ),
-              contentPadding: const EdgeInsets.all(24),
-            ),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            autofocus: true,
-            onChanged: (_) => setState(() {}), // rebuild to update chip border
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w900,
-              color: scheme.onSurface,
-              letterSpacing: -1,
-            ),
+    return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
           ),
-          const SizedBox(height: 24),
-          Row(
-            children: _quickAmounts
-                .map(
-                  (amt) => Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Material(
-                        color: scheme.onSurface.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(16),
-                        child: InkWell(
-                          onTap: () =>
-                              setState(() => _amountCtrl.text = amt.toString()),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: _amountCtrl.text == amt.toString()
-                                    ? scheme.primary
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '₦$amt',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  color: _amountCtrl.text == amt.toString()
-                                      ? scheme.primary
-                                      : scheme.onSurface.withValues(alpha: 0.7),
-                                ),
-                              ),
-                            ),
-                          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Top Up Wallet',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          size: 20,
+                          color: Colors.black87,
                         ),
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Amount input
+                TextField(
+                  controller: _amountCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Enter Amount',
+                    labelStyle: const TextStyle(
+                      color: Colors.black45,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    floatingLabelStyle: TextStyle(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    hintText: '0',
+                    prefixText: '₦ ',
+                    prefixStyle: TextStyle(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 24,
+                    ),
+                    filled: true,
+                    fillColor: Colors.black.withValues(alpha: 0.04),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(color: scheme.primary, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.all(20),
                   ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              children: [
-                Icon(Icons.lock_outline_rounded, size: 14, color: scheme.onSurface.withValues(alpha: 0.4)),
-                const SizedBox(width: 6),
-                Text(
-                  'Secured by Paystack',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: scheme.onSurface.withValues(alpha: 0.4),
-                    fontWeight: FontWeight.w500,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
                   ),
+                  autofocus: true,
+                  onChanged: (_) => setState(() {}),
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                    letterSpacing: -1,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Quick amount chips
+                Row(
+                  children:
+                      _quickAmounts
+                          .map(
+                            (amt) => Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                child: GestureDetector(
+                                  onTap: () => setState(
+                                    () => _amountCtrl.text = amt.toString(),
+                                  ),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          _amountCtrl.text == amt.toString()
+                                              ? scheme.primary.withValues(
+                                                alpha: 0.1,
+                                              )
+                                              : Colors.black.withValues(
+                                                alpha: 0.04,
+                                              ),
+                                      border: Border.all(
+                                        color:
+                                            _amountCtrl.text == amt.toString()
+                                                ? scheme.primary
+                                                : Colors.transparent,
+                                        width: 2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '₦$amt',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 13,
+                                          color:
+                                              _amountCtrl.text == amt.toString()
+                                                  ? scheme.primary
+                                                  : Colors.black54,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                ),
+                const SizedBox(height: 12),
+
+                // Security badge
+                Row(
+                  children: [
+                    Icon(
+                      Icons.lock_outline_rounded,
+                      size: 13,
+                      color: Colors.black38,
+                    ),
+                    const SizedBox(width: 5),
+                    const Text(
+                      'Secured by Paystack',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.black38,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Deposit button
+                CustomButton(
+                  isLoading: _isLoading,
+                  label: 'Deposit via Paystack',
+                  primaryColor: scheme.primary,
+                  onPressed: _isLoading ? null : _deposit,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 28),
-          CustomButton(
-            isLoading: _isLoading,
-            label: 'Deposit via Paystack',
-            primaryColor: scheme.primary,
-            onPressed: _isLoading ? null : _deposit,
-          ),
-        ],
-      ),
-    );
+        )
+        .animate()
+        .fadeIn(duration: 180.ms)
+        .scale(begin: const Offset(0.95, 0.95), curve: Curves.easeOutBack);
   }
 }

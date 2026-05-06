@@ -75,7 +75,14 @@ class LogoutButton extends StatelessWidget {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Sign Out'),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: const Text(
+            'Sign Out',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
           content: const Text('Are you sure you want to sign out?'),
           actions: [
             TextButton(

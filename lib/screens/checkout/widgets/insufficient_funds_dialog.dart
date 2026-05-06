@@ -28,7 +28,7 @@ class InsufficientFundsDialog extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(28),
             ),
             child: Column(
@@ -95,11 +95,9 @@ class InsufficientFundsDialog extends StatelessWidget {
                     ),
                     onPressed: () async {
                       Navigator.pop(context);
-                      await showModalBottomSheet<bool>(
-                        context: screenContext,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => TopUpSheet(initialAmount: shortfall),
+                      await TopUpSheet.show(
+                        screenContext,
+                        initialAmount: shortfall,
                       );
                     },
                     child: const Text(

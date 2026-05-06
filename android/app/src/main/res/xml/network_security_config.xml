@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network Security Configuration for release builds.
+  - Enforces HTTPS for all connections (no cleartext HTTP).
+  - Trusts system CA store (no custom certificates needed for Vercel/Paystack).
+  - Prevents cleartext traffic to all domains in release.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust system CAs (Vercel, Paystack, Firebase all use valid certs) -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Allow debug builds to connect to local dev servers -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>
