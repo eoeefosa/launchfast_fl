@@ -125,6 +125,7 @@ class CartProvider with ChangeNotifier {
     bool hasSalad = false,
     Map<String, int>? selectedAddons,
     String? selectedSizeId,
+    Map<String, dynamic>? selectedSoup,
   }) {
     if (currentStoreId != null && currentStoreId != item.storeId) {
       return false;
@@ -137,6 +138,7 @@ class CartProvider with ChangeNotifier {
         hasSalad: hasSalad,
         selectedAddons: selectedAddons,
         selectedSizeId: selectedSizeId,
+        selectedSoupId: selectedSoup?['id'] as String?,
       ),
     );
 
@@ -152,6 +154,7 @@ class CartProvider with ChangeNotifier {
           hasSalad: hasSalad,
           selectedAddons: selectedAddons,
           selectedSizeId: selectedSizeId,
+          selectedSoup: selectedSoup,
         ),
       );
     }
@@ -168,6 +171,7 @@ class CartProvider with ChangeNotifier {
     bool hasSalad = false,
     Map<String, int>? selectedAddons,
     String? selectedSizeId,
+    Map<String, dynamic>? selectedSoup,
   }) {
     _items = [
       CartItem(
@@ -178,6 +182,7 @@ class CartProvider with ChangeNotifier {
         hasSalad: hasSalad,
         selectedAddons: selectedAddons,
         selectedSizeId: selectedSizeId,
+        selectedSoup: selectedSoup,
       ),
     ];
     _saveCart();
@@ -262,7 +267,7 @@ class CartProvider with ChangeNotifier {
     required double saladPrice,
     required List<MenuItem> allMenuItems,
   }) {
-    double total = _items.fold(
+    return _items.fold(
       0,
       (sum, item) =>
           sum +
@@ -273,25 +278,6 @@ class CartProvider with ChangeNotifier {
             allMenuItems: allMenuItems,
           ),
     );
-
-    final swallowCount = _items
-        .where((i) => i.menuItem.category == 'Swallow')
-        .fold(0, (sum, i) => sum + i.quantity);
-    final freeEligibleSoups =
-        _items
-            .where((i) => i.menuItem.isFreeWithSwallow)
-            .expand((i) => List.filled(i.quantity, i.menuItem.price))
-            .toList()
-          ..sort((a, b) => b.compareTo(a));
-
-    final discountCount = swallowCount < freeEligibleSoups.length
-        ? swallowCount
-        : freeEligibleSoups.length;
-    final discount = freeEligibleSoups
-        .take(discountCount)
-        .fold(0.0, (sum, price) => sum + price);
-
-    return total - discount;
   }
 
   /// Convenience getter that uses updated local pricing.

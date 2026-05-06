@@ -516,6 +516,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 'selectedMeats': i.selectedMeats,
                 'hasSalad': i.hasSalad,
                 'selectedAddons': i.selectedAddons,
+                if (i.selectedSoup != null) 'selectedSoup': i.selectedSoup,
               },
             )
             .toList(),

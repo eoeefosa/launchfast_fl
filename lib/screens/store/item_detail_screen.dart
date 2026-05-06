@@ -225,9 +225,24 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     MenuItem item,
     StoreProvider storeProvider,
   ) {
-    if (item.category == 'Swallow' && _selectedSoupId == null) {
+    // Guard: soup required for this swallow
+    if (item.requiresSoupSelection && _selectedSoupId == null) {
       _showSnack(context, 'Please select a soup first');
       return;
+    }
+
+    // Build the selectedSoup payload if a soup was chosen
+    Map<String, dynamic>? soupPayload;
+    if (_selectedSoupId != null) {
+      final soup = storeProvider.menuItems.firstWhere(
+        (m) => m.id == _selectedSoupId,
+      );
+      soupPayload = {
+        'id': soup.id,
+        'name': soup.name,
+        // If isFreeWithSwallow the customer pays ₦0 for the soup
+        'price': soup.isFreeWithSwallow ? 0.0 : soup.price,
+      };
     }
 
     final success = cartProvider.addToCart(
@@ -236,22 +251,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       selectedMeats: _selectedMeats,
       hasSalad: _hasSalad,
       selectedAddons: _selectedAddons,
+      selectedSoup: soupPayload,
     );
 
     if (success) {
-      _addSoupIfNeeded(cartProvider, storeProvider);
       context.pop();
     } else {
-      _showClearCartDialog(context, cartProvider, item, storeProvider);
+      _showClearCartDialog(context, cartProvider, item, storeProvider, soupPayload);
     }
-  }
-
-  void _addSoupIfNeeded(CartProvider cartProvider, StoreProvider storeProvider) {
-    if (_selectedSoupId == null) return;
-    final soup = storeProvider.menuItems.firstWhere(
-      (m) => m.id == _selectedSoupId,
-    );
-    cartProvider.addToCart(item: soup, quantity: _quantity);
   }
 
   // ── Dialogs & snackbars ────────────────────────────────────────────────────
@@ -289,6 +296,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     CartProvider cartProvider,
     MenuItem item,
     StoreProvider storeProvider,
+    Map<String, dynamic>? soupPayload,
   ) {
     showDialog(
       context: context,
@@ -300,8 +308,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
             selectedMeats: _selectedMeats,
             hasSalad: _hasSalad,
             selectedAddons: _selectedAddons,
+            selectedSoup: soupPayload,
           );
-          _addSoupIfNeeded(cartProvider, storeProvider);
           Navigator.pop(context);
           context.pop();
         },

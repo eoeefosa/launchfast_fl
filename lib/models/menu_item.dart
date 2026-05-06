@@ -4,11 +4,12 @@ class MenuItem {
   final String name;
   final String description;
   final double price;
-  final String category; // 'Rice' | 'Swallow' | 'Soup' | 'Others'
+  final String category;
   final String image;
   final bool popular;
   final bool isPerPortion;
   final bool isFreeWithSwallow;
+  final bool requiresSoupSelection;
   final int? prepTimeMinutes;
   final bool isReady;
   final int? calories;
@@ -27,6 +28,7 @@ class MenuItem {
     this.popular = false,
     this.isPerPortion = false,
     this.isFreeWithSwallow = false,
+    this.requiresSoupSelection = false,
     this.prepTimeMinutes,
     this.isReady = true,
     this.calories,
@@ -51,6 +53,7 @@ class MenuItem {
       popular: json['popular'] ?? false,
       isPerPortion: json['isPerPortion'] ?? false,
       isFreeWithSwallow: json['isFreeWithSwallow'] ?? false,
+      requiresSoupSelection: json['requiresSoupSelection'] ?? false,
       prepTimeMinutes: json['prepTimeMinutes'],
       isReady: json['isReady'] ?? true,
       calories: json['calories'],
@@ -76,6 +79,7 @@ class MenuItem {
       'popular': popular,
       'isPerPortion': isPerPortion,
       'isFreeWithSwallow': isFreeWithSwallow,
+      'requiresSoupSelection': requiresSoupSelection,
       'prepTimeMinutes': prepTimeMinutes,
       'isReady': isReady,
       'calories': calories,
@@ -96,6 +100,7 @@ class MenuItem {
     bool? popular,
     bool? isPerPortion,
     bool? isFreeWithSwallow,
+    bool? requiresSoupSelection,
     int? prepTimeMinutes,
     bool? isReady,
     int? calories,
@@ -114,6 +119,7 @@ class MenuItem {
       popular: popular ?? this.popular,
       isPerPortion: isPerPortion ?? this.isPerPortion,
       isFreeWithSwallow: isFreeWithSwallow ?? this.isFreeWithSwallow,
+      requiresSoupSelection: requiresSoupSelection ?? this.requiresSoupSelection,
       prepTimeMinutes: prepTimeMinutes ?? this.prepTimeMinutes,
       isReady: isReady ?? this.isReady,
       calories: calories ?? this.calories,

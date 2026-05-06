@@ -10,6 +10,8 @@ class CartItem {
   final bool hasSalad;
   final Map<String, int>? selectedAddons;
   final String? selectedSizeId;
+  /// The soup chosen when this is a swallow item (id, name, effective price).
+  final Map<String, dynamic>? selectedSoup;
 
   CartItem({
     String? id,
@@ -20,6 +22,7 @@ class CartItem {
     this.hasSalad = false,
     this.selectedAddons,
     this.selectedSizeId,
+    this.selectedSoup,
   }) : id = id ?? '${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(10000)}';
 
   // ── Structural equality ─────────────────────────────────────────────────────
@@ -39,12 +42,14 @@ class CartItem {
     bool hasSalad = false,
     Map<String, int>? selectedAddons,
     String? selectedSizeId,
+    String? selectedSoupId,
   }) {
     return menuItem.id == menuItemId &&
         _mapsEqual(this.selectedMeats, selectedMeats) &&
         this.hasSalad == hasSalad &&
         _mapsEqual(this.selectedAddons, selectedAddons) &&
-        this.selectedSizeId == selectedSizeId;
+        this.selectedSizeId == selectedSizeId &&
+        (this.selectedSoup?['id'] as String?) == selectedSoupId;
   }
 
   @override
@@ -55,7 +60,8 @@ class CartItem {
         _mapsEqual(other.selectedMeats, selectedMeats) &&
         other.hasSalad == hasSalad &&
         _mapsEqual(other.selectedAddons, selectedAddons) &&
-        other.selectedSizeId == selectedSizeId;
+        other.selectedSizeId == selectedSizeId &&
+        (other.selectedSoup?['id'] as String?) == (selectedSoup?['id'] as String?);
   }
 
   @override
@@ -69,6 +75,7 @@ class CartItem {
           selectedAddons?.entries.map((e) => Object.hash(e.key, e.value)) ?? [],
         ),
         selectedSizeId,
+        selectedSoup?['id'],
       );
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
@@ -129,6 +136,9 @@ class CartItem {
       hasSalad: json['hasSalad'] ?? false,
       selectedAddons: addonsData != null ? Map<String, int>.from(addonsData) : null,
       selectedSizeId: json['selectedSizeId'],
+      selectedSoup: json['selectedSoup'] != null
+          ? Map<String, dynamic>.from(json['selectedSoup'] as Map)
+          : null,
     );
   }
 
@@ -142,6 +152,7 @@ class CartItem {
       'hasSalad': hasSalad,
       'selectedAddons': selectedAddons,
       'selectedSizeId': selectedSizeId,
+      if (selectedSoup != null) 'selectedSoup': selectedSoup,
     };
   }
 }

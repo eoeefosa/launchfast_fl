@@ -40,6 +40,12 @@ abstract final class PriceCalculator {
       });
     }
 
+    // Add soup price (0 if free, otherwise the stored price)
+    if (item.selectedSoup != null) {
+      final soupPrice = (item.selectedSoup!['price'] as num?)?.toDouble() ?? 0.0;
+      price += soupPrice;
+    }
+
     return price * item.quantity;
   }
 
@@ -126,6 +132,12 @@ abstract final class PriceCalculator {
           parts.add('$count x ${addon.name}');
         }
       });
+    }
+
+    if (item.selectedSoup != null) {
+      final soupName = item.selectedSoup!['name'] as String? ?? 'Soup';
+      final soupPrice = (item.selectedSoup!['price'] as num?)?.toDouble() ?? 0.0;
+      parts.add(soupPrice == 0 ? '$soupName (Free)' : soupName);
     }
 
     return parts.join(' • ');
