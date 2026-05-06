@@ -16,6 +16,7 @@ import '../../widgets/home/cart_bar.dart';
 import '../../widgets/home/item_options_sheet.dart';
 import '../../services/ably_service.dart';
 import '../../locator.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -123,9 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (storeProvider.isLoading && storeProvider.stores.isEmpty) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator.adaptive()),
-      );
+      return const HomeSkeleton();
     }
 
     if (storeProvider.stores.isEmpty) {
@@ -457,5 +456,110 @@ class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _CategoryHeaderDelegate oldDelegate) {
     return child != oldDelegate.child;
+  }
+}
+
+class HomeSkeleton extends StatelessWidget {
+  const HomeSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[850]! : Colors.grey[300]!;
+    
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header skeleton
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  children: [
+                    Container(width: 50, height: 50, decoration: BoxDecoration(color: baseColor, shape: BoxShape.circle)),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(width: 100, height: 14, decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(bottom: 8)),
+                        Container(width: 150, height: 20, decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(4))),
+                      ],
+                    ),
+                    const Spacer(),
+                    Container(width: 40, height: 40, decoration: BoxDecoration(color: baseColor, shape: BoxShape.circle)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // "Restaurants" title
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(width: 120, height: 24, decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(4))),
+              ),
+              const SizedBox(height: 16),
+              
+              // Stores skeleton
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: List.generate(3, (index) => 
+                    Container(
+                      width: 240, 
+                      height: 140, 
+                      margin: const EdgeInsets.only(right: 16), 
+                      decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(24))
+                    )
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Categories skeleton
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: List.generate(5, (index) => 
+                    Container(
+                      width: 80, height: 40, 
+                      margin: const EdgeInsets.only(right: 12), 
+                      decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(20))
+                    )
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Menu items skeleton
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(width: 100, height: 20, decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(bottom: 16)),
+                    ...List.generate(3, (index) => 
+                      Container(
+                        width: double.infinity, height: 110, 
+                        margin: const EdgeInsets.only(bottom: 16), 
+                        decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(20))
+                      )
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ).animate(onPlay: (controller) => controller.repeat())
+           .shimmer(duration: 1200.ms, color: isDark ? Colors.white10 : Colors.white54)
+           .animate()
+           .fade(duration: 300.ms),
+        ),
+      ),
+    );
   }
 }
