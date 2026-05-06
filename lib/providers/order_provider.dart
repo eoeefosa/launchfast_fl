@@ -133,6 +133,26 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> initializePayment(String orderId, String method) async {
+    debugPrint('[OrderProvider] initializePayment: initiating — orderId=$orderId, method=$method');
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await locator<OrderRepository>().initializePayment(orderId, method);
+      _error = null;
+      debugPrint('[OrderProvider] initializePayment: success — $response');
+      return response;
+    } catch (e) {
+      _error = 'Failed to initialize payment. Please try again.';
+      debugPrint('[OrderProvider] initializePayment: ERROR — $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<Order?> updateOrder(String id, Map<String, dynamic> orderData) async {
     debugPrint('[OrderProvider] updateOrder: orderId=$id — payload=$orderData');
     _isLoading = true;

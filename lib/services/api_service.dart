@@ -9,13 +9,14 @@ class ApiService {
   final storage = const FlutterSecureStorage();
 
   static const String baseUrl = 'https://campus-chow-three.vercel.app/api';
+  // static const String baseUrl = 'http://10.0.2.2:3000/api';
 
   ApiService() {
     dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
         headers: {'Content-Type': 'application/json'},
       ),
     );

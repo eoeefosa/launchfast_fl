@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 import '../../theme/app_spacing.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
@@ -478,10 +478,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       if (success != null) {
         HapticFeedback.heavyImpact();
-        // If wallet was used the backend already deducted; refresh local balance.
-        if (_paymentMethod == 'Wallet') {
+        
+        if (_paymentMethod == 'Paystack') {
+          try {
+            final paymentData = await orderProvider.initializePayment(success.id, 'Card');
+            final authorizationUrl = paymentData['authorization_url'];
+            
+            if (authorizationUrl != null) {
+              final uri = Uri.parse(authorizationUrl);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } else {
+                _showErrorDialog('Could not launch payment portal.');
+                return;
+              }
+            } else {
+              _showErrorDialog('Payment initialization failed. Please try again.');
+              return;
+            }
+          } catch (e) {
+            _showErrorDialog('Could not initialize payment. Please check your connection.');
+            return;
+          }
+        } else if (_paymentMethod == 'Wallet') {
+          // If wallet was used the backend already deducted; refresh local balance.
           await auth.refreshUser();
         }
+        
         cart.clearCart();
         setState(() => _isSuccess = true);
       } else {
