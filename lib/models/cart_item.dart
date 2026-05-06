@@ -72,19 +72,30 @@ class CartItem {
       );
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
-    final rawItem = json['menuItem'];
-    final menuItemId = json['menuItemId']?.toString();
-    
+    // The backend may return items using several different field names:
+    //   - menuItem  : fully populated object (ideal)
+    //   - menuItemId: bare reference ID
+    //   - foodId    : MongoDB ObjectId string (used in create/list responses)
+    //   - food      : fully populated object (some endpoints)
+    //   - _id       : Mongo subdocument ID — not the menuItem ID
+
+    final rawItem = json['menuItem'] ?? json['food'];
+    final itemId = (json['menuItemId'] ?? json['foodId'] ?? json['food_id'])
+        ?.toString();
+
     MenuItem? menuItem;
+
     if (rawItem is Map<String, dynamic>) {
+      // Fully populated — use directly
       menuItem = MenuItem.fromJson(rawItem);
-    } else if (menuItemId != null) {
+    } else if (itemId != null) {
+      // Bare ID — build a stub so the order can at least be stored/displayed
       menuItem = MenuItem(
-        id: menuItemId,
-        storeId: '',
-        name: 'Item $menuItemId',
+        id: itemId,
+        storeId: json['storeId']?.toString() ?? '',
+        name: json['name']?.toString() ?? 'Item',
         description: '',
-        price: 0,
+        price: (json['price'] as num?)?.toDouble() ?? 0.0,
         category: 'Others',
         image: '',
         popular: false,
@@ -100,7 +111,10 @@ class CartItem {
     }
 
     if (menuItem == null) {
-      throw FormatException('CartItem.fromJson: missing both "menuItem" and "menuItemId"');
+      // Last resort: log the full JSON shape so we can debug future variants
+      throw FormatException(
+        'CartItem.fromJson: could not resolve menuItem from keys: ${json.keys.toList()}',
+      );
     }
 
     final meatsData = json['selectedMeats'] as Map<String, dynamic>?;

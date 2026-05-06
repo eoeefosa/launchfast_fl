@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:campuschow/models/rider.dart';
+import 'package:flutter/foundation.dart';
 
 import 'cart_item.dart';
 import 'user.dart';
@@ -114,49 +115,71 @@ class Order {
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
+    // id — backend may send 'id' or '_id'
+    final rawId = json['id'] ?? json['_id'];
+    final resolvedId = rawId is String ? rawId : rawId?.toString() ?? '';
+
+    // date — backend may send 'date', 'createdAt', or 'updatedAt'
+    final resolvedDate =
+        (json['date'] ?? json['createdAt'] ?? json['updatedAt'])?.toString() ?? '';
+
+    // stores — backend may send 'stores', 'restaurantIds', or 'restaurantId'
+    final rawStores = json['stores'] as List? ??
+        (json['restaurantIds'] is List ? json['restaurantIds'] as List : null) ??
+        (json['restaurantId'] != null ? [json['restaurantId']] : null) ??
+        [];
+
     return Order(
-      id: json['id'] is String ? json['id'] : (json['id']?.toString() ?? ''),
+      id: resolvedId,
       userId: json['userId']?.toString(),
       user: json['user'] != null ? UserProfile.fromJson(json['user']) : null,
       items:
           (json['items'] as List?)
-              ?.map((i) => CartItem.fromJson(i as Map<String, dynamic>))
+              ?.map((i) {
+                try {
+                  return CartItem.fromJson(i as Map<String, dynamic>);
+                } catch (e) {
+                  debugPrint('[Order.fromJson] skipping item — $e | raw: $i');
+                  return null;
+                }
+              })
+              .whereType<CartItem>()
               .toList() ??
           [],
       subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
       serviceFee: (json['serviceFee'] as num?)?.toDouble() ?? 0.0,
       deliveryFee: (json['deliveryFee'] as num?)?.toDouble() ?? 0.0,
-      platformDeliveryProfit: (json['platformDeliveryProfit'] as num?)?.toDouble() ?? 0.0,
+      platformDeliveryProfit:
+          (json['platformDeliveryProfit'] as num?)?.toDouble() ?? 0.0,
       walletDeduction: (json['walletDeduction'] as num?)?.toDouble() ?? 0.0,
-      total: (json['total'] as num?)?.toDouble() ?? 0.0,
+      total: (json['total'] ?? json['totalAmount'] as num?)?.toDouble() ?? 0.0,
       deliveryType: json['deliveryType']?.toString() ?? 'bulk',
-      status: OrderStatusExtension.fromString(json['status']?.toString() ?? ''),
-      date: json['date']?.toString() ?? '',
-      stores:
-          (json['stores'] as List?)
-              ?.map((s) {
-                if (s is Map<String, dynamic>) {
-                  return Store.fromJson(s);
-                }
-                // Fallback for when only IDs are returned
-                return Store(
-                  id: s.toString(),
-                  name: 'Store ${s.toString().substring(0, min(4, s.toString().length))}',
-                  tagline: '',
-                  accentColor: const Color(0xFFFF6B2C),
-                  deliveryTime: '',
-                  rating: 5.0,
-                  isOpen: true,
-                  deliveryFee: 0,
-                  image: '',
-                );
-              })
-              .toList() ??
-          [],
+      status:
+          OrderStatusExtension.fromString(json['status']?.toString() ?? ''),
+      date: resolvedDate,
+      stores: rawStores
+          .map((s) {
+            if (s is Map<String, dynamic>) return Store.fromJson(s);
+            final sid = s.toString();
+            return Store(
+              id: sid,
+              name: 'Store ${sid.substring(0, min(4, sid.length))}',
+              tagline: '',
+              accentColor: const Color(0xFFFF6B2C),
+              deliveryTime: '',
+              rating: 5.0,
+              isOpen: true,
+              deliveryFee: 0,
+              image: '',
+            );
+          })
+          .toList(),
       isPriority: json['isPriority'] ?? false,
-      riderId: json['riderId'] is Map ? json['riderId']['id']?.toString() : json['riderId']?.toString(),
-      rider: json['rider'] != null 
-          ? Rider.fromJson(json['rider']) 
+      riderId: json['riderId'] is Map
+          ? json['riderId']['id']?.toString()
+          : json['riderId']?.toString(),
+      rider: json['rider'] != null
+          ? Rider.fromJson(json['rider'])
           : (json['riderId'] is Map ? Rider.fromJson(json['riderId']) : null),
     );
   }
