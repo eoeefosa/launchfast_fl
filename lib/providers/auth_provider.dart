@@ -30,8 +30,11 @@ class AuthProvider with ChangeNotifier {
   String? get guestAddress => _guestAddress;
   String? get guestName => _guestName;
   String? get guestPhone => _guestPhone;
-  String? get currentAddress => _user?.address ?? _guestAddress;
+  String? get currentAddress => _selectedAddress ?? _user?.address ?? _guestAddress;
   List<String> get locations => _locations;
+
+  // Tracks the actively selected delivery address (always up-to-date in UI)
+  String? _selectedAddress;
 
   Future<void> fetchLocations() async {
     try {
@@ -91,6 +94,7 @@ class AuthProvider with ChangeNotifier {
       _guestName = await storage.read(key: 'launch-fast-guest-name');
       _guestPhone = await storage.read(key: 'launch-fast-guest-phone');
       _guestAddress = await storage.read(key: 'launch-fast-guest-address');
+      _selectedAddress = await storage.read(key: 'launch-fast-selected-address');
 
       if (userStr != null) {
         _user = UserProfile.fromJson(jsonDecode(userStr));
@@ -298,9 +302,43 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  /// Updates the delivery address for both guest and authenticated users.
+  /// Immediately reflects in the UI — backend sync is async for logged-in users.
+  Future<void> setDeliveryAddress(String address) async {
+    _selectedAddress = address;
+    // Persist as the selected address so it survives app restarts
+    await storage.write(key: 'launch-fast-selected-address', value: address);
+    notifyListeners();
+
+    if (_user != null) {
+      // Sync to backend async without blocking the UI update
+      try {
+        await locator<AuthRepository>().updateProfile({'address': address});
+        // Update local user model so currentAddress stays consistent
+        final updatedJson = {..._user!.toJson(), 'address': address};
+        _user = UserProfile.fromJson(updatedJson);
+        await storage.write(
+          key: 'launch-fast-user',
+          value: jsonEncode(_user!.toJson()),
+        );
+      } catch (e) {
+        debugPrint('[AuthProvider] setDeliveryAddress backend sync failed: $e');
+        // Keep the local selection even if backend fails
+      }
+      notifyListeners();
+    } else {
+      // Guest user — also save as guest address
+      _guestAddress = address;
+      await storage.write(key: 'launch-fast-guest-address', value: address);
+      notifyListeners();
+    }
+  }
+
   void setGuestAddress(String address) {
     _guestAddress = address;
+    _selectedAddress = address;
     storage.write(key: 'launch-fast-guest-address', value: address);
+    storage.write(key: 'launch-fast-selected-address', value: address);
     notifyListeners();
   }
 

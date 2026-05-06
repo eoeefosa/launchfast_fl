@@ -17,6 +17,7 @@ import 'widgets/bottom_bar.dart';
 import 'widgets/insufficient_funds_dialog.dart';
 import 'widgets/delivery_type_sheet.dart';
 import 'widgets/payment_sheet.dart';
+import 'widgets/phone_confirm_sheet.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -417,18 +418,76 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   ) async {
     // --- Guest Checkout Logic ---
     if (!auth.isAuthenticated) {
-      // If guest details are not yet collected, prompt the user to enter them.
       if (!auth.guestName.isNotNullOrEmpty() ||
-          !auth.guestPhone.isNotNullOrEmpty() ||
-          auth.currentAddress == null) {
-        setState(() {
-          _isGuestCheckout = true; // Show the guest form
-        });
+          !auth.guestPhone.isNotNullOrEmpty()) {
+        setState(() => _isGuestCheckout = true);
         _showErrorDialog('Please provide your contact and delivery details.');
-        return; // Stop order placement until details are provided
+        return;
       }
     }
     // --- End Guest Checkout Logic ---
+
+    // ── Location guard (applies to ALL users) ────────────────────────────────
+    if (auth.currentAddress == null || auth.currentAddress!.trim().isEmpty) {
+      await showDialog(
+        context: context,
+        barrierColor: Colors.black54,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          icon: const Icon(
+            Icons.location_off_rounded,
+            size: 44,
+            color: Colors.orange,
+          ),
+          title: const Text(
+            'No Delivery Location',
+            style: TextStyle(fontWeight: FontWeight.w900),
+            textAlign: TextAlign.center,
+          ),
+          content: const Text(
+            'Please set your delivery address before placing an order.',
+            textAlign: TextAlign.center,
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                LocationSelector.show(context);
+              },
+              child: const Text('Set Location'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // ── Phone guard (applies to ALL users) ───────────────────────────────────
+    // Get the current phone — user profile phone takes priority over guest phone
+    final currentPhone = auth.isAuthenticated
+        ? (auth.user?.phone ?? auth.guestPhone ?? '')
+        : (auth.guestPhone ?? '');
+
+    final confirmedPhone = await PhoneConfirmSheet.show(
+      context,
+      currentPhone: currentPhone.trim().isEmpty ? null : currentPhone.trim(),
+    );
+
+    if (!mounted) return;
+    if (confirmedPhone == null) return; // user cancelled
+
+    // Persist the (possibly updated) phone number
+    if (auth.isAuthenticated && confirmedPhone != (auth.user?.phone ?? '')) {
+      auth.updateUser({'phone': confirmedPhone});
+    } else if (!auth.isAuthenticated) {
+      auth.setGuestInfo(phone: confirmedPhone);
+    }
 
     // Final wallet check — total is the grand total the user must pay.
     if (_paymentMethod == 'Wallet') {
@@ -468,9 +527,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           'name': auth.isAuthenticated
               ? (auth.user?.name ?? '')
               : (auth.guestName ?? ''),
-          'phone': auth.isAuthenticated
-              ? (auth.user?.phone ?? '')
-              : (auth.guestPhone ?? ''),
+          'phone': confirmedPhone,
           'email': auth.isAuthenticated
               ? (auth.user?.email ?? 'user@campuschow.com')
               : 'guest@campuschow.com',
@@ -568,6 +625,11 @@ extension StringExtension on String? {
 // Helper for withValues extension if not globally available
 extension ColorExtension on Color {
   Color withValues({double alpha = 1.0}) {
-    return Color.fromRGBO(this.red, this.green, this.blue, alpha);
+    return Color.fromRGBO(
+      (r * 255.0).round().clamp(0, 255),
+      (g * 255.0).round().clamp(0, 255),
+      (b * 255.0).round().clamp(0, 255),
+      alpha,
+    );
   }
 }
