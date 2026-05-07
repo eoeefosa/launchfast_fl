@@ -80,7 +80,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
         .toList();
 
     // Group items by category
-    final categories = ['Rice', 'Swallow', 'Soup', 'Others'];
+    final categories = ['Rice', 'Swallow', 'Soup', 'Drinks', 'Extras', 'Others'];
     final groupedItems = <String, List<MenuItem>>{};
     for (var cat in categories) {
       final catItems = items.where((i) => i.category == cat).toList();

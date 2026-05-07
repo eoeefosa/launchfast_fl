@@ -160,10 +160,20 @@ class _HomeScreenState extends State<HomeScreen> {
     }).toList();
 
     final groupedItems = <String, List<MenuItem>>{};
+    final predefinedOrder = ['Rice', 'Swallow', 'Soup', 'Drinks', 'Extras', 'Others'];
     final categories = storeProvider.menuItems
+        .where((item) => item.storeId == _activeStoreId)
         .map((item) => item.category)
         .toSet()
-        .toList();
+        .toList()
+      ..sort((a, b) {
+        final indexA = predefinedOrder.indexOf(a);
+        final indexB = predefinedOrder.indexOf(b);
+        if (indexA == -1 && indexB == -1) return a.compareTo(b);
+        if (indexA == -1) return 1;
+        if (indexB == -1) return -1;
+        return indexA.compareTo(indexB);
+      });
     for (var cat in categories) {
       final items = filteredItems.where((i) => i.category == cat).toList();
       if (items.isNotEmpty) groupedItems[cat] = items;

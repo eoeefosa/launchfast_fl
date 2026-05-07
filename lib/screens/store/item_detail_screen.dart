@@ -121,14 +121,53 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // firstWhere without orElse is intentional — an invalid item ID at this
-    // point is a routing bug that should throw loudly in development.
-    // The router guard is responsible for ensuring this never happens in prod.
-    final item = storeProvider.menuItems.firstWhere((m) => m.id == widget.id);
-    final store = storeProvider.stores.firstWhere(
-      (s) => s.id == item.storeId,
-      orElse: () => storeProvider.stores.first,
+    // ── Resolve item safely ────────────────────────────────────────────────
+    // menuItems may still be loading; show a spinner rather than throwing.
+    final item = storeProvider.menuItems.cast<MenuItem?>().firstWhere(
+      (m) => m?.id == widget.id,
+      orElse: () => null,
     );
+
+    if (item == null) {
+      return Scaffold(
+        body: Center(
+          child: storeProvider.isLoading
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                    const SizedBox(height: 12),
+                    const Text('Item not found', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => context.pop(),
+                      child: const Text('Go back'),
+                    ),
+                  ],
+                ),
+        ),
+      );
+    }
+
+    final store = storeProvider.stores.cast<dynamic>().firstWhere(
+      (s) => s.id == item.storeId,
+      orElse: () => storeProvider.stores.isNotEmpty ? storeProvider.stores.first : null,
+    );
+
+    if (store == null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Store not found'),
+              TextButton(onPressed: () => context.pop(), child: const Text('Go back')),
+            ],
+          ),
+        ),
+      );
+    }
 
     final availableSoups = item.category == 'Swallow'
         ? storeProvider.menuItems
@@ -136,8 +175,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
             .toList()
         : <MenuItem>[];
 
+    // Filter addon IDs — skip any that haven't loaded yet
     final availableAddons = (item.addonIds ?? [])
-        .map((id) => storeProvider.menuItems.firstWhere((m) => m.id == id))
+        .map((id) => storeProvider.menuItems.cast<MenuItem?>().firstWhere(
+              (m) => m?.id == id,
+              orElse: () => null,
+            ))
+        .whereType<MenuItem>()
         .toList();
 
     final totalPrice = PriceCalculator.computeTotal(
@@ -234,15 +278,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     // Build the selectedSoup payload if a soup was chosen
     Map<String, dynamic>? soupPayload;
     if (_selectedSoupId != null) {
-      final soup = storeProvider.menuItems.firstWhere(
-        (m) => m.id == _selectedSoupId,
+      final soup = storeProvider.menuItems.cast<MenuItem?>().firstWhere(
+        (m) => m?.id == _selectedSoupId,
+        orElse: () => null,
       );
-      soupPayload = {
-        'id': soup.id,
-        'name': soup.name,
-        // If isFreeWithSwallow the customer pays ₦0 for the soup
-        'price': soup.isFreeWithSwallow ? 0.0 : soup.price,
-      };
+      if (soup != null) {
+        soupPayload = {
+          'id': soup.id,
+          'name': soup.name,
+          // If isFreeWithSwallow the customer pays ₦0 for the soup
+          'price': soup.isFreeWithSwallow ? 0.0 : soup.price,
+        };
+      }
     }
 
     final success = cartProvider.addToCart(
