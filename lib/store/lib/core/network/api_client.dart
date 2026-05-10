@@ -17,7 +17,7 @@ class ApiClient {
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://backend-lauchfast.vercel.app/api',
+    defaultValue: 'https://campus-chow-three.vercel.app/api',
   );
 
   ApiClient() {

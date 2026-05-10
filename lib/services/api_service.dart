@@ -9,7 +9,7 @@ class ApiService {
   final storage = const FlutterSecureStorage();
 
   // static const String baseUrl = 'https://campus-chow-three.vercel.app/api';
-  
+
   // Use 10.0.2.2 for Android Emulator, 127.0.0.1 for iOS Simulator.
   // If testing on a real device, replace this with your computer's local IP address.
   static String get baseUrl {
@@ -17,7 +17,8 @@ class ApiService {
       return 'https://campus-chow-three.vercel.app/api';
     }
     // Default for Android Emulator
-    return 'http://10.0.2.2:3000/api'; 
+    return 'https://campus-chow-three.vercel.app/api';
+    // return 'http://10.0.2.2:3000/api';
   }
 
   ApiService() {
@@ -105,7 +106,8 @@ class ApiService {
             e.message ??
             'Unknown error';
       }
-      if (e.response?.data is String && (e.response?.data as String).isNotEmpty) {
+      if (e.response?.data is String &&
+          (e.response?.data as String).isNotEmpty) {
         return e.response?.data as String;
       }
       return e.message ?? 'Unknown error';

@@ -169,7 +169,13 @@ class _StoreMainNavState extends State<StoreMainNav>
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(
-                      onPressed: () => storeProvider.refreshData(),
+                      onPressed: () {
+                        if (auth.user?.id != null) {
+                          storeProvider.setOwner(auth.user!.id);
+                        } else {
+                          storeProvider.refreshData();
+                        }
+                      },
                       child: const Text('Check Status'),
                     ),
                     TextButton(

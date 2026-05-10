@@ -33,16 +33,16 @@ class Store {
 
   factory Store.fromJson(Map<String, dynamic> json) {
     return Store(
-      id: json['id'],
-      name: json['name'],
-      tagline: json['tagline'],
-      accentColor: json['accentColor'],
-      deliveryTime: json['deliveryTime'],
-      rating: (json['rating'] as num).toDouble(),
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      name: json['name']?.toString() ?? 'Store',
+      tagline: json['tagline']?.toString() ?? json['description']?.toString() ?? '',
+      accentColor: json['accentColor']?.toString() ?? '#FF6B2C',
+      deliveryTime: json['deliveryTime']?.toString() ?? '30-45 min',
+      rating: (json['rating'] as num?)?.toDouble() ?? 5.0,
       isOpen: json['isOpen'] ?? false,
-      deliveryFee: (json['deliveryFee'] as num).toDouble(),
-      image: json['image'],
-      ownerId: json['ownerId'],
+      deliveryFee: (json['deliveryFee'] as num?)?.toDouble() ?? 0.0,
+      image: json['image']?.toString() ?? '',
+      ownerId: json['ownerId']?.toString(),
       isApproved: json['isApproved'] ?? false,
     );
   }

@@ -12,6 +12,7 @@ import 'providers/order_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/theme_provider.dart';
 import 'locator.dart';
+import 'store_app_entry.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -133,13 +134,29 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return MaterialApp.router(
-          title: 'CampusChow',
-          debugShowCheckedModeBanner: false,
-          theme: _lightTheme,
-          darkTheme: _darkTheme,
-          themeMode: themeProvider.themeMode,
-          routerConfig: router,
+        return Consumer<AuthProvider>(
+          builder: (context, auth, _) {
+            // Wait until auth is done loading to prevent flashes
+            if (auth.isLoading) {
+              return const Directionality(
+                textDirection: TextDirection.ltr,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            if (auth.isAuthenticated && auth.isStoreOwner) {
+              return const StoreAppWrapper();
+            }
+
+            return MaterialApp.router(
+              title: 'CampusChow',
+              debugShowCheckedModeBanner: false,
+              theme: _lightTheme,
+              darkTheme: _darkTheme,
+              themeMode: themeProvider.themeMode,
+              routerConfig: router,
+            );
+          },
         );
       },
     );

@@ -5,6 +5,7 @@ import '../../../core/services/ably_service.dart';
 import 'package:campuschow/store/lib/features/store/data/store_model.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
 import '../data/menu_repository.dart';
+import '../data/store_repository.dart';
 import 'package:campuschow/store/lib/features/dashboard/data/store_stats_model.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 
@@ -116,8 +117,17 @@ class StoreProvider extends BaseProvider {
     setLoading(false);
   }
 
-  void setOwner(String userId) {
-    // In a real app this would load the store owned by the user
+  Future<void> setOwner(String userId) async {
+    setLoading(true);
+    final store = await storeRepository.getOwnerStore(userId);
+    if (store != null) {
+      _activeStoreId = store.id;
+      _activeStore = store;
+      // Fetch fresh menu items for the store
+      await refreshData();
+    }
+    setLoading(false);
+    notifyListeners();
   }
 
   // Backwards compatibility for dashboard files
@@ -130,8 +140,18 @@ class StoreProvider extends BaseProvider {
   }
 
   Future<void> refreshData() async {
-    // In a real app this would fetch from repository
-    updateData(StaticData.stores, StaticData.menuItems);
+    if (_activeStoreId != null) {
+      try {
+        final store = await storeRepository.getStores().then((stores) => stores.firstWhere((s) => s.id == _activeStoreId, orElse: () => _activeStore!));
+        _activeStore = store;
+        
+        // Also refresh menu items
+        // In a real app we'd fetch them here
+      } catch (e) {
+        // error handling
+      }
+      notifyListeners();
+    }
   }
 
   Future<void> updateStore(String storeId, Map<String, dynamic> data) async {

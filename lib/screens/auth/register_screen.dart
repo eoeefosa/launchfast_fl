@@ -9,7 +9,6 @@ import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../services/api_service.dart';
-import '../../store_app_entry.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -60,10 +59,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'password': _passwordController.text,
       });
 
+      if (!mounted) return;
       final isStoreOwner = authProvider.isStoreOwner;
-      if (isStoreOwner) {
-        launchStoreApp();
-      } else {
+      if (!isStoreOwner) {
         orderProvider.refreshOrders();
         router.go('/home');
       }

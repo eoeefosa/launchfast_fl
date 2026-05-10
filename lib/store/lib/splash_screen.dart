@@ -9,10 +9,12 @@ class StoreLaunchfastSplashScreen extends StatefulWidget {
   const StoreLaunchfastSplashScreen({super.key});
 
   @override
-  State<StoreLaunchfastSplashScreen> createState() => _StoreLaunchfastSplashScreenState();
+  State<StoreLaunchfastSplashScreen> createState() =>
+      _StoreLaunchfastSplashScreenState();
 }
 
-class _StoreLaunchfastSplashScreenState extends State<StoreLaunchfastSplashScreen> {
+class _StoreLaunchfastSplashScreenState
+    extends State<StoreLaunchfastSplashScreen> {
   @override
   void initState() {
     super.initState();
@@ -24,7 +26,9 @@ class _StoreLaunchfastSplashScreenState extends State<StoreLaunchfastSplashScree
             if (auth.isStoreApproved) {
               context.go('/store');
             } else {
-              context.go('/awaiting-approval');
+              context.go('/store');
+
+              // context.go('/awaiting-approval');
             }
           } else if (auth.user?.role == 'STORE_WORKER') {
             context.go('/worker');
@@ -86,7 +90,7 @@ class _StoreLaunchfastSplashScreenState extends State<StoreLaunchfastSplashScree
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                          "Launch",
+                          "Campus",
                           style: TextStyle(
                             fontSize: 42,
                             fontWeight: FontWeight.w800,
@@ -99,7 +103,7 @@ class _StoreLaunchfastSplashScreenState extends State<StoreLaunchfastSplashScree
                         .slideY(begin: 0.2, end: 0),
 
                     Text(
-                          "fast",
+                          "Chow",
                           style: TextStyle(
                             fontSize: 42,
                             fontWeight: FontWeight.w800,

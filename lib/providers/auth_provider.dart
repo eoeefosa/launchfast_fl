@@ -48,9 +48,9 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  bool get isAdmin => _user?.role == 'admin';
-  bool get isStoreOwner => _user?.role == 'store_owner';
-  bool get isRider => _user?.role == 'rider';
+  bool get isAdmin => _user?.role == 'admin' || _user?.role == 'ADMIN';
+  bool get isStoreOwner => _user?.role == 'store_owner' || _user?.role == 'STORE_OWNER';
+  bool get isRider => _user?.role == 'rider' || _user?.role == 'RIDER';
   bool get isAuthenticated => _token != null;
   Store? getAdminStore(List<Store> stores) => _adminStoreId != null
       ? stores.firstWhere((s) => s.id == _adminStoreId)
@@ -124,7 +124,7 @@ class AuthProvider with ChangeNotifier {
     try {
       final data = await locator<AuthRepository>().login(email, password);
       final userData = data['user'] ?? data;
-      if (userData is Map && userData['id'] != null) {
+      if (userData is Map && (userData['id'] != null || userData['_id'] != null)) {
         _user = UserProfile.fromJson(userData as Map<String, dynamic>);
         _token = data['token'];
 
@@ -150,7 +150,7 @@ class AuthProvider with ChangeNotifier {
     try {
       final data = await locator<AuthRepository>().register(userData);
       final uData = data['user'] ?? data;
-      if (uData is Map && uData['id'] != null) {
+      if (uData is Map && (uData['id'] != null || uData['_id'] != null)) {
         _user = UserProfile.fromJson(uData as Map<String, dynamic>);
         _token = data['token'];
 
@@ -204,7 +204,7 @@ class AuthProvider with ChangeNotifier {
       debugPrint('[AuthProvider] Backend response received: $data');
 
       final uData = data['user'] ?? data;
-      if (uData is Map && uData['id'] != null) {
+      if (uData is Map && (uData['id'] != null || uData['_id'] != null)) {
         _user = UserProfile.fromJson(uData as Map<String, dynamic>);
         _token = data['token'];
 
@@ -272,7 +272,7 @@ class AuthProvider with ChangeNotifier {
     try {
       final data = await locator<AuthRepository>().updateProfile(updates);
       final uData = data['user'] ?? data;
-      if (uData is Map && uData['id'] != null) {
+      if (uData is Map && (uData['id'] != null || uData['_id'] != null)) {
         _user = UserProfile.fromJson(uData as Map<String, dynamic>);
         await storage.write(
           key: 'launch-fast-user',
@@ -327,8 +327,8 @@ class AuthProvider with ChangeNotifier {
         }
 
         if (userData != null &&
-            userData.containsKey('id') &&
-            userData['id'] != null) {
+            (userData.containsKey('id') || userData.containsKey('_id')) &&
+            (userData['id'] != null || userData['_id'] != null)) {
           _user = UserProfile.fromJson(userData);
           await storage.write(
             key: 'launch-fast-user',

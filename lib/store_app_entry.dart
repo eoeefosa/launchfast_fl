@@ -11,18 +11,30 @@ import 'package:campuschow/store/lib/features/store/presentation/store_provider.
 
 bool _locatorInitialized = false;
 
-void launchStoreApp() {
-  if (!_locatorInitialized) {
-    try {
-      store_locator.setupLocator();
-      _locatorInitialized = true;
-    } catch (e) {
-      debugPrint('Store locator already setup or error: $e');
+class StoreAppWrapper extends StatefulWidget {
+  const StoreAppWrapper({super.key});
+
+  @override
+  State<StoreAppWrapper> createState() => _StoreAppWrapperState();
+}
+
+class _StoreAppWrapperState extends State<StoreAppWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    if (!_locatorInitialized) {
+      try {
+        store_locator.setupLocator();
+        _locatorInitialized = true;
+      } catch (e) {
+        debugPrint('Store locator already setup or error: $e');
+      }
     }
   }
 
-  runApp(
-    MultiProvider(
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => store_auth.AuthProvider()),
         ChangeNotifierProvider(create: (_) => store_store.StoreProvider()),
@@ -32,6 +44,11 @@ void launchStoreApp() {
         ChangeNotifierProvider(create: (_) => store_theme.ThemeProvider()),
       ],
       child: const store_app.MyApp(),
-    ),
-  );
+    );
+  }
+}
+
+// Keep launchStoreApp as a fallback wrapper around runApp for imperative use if needed.
+void launchStoreApp() {
+  runApp(const StoreAppWrapper());
 }
