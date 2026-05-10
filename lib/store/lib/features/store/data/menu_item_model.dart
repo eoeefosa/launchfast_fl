@@ -1,3 +1,24 @@
+class ItemOption {
+  final String name;
+  final double price;
+
+  ItemOption({required this.name, required this.price});
+
+  factory ItemOption.fromJson(Map<String, dynamic> json) {
+    return ItemOption(
+      name: json['name'] ?? '',
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'price': price,
+    };
+  }
+}
+
 class MenuItem {
   final String id;
   final String storeId;
@@ -9,10 +30,13 @@ class MenuItem {
   final bool popular;
   final bool isPerPortion;
   final bool isFreeWithSwallow;
+  final bool requiresSoupSelection;
   final int? prepTimeMinutes;
   final bool isReady;
   final int? calories;
   final List<String>? addonIds;
+  final List<ItemOption>? sizes;
+  final List<ItemOption>? meatOptions;
 
   MenuItem({
     required this.id,
@@ -25,28 +49,38 @@ class MenuItem {
     this.popular = false,
     this.isPerPortion = false,
     this.isFreeWithSwallow = false,
+    this.requiresSoupSelection = false,
     this.prepTimeMinutes,
     this.isReady = true,
     this.calories,
     this.addonIds,
+    this.sizes,
+    this.meatOptions,
   });
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
     return MenuItem(
-      id: json['id'],
-      storeId: json['storeId'],
-      name: json['name'],
-      description: json['description'],
-      price: (json['price'] as num).toDouble(),
-      category: json['category'],
-      image: json['image'],
+      id: json['id'] ?? json['_id'] ?? '',
+      storeId: json['storeId'] ?? json['restaurantId'] ?? '',
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      category: json['category'] ?? 'Others',
+      image: json['image'] ?? '',
       popular: json['popular'] ?? false,
       isPerPortion: json['isPerPortion'] ?? false,
       isFreeWithSwallow: json['isFreeWithSwallow'] ?? false,
+      requiresSoupSelection: json['requiresSoupSelection'] ?? false,
       prepTimeMinutes: json['prepTimeMinutes'],
-      isReady: json['isReady'] ?? true,
+      isReady: json['isReady'] ?? json['available'] ?? true, // Support both isReady and available
       calories: json['calories'],
       addonIds: json['addonIds'] != null ? List<String>.from(json['addonIds']) : null,
+      sizes: json['sizes'] != null
+          ? (json['sizes'] as List).map((e) => ItemOption.fromJson(e)).toList()
+          : null,
+      meatOptions: json['meatOptions'] != null
+          ? (json['meatOptions'] as List).map((e) => ItemOption.fromJson(e)).toList()
+          : null,
     );
   }
 
@@ -62,10 +96,14 @@ class MenuItem {
       'popular': popular,
       'isPerPortion': isPerPortion,
       'isFreeWithSwallow': isFreeWithSwallow,
+      'requiresSoupSelection': requiresSoupSelection,
       'prepTimeMinutes': prepTimeMinutes,
       'isReady': isReady,
+      'available': isReady, // For backend compatibility
       'calories': calories,
       'addonIds': addonIds,
+      'sizes': sizes?.map((e) => e.toJson()).toList(),
+      'meatOptions': meatOptions?.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -80,10 +118,13 @@ class MenuItem {
     bool? popular,
     bool? isPerPortion,
     bool? isFreeWithSwallow,
+    bool? requiresSoupSelection,
     int? prepTimeMinutes,
     bool? isReady,
     int? calories,
     List<String>? addonIds,
+    List<ItemOption>? sizes,
+    List<ItemOption>? meatOptions,
   }) {
     return MenuItem(
       id: id ?? this.id,
@@ -96,10 +137,13 @@ class MenuItem {
       popular: popular ?? this.popular,
       isPerPortion: isPerPortion ?? this.isPerPortion,
       isFreeWithSwallow: isFreeWithSwallow ?? this.isFreeWithSwallow,
+      requiresSoupSelection: requiresSoupSelection ?? this.requiresSoupSelection,
       prepTimeMinutes: prepTimeMinutes ?? this.prepTimeMinutes,
       isReady: isReady ?? this.isReady,
       calories: calories ?? this.calories,
       addonIds: addonIds ?? this.addonIds,
+      sizes: sizes ?? this.sizes,
+      meatOptions: meatOptions ?? this.meatOptions,
     );
   }
 }

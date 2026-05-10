@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:provider/provider.dart';
@@ -117,6 +118,14 @@ class _StoreMainNavState extends State<StoreMainNav>
     if (status == OrderStatus.pending && mounted) {
       setState(() => _newOrderCount++);
       _badgeCtrl.repeat(reverse: true);
+
+      // Trigger a local notification for foreground alert
+      notificationService.showNotification(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title: 'New Order Received! 🚀',
+        body: 'You have a new pending order ($orderId). Tap to view.',
+        payload: 'order_$orderId',
+      );
     }
   }
 

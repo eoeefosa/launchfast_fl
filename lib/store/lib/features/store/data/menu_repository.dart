@@ -6,9 +6,9 @@ import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
 import 'package:campuschow/store/lib/features/store/data/store_model.dart';
 
 class MenuRepository {
-  Future<Result<List<MenuItem>>> getMenuItems() async {
+  Future<Result<List<MenuItem>>> getMenuItems(String storeId) async {
     try {
-      final response = await apiService.dio.get('/menu');
+      final response = await apiService.dio.get('/stores/$storeId/menu');
       final items = (response.data as List).map((i) => MenuItem.fromJson(i)).toList();
       return Result.success(items);
     } on DioException catch (e) {
@@ -20,7 +20,7 @@ class MenuRepository {
 
   Future<Result<Map<String, dynamic>>> updateMenuItem(String id, Map<String, dynamic> data) async {
     try {
-      final response = await apiService.dio.put('/menu/$id', data: data);
+      final response = await apiService.dio.patch('/menu/$id', data: data);
       return Result.success(Map<String, dynamic>.from(response.data));
     } on DioException catch (e) {
       return Result.failure(apiService.handleDioError(e));
@@ -29,9 +29,9 @@ class MenuRepository {
     }
   }
 
-  Future<Result<Map<String, dynamic>>> addMenuItem(Map<String, dynamic> data) async {
+  Future<Result<Map<String, dynamic>>> addMenuItem(String storeId, Map<String, dynamic> data) async {
     try {
-      final response = await apiService.dio.post('/menu', data: data);
+      final response = await apiService.dio.post('/stores/$storeId/menu', data: data);
       return Result.success(Map<String, dynamic>.from(response.data));
     } on DioException catch (e) {
       return Result.failure(apiService.handleDioError(e));

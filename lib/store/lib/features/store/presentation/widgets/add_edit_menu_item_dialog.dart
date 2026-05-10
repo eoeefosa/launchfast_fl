@@ -29,6 +29,10 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
   late String _selectedCat;
   late bool _isReady;
   late bool _popular;
+  bool _isFreeWithSwallow = false;
+  bool _requiresSoupSelection = false;
+  List<Map<String, TextEditingController>> _sizes = [];
+  List<Map<String, TextEditingController>> _meatOptions = [];
 
   @override
   void initState() {
@@ -41,6 +45,20 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     _selectedCat = item?.category ?? 'Rice';
     _isReady = item?.isReady ?? true;
     _popular = item?.popular ?? false;
+    _isFreeWithSwallow = item?.isFreeWithSwallow ?? false;
+    _requiresSoupSelection = item?.requiresSoupSelection ?? false;
+    if (item?.sizes != null) {
+      _sizes = item!.sizes!.map((e) => {
+        'name': TextEditingController(text: e.name),
+        'price': TextEditingController(text: e.price.toString()),
+      }).toList();
+    }
+    if (item?.meatOptions != null) {
+      _meatOptions = item!.meatOptions!.map((e) => {
+        'name': TextEditingController(text: e.name),
+        'price': TextEditingController(text: e.price.toString()),
+      }).toList();
+    }
   }
 
   @override
@@ -48,6 +66,9 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     _nameCtrl.dispose();
     _descCtrl.dispose();
     _priceCtrl.dispose();
+    
+    for (var s in _sizes) { s['name']?.dispose(); s['price']?.dispose(); }
+    for (var m in _meatOptions) { m['name']?.dispose(); m['price']?.dispose(); }
 
     super.dispose();
   }
@@ -65,6 +86,17 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     }
 
     final isEdit = widget.item != null;
+
+    final sizesData = _sizes.where((s) => s['name']!.text.isNotEmpty).map((s) => {
+      'name': s['name']!.text.trim(),
+      'price': double.tryParse(s['price']!.text.trim()) ?? 0.0,
+    }).toList();
+
+    final meatData = _meatOptions.where((m) => m['name']!.text.isNotEmpty).map((m) => {
+      'name': m['name']!.text.trim(),
+      'price': double.tryParse(m['price']!.text.trim()) ?? 0.0,
+    }).toList();
+
     final data = {
       'name': name,
       'description': desc,
@@ -73,6 +105,11 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
       'image': _selectedImageStr,
       'isReady': _isReady,
       'popular': _popular,
+      'isFreeWithSwallow': _isFreeWithSwallow,
+      'requiresSoupSelection': _requiresSoupSelection,
+      'sizes': sizesData,
+      'meatOptions': meatData,
+      if (widget.item?.addonIds != null) 'addonIds': widget.item!.addonIds,
       if (widget.storeId != null && !isEdit) 'storeId': widget.storeId,
     };
 
@@ -270,6 +307,22 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
                   ),
                 )).toList(),
               ),
+              if (_selectedCat == 'Swallow') ...[
+                const SizedBox(height: 16),
+                _toggleRow('Requires Soup Selection', _requiresSoupSelection, muted, textColor, border, (v) => setState(() => _requiresSoupSelection = v)),
+                const SizedBox(height: 4),
+                Text('Customers must choose a soup when ordering this swallow.', style: TextStyle(color: muted, fontSize: 12)),
+              ],
+              if (_selectedCat == 'Soup') ...[
+                const SizedBox(height: 16),
+                _toggleRow('Free with Swallow', _isFreeWithSwallow, muted, textColor, border, (v) => setState(() => _isFreeWithSwallow = v)),
+                const SizedBox(height: 4),
+                Text('This soup will be ₦0 when paired with a swallow.', style: TextStyle(color: muted, fontSize: 12)),
+              ],
+              const SizedBox(height: 20),
+              _buildDynamicList('Meat / Portion Options', 'e.g. Small, Big, Half', _meatOptions, textColor, muted, border, bg),
+              const SizedBox(height: 20),
+              _buildDynamicList('Sizes / Portions (Optional)', 'e.g. 1.5 Portion', _sizes, textColor, muted, border, bg),
               const SizedBox(height: 16),
               _toggleRow('Available Now', _isReady, muted, textColor, border, (v) => setState(() => _isReady = v)),
               const SizedBox(height: 8),
@@ -305,6 +358,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     Color fillColor, {
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
+    String? hintText,
   }) {
     return TextField(
       controller: ctrl,
@@ -312,7 +366,9 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
       keyboardType: keyboardType,
       style: TextStyle(color: textColor),
       decoration: InputDecoration(
-        labelText: label,
+        labelText: label.isEmpty ? null : label,
+        hintText: hintText,
+        hintStyle: TextStyle(color: muted.withValues(alpha: 0.5)),
         labelStyle: TextStyle(color: muted),
         filled: true,
         fillColor: fillColor,
@@ -357,6 +413,67 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDynamicList(
+    String title,
+    String placeholder,
+    List<Map<String, TextEditingController>> list,
+    Color textColor,
+    Color muted,
+    Color border,
+    Color fillColor,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  list.add({'name': TextEditingController(), 'price': TextEditingController()});
+                });
+              },
+              icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
+              label: const Text('Add', style: TextStyle(color: AppColors.primary)),
+            )
+          ],
+        ),
+        ...list.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final item = entry.value;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _buildField('', item['name']!, textColor, muted, border, fillColor, hintText: placeholder),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: _buildField('', item['price']!, textColor, muted, border, fillColor, keyboardType: TextInputType.number, hintText: 'Price'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      item['name']?.dispose();
+                      item['price']?.dispose();
+                      list.removeAt(idx);
+                    });
+                  },
+                )
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 }

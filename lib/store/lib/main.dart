@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:campuschow/store/lib/features/dashboard/presentation/staff_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -50,30 +51,48 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) {
-          debugPrint('--- Creating AuthProvider ---');
-          return AuthProvider();
-        }),
-        ChangeNotifierProvider(create: (_) {
-          debugPrint('--- Creating StoreProvider ---');
-          return StoreProvider();
-        }),
-        ChangeNotifierProvider(create: (_) {
-          debugPrint('--- Creating CartProvider ---');
-          return CartProvider();
-        }),
-        ChangeNotifierProvider(create: (_) {
-          debugPrint('--- Creating OrderProvider ---');
-          return OrderProvider();
-        }),
-        ChangeNotifierProvider(create: (_) {
-          debugPrint('--- Creating NotificationProvider ---');
-          return NotificationProvider();
-        }),
-        ChangeNotifierProvider(create: (_) {
-          debugPrint('--- Creating ThemeProvider ---');
-          return ThemeProvider();
-        }),
+        ChangeNotifierProvider(
+          create: (_) {
+            debugPrint('--- Creating AuthProvider ---');
+            return AuthProvider();
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            debugPrint('--- Creating StoreProvider ---');
+            return StoreProvider();
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            debugPrint('--- Creating CartProvider ---');
+            return CartProvider();
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            debugPrint('--- Creating OrderProvider ---');
+            return OrderProvider();
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            debugPrint('--- Creating NotificationProvider ---');
+            return NotificationProvider();
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            debugPrint('--- Creating ThemeProvider ---');
+            return ThemeProvider();
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            debugPrint('--- Creating StaffProvider ---');
+            return StaffProvider();
+          },
+        ),
       ],
       child: const MyApp(),
     ),

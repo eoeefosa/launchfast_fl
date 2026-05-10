@@ -8,6 +8,7 @@ import '../data/menu_repository.dart';
 import '../data/store_repository.dart';
 import 'package:campuschow/store/lib/features/dashboard/data/store_stats_model.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
+import 'package:campuschow/store/lib/features/orders/data/order_repository.dart';
 
 class StoreProvider extends BaseProvider {
   List<Store> _stores = StaticData.stores;
@@ -90,9 +91,38 @@ class StoreProvider extends BaseProvider {
     notifyListeners();
   }
 
+  Future<void> refreshData() async {
+    if (_activeStoreId != null) {
+      try {
+        final storeResult = await menuRepository.getStores();
+        storeResult.fold(
+          (stores) {
+            _stores = stores;
+            try {
+              _activeStore = stores.firstWhere((s) => s.id == _activeStoreId);
+            } catch (_) {
+              // keep old _activeStore if not found in list
+            }
+          },
+          (failure) => setFailure(failure),
+        );
+
+        final menuResult = await menuRepository.getMenuItems(_activeStoreId!);
+        menuResult.fold(
+          (items) => _menuItems = items,
+          (failure) => setFailure(failure),
+        );
+      } catch (e) {
+        // unexpected error
+      }
+      notifyListeners();
+    }
+  }
+
   Future<void> addMenuItem(Map<String, dynamic> data) async {
+    if (_activeStoreId == null) return;
     setLoading(true);
-    (await menuRepository.addMenuItem(data)).fold(
+    (await menuRepository.addMenuItem(_activeStoreId!, data)).fold(
       (newItem) {
         _menuItems.add(MenuItem.fromJson(newItem));
         notifyListeners();
@@ -139,21 +169,6 @@ class StoreProvider extends BaseProvider {
     setActiveStore(storeId);
   }
 
-  Future<void> refreshData() async {
-    if (_activeStoreId != null) {
-      try {
-        final store = await storeRepository.getStores().then((stores) => stores.firstWhere((s) => s.id == _activeStoreId, orElse: () => _activeStore!));
-        _activeStore = store;
-        
-        // Also refresh menu items
-        // In a real app we'd fetch them here
-      } catch (e) {
-        // error handling
-      }
-      notifyListeners();
-    }
-  }
-
   Future<void> updateStore(String storeId, Map<String, dynamic> data) async {
     // Add logic to update a store
     final i = _stores.indexWhere((s) => s.id == storeId);
@@ -164,17 +179,19 @@ class StoreProvider extends BaseProvider {
   }
 
   Future<StoreStats> fetchStoreStats() async {
-    // Requires order_repository, returning dummy data for now
-    return StoreStats(revenue: 0, totalOrders: 0, pendingOrders: 0, preparingOrders: 0, topSellingItems: {});
+    if (_activeStoreId == null) {
+      return StoreStats(revenue: 0, totalOrders: 0, pendingOrders: 0, preparingOrders: 0, topSellingItems: {});
+    }
+    return await orderRepository.getStoreStats(_activeStoreId!);
   }
 
   Future<List<Order>> fetchStoreOrders() async {
-    // Requires order_repository, returning dummy data for now
-    return <Order>[];
+    if (_activeStoreId == null) return [];
+    return await orderRepository.getStoreOrders(_activeStoreId!);
   }
 
   Future<void> updateOrderStatus(String orderId, String status) async {
-    // Logic to update order status
+    await orderRepository.updateOrderStatus(orderId, status);
     notifyListeners();
   }
 

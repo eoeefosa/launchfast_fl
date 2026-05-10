@@ -8,6 +8,8 @@ import 'package:campuschow/store/lib/features/auth/presentation/auth_provider.da
 import 'package:campuschow/store/lib/features/orders/presentation/cart_provider.dart' as store_cart;
 import 'package:campuschow/store/lib/features/orders/presentation/order_provider.dart' as store_order;
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart' as store_store;
+import 'package:campuschow/store/lib/features/dashboard/presentation/staff_provider.dart' as store_staff;
+import 'package:campuschow/store/lib/core/services/notification_service.dart';
 
 bool _locatorInitialized = false;
 
@@ -30,6 +32,7 @@ class _StoreAppWrapperState extends State<StoreAppWrapper> {
         debugPrint('Store locator already setup or error: $e');
       }
     }
+    notificationService.init();
   }
 
   @override
@@ -42,6 +45,7 @@ class _StoreAppWrapperState extends State<StoreAppWrapper> {
         ChangeNotifierProvider(create: (_) => store_order.OrderProvider()),
         ChangeNotifierProvider(create: (_) => store_notif.NotificationProvider()),
         ChangeNotifierProvider(create: (_) => store_theme.ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => store_staff.StaffProvider()),
       ],
       child: const store_app.MyApp(),
     );
