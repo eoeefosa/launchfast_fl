@@ -87,7 +87,7 @@ class OrderRepository {
       data: {
         'orderId': orderId,
         'method': method,
-        if (email != null) 'email': email,
+        'email': ?email,
       },
     );
     if (response.data is! Map) {

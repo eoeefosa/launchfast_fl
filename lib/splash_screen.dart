@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'providers/auth_provider.dart';
+import 'store_app_entry.dart';
 
 class CampusChowSplashScreen extends StatefulWidget {
   const CampusChowSplashScreen({super.key});
@@ -15,7 +18,12 @@ class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
     super.initState();
     Future.delayed(const Duration(microseconds: 3000000), () {
       if (mounted) {
-        context.go('/home');
+        final authProvider = context.read<AuthProvider>();
+        if (authProvider.isAuthenticated && authProvider.isStoreOwner) {
+          launchStoreApp();
+        } else {
+          context.go('/home');
+        }
       }
     });
   }

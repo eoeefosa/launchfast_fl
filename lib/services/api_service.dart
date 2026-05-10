@@ -8,8 +8,17 @@ class ApiService {
   late Dio dio;
   final storage = const FlutterSecureStorage();
 
-  static const String baseUrl = 'https://campus-chow-three.vercel.app/api';
-  // static const String baseUrl = 'http://10.0.2.2:3000/api';
+  // static const String baseUrl = 'https://campus-chow-three.vercel.app/api';
+  
+  // Use 10.0.2.2 for Android Emulator, 127.0.0.1 for iOS Simulator.
+  // If testing on a real device, replace this with your computer's local IP address.
+  static String get baseUrl {
+    if (kReleaseMode) {
+      return 'https://campus-chow-three.vercel.app/api';
+    }
+    // Default for Android Emulator
+    return 'http://10.0.2.2:3000/api'; 
+  }
 
   ApiService() {
     dio = Dio(
@@ -80,6 +89,28 @@ class ApiService {
         },
       ),
     );
+  }
+
+  static String getErrorMessage(dynamic e) {
+    if (e is DioException) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        return 'No internet connection';
+      }
+      if (e.response?.data is Map) {
+        return e.response?.data['message'] ??
+            e.response?.data['error'] ??
+            e.message ??
+            'Unknown error';
+      }
+      if (e.response?.data is String && (e.response?.data as String).isNotEmpty) {
+        return e.response?.data as String;
+      }
+      return e.message ?? 'Unknown error';
+    }
+    return e.toString();
   }
 }
 

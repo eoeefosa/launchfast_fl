@@ -51,6 +51,10 @@ dependencies:
   firebase_core: ^4.7.0
   permission_handler: ^12.0.1
   flutter_native_splash: ^2.4.7
+  qr_flutter: ^4.1.0
+  image_picker: ^1.2.2
+  audioplayers: ^6.6.0
+  flutter_local_notifications: ^21.0.0
 
 dev_dependencies:
   flutter_test:

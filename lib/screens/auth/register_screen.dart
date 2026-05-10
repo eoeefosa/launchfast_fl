@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
+import '../../services/api_service.dart';
+import '../../store_app_entry.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -58,10 +60,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'password': _passwordController.text,
       });
 
-      orderProvider.refreshOrders();
-      router.go('/home');
+      final isStoreOwner = authProvider.isStoreOwner;
+      if (isStoreOwner) {
+        launchStoreApp();
+      } else {
+        orderProvider.refreshOrders();
+        router.go('/home');
+      }
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+      messenger.showSnackBar(
+        SnackBar(content: Text(ApiService.getErrorMessage(e))),
+      );
     }
   }
 

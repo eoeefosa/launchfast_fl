@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:campuschow/repositories/location_repository.dart';
 
 import '../locator.dart';
 import '../services/ably_service.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user.dart';
 import '../models/store.dart';
@@ -30,7 +31,8 @@ class AuthProvider with ChangeNotifier {
   String? get guestAddress => _guestAddress;
   String? get guestName => _guestName;
   String? get guestPhone => _guestPhone;
-  String? get currentAddress => _selectedAddress ?? _user?.address ?? _guestAddress;
+  String? get currentAddress =>
+      _selectedAddress ?? _user?.address ?? _guestAddress;
   List<String> get locations => _locations;
 
   // Tracks the actively selected delivery address (always up-to-date in UI)
@@ -61,13 +63,16 @@ class AuthProvider with ChangeNotifier {
   }
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    // By passing clientId directly, we prevent a native crash on iOS if GoogleService-Info.plist is missing.
+    // On Android, the clientId is automatically picked up from google-services.json.
+    // Providing it manually here can often cause 'DEVELOPER_ERROR' (ApiException 10).
     clientId: Platform.isIOS
         ? '471745302305-n6okkh5s155equosej1tsiibbu0l09ua.apps.googleusercontent.com'
-        : '471745302305-lj75e24f9iabb6c9e3hkguha505omn9q.apps.googleusercontent.com',
-    // The serverClientId is required to get an idToken for some backend verification flows
+        : null,
+    // The serverClientId is required to get an idToken for backend verification.
+    // This MUST be the Web Client ID from your Firebase Console.
     serverClientId:
-        '471745302305-jgs69lte05ua7ibf89pnmt6c02gi31fl.apps.googleusercontent.com',
+        '471745302305-tts3kroutn6jofuvcldfckjk4j7et6l2.apps.googleusercontent.com',
+    // '471745302305-jgs69lte05ua7ibf89pnmt6c02gi31fl.apps.googleusercontent.com',
   );
 
   AuthProvider() {
@@ -94,7 +99,9 @@ class AuthProvider with ChangeNotifier {
       _guestName = await storage.read(key: 'launch-fast-guest-name');
       _guestPhone = await storage.read(key: 'launch-fast-guest-phone');
       _guestAddress = await storage.read(key: 'launch-fast-guest-address');
-      _selectedAddress = await storage.read(key: 'launch-fast-selected-address');
+      _selectedAddress = await storage.read(
+        key: 'launch-fast-selected-address',
+      );
 
       if (userStr != null) {
         _user = UserProfile.fromJson(jsonDecode(userStr));
@@ -166,23 +173,36 @@ class AuthProvider with ChangeNotifier {
   Future<void> signInWithGoogle() async {
     _isLoading = true;
     notifyListeners();
+    debugPrint('[AuthProvider] Starting Google Sign-In...');
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
+        debugPrint(
+          '[AuthProvider] Google Sign-In was cancelled by user or failed silently.',
+        );
         _isLoading = false;
         notifyListeners();
         return;
       }
 
+      debugPrint('[AuthProvider] Google User: ${googleUser.email}');
+
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
       final String? idToken = googleAuth.idToken;
 
+      debugPrint('[AuthProvider] ID Token retrieved: ${idToken != null}');
+
       if (idToken == null) {
-        throw Exception('No ID token returned from Google');
+        throw Exception(
+          'No ID token returned from Google. Ensure your SHA-1 is registered in Firebase Console.',
+        );
       }
 
+      debugPrint('[AuthProvider] Calling backend for Google login...');
       final data = await locator<AuthRepository>().loginWithGoogle(idToken);
+      debugPrint('[AuthProvider] Backend response received: $data');
+
       final uData = data['user'] ?? data;
       if (uData is Map && uData['id'] != null) {
         _user = UserProfile.fromJson(uData as Map<String, dynamic>);
@@ -195,8 +215,28 @@ class AuthProvider with ChangeNotifier {
         );
         _initializeAbly();
       }
+    } on PlatformException catch (e) {
+      String errorMessage;
+      final code = e.code;
+      final message = e.message;
+
+      if (code == '10') {
+        errorMessage =
+            'DEVELOPER_ERROR (10): This usually means your SHA-1 fingerprint is missing or incorrect in the Google Cloud Console, or your package name does not match the registration.';
+      } else if (code == '7') {
+        errorMessage =
+            'NETWORK_ERROR (7): Ensure your device has internet access and can reach the Google Play Services.';
+      } else if (code == '12500') {
+        errorMessage =
+            'SIGN_IN_FAILED (12500): Check your Google Cloud Console configuration and ensure the Web Client ID is correct.';
+      } else {
+        errorMessage = 'Google Sign-In Platform Error ($code): $message';
+      }
+
+      debugPrint('[AuthProvider] Google Sign-In error: $errorMessage');
+      rethrow;
     } catch (e) {
-      debugPrint('[AuthProvider] Google Sign-In error: $e');
+      debugPrint('[AuthProvider] Unexpected error during Google Sign-In: $e');
       rethrow;
     } finally {
       _isLoading = false;

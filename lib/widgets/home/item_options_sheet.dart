@@ -120,22 +120,34 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (widget.item.sizes.isNotEmpty) ...[
-                    ItemDetailOptionsSection(
-                      title: 'Select Size',
-                      subtitle: 'Required',
-                      children: widget.item.sizes.map((size) {
-                        return ListTile(
-                          title: Text(size.name),
-                          trailing: Text('₦${size.price.toStringAsFixed(0)}'),
-                          leading: Radio<String>(
-                            value: size.id,
-                            groupValue: _selectedSizeId ?? (widget.item.sizes.isNotEmpty ? widget.item.sizes.first.id : null),
-                            onChanged: (val) => setState(() => _selectedSizeId = val),
-                            activeColor: widget.accentColor,
-                          ),
-                          onTap: () => setState(() => _selectedSizeId = size.id),
-                        );
-                      }).toList(),
+                    RadioGroup<String>(
+                      groupValue:
+                          _selectedSizeId ??
+                          (widget.item.sizes.isNotEmpty
+                              ? widget.item.sizes.first.id
+                              : null),
+                      onChanged: (val) => setState(() => _selectedSizeId = val),
+                      child: ItemDetailOptionsSection(
+                        title: 'Select Size',
+                        subtitle: 'Required',
+                        children:
+                            widget.item.sizes.map((size) {
+                              return ListTile(
+                                title: Text(size.name),
+                                trailing: Text(
+                                  '₦${size.price.toStringAsFixed(0)}',
+                                ),
+                                leading: Radio<String>(
+                                  value: size.id,
+                                  activeColor: widget.accentColor,
+                                ),
+                                onTap:
+                                    () => setState(
+                                      () => _selectedSizeId = size.id,
+                                    ),
+                              );
+                            }).toList(),
+                      ),
                     ),
                     const SizedBox(height: 24),
                   ],

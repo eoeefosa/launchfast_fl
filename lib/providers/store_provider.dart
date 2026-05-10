@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:campuschow/services/api_service.dart';
+
 import '../locator.dart';
 import 'package:flutter/material.dart';
 import '../models/store.dart';
@@ -102,7 +104,7 @@ class StoreProvider with ChangeNotifier {
         _halls = List<String>.from(fetchedSettings['halls'] as List);
       }
     } catch (e) {
-      _error = 'Failed to fetch data from API';
+      _error = ApiService.getErrorMessage(e);
       // print('Fetch error: $e');
     } finally {
       _isLoading = false;
@@ -117,7 +119,7 @@ class StoreProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
     } catch (e) {
-      _error = 'Failed to add menu item: $e';
+      _error = ApiService.getErrorMessage(e);
       notifyListeners();
       rethrow;
     }
@@ -133,7 +135,7 @@ class StoreProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      _error = 'Failed to update menu item: $e';
+      _error = ApiService.getErrorMessage(e);
       notifyListeners();
       rethrow;
     }
@@ -146,7 +148,7 @@ class StoreProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
     } catch (e) {
-      _error = 'Failed to delete menu item: $e';
+      _error = ApiService.getErrorMessage(e);
       notifyListeners();
       rethrow;
     }

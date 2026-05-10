@@ -10,6 +10,7 @@ class CartItem {
   final bool hasSalad;
   final Map<String, int>? selectedAddons;
   final String? selectedSizeId;
+
   /// The soup chosen when this is a swallow item (id, name, effective price).
   final Map<String, dynamic>? selectedSoup;
 
@@ -23,7 +24,9 @@ class CartItem {
     this.selectedAddons,
     this.selectedSizeId,
     this.selectedSoup,
-  }) : id = id ?? '${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(10000)}';
+  }) : id =
+           id ??
+           '${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(10000)}';
 
   // ── Structural equality ─────────────────────────────────────────────────────
   static bool _mapsEqual(Map<String, int>? a, Map<String, int>? b) {
@@ -49,7 +52,7 @@ class CartItem {
         this.hasSalad == hasSalad &&
         _mapsEqual(this.selectedAddons, selectedAddons) &&
         this.selectedSizeId == selectedSizeId &&
-        (this.selectedSoup?['id'] as String?) == selectedSoupId;
+        (selectedSoup?['id'] as String?) == selectedSoupId;
   }
 
   @override
@@ -61,22 +64,23 @@ class CartItem {
         other.hasSalad == hasSalad &&
         _mapsEqual(other.selectedAddons, selectedAddons) &&
         other.selectedSizeId == selectedSizeId &&
-        (other.selectedSoup?['id'] as String?) == (selectedSoup?['id'] as String?);
+        (other.selectedSoup?['id'] as String?) ==
+            (selectedSoup?['id'] as String?);
   }
 
   @override
   int get hashCode => Object.hash(
-        menuItem.id,
-        Object.hashAllUnordered(
-          selectedMeats?.entries.map((e) => Object.hash(e.key, e.value)) ?? [],
-        ),
-        hasSalad,
-        Object.hashAllUnordered(
-          selectedAddons?.entries.map((e) => Object.hash(e.key, e.value)) ?? [],
-        ),
-        selectedSizeId,
-        selectedSoup?['id'],
-      );
+    menuItem.id,
+    Object.hashAllUnordered(
+      selectedMeats?.entries.map((e) => Object.hash(e.key, e.value)) ?? [],
+    ),
+    hasSalad,
+    Object.hashAllUnordered(
+      selectedAddons?.entries.map((e) => Object.hash(e.key, e.value)) ?? [],
+    ),
+    selectedSizeId,
+    selectedSoup?['id'],
+  );
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     // The backend may return items using several different field names:
@@ -132,9 +136,13 @@ class CartItem {
       menuItem: menuItem,
       quantity: json['quantity'] ?? 1,
       extras: json['extras'] != null ? List<String>.from(json['extras']) : null,
-      selectedMeats: meatsData != null ? Map<String, int>.from(meatsData) : null,
+      selectedMeats: meatsData != null
+          ? Map<String, int>.from(meatsData)
+          : null,
       hasSalad: json['hasSalad'] ?? false,
-      selectedAddons: addonsData != null ? Map<String, int>.from(addonsData) : null,
+      selectedAddons: addonsData != null
+          ? Map<String, int>.from(addonsData)
+          : null,
       selectedSizeId: json['selectedSizeId'],
       selectedSoup: json['selectedSoup'] != null
           ? Map<String, dynamic>.from(json['selectedSoup'] as Map)

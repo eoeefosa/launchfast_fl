@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
+import '../../services/api_service.dart';
+import '../../store_app_entry.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -55,10 +57,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await action();
-      orderProvider.refreshOrders();
-      router.go('/home');
+      final isStoreOwner = context.read<AuthProvider>().isStoreOwner;
+      if (isStoreOwner) {
+        launchStoreApp();
+      } else {
+        orderProvider.refreshOrders();
+        router.go('/home');
+      }
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+      messenger.showSnackBar(
+        SnackBar(content: Text(ApiService.getErrorMessage(e))),
+      );
     }
   }
 
