@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAkGr9_24ZB1ifXAGVAJIs1990dQYpSgSw',
-    appId: '1:471745302305:android:c990b131458efeab117860',
+    appId: '1:471745302305:android:5357d8fa9e69ced5117860',
     messagingSenderId: '471745302305',
     projectId: 'try-auth-f5762',
     storageBucket: 'try-auth-f5762.firebasestorage.app',
@@ -59,12 +59,13 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBkrSjLp-8sYJ3fbWQH49GedP9L-9iEOKc',
-    appId: '1:471745302305:ios:49c4fb21182c1e0e117860',
+    appId: '1:471745302305:ios:48b687bcf07f0bf0117860',
     messagingSenderId: '471745302305',
     projectId: 'try-auth-f5762',
     storageBucket: 'try-auth-f5762.firebasestorage.app',
-    androidClientId: '471745302305-dn3dbl2ks77jqkajs9u2nivhrh4vrum0.apps.googleusercontent.com',
+    androidClientId: '471745302305-08e9dpqfai0danp1q4rvjj62nmdt7rcd.apps.googleusercontent.com',
     iosClientId: '471745302305-n6okkh5s155equosej1tsiibbu0l09ua.apps.googleusercontent.com',
-    iosBundleId: 'com.launchfast.app.launchfastFl',
+    iosBundleId: 'com.campuschow.app',
   );
+
 }

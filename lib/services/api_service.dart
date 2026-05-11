@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Called when any API response returns HTTP 401 (token expired / invalid).
 /// Wire this up in AuthProvider so the app navigates to login automatically.
@@ -42,7 +43,18 @@ class ApiService {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await storage.read(key: 'launch-fast-token');
+          String? token;
+          try {
+            final user = FirebaseAuth.instance.currentUser;
+            if (user != null) {
+              token = await user.getIdToken();
+            }
+          } catch (e) {
+            debugPrint('Error getting Firebase token: $e');
+          }
+
+          token ??= await storage.read(key: 'launch-fast-token');
+
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }

@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user.dart';
 import '../repositories/auth_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -415,13 +416,22 @@ class AuthProvider extends ChangeNotifier {
       }
 
       final googleAuth = await googleUser.authentication;
-      final token = googleAuth.idToken;
+      
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final idToken = await userCredential.user!.getIdToken();
 
-      if (token == null) {
-        throw Exception('Failed to get ID token from Google');
+      if (idToken == null) {
+        throw Exception('Failed to get ID token from Firebase');
       }
 
-      final data = await locator<AuthRepository>().loginWithGoogle(token);
+      // Just pass the Firebase ID Token to the Google OAuth endpoint
+      final data = await locator<AuthRepository>().loginWithGoogle(idToken);
+      
       await _persistAuthResponse(data);
       await _initializeAbly();
     } catch (e) {
