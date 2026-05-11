@@ -1,6 +1,11 @@
 import 'package:get_it/get_it.dart';
+import 'package:flutter/foundation.dart';
 
-import 'services/ably_service.dart';
+// The store's locator registers ALL the shared services (AblyService,
+// repositories). The main app just calls it and adds the app-level repos.
+import 'package:campuschow/store/lib/locator.dart' as store_locator;
+
+// Main-app–only repositories (not needed by the store screens).
 import 'repositories/auth_repository.dart';
 import 'repositories/menu_repository.dart';
 import 'repositories/order_repository.dart';
@@ -9,12 +14,27 @@ import 'repositories/location_repository.dart';
 final locator = GetIt.instance;
 
 void setupLocator() {
-  // Services
-  locator.registerLazySingleton<AblyService>(() => AblyService.instance);
+  debugPrint('[Locator] Setting up services...');
 
-  // Repositories
-  locator.registerLazySingleton<AuthRepository>(() => AuthRepository());
-  locator.registerLazySingleton<MenuRepository>(() => MenuRepository());
-  locator.registerLazySingleton<OrderRepository>(() => OrderRepository());
-  locator.registerLazySingleton<LocationRepository>(() => LocationRepository());
+  // Delegate to the store's locator first so the better AblyService
+  // and shared repositories are available to everyone.
+  store_locator.setupLocator();
+
+  // Main-app–specific repositories (customer-facing).
+  if (!locator.isRegistered<AuthRepository>()) {
+    locator.registerLazySingleton<AuthRepository>(() => AuthRepository());
+  }
+  if (!locator.isRegistered<MenuRepository>()) {
+    locator.registerLazySingleton<MenuRepository>(() => MenuRepository());
+  }
+  if (!locator.isRegistered<OrderRepository>()) {
+    locator.registerLazySingleton<OrderRepository>(() => OrderRepository());
+  }
+  if (!locator.isRegistered<LocationRepository>()) {
+    locator.registerLazySingleton<LocationRepository>(
+      () => LocationRepository(),
+    );
+  }
+
+  debugPrint('[Locator] Setup complete.');
 }

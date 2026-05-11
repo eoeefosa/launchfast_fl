@@ -3,74 +3,9 @@ import 'package:flutter/material.dart';
 import 'cart_item.dart';
 import 'package:campuschow/store/lib/features/auth/data/user_profile.dart';
 import 'package:campuschow/store/lib/features/store/data/store_model.dart';
+import 'package:campuschow/models/order.dart' show OrderStatus, OrderStatusExtension;
+export 'package:campuschow/models/order.dart' show OrderStatus, OrderStatusExtension;
 export 'cart_item.dart';
-
-enum OrderStatus {
-  pending,
-  accepted,
-  preparing,
-  readyForPickup,
-  pickingUp,
-  onTheWay,
-  delivered,
-  cancelled,
-  outForDelivery,
-  queued,
-}
-
-extension OrderStatusExtension on OrderStatus {
-  String get name {
-    switch (this) {
-      case OrderStatus.pending:
-        return 'Pending';
-      case OrderStatus.accepted:
-        return 'Accepted';
-      case OrderStatus.preparing:
-        return 'Preparing';
-      case OrderStatus.readyForPickup:
-        return 'Ready for Pickup';
-      case OrderStatus.pickingUp:
-        return 'Picking Up';
-      case OrderStatus.onTheWay:
-        return 'On the Way';
-      case OrderStatus.delivered:
-        return 'Delivered';
-      case OrderStatus.cancelled:
-        return 'Cancelled';
-      case OrderStatus.outForDelivery:
-        return 'Out for Delivery';
-      case OrderStatus.queued:
-        return 'Queued';
-    }
-  }
-
-  String get backendName => name.toUpperCase().replaceAll(' ', '_');
-
-  static OrderStatus fromString(String status) {
-    final s = status.toUpperCase().replaceAll(' ', '_');
-    switch (s) {
-      case 'PENDING':
-        return OrderStatus.pending;
-      case 'ACCEPTED':
-        return OrderStatus.accepted;
-      case 'PREPARING':
-        return OrderStatus.preparing;
-      case 'READY_FOR_PICKUP':
-        return OrderStatus.readyForPickup;
-      case 'PICKING_UP':
-        return OrderStatus.pickingUp;
-      case 'OUT_FOR_DELIVERY':
-      case 'ON_THE_WAY':
-        return OrderStatus.onTheWay;
-      case 'DELIVERED':
-        return OrderStatus.delivered;
-      case 'CANCELLED':
-        return OrderStatus.cancelled;
-      default:
-        return OrderStatus.pending;
-    }
-  }
-}
 
 class Order {
   final String id;

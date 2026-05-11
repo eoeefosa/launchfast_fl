@@ -1,93 +1,400 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-import 'package:campuschow/screens/auth/forgot_password_screen.dart';
-import 'package:campuschow/screens/auth/login_screen.dart';
-import 'package:campuschow/screens/auth/register_screen.dart';
-import 'package:campuschow/screens/stores_screen.dart';
-import 'package:campuschow/screens/tabs/home_screen.dart';
-import 'package:campuschow/screens/tabs/orders_screen.dart';
-import 'package:campuschow/screens/tabs/profile/profile_screen.dart';
-import 'package:campuschow/screens/tabs/tabs_shell.dart';
+
+import 'providers/auth_provider.dart';
+
+// ── Customer screens ──────────────────────────────────────────────────────────
+import 'splash_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/register_screen.dart';
+import 'screens/auth/forgot_password_screen.dart';
+
+import 'screens/tabs/tabs_shell.dart';
+import 'screens/tabs/home_screen.dart';
 import 'screens/tabs/cart_screen.dart';
+import 'screens/tabs/orders_screen.dart';
+import 'screens/tabs/profile/profile_screen.dart';
+
 import 'screens/store/store_detail_screen.dart';
 import 'screens/store/item_detail_screen.dart';
-import 'screens/checkout/checkout_screen.dart';
-import 'screens/search_screen.dart';
-import 'package:campuschow/screens/notifications_screen.dart';
-import 'package:campuschow/splash_screen.dart';
 
-final router = GoRouter(
-  initialLocation: '/',
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const CampusChowSplashScreen(),
-    ),
-    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-    GoRoute(
-      path: '/register',
-      builder: (context, state) => const RegisterScreen(),
-    ),
-    GoRoute(
-      path: '/forgot-password',
-      builder: (context, state) => const ForgotPasswordScreen(),
-    ),
-    GoRoute(
-      path: '/notifications',
-      builder: (context, state) => const NotificationsScreen(),
-    ),
-    StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) =>
-          TabsShell(navigationShell: navigationShell),
-      branches: [
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/home',
-              builder: (context, state) => const HomeScreen(),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/cart',
-              builder: (context, state) => const CartScreen(),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/orders',
-              builder: (context, state) => const OrdersScreen(),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/profile',
-              builder: (context, state) => const ProfileScreen(),
-            ),
-          ],
-        ),
-      ],
-    ),
-    GoRoute(
-      path: '/store/:id',
-      builder: (context, state) =>
-          StoreDetailScreen(id: state.pathParameters['id']!),
-    ),
-    GoRoute(
-      path: '/item/:id',
-      builder: (context, state) =>
-          ItemDetailScreen(id: state.pathParameters['id']!),
-    ),
-    GoRoute(path: '/stores', builder: (context, state) => const StoresScreen()),
-    GoRoute(
-      path: '/checkout',
-      builder: (context, state) => const CheckoutScreen(),
-    ),
-    GoRoute(path: '/search', builder: (context, state) => const SearchScreen()),
-  ],
-);
+import 'screens/checkout/checkout_screen.dart';
+
+import 'screens/search_screen.dart';
+import 'screens/stores_screen.dart';
+import 'screens/notifications_screen.dart';
+
+// ── Store-owner / worker screens ─────────────────────────────────────────────
+import 'package:campuschow/store/lib/features/dashboard/presentation/store_main_nav.dart';
+import 'package:campuschow/store/lib/features/dashboard/presentation/worker_main_nav.dart';
+
+import 'package:campuschow/store/lib/features/auth/presentation/awaiting_approval_screen.dart';
+
+import 'package:campuschow/store/lib/features/auth/presentation/register_screen.dart'
+    as store_register;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Route constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Splash
+const routeSplash = '/';
+
+// Auth
+const routeLogin = '/login';
+const routeRegister = '/register';
+const routeForgotPassword = '/forgot-password';
+
+// Customer tabs
+const routeHome = '/home';
+const routeCart = '/cart';
+const routeOrders = '/orders';
+const routeProfile = '/profile';
+
+// Customer misc
+const routeSearch = '/search';
+const routeNotifications = '/notifications';
+const routeStores = '/stores';
+const routeCheckout = '/checkout';
+
+// Dynamic customer routes
+const routeStoreDetails = '/stores/:id';
+const routeItemDetails = '/items/:id';
+
+// Store owner / worker dashboards
+const routeStoreDashboard = '/dashboard';
+const routeWorkerDashboard = '/worker';
+
+// Approval
+const routeAwaitingApproval = '/awaiting-approval';
+
+// Store registration
+const routeStoreRegister = '/store-register';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Route groups
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _authOnlyRoutes = {routeLogin, routeRegister, routeForgotPassword};
+
+const _customerRoutes = {
+  routeHome,
+  routeCart,
+  routeOrders,
+  routeProfile,
+  routeSearch,
+  routeNotifications,
+  routeStores,
+  routeCheckout,
+};
+
+const _protectedExactRoutes = {
+  routeHome,
+  routeCart,
+  routeOrders,
+  routeProfile,
+  routeCheckout,
+  routeStoreDashboard,
+  routeWorkerDashboard,
+  routeAwaitingApproval,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Router factory
+// ─────────────────────────────────────────────────────────────────────────────
+
+GoRouter createRouter(AuthProvider auth) {
+  debugPrint('[Router] Creating router');
+
+  return GoRouter(
+    initialLocation: routeSplash,
+
+    refreshListenable: auth,
+
+    debugLogDiagnostics: kDebugMode,
+
+    redirect: (context, state) {
+      final loc = state.matchedLocation;
+
+      final isLoading = auth.isLoading;
+      final isAuthed = auth.isAuthenticated;
+
+      final isStoreOwner = auth.isStoreOwner;
+      final isWorker = auth.isWorker;
+      final isAdmin = auth.isAdmin;
+
+      final isApproved = auth.isStoreApproved;
+
+      debugPrint('''
+[Router Redirect]
+location: $loc
+loading: $isLoading
+authenticated: $isAuthed
+role: ${auth.user?.role}
+approved: $isApproved
+''');
+
+      // ─────────────────────────────────────────────────────────────
+      // 1. App boot/loading protection
+      // ─────────────────────────────────────────────────────────────
+
+      if (isLoading) {
+        // Prevent navigating away during auth bootstrap
+        return loc == routeSplash ? null : routeSplash;
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // 2. Splash redirect after loading
+      // ─────────────────────────────────────────────────────────────
+
+      if (loc == routeSplash) {
+        return isAuthed ? _roleHomePage(auth) : routeLogin;
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // 3. Protected route guard
+      // ─────────────────────────────────────────────────────────────
+
+      if (!isAuthed && _isProtectedRoute(loc)) {
+        debugPrint('[Router] Blocked unauthenticated access');
+
+        return routeLogin;
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // 4. Logged-in users cannot access auth pages
+      // ─────────────────────────────────────────────────────────────
+
+      if (isAuthed && _authOnlyRoutes.contains(loc)) {
+        return _roleHomePage(auth);
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // 5. Store approval enforcement
+      // ─────────────────────────────────────────────────────────────
+
+      if (isAuthed &&
+          isStoreOwner &&
+          !isApproved &&
+          loc != routeAwaitingApproval) {
+        debugPrint('[Router] Store owner awaiting approval');
+
+        return routeAwaitingApproval;
+      }
+
+      // Approved store owner should NOT stay there
+      if (isAuthed &&
+          isStoreOwner &&
+          isApproved &&
+          loc == routeAwaitingApproval) {
+        return routeStoreDashboard;
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // 6. Prevent role dashboard crossover
+      // ─────────────────────────────────────────────────────────────
+
+      if (isWorker && loc == routeStoreDashboard) {
+        return routeWorkerDashboard;
+      }
+
+      if ((isStoreOwner || isAdmin) && loc == routeWorkerDashboard) {
+        return routeStoreDashboard;
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // 7. Prevent store/worker users from customer UI
+      // ─────────────────────────────────────────────────────────────
+
+      if ((isStoreOwner || isAdmin) && _customerRoutes.contains(loc)) {
+        return routeStoreDashboard;
+      }
+
+      if (isWorker && _customerRoutes.contains(loc)) {
+        return routeWorkerDashboard;
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // 8. No redirect needed
+      // ─────────────────────────────────────────────────────────────
+
+      return null;
+    },
+
+    routes: [
+      // ───────────────────────────────────────────────────────────
+      // Splash
+      // ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: routeSplash,
+        builder: (_, _) => const CampusChowSplashScreen(),
+      ),
+
+      // ───────────────────────────────────────────────────────────
+      // Auth
+      // ───────────────────────────────────────────────────────────
+      GoRoute(path: routeLogin, builder: (_, _) => const LoginScreen()),
+
+      GoRoute(path: routeRegister, builder: (_, _) => const RegisterScreen()),
+
+      GoRoute(
+        path: routeForgotPassword,
+        builder: (_, _) => const ForgotPasswordScreen(),
+      ),
+
+      // ───────────────────────────────────────────────────────────
+      // Store registration
+      // ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: routeStoreRegister,
+        builder: (_, _) => const store_register.RegisterScreen(),
+      ),
+
+      // ───────────────────────────────────────────────────────────
+      // Customer shell
+      // ───────────────────────────────────────────────────────────
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, shell) {
+          return TabsShell(navigationShell: shell);
+        },
+
+        branches: [
+          // Home
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: routeHome, builder: (_, _) => const HomeScreen()),
+            ],
+          ),
+
+          // Cart
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: routeCart, builder: (_, _) => const CartScreen()),
+            ],
+          ),
+
+          // Orders
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: routeOrders,
+                builder: (_, _) => const OrdersScreen(),
+              ),
+            ],
+          ),
+
+          // Profile
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: routeProfile,
+                builder: (_, _) => const ProfileScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
+
+      // ───────────────────────────────────────────────────────────
+      // Customer misc
+      // ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: routeNotifications,
+        builder: (_, _) => const NotificationsScreen(),
+      ),
+
+      GoRoute(path: routeStores, builder: (_, _) => const StoresScreen()),
+
+      GoRoute(path: routeSearch, builder: (_, _) => const SearchScreen()),
+
+      GoRoute(path: routeCheckout, builder: (_, _) => const CheckoutScreen()),
+
+      // ───────────────────────────────────────────────────────────
+      // Dynamic routes
+      // ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: routeStoreDetails,
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+
+          return StoreDetailScreen(id: id);
+        },
+      ),
+
+      GoRoute(
+        path: routeItemDetails,
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+
+          return ItemDetailScreen(id: id);
+        },
+      ),
+
+      // ───────────────────────────────────────────────────────────
+      // Store dashboard
+      // ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: routeStoreDashboard,
+        builder: (_, _) => const StoreMainNav(),
+      ),
+
+      // ───────────────────────────────────────────────────────────
+      // Worker dashboard
+      // ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: routeWorkerDashboard,
+        builder: (_, _) => const WorkerMainNav(),
+      ),
+
+      // ───────────────────────────────────────────────────────────
+      // Awaiting approval
+      // ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: routeAwaitingApproval,
+        builder: (_, _) => const AwaitingApprovalScreen(),
+      ),
+    ],
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Protected route helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+bool _isProtectedRoute(String loc) {
+  // Exact protected routes
+  if (_protectedExactRoutes.contains(loc)) {
+    return true;
+  }
+
+  // Dynamic protected routes
+  if (loc.startsWith('/stores/')) {
+    return true;
+  }
+
+  if (loc.startsWith('/items/')) {
+    return true;
+  }
+
+  return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Role homepage resolver
+// ─────────────────────────────────────────────────────────────────────────────
+
+String _roleHomePage(AuthProvider auth) {
+  if (auth.isAdmin) {
+    return routeStoreDashboard;
+  }
+
+  if (auth.isStoreOwner) {
+    return auth.isStoreApproved ? routeStoreDashboard : routeAwaitingApproval;
+  }
+
+  if (auth.isWorker) {
+    return routeWorkerDashboard;
+  }
+
+  return routeHome;
+}

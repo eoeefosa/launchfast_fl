@@ -56,7 +56,7 @@ class OrderProvider with ChangeNotifier {
           debugPrint(
             '[OrderProvider] _loadLocalOrders: subscribing to real-time updates for userId=$userId',
           );
-          locator<AblyService>().subscribeToUserOrders(userId, (
+          ablyService.subscribeToUserOrders(userId, (
             orderId,
             status,
           ) {
@@ -276,14 +276,15 @@ class OrderProvider with ChangeNotifier {
 
   Future<void> clearOrders() async {
     debugPrint(
-      '[OrderProvider] clearOrders: clearing all orders and disconnecting Ably...',
+      '[OrderProvider] clearOrders: clearing all cached orders...',
     );
     _orders = [];
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('launch-fast-orders');
-    locator<AblyService>().disconnect();
+    // Note: Do not disconnect Ably here! Ably is tied to the AuthProvider
+    // session and is disconnected globally during logout.
     debugPrint(
-      '[OrderProvider] clearOrders: done — cache cleared, Ably disconnected.',
+      '[OrderProvider] clearOrders: done — cache cleared.',
     );
     notifyListeners();
   }

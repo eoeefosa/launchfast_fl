@@ -1,24 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
 
-class CampusChowSplashScreen extends StatefulWidget {
+/// CampusChow launch / loading screen.
+///
+/// Responsibility: animate the brand while auth initialises.
+///
+/// Navigation responsibility: NONE — the router's `redirect` clause watches
+/// [AuthProvider] via `refreshListenable`. The moment `auth.isLoading` flips
+/// to `false`, the router fires and sends the user to the correct screen
+/// for their role. The splash never calls `context.go(...)`.
+class CampusChowSplashScreen extends StatelessWidget {
   const CampusChowSplashScreen({super.key});
-
-  @override
-  State<CampusChowSplashScreen> createState() => _CampusChowSplashScreenState();
-}
-
-class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(microseconds: 3000000), () {
-      if (mounted) {
-        context.go('/home');
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +20,7 @@ class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
       backgroundColor: scheme.surface,
       body: Stack(
         children: [
-          // Subtle background radial glow for depth
+          // Subtle radial glow for depth
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -48,32 +40,24 @@ class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // THE LOGO ICON
+                // App icon
                 Semantics(
                   label: 'Campus Chow Logo',
                   image: true,
-                  child:
-                      Image.asset(
-                            'assets/appicon.png', // Just the cloche/rocket part
-                            height: 120,
-                          )
-                          .animate()
-                          .fadeIn(duration: 600.ms)
-                          .slideX(
-                            begin: -0.2,
-                            end: 0,
-                            curve: Curves.easeOutCubic,
-                          )
-                          .shimmer(
-                            delay: 800.ms,
-                            duration: 1500.ms,
-                            color: Colors.white.withValues(alpha: 0.5),
-                          ),
-                ), // Premium shader sweep
+                  child: Image.asset('assets/appicon.png', height: 120)
+                      .animate()
+                      .fadeIn(duration: 600.ms)
+                      .slideX(begin: -0.2, end: 0, curve: Curves.easeOutCubic)
+                      .shimmer(
+                        delay: 800.ms,
+                        duration: 1500.ms,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
+                ),
 
                 const SizedBox(height: 24),
 
-                // THE BRAND NAME
+                // Brand name
                 Semantics(
                   label: 'Campus Chow',
                   header: true,
@@ -81,7 +65,7 @@ class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                            "Campus",
+                            'Campus',
                             style: TextStyle(
                               fontSize: 42,
                               fontWeight: FontWeight.w800,
@@ -92,9 +76,8 @@ class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
                           .animate()
                           .fadeIn(delay: 400.ms)
                           .slideY(begin: 0.2, end: 0),
-
                       Text(
-                            "Chow",
+                            'Chow',
                             style: TextStyle(
                               fontSize: 42,
                               fontWeight: FontWeight.w800,
@@ -112,9 +95,8 @@ class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
 
                 const SizedBox(height: 8),
 
-                // SUBTITLE WITH SPACING
                 Text(
-                      "FOOD DELIVERY",
+                      'FOOD DELIVERY',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -124,12 +106,12 @@ class _CampusChowSplashScreenState extends State<CampusChowSplashScreen> {
                     )
                     .animate()
                     .fadeIn(delay: 1000.ms)
-                    .blurXY(begin: 10, end: 0), // Smooth "focus" effect
+                    .blurXY(begin: 10, end: 0),
               ],
             ),
           ),
 
-          // Bottom loading indicator (Discrete & Professional)
+          // Bottom loading bar — visible while auth is being read from storage
           Positioned(
             bottom: 60,
             left: 0,

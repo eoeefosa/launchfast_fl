@@ -54,14 +54,12 @@ class AblyService {
 
   // ── Listener registries ─────────────────────────────────────────────────────
 
-  final List<Function(String orderId, OrderStatus status)> _orderListeners = [];
-  final List<Function(String storeId, bool isOpen)> _storeListeners = [];
-  final List<Function(String newRole)> _roleListeners = [];
-  final List<Function(String storeId)> _approvalListeners = [];
-  final List<Function(Map<String, dynamic> payload)> _notificationListeners =
-      [];
-  final List<Function(String storeId, String? menuItemId, bool? isReady)>
-  _menuListeners = [];
+  final List<void Function(String orderId, OrderStatus status)> _orderListeners = [];
+  final List<void Function(String storeId, bool isOpen)> _storeListeners = [];
+  final List<void Function(String newRole)> _roleListeners = [];
+  final List<void Function(String storeId)> _approvalListeners = [];
+  final List<void Function(Map<String, dynamic> payload)> _notificationListeners = [];
+  final List<void Function(String storeId, String? menuItemId, bool? isReady)> _menuListeners = [];
 
   // ── Init ────────────────────────────────────────────────────────────────────
   Future<void> initAbly(String userId) async {
@@ -448,8 +446,8 @@ class AblyService {
 
   Future<void> subscribeToRiderChannel(
     String riderId, {
-    Function(Map<String, dynamic> data)? onOrderUpdate,
-    Function(Map<String, dynamic> data)? onNewJob,
+    void Function(Map<String, dynamic> data)? onOrderUpdate,
+    void Function(Map<String, dynamic> data)? onNewJob,
   }) async {
     // FIX: Snapshot _realtime so a concurrent disconnect() can't null it
     // between the guard and subsequent accesses (two await gaps in this method).
@@ -549,7 +547,7 @@ class AblyService {
   // silently registering a listener that will never fire.
   void subscribeToUserOrders(
     String userId,
-    Function(String orderId, OrderStatus status) onUpdate,
+    void Function(String orderId, OrderStatus status) onUpdate,
   ) {
     addOrderListener(onUpdate);
     if (_realtime != null) {
@@ -573,54 +571,54 @@ class AblyService {
   /// IMPORTANT: Pass a stable function reference (a named method or a stored
   /// closure), never an inline lambda. Dart compares closures by identity, so a
   /// new lambda on every call will not be deduplicated and will accumulate.
-  void addOrderListener(Function(String orderId, OrderStatus status) l) {
+  void addOrderListener(void Function(String orderId, OrderStatus status) l) {
     if (!_orderListeners.contains(l)) _orderListeners.add(l);
   }
 
-  void removeOrderListener(Function(String orderId, OrderStatus status) l) =>
+  void removeOrderListener(void Function(String orderId, OrderStatus status) l) =>
       _orderListeners.remove(l);
 
   /// See [addOrderListener] for the stable-reference requirement.
   void addMenuListener(
-    Function(String storeId, String? menuItemId, bool? isReady) l,
+    void Function(String storeId, String? menuItemId, bool? isReady) l,
   ) {
     if (!_menuListeners.contains(l)) _menuListeners.add(l);
   }
 
   void removeMenuListener(
-    Function(String storeId, String? menuItemId, bool? isReady) l,
+    void Function(String storeId, String? menuItemId, bool? isReady) l,
   ) => _menuListeners.remove(l);
 
   /// See [addOrderListener] for the stable-reference requirement.
-  void addStoreListener(Function(String storeId, bool isOpen) l) {
+  void addStoreListener(void Function(String storeId, bool isOpen) l) {
     if (!_storeListeners.contains(l)) _storeListeners.add(l);
   }
 
-  void removeStoreListener(Function(String storeId, bool isOpen) l) =>
+  void removeStoreListener(void Function(String storeId, bool isOpen) l) =>
       _storeListeners.remove(l);
 
   /// See [addOrderListener] for the stable-reference requirement.
-  void addRoleListener(Function(String newRole) l) {
+  void addRoleListener(void Function(String newRole) l) {
     if (!_roleListeners.contains(l)) _roleListeners.add(l);
   }
 
-  void removeRoleListener(Function(String newRole) l) =>
+  void removeRoleListener(void Function(String newRole) l) =>
       _roleListeners.remove(l);
 
   /// See [addOrderListener] for the stable-reference requirement.
-  void addNotificationListener(Function(Map<String, dynamic> payload) l) {
+  void addNotificationListener(void Function(Map<String, dynamic> payload) l) {
     if (!_notificationListeners.contains(l)) _notificationListeners.add(l);
   }
 
-  void removeNotificationListener(Function(Map<String, dynamic> payload) l) =>
+  void removeNotificationListener(void Function(Map<String, dynamic> payload) l) =>
       _notificationListeners.remove(l);
 
   /// See [addOrderListener] for the stable-reference requirement.
-  void addStoreApprovalListener(Function(String storeId) l) {
+  void addStoreApprovalListener(void Function(String storeId) l) {
     if (!_approvalListeners.contains(l)) _approvalListeners.add(l);
   }
 
-  void removeStoreApprovalListener(Function(String storeId) l) =>
+  void removeStoreApprovalListener(void Function(String storeId) l) =>
       _approvalListeners.remove(l);
 
   // ── Teardown ────────────────────────────────────────────────────────────────

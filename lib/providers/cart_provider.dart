@@ -314,10 +314,10 @@ class CartProvider with ChangeNotifier {
   double get serviceFees {
     if (subTotal == 0) return 0;
     final storeCount = _items.map((i) => i.menuItem.storeId).toSet().length;
-    if (subTotal < 2000) return 100.0 * storeCount;
-    if (subTotal <= 5000) return 200.0 * storeCount;
-    if (subTotal <= 10000) return 300.0 * storeCount;
-    return 350.0 * storeCount;
+    if (subTotal < 2000) return 150.0 * storeCount;
+    if (subTotal <= 5000) return 250.0 * storeCount;
+    if (subTotal <= 10000) return 350.0 * storeCount;
+    return 500.0 * storeCount;
   }
 
   /// Delivery charge for the given [DeliveryType]. The UI reads this; it does

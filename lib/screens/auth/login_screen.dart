@@ -5,7 +5,6 @@ import 'package:campuschow/screens/auth/widgets/constants.dart';
 import 'package:campuschow/screens/auth/widgets/custom_button.dart';
 import 'package:campuschow/screens/auth/widgets/password_toggle.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../services/api_service.dart';
@@ -52,16 +51,19 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _authenticate(Future<void> Function() action) async {
     final messenger = ScaffoldMessenger.of(context);
     final orderProvider = context.read<OrderProvider>();
-    final router = GoRouter.of(context);
 
     try {
       await action();
       if (!mounted) return;
-      final isStoreOwner = context.read<AuthProvider>().isStoreOwner;
-      if (!isStoreOwner) {
+      // Refresh orders for customers after login.
+      // Store owners / workers are handled by their own screens.
+      final auth = context.read<AuthProvider>();
+      if (!auth.isStoreOwner && !auth.isWorker) {
         orderProvider.refreshOrders();
-        router.go('/home');
       }
+      // No need to call router.go() — the router's refreshListenable
+      // detects the auth state change and navigates to the correct screen.
+      debugPrint('[LoginScreen] Auth complete. Role: ${auth.user?.role}. Router will redirect.');
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text(ApiService.getErrorMessage(e))),

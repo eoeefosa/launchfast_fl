@@ -21,21 +21,26 @@ class _StoreLaunchfastSplashScreenState
     Future.delayed(const Duration(milliseconds: 2000), () {
       if (mounted) {
         final auth = context.read<AuthProvider>();
+        debugPrint('[StoreSplash] Timer fired. isAuthenticated: ${auth.isAuthenticated}, isStoreOwner: ${auth.isStoreOwner}');
+        
         if (auth.isAuthenticated) {
           if (auth.isStoreOwner) {
             if (auth.isStoreApproved) {
+              debugPrint('[StoreSplash] Navigating to /store');
               context.go('/store');
             } else {
+              debugPrint('[StoreSplash] Navigating to /store (approval check disabled or passing)');
               context.go('/store');
-
-              // context.go('/awaiting-approval');
             }
           } else if (auth.user?.role == 'STORE_WORKER') {
+            debugPrint('[StoreSplash] Navigating to /worker');
             context.go('/worker');
           } else {
+            debugPrint('[StoreSplash] Not a store user, navigating to /login');
             context.go('/login');
           }
         } else {
+          debugPrint('[StoreSplash] Not authenticated, navigating to /login');
           context.go('/login');
         }
       }

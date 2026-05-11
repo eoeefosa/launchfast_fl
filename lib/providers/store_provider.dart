@@ -37,7 +37,7 @@ class StoreProvider with ChangeNotifier {
   }
 
   void _setupListeners() {
-    locator<AblyService>().addStoreListener((storeId, isOpen) {
+    ablyService.addStoreListener((storeId, isOpen) {
       final index = _stores.indexWhere((s) => s.id == storeId);
       if (index != -1) {
         final oldStatus = _stores[index].isOpen;
@@ -50,7 +50,7 @@ class StoreProvider with ChangeNotifier {
       }
     });
 
-    locator<AblyService>().addMenuListener((storeId, menuItemId, isReady) {
+    ablyService.addMenuListener((storeId, menuItemId, isReady) {
       if (menuItemId != null && isReady != null) {
         // Specific item update
         final index = _menuItems.indexWhere((m) => m.id == menuItemId);
@@ -73,7 +73,7 @@ class StoreProvider with ChangeNotifier {
   @override
   void dispose() {
     _alertController.close();
-    // locator<AblyService>().removeStoreListener(_onStoreUpdate);
+    // ablyService.removeStoreListener(_onStoreUpdate);
     super.dispose();
   }
 

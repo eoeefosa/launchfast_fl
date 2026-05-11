@@ -6,6 +6,9 @@ class UserProfile {
   final String? phone;
   final double walletBalance;
   final String role; // 'user', 'store_owner', 'rider', 'admin'
+  /// Whether the admin has approved the store this user owns.
+  /// Always false for non-store-owner roles.
+  final bool isStoreApproved;
   final String? adminStore;
   final bool emailVerified;
   final bool phoneVerified;
@@ -19,6 +22,7 @@ class UserProfile {
     this.phone,
     required this.walletBalance,
     required this.role,
+    this.isStoreApproved = false,
     this.adminStore,
     this.emailVerified = false,
     this.phoneVerified = false,
@@ -34,6 +38,7 @@ class UserProfile {
       phone: json['phone'],
       walletBalance: (json['walletBalance'] as num?)?.toDouble() ?? 0.0,
       role: json['role'] ?? 'user',
+      isStoreApproved: json['isStoreApproved'] ?? false,
       adminStore: json['adminStore'],
       emailVerified: json['emailVerified'] ?? false,
       phoneVerified: json['phoneVerified'] ?? false,
@@ -50,6 +55,7 @@ class UserProfile {
       'phone': phone,
       'walletBalance': walletBalance,
       'role': role,
+      'isStoreApproved': isStoreApproved,
       'adminStore': adminStore,
       'emailVerified': emailVerified,
       'phoneVerified': phoneVerified,

@@ -15,7 +15,6 @@ import '../../widgets/home/category_selector.dart';
 import '../../widgets/home/cart_bar.dart';
 import '../../widgets/home/item_options_sheet.dart';
 import '../../services/ably_service.dart';
-import '../../locator.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -55,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _roleListener = (String newRole) {
         if (mounted) context.read<AuthProvider>().updateRole(newRole);
       };
-      locator<AblyService>().addRoleListener(_roleListener);
+      ablyService.addRoleListener(_roleListener);
 
       _notificationListener = (Map<String, dynamic> payload) {
         if (mounted) {
@@ -73,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
           context.read<NotificationProvider>().addNotification(item);
         }
       };
-      locator<AblyService>().addNotificationListener(_notificationListener);
+      ablyService.addNotificationListener(_notificationListener);
 
       _ablyOrderListener = (String orderId, OrderStatus status) {
         if (mounted) {
@@ -88,19 +87,18 @@ class _HomeScreenState extends State<HomeScreen> {
           context.read<NotificationProvider>().addNotification(item);
         }
       };
-      locator<AblyService>().addOrderListener(_ablyOrderListener);
+      ablyService.addOrderListener(_ablyOrderListener);
     } else {
       _roleListener = (_) {};
       _notificationListener = (_) {};
       _ablyOrderListener = (_, _) {};
     }
   }
-
   @override
   void dispose() {
-    locator<AblyService>().removeRoleListener(_roleListener);
-    locator<AblyService>().removeNotificationListener(_notificationListener);
-    locator<AblyService>().removeOrderListener(_ablyOrderListener);
+    ablyService.removeRoleListener(_roleListener);
+    ablyService.removeNotificationListener(_notificationListener);
+    ablyService.removeOrderListener(_ablyOrderListener);
     super.dispose();
   }
 

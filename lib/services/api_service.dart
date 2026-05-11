@@ -4,9 +4,17 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+/// Called when any API response returns HTTP 401 (token expired / invalid).
+/// Wire this up in AuthProvider so the app navigates to login automatically.
+typedef OnUnauthorizedCallback = void Function();
+
 class ApiService {
   late Dio dio;
   final storage = const FlutterSecureStorage();
+
+  /// Set this in AuthProvider after construction. Any 401 response will
+  /// fire this callback so the session can be cleared and the user redirected.
+  OnUnauthorizedCallback? onUnauthorized;
 
   // static const String baseUrl = 'https://campus-chow-three.vercel.app/api';
 
@@ -72,6 +80,12 @@ class ApiService {
           debugPrint(
             '❌ [API] ${e.response?.statusCode ?? 'Network Error'} ${e.requestOptions.path}',
           );
+
+          // 401 = token expired or invalid → force logout via the callback.
+          if (e.response?.statusCode == 401) {
+            debugPrint('🔐 [API] 401 detected — firing onUnauthorized callback');
+            onUnauthorized?.call();
+          }
 
           String message = e.message ?? 'Unknown error';
           if (e.response?.data is Map) {
