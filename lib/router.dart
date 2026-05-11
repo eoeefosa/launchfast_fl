@@ -89,11 +89,6 @@ const _customerRoutes = {
 };
 
 const _protectedExactRoutes = {
-  routeHome,
-  routeCart,
-  routeOrders,
-  routeProfile,
-  routeCheckout,
   routeStoreDashboard,
   routeWorkerDashboard,
   routeAwaitingApproval,
@@ -138,7 +133,7 @@ approved: $isApproved
       // 1. App boot/loading protection
       // ─────────────────────────────────────────────────────────────
 
-      if (isLoading) {
+      if (!auth.initialized) {
         // Prevent navigating away during auth bootstrap
         return loc == routeSplash ? null : routeSplash;
       }
@@ -148,7 +143,7 @@ approved: $isApproved
       // ─────────────────────────────────────────────────────────────
 
       if (loc == routeSplash) {
-        return isAuthed ? _roleHomePage(auth) : routeLogin;
+        return isAuthed ? _roleHomePage(auth) : routeHome;
       }
 
       // ─────────────────────────────────────────────────────────────
@@ -364,15 +359,6 @@ approved: $isApproved
 bool _isProtectedRoute(String loc) {
   // Exact protected routes
   if (_protectedExactRoutes.contains(loc)) {
-    return true;
-  }
-
-  // Dynamic protected routes
-  if (loc.startsWith('/stores/')) {
-    return true;
-  }
-
-  if (loc.startsWith('/items/')) {
     return true;
   }
 

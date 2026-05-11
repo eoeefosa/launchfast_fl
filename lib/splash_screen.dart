@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'widgets/common/loading_indicator.dart';
 
 /// CampusChow launch / loading screen.
 ///
@@ -20,6 +21,9 @@ class CampusChowSplashScreen extends StatelessWidget {
       backgroundColor: scheme.surface,
       body: Stack(
         children: [
+          // Guaranteed background color
+          Container(color: scheme.surface),
+          
           // Subtle radial glow for depth
           Positioned.fill(
             child: Container(
@@ -28,7 +32,7 @@ class CampusChowSplashScreen extends StatelessWidget {
                   center: Alignment.center,
                   radius: 1.2,
                   colors: [
-                    scheme.primary.withValues(alpha: 0.05),
+                    scheme.primary.withValues(alpha: 0.1),
                     scheme.surface,
                   ],
                 ),
@@ -40,11 +44,18 @@ class CampusChowSplashScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // App icon
                 Semantics(
                   label: 'Campus Chow Logo',
                   image: true,
-                  child: Image.asset('assets/appicon.png', height: 120)
+                  child: Image.asset(
+                    'assets/appicon.png', 
+                    height: 120,
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                      Icons.fastfood_rounded,
+                      size: 120,
+                      color: scheme.primary,
+                    ),
+                  )
                       .animate()
                       .fadeIn(duration: 600.ms)
                       .slideX(begin: -0.2, end: 0, curve: Curves.easeOutCubic)
@@ -113,19 +124,12 @@ class CampusChowSplashScreen extends StatelessWidget {
 
           // Bottom loading bar — visible while auth is being read from storage
           Positioned(
-            bottom: 60,
+            bottom: 80,
             left: 0,
             right: 0,
-            child: Center(
-              child: SizedBox(
-                width: 40,
-                height: 2,
-                child: LinearProgressIndicator(
-                  backgroundColor: scheme.primary.withValues(alpha: 0.1),
-                  color: scheme.primary,
-                ),
-              ).animate().fadeIn(delay: 1500.ms),
-            ),
+            child: const CampusChowLoading(size: 32)
+                .animate()
+                .fadeIn(delay: 1000.ms, duration: 800.ms),
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../../../../widgets/common/loading_indicator.dart';
 
 class CustomButton extends StatelessWidget {
   const CustomButton({
@@ -29,14 +30,7 @@ class CustomButton extends StatelessWidget {
         shadowColor: primaryColor.withValues(alpha: 0.5),
       ),
       child: isLoading
-          ? const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            )
+          ? const CampusChowLoading(size: 24)
           : Text(
               label,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -86,11 +80,7 @@ class GoogleSignInButton extends StatelessWidget {
         side: BorderSide(color: Colors.grey[300]!),
       ),
       child: isLoading
-          ? const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
+          ? const CampusChowLoading(size: 24)
           : const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
