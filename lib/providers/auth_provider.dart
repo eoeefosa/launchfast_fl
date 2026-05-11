@@ -429,8 +429,9 @@ class AuthProvider extends ChangeNotifier {
         throw Exception('Failed to get ID token from Firebase');
       }
 
-      // Just pass the Firebase ID Token to the Google OAuth endpoint
-      final data = await locator<AuthRepository>().loginWithGoogle(idToken);
+      // IMPORTANT: Send the Google ID Token, NOT the Firebase ID Token.
+      // The backend uses google-auth-library which expects a token from accounts.google.com.
+      final data = await locator<AuthRepository>().loginWithGoogle(googleAuth.idToken!);
       
       await _persistAuthResponse(data);
       await _initializeAbly();
