@@ -17,7 +17,12 @@ class AuthProvider extends ChangeNotifier {
     FlutterSecureStorage? storage,
     GoogleSignIn? googleSignIn,
   })  : _storage = storage ?? const FlutterSecureStorage(),
-        _googleSignIn = googleSignIn ?? GoogleSignIn() {
+        _googleSignIn = googleSignIn ?? GoogleSignIn(
+          serverClientId: const String.fromEnvironment(
+            'SERVER_CLIENT_ID',
+            defaultValue: '471745302305-tts3kroutn6jofuvcldfckjk4j7et6l2.apps.googleusercontent.com',
+          ),
+        ) {
 
     apiService.onUnauthorized = _handleUnauthorized;
   }
