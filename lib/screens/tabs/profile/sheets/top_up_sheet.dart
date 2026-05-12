@@ -41,6 +41,9 @@ class _TopUpSheetState extends State<TopUpSheet> {
       return;
     }
 
+    // Capture platform before async gap
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
     setState(() => _isLoading = true);
 
     try {
@@ -62,7 +65,6 @@ class _TopUpSheetState extends State<TopUpSheet> {
         if (mounted) Navigator.pop(context);
         // Use in-app browser on iOS so the campuschow:// deep link can bring the
         // user back after completing payment. Android uses external browser.
-        final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
         await launchUrl(
           uri,
           mode: isIOS ? LaunchMode.inAppBrowserView : LaunchMode.externalApplication,

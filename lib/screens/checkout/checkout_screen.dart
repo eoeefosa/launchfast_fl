@@ -546,10 +546,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         HapticFeedback.heavyImpact();
 
         if (_paymentMethod == 'Paystack') {
+          // Capture platform before async gap to avoid lint error
+          final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+          
           try {
             final customerEmail = auth.isAuthenticated
                 ? (auth.user?.email ?? 'user@campuschow.com')
                 : 'guest@campuschow.com';
+            
             final paymentData = await orderProvider.initializePayment(
               success.id,
               'Card',
@@ -577,7 +581,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             // Use in-app browser on iOS so Safari can hand back control to the
             // app via the campuschow:// deep-link. Android needs externalApplication
             // so Chrome can handle universal links and custom scheme redirects.
-            final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
             await launchUrl(
               uri,
               mode: isIOS
