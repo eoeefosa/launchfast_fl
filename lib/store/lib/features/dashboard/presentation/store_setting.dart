@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/dashboard/data/staff_member_model.dart';
 import 'package:campuschow/store/lib/features/auth/presentation/auth_provider.dart';
@@ -25,6 +26,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   String? _storeId;
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isSoundEnabled = true;
 
   @override
   void initState() {
@@ -56,10 +58,12 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
 
       if (!mounted) return;
       _storeId = store.id;
-      _nameCtrl.text = store.name;
-      _taglineCtrl.text = store.tagline;
       _deliveryTimeCtrl.text = store.deliveryTime;
       _deliveryFeeCtrl.text = store.deliveryFee.toString();
+
+      // Load sound preference
+      final prefs = await SharedPreferences.getInstance();
+      _isSoundEnabled = prefs.getBool('order_notifications_sound') ?? true;
     } catch (e) {
       debugPrint('[StoreSettings] _loadStore error: $e');
       _showSnackBar('Failed to load store settings', success: false);
@@ -165,6 +169,12 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
               isLoadingStaff: staffProvider.isLoading,
               onAddStaff: _showAddStaffDialog,
               onRemoveStaff: _removeStaff,
+              isSoundEnabled: _isSoundEnabled,
+              onSoundToggle: (val) async {
+                setState(() => _isSoundEnabled = val);
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('order_notifications_sound', val);
+              },
               onLogout: _showLogoutDialog,
             ),
     );
@@ -281,6 +291,8 @@ class _SettingsBody extends StatelessWidget {
     required this.isLoadingStaff,
     required this.onAddStaff,
     required this.onRemoveStaff,
+    required this.isSoundEnabled,
+    required this.onSoundToggle,
     required this.onLogout,
   });
 
@@ -294,6 +306,8 @@ class _SettingsBody extends StatelessWidget {
   final bool isLoadingStaff;
   final VoidCallback onAddStaff;
   final ValueChanged<String> onRemoveStaff;
+  final bool isSoundEnabled;
+  final ValueChanged<bool> onSoundToggle;
   final VoidCallback onLogout;
 
   @override
@@ -323,6 +337,14 @@ class _SettingsBody extends StatelessWidget {
             isLoading: isLoadingStaff,
             onAdd: onAddStaff,
             onRemove: onRemoveStaff,
+          ),
+          const SizedBox(height: 24),
+          _SectionLabel('Notifications', theme.textColor),
+          const SizedBox(height: 12),
+          _NotificationSettingsCard(
+            theme: theme,
+            isEnabled: isSoundEnabled,
+            onChanged: onSoundToggle,
           ),
           const SizedBox(height: 24),
           _SectionLabel('Account', theme.textColor),
@@ -630,6 +652,65 @@ class _StaffMemberRow extends StatelessWidget {
               size: 20,
             ),
             onPressed: onRemove,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Notification Settings ────────────────────────────────────────────────
+
+class _NotificationSettingsCard extends StatelessWidget {
+  const _NotificationSettingsCard({
+    required this.theme,
+    required this.isEnabled,
+    required this.onChanged,
+  });
+
+  final _SettingsTheme theme;
+  final bool isEnabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsSectionCard(
+      theme: theme,
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.notifications_active_outlined, color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'New Order Sound',
+                  style: TextStyle(
+                    color: theme.textColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  'Play alert sound when a new order arrives',
+                  style: TextStyle(color: theme.muted, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: isEnabled,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -30,7 +31,6 @@ class NotificationService {
     await _flutterLocalNotificationsPlugin.initialize(
       settings: initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        // Handle notification tap
         debugPrint('Notification clicked: ${response.payload}');
       },
     );
@@ -49,20 +49,32 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    final prefs = await SharedPreferences.getInstance();
+    final bool isSoundEnabled = prefs.getBool('order_notifications_sound') ?? true;
+
+    // We specify 'order_sound' here. 
+    // Android looks in: res/raw/order_sound.mp3
+    // iOS looks in: the main bundle for order_sound.aiff/mp3/wav
+    final String? soundFile = isSoundEnabled ? 'order_sound' : null;
+
+    AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'launchfast_main_channel',
-      'LaunchFast Notifications',
-      channelDescription: 'Main channel for app notifications',
+      'launchfast_order_channel',
+      'Order Notifications',
+      channelDescription: 'Channel for new order alerts',
       importance: Importance.max,
       priority: Priority.high,
-      showWhen: true,
+      playSound: isSoundEnabled,
+      sound: soundFile != null ? RawResourceAndroidNotificationSound(soundFile) : null,
     );
 
-    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-        DarwinNotificationDetails();
+    DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+      presentSound: isSoundEnabled,
+      sound: soundFile != null ? '$soundFile.mp3' : null,
+    );
 
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+    NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: iOSPlatformChannelSpecifics,
     );
@@ -78,3 +90,4 @@ class NotificationService {
 }
 
 final notificationService = NotificationService();
+
