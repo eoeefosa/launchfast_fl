@@ -60,10 +60,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       if (!mounted) return;
+      
       final isStoreOwner = authProvider.isStoreOwner;
-      if (!isStoreOwner) {
+      final isWorker = authProvider.isWorker;
+      final isAdmin = authProvider.isAdmin;
+
+      if (!isStoreOwner && !isWorker && !isAdmin) {
         orderProvider.refreshOrders();
-        router.go('/home');
+      }
+
+      // Explicitly trigger navigation
+      if (isAdmin || isStoreOwner) {
+        context.go(authProvider.isStoreApproved ? '/dashboard' : '/awaiting-approval');
+      } else if (isWorker) {
+        context.go('/worker');
+      } else {
+        context.go('/home');
       }
     } catch (e) {
       messenger.showSnackBar(
@@ -75,7 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
-    final primaryColor = Theme.of(context).primaryColor;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       body: SafeArea(

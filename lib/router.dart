@@ -23,6 +23,8 @@ import 'screens/checkout/checkout_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/stores_screen.dart';
 import 'screens/notifications_screen.dart';
+import 'screens/payment_callback_screen.dart';
+
 
 // ── Store-owner / worker screens ─────────────────────────────────────────────
 import 'package:campuschow/store/lib/features/dashboard/presentation/store_main_nav.dart';
@@ -58,8 +60,11 @@ const routeStores = '/stores';
 const routeCheckout = '/checkout';
 
 // Dynamic customer routes
-const routeStoreDetails = '/stores/:id';
-const routeItemDetails = '/items/:id';
+const routeStoreDetails = '/store/:id';
+const routeItemDetails = '/item/:id';
+
+// Payment callback (Paystack deep link)
+const routePaymentCallback = '/payment/callback';
 
 // Store owner / worker dashboards
 const routeStoreDashboard = '/dashboard';
@@ -109,7 +114,7 @@ GoRouter createRouter(AuthProvider auth) {
     debugLogDiagnostics: kDebugMode,
 
     redirect: (context, state) {
-      final loc = state.matchedLocation;
+      final loc = state.uri.path;
 
       final isLoading = auth.isLoading;
       final isAuthed = auth.isAuthenticated;
@@ -303,6 +308,25 @@ approved: $isApproved
       GoRoute(path: routeSearch, builder: (_, _) => const SearchScreen()),
 
       GoRoute(path: routeCheckout, builder: (_, _) => const CheckoutScreen()),
+
+      // ───────────────────────────────────────────────────────────
+      // Payment callback — called by Paystack via deep link
+      // campuschow://payment/callback?reference=REF&orderId=ID&type=TYPE
+      // NOT auth-guarded: guest orders must also be able to complete payment.
+      // ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: routePaymentCallback,
+        builder: (_, state) {
+          final reference = state.uri.queryParameters['reference'] ?? '';
+          final orderId   = state.uri.queryParameters['orderId'];
+          final type      = state.uri.queryParameters['type'];
+          return PaymentCallbackScreen(
+            reference: reference,
+            orderId:   orderId,
+            type:      type,
+          );
+        },
+      ),
 
       // ───────────────────────────────────────────────────────────
       // Dynamic routes

@@ -16,6 +16,16 @@
 					<string>com.googleusercontent.apps.471745302305-n6okkh5s155equosej1tsiibbu0l09ua</string>
 				</array>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>campuschow.payment</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>campuschow</string>
+				</array>
+			</dict>
 		</array>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>

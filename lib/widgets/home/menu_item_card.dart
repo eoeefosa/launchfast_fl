@@ -17,6 +17,8 @@ class MenuItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
@@ -30,10 +32,12 @@ class MenuItemCard extends StatelessWidget {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                color: isDark 
+                    ? Colors.transparent 
+                    : Theme.of(context).dividerColor.withValues(alpha: 0.5),
                 width: 1,
               ),
-              boxShadow: [
+              boxShadow: isDark ? [] : [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 10,

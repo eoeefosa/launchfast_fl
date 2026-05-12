@@ -89,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final auth = context.read<AuthProvider>();
       if (auth.isStoreOwner) {
         if (auth.isStoreApproved) {
-          router.go('/store');
+          router.go('/dashboard');
         } else {
           router.go('/awaiting-approval');
         }
@@ -104,7 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
-    final primaryColor = Theme.of(context).primaryColor;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       body: SafeArea(
@@ -126,7 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   'Join Lunch Fast — carefully crafted for your campus needs.',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     height: 1.5,
                   ),
                 ),

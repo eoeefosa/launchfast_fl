@@ -36,15 +36,25 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
 
   void _showClosedDialog() {
     if (!mounted) return;
+    final scheme = Theme.of(context).colorScheme;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Store Closed', style: TextStyle(fontWeight: FontWeight.w900)),
-        content: const Text(
+        title: Text(
+          'Store Closed',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: scheme.onSurface,
+          ),
+        ),
+        content: Text(
           'This store just closed and is no longer accepting orders. You can still browse the menu, but items cannot be added to your cart.',
+          style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7)),
         ),
         actions: [
           TextButton(
@@ -90,6 +100,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     final accentColor = store.accentColor;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: Stack(
@@ -108,7 +119,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                   child: Center(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: scheme.surface,
+                        color: scheme.surface.withValues(alpha: 0.8),
                         shape: BoxShape.circle,
                       ),
                       child: Semantics(
@@ -132,7 +143,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                     padding: const EdgeInsets.only(right: 16),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: scheme.surface,
+                        color: scheme.surface.withValues(alpha: 0.8),
                         shape: BoxShape.circle,
                       ),
                       child: Semantics(
@@ -171,7 +182,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                       ),
                       if (!store.isOpen)
                         Container(
-                          color: Colors.black54,
+                          color: Colors.black.withValues(alpha: isDark ? 0.7 : 0.5),
                           child: Center(
                             child: Container(
                               padding: const EdgeInsets.symmetric(
@@ -181,6 +192,12 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                               decoration: BoxDecoration(
                                 color: scheme.surface,
                                 borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    blurRadius: 10,
+                                  )
+                                ],
                               ),
                               child: Text(
                                 'CLOSED',

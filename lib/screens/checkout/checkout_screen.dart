@@ -559,23 +559,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             final paystackData = paymentData['data'] as Map<String, dynamic>?;
             final authorizationUrl = paystackData?['authorization_url'] as String?;
 
-            if (authorizationUrl != null) {
-              final uri = Uri.parse(authorizationUrl);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              } else {
-                _showErrorDialog('Could not launch payment portal.');
-                return;
-              }
-            } else {
-              _showErrorDialog(
-                'Payment initialization failed. Please try again.',
-              );
+            if (authorizationUrl == null) {
+              _showErrorDialog('Payment initialization failed. Please try again.');
               return;
             }
+
+            final uri = Uri.parse(authorizationUrl);
+            if (!await canLaunchUrl(uri)) {
+              _showErrorDialog('Could not open the payment portal on this device.');
+              return;
+            }
+
+            // Clear cart immediately — the order is placed, payment is in-flight.
+            // The PaymentCallbackScreen (deep link) will show success/failure.
+            cart.clearCart();
+
+            // Use in-app browser on iOS so Safari can hand back control to the
+            // app via the campuschow:// deep-link. Android needs externalApplication
+            // so Chrome can handle universal links and custom scheme redirects.
+            final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+            await launchUrl(
+              uri,
+              mode: isIOS
+                  ? LaunchMode.inAppBrowserView
+                  : LaunchMode.externalApplication,
+            );
+
+            // The deep link will bring the user back to /payment/callback automatically.
+            // No further action needed here — just pop the checkout screen so the
+            // user doesn't return to a stale screen if they press Back in the browser.
+            if (mounted) context.pop();
+            return;
           } catch (e) {
             _showErrorDialog(
-              'Could not initialize payment. Please check your connection.',
+              'Could not initialize payment. Please check your connection and try again.',
             );
             return;
           }

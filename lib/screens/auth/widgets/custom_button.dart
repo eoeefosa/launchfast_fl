@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../../../../widgets/common/loading_indicator.dart';
 
 class CustomButton extends StatelessWidget {
   const CustomButton({
@@ -26,11 +25,19 @@ class CustomButton extends StatelessWidget {
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         minimumSize: const Size(double.infinity, 56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        elevation: 5,
-        shadowColor: primaryColor.withValues(alpha: 0.5),
+        elevation: 0,
       ),
       child: isLoading
-          ? const CampusChowLoading(size: 24)
+          ? SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+            )
           : Text(
               label,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -51,7 +58,7 @@ class ForgotPasswordButton extends StatelessWidget {
         child: Text(
           'Forgot Password?',
           style: TextStyle(
-            color: Theme.of(context).primaryColor,
+            color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -80,12 +87,21 @@ class GoogleSignInButton extends StatelessWidget {
         side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       child: isLoading
-          ? const CampusChowLoading(size: 24)
+          ? SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            )
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                FaIcon(FontAwesomeIcons.google, size: 20, color: Colors.red),
-                SizedBox(width: 12),
+                const FaIcon(FontAwesomeIcons.google, size: 20, color: Colors.red),
+                const SizedBox(width: 12),
                 Text(
                   'Sign in with Google',
                   style: TextStyle(

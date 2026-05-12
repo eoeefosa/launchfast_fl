@@ -14,12 +14,15 @@ class AppColors {
   static const Color lightMuted      = Color(0xFF6B7280);
   static const Color lightBorder     = Color(0xFFE5E7EB);
 
-  // Dark Theme
-  static const Color darkText        = Color(0xFFFFFFFF);
-  static const Color darkBackground  = Color(0xFF0F0F0F);
-  static const Color darkSurface     = Color(0xFF1E1E1E);
-  static const Color darkMuted       = Color(0xFF9CA3AF);
-  static const Color darkBorder      = Color(0xFF374151);
+  // Dark Theme (Designer Refined)
+  static const Color darkText          = Color(0xFFE1E1E6); // Soft off-white
+  static const Color darkTextSecondary = Color(0xFFA1A1AA); // Zinc secondary
+  static const Color darkBackground     = Color(0xFF0A0A0B); // Deep rich black
+  static const Color darkSurface        = Color(0xFF161618); // Level 1 Surface
+  static const Color darkSurface2       = Color(0xFF1C1C1E); // Level 2 Surface
+  static const Color darkMuted          = Color(0xFF71717A); // Muted Zinc
+  static const Color darkBorder         = Color(0xFF252528); // Subtle border
+  static const Color darkPrimary        = Color(0xFFFF7E47); // Softer primary for dark mode
 
   // Store-specific accent colours (also used in StaticData)
   static const Color homeways = Color(0xFFF59E0B);

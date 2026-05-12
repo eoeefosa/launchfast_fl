@@ -9,6 +9,7 @@ class LocationSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasLocation = authProvider.currentAddress != null;
 
     return Material(
@@ -21,13 +22,15 @@ class LocationSelector extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: hasLocation
-                ? scheme.primary.withValues(alpha: 0.06)
+                ? (isDark ? scheme.surfaceContainerHighest : scheme.primary.withValues(alpha: 0.06))
                 : scheme.error.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: hasLocation
-                  ? scheme.primary.withValues(alpha: 0.2)
-                  : scheme.error.withValues(alpha: 0.3),
+              color: isDark 
+                  ? Colors.transparent 
+                  : (hasLocation
+                      ? scheme.primary.withValues(alpha: 0.2)
+                      : scheme.error.withValues(alpha: 0.3)),
             ),
           ),
           child: Row(

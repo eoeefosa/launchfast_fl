@@ -13,7 +13,9 @@ class AuthPrompt extends StatelessWidget {
       children: [
         Text(
           isLogin ? "Don't have an account? " : 'Already have an account? ',
-          style: TextStyle(color: Colors.grey[600]),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
         ),
         GestureDetector(
           onTap: () =>
@@ -21,7 +23,7 @@ class AuthPrompt extends StatelessWidget {
           child: Text(
             isLogin ? 'Sign Up' : 'Sign In',
             style: TextStyle(
-              color: Theme.of(context).primaryColor,
+              color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.bold,
             ),
           ),

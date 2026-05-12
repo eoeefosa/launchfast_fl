@@ -71,6 +71,8 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -81,12 +83,12 @@ class _CategoryChip extends StatelessWidget {
           color: isActive ? scheme.primary : scheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive
-                ? scheme.primary
-                : scheme.onSurface.withValues(alpha: 0.1),
+            color: isDark 
+                ? Colors.transparent 
+                : (isActive ? scheme.primary : scheme.onSurface.withValues(alpha: 0.1)),
             width: 1.5,
           ),
-          boxShadow: isActive
+          boxShadow: (isActive && !isDark)
               ? [
                   BoxShadow(
                     color: scheme.primary.withValues(alpha: 0.25),

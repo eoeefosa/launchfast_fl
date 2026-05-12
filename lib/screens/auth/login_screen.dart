@@ -4,6 +4,7 @@ import 'package:campuschow/screens/auth/widgets/auth_prompt.dart';
 import 'package:campuschow/screens/auth/widgets/constants.dart';
 import 'package:campuschow/screens/auth/widgets/custom_button.dart';
 import 'package:campuschow/screens/auth/widgets/password_toggle.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
@@ -61,9 +62,12 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!auth.isStoreOwner && !auth.isWorker) {
         orderProvider.refreshOrders();
       }
-      // No need to call router.go() — the router's refreshListenable
-      // detects the auth state change and navigates to the correct screen.
-      debugPrint('[LoginScreen] Auth complete. Role: ${auth.user?.role}. Router will redirect.');
+
+      // Explicitly trigger navigation. GoRouter's redirect guard will 
+      // intercept this and route to the correct role-based dashboard if needed.
+      context.go('/home');
+      
+      debugPrint('[LoginScreen] Auth complete. Navigating...');
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text(ApiService.getErrorMessage(e))),
@@ -74,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
-    final primaryColor = Theme.of(context).primaryColor;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       body: SafeArea(

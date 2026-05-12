@@ -43,11 +43,11 @@ class TabsShell extends StatelessWidget {
 
     final isIOS = Platform.isIOS;
     // final primaryColor = Theme.of(context).primaryColor;
-    // final scheme = Theme.of(context).colorScheme;
-    final activeColor = Colors.orangeAccent; // More vibrant orange for dark mode
+    final scheme = Theme.of(context).colorScheme;
+    final activeColor = scheme.primary;
 
     return Scaffold(
-      extendBody: true, // Allows content to show behind glass bar
+      extendBody: true,
       body: navigationShell,
       bottomNavigationBar: isIOS
           ? _buildIOSBar(context, navigationShell, items, activeColor)
@@ -70,7 +70,7 @@ class TabsShell extends StatelessWidget {
             color: scheme.surface.withValues(alpha: 0.85),
             border: Border(
               top: BorderSide(
-                color: scheme.onSurface.withValues(alpha: 0.1),
+                color: scheme.onSurface.withValues(alpha: 0.08),
                 width: 0.5,
               ),
             ),
@@ -110,14 +110,16 @@ class TabsShell extends StatelessWidget {
     Color activeColor,
   ) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
         color: scheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+            color: isDark ? Colors.black.withValues(alpha: 0.3) : scheme.onSurface.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
@@ -212,8 +214,8 @@ class _AnimatedIcon extends StatelessWidget {
 }
 
 Widget _buildCartIcon(int quantity, bool isActive, BuildContext context) {
-  final activeColor = Colors.orangeAccent;
   final scheme = Theme.of(context).colorScheme;
+  final activeColor = scheme.primary;
 
   return Stack(
     clipBehavior: Clip.none,
@@ -229,7 +231,7 @@ Widget _buildCartIcon(int quantity, bool isActive, BuildContext context) {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.redAccent,
+              color: scheme.error,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: scheme.surface, width: 1.5),
             ),
@@ -237,8 +239,8 @@ Widget _buildCartIcon(int quantity, bool isActive, BuildContext context) {
             child: Center(
               child: Text(
                 '$quantity',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: scheme.onError,
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                 ),

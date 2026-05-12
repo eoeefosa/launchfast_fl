@@ -19,6 +19,9 @@ class StoreSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveAccent = isDark ? Theme.of(context).colorScheme.primary : accentColor;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -54,7 +57,7 @@ class StoreSection extends StatelessWidget {
                 onPressed: () => context.push('/stores'),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  backgroundColor: accentColor.withValues(alpha: 0.1),
+                  backgroundColor: effectiveAccent.withValues(alpha: 0.1),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -62,7 +65,7 @@ class StoreSection extends StatelessWidget {
                 child: Text(
                   'Explore All',
                   style: TextStyle(
-                    color: accentColor,
+                    color: effectiveAccent,
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
                   ),

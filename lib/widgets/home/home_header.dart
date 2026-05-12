@@ -13,6 +13,7 @@ class HomeHeader extends StatelessWidget {
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.user;
     final primaryColor = Theme.of(context).primaryColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -82,21 +83,21 @@ class HomeHeader extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
+                        color: isDark 
+                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
+                            : Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
+                        boxShadow: isDark ? [] : [
                           BoxShadow(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.3),
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.search_rounded,
-                        color: Colors.white,
+                        color: isDark ? Theme.of(context).colorScheme.primary : Colors.white,
                         size: 22,
                       ),
                     ),
