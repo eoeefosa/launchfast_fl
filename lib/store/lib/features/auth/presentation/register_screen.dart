@@ -91,7 +91,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (auth.isStoreApproved) {
           router.go('/dashboard');
         } else {
-          router.go('/awaiting-approval');
+          router.go('/dashboard');
+          // router.go('/awaiting-approval');
         }
       } else {
         router.go('/profile');
@@ -126,7 +127,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   'Join Lunch Fast — carefully crafted for your campus needs.',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                     height: 1.5,
                   ),
                 ),
@@ -174,14 +177,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
                 const SizedBox(height: 32),
                 CustomButton(
-                  label: _isGoogleLoggedIn ? 'Apply for Approval' : 'Register Store',
+                  label: _isGoogleLoggedIn
+                      ? 'Apply for Approval'
+                      : 'Register Store',
                   isLoading: isLoading,
                   onPressed: _submit,
                   primaryColor: primaryColor,
                 ),
                 if (!_isGoogleLoggedIn) ...[
                   const SizedBox(height: 24),
-                  const Center(child: Text('OR', style: TextStyle(color: Colors.grey))),
+                  const Center(
+                    child: Text('OR', style: TextStyle(color: Colors.grey)),
+                  ),
                   const SizedBox(height: 24),
                   GoogleSignInButton(
                     isLoading: isLoading,
