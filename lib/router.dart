@@ -25,12 +25,9 @@ import 'screens/stores_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/payment_callback_screen.dart';
 
-
 // ── Store-owner / worker screens ─────────────────────────────────────────────
 import 'package:campuschow/store/lib/features/dashboard/presentation/store_main_nav.dart';
 import 'package:campuschow/store/lib/features/dashboard/presentation/worker_main_nav.dart';
-
-import 'package:campuschow/store/lib/features/auth/presentation/awaiting_approval_screen.dart';
 
 import 'package:campuschow/store/lib/features/auth/presentation/register_screen.dart'
     as store_register;
@@ -70,9 +67,6 @@ const routePaymentCallback = '/payment/callback';
 const routeStoreDashboard = '/dashboard';
 const routeWorkerDashboard = '/worker';
 
-// Approval
-const routeAwaitingApproval = '/awaiting-approval';
-
 // Store registration
 const routeStoreRegister = '/store-register';
 
@@ -93,11 +87,7 @@ const _customerRoutes = {
   routeCheckout,
 };
 
-const _protectedExactRoutes = {
-  routeStoreDashboard,
-  routeWorkerDashboard,
-  routeAwaitingApproval,
-};
+const _protectedExactRoutes = {routeStoreDashboard, routeWorkerDashboard};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Router factory
@@ -116,22 +106,17 @@ GoRouter createRouter(AuthProvider auth) {
     redirect: (context, state) {
       final loc = state.uri.path;
 
-      final isLoading = auth.isLoading;
       final isAuthed = auth.isAuthenticated;
 
       final isStoreOwner = auth.isStoreOwner;
       final isWorker = auth.isWorker;
       final isAdmin = auth.isAdmin;
 
-      final isApproved = auth.isStoreApproved;
-
       debugPrint('''
 [Router Redirect]
 location: $loc
-loading: $isLoading
 authenticated: $isAuthed
 role: ${auth.user?.role}
-approved: $isApproved
 ''');
 
       // ─────────────────────────────────────────────────────────────
@@ -170,28 +155,7 @@ approved: $isApproved
       }
 
       // ─────────────────────────────────────────────────────────────
-      // 5. Store approval enforcement
-      // ─────────────────────────────────────────────────────────────
-
-      if (isAuthed &&
-          isStoreOwner &&
-          !isApproved &&
-          loc != routeAwaitingApproval) {
-        debugPrint('[Router] Store owner awaiting approval');
-
-        return routeAwaitingApproval;
-      }
-
-      // Approved store owner should NOT stay there
-      if (isAuthed &&
-          isStoreOwner &&
-          isApproved &&
-          loc == routeAwaitingApproval) {
-        return routeStoreDashboard;
-      }
-
-      // ─────────────────────────────────────────────────────────────
-      // 6. Prevent role dashboard crossover
+      // 5. Prevent role dashboard crossover
       // ─────────────────────────────────────────────────────────────
 
       if (isWorker && loc == routeStoreDashboard) {
@@ -203,7 +167,7 @@ approved: $isApproved
       }
 
       // ─────────────────────────────────────────────────────────────
-      // 7. Prevent store/worker users from customer UI
+      // 6. Prevent store/worker users from customer UI
       // ─────────────────────────────────────────────────────────────
 
       if ((isStoreOwner || isAdmin) && _customerRoutes.contains(loc)) {
@@ -215,7 +179,7 @@ approved: $isApproved
       }
 
       // ─────────────────────────────────────────────────────────────
-      // 8. No redirect needed
+      // 7. No redirect needed
       // ─────────────────────────────────────────────────────────────
 
       return null;
@@ -312,18 +276,20 @@ approved: $isApproved
       // ───────────────────────────────────────────────────────────
       // Payment callback — called by Paystack via deep link
       // campuschow://payment/callback?reference=REF&orderId=ID&type=TYPE
-      // NOT auth-guarded: guest orders must also be able to complete payment.
       // ───────────────────────────────────────────────────────────
       GoRoute(
         path: routePaymentCallback,
         builder: (_, state) {
           final reference = state.uri.queryParameters['reference'] ?? '';
-          final orderId   = state.uri.queryParameters['orderId'];
-          final type      = state.uri.queryParameters['type'];
+
+          final orderId = state.uri.queryParameters['orderId'];
+
+          final type = state.uri.queryParameters['type'];
+
           return PaymentCallbackScreen(
             reference: reference,
-            orderId:   orderId,
-            type:      type,
+            orderId: orderId,
+            type: type,
           );
         },
       ),
@@ -364,14 +330,6 @@ approved: $isApproved
         path: routeWorkerDashboard,
         builder: (_, _) => const WorkerMainNav(),
       ),
-
-      // ───────────────────────────────────────────────────────────
-      // Awaiting approval
-      // ───────────────────────────────────────────────────────────
-      GoRoute(
-        path: routeAwaitingApproval,
-        builder: (_, _) => const AwaitingApprovalScreen(),
-      ),
     ],
   );
 }
@@ -399,7 +357,7 @@ String _roleHomePage(AuthProvider auth) {
   }
 
   if (auth.isStoreOwner) {
-    return auth.isStoreApproved ? routeStoreDashboard : routeAwaitingApproval;
+    return routeStoreDashboard;
   }
 
   if (auth.isWorker) {
