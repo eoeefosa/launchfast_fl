@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,7 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
 
   NotificationService._internal();
 
@@ -40,6 +42,57 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>()
           ?.requestNotificationsPermission();
+    }
+
+    // --- FCM Initialization ---
+    await _initFCM();
+  }
+
+  Future<void> _initFCM() async {
+    try {
+      // 1. Request permissions (especially for iOS)
+      NotificationSettings settings = await _fcm.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        debugPrint('[FCM] User granted permission');
+      } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+        debugPrint('[FCM] User granted provisional permission');
+      } else {
+        debugPrint('[FCM] User declined or has not accepted permission');
+      }
+
+      // 2. Handle foreground messages
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        debugPrint('[FCM] Foreground message: ${message.notification?.title}');
+        if (message.notification != null) {
+          showNotification(
+            title: message.notification!.title ?? 'New Notification',
+            body: message.notification!.body ?? '',
+            payload: message.data['orderId'],
+          );
+        }
+      });
+
+      // 3. Handle notification click when app is in background but not terminated
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        debugPrint('[FCM] Message clicked: ${message.data}');
+      });
+
+    } catch (e) {
+      debugPrint('[FCM] Init error: $e');
+    }
+  }
+
+  Future<String?> getToken() async {
+    try {
+      return await _fcm.getToken();
+    } catch (e) {
+      debugPrint('[FCM] Error getting token: $e');
+      return null;
     }
   }
 

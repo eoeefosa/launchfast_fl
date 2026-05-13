@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:async';
+import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:campuschow/repositories/location_repository.dart';
 
@@ -126,6 +128,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (isAuthenticated) {
         await _initializeAbly();
+      unawaited(syncFCMToken());
       }
 
     } catch (e, stack) {
@@ -228,6 +231,7 @@ class AuthProvider extends ChangeNotifier {
       await _persistAuthResponse(data);
 
       await _initializeAbly();
+      unawaited(syncFCMToken());
 
     } finally {
 
@@ -262,12 +266,34 @@ class AuthProvider extends ChangeNotifier {
       await _persistAuthResponse(data);
 
       await _initializeAbly();
+      unawaited(syncFCMToken());
 
     } finally {
 
       _authOperationInProgress = false;
 
       _setLoading(false);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Sync FCM Token
+  // ─────────────────────────────────────────────────────────────
+
+  Future<void> syncFCMToken() async {
+    if (!isAuthenticated) return;
+    
+    try {
+      final token = await notificationService.getToken();
+      if (token != null) {
+        debugPrint('[AuthProvider] Syncing FCM Token: $token');
+        await locator<AuthRepository>().updateProfile({
+          'fcmToken': token,
+          'deviceToken': token, // Some backends use deviceToken
+        });
+      }
+    } catch (e) {
+      debugPrint('[AuthProvider] FCM Token sync failed: $e');
     }
   }
 
@@ -444,6 +470,7 @@ class AuthProvider extends ChangeNotifier {
       
       await _persistAuthResponse(data);
       await _initializeAbly();
+      unawaited(syncFCMToken());
     } catch (e) {
       debugPrint('[AuthProvider] signInWithGoogle error: $e');
       rethrow;

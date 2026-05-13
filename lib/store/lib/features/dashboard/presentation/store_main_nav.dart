@@ -88,7 +88,7 @@ class _StoreMainNavState extends State<StoreMainNav>
     if (userId == null) return;
 
     // Tell the provider who the owner is — all child screens will use this
-    storeProvider.setOwner(userId);
+    await storeProvider.setOwner(userId);
 
     try {
       await ablyService.initAbly(userId);
@@ -98,15 +98,10 @@ class _StoreMainNavState extends State<StoreMainNav>
       ablyService.addOrderListener(_onAblyOrderUpdate);
 
       // Subscribe to the owned store's orders channel
-      if (storeProvider.stores.isEmpty) {
-        await storeProvider.refreshData();
-      }
-      
-      if (!mounted) return;
-      
+      // The ownedId is now guaranteed to be populated after the await above
       final ownedId = storeProvider.ownedStoreId;
       if (ownedId != null) {
-        ablyService.subscribeToStoreOrders(ownedId);
+        await ablyService.subscribeToStoreOrders(ownedId);
       }
 
       _ablyInitialized = true;

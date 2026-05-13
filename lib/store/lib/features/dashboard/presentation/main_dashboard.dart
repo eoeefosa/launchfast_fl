@@ -138,17 +138,25 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
 
   void _subscribeAbly() {
     ablyService.addStoreListener(_onStoreToggle);
+    ablyService.addOrderListener(_onNewOrder);
   }
 
   Future<void> _onStoreToggle(String storeId, bool isOpen) async {
     if (storeId == _storeId && mounted) {
       setState(() {
         _isOpen = isOpen;
-        _hasNewOrder = true;
       });
+    }
+  }
+
+  void _onNewOrder(String orderId, OrderStatus status) {
+    if (status == OrderStatus.pending && mounted) {
+      setState(() => _hasNewOrder = true);
       _pulseCtrl.repeat(reverse: true);
+      _refresh(); // Auto-refresh data to show the new order in the list
+      
       try {
-        await _audioPlayer.play(AssetSource('notification.mp3'));
+        _audioPlayer.play(AssetSource('notification.mp3'));
       } catch (e) {
         debugPrint('[Dashboard] Audio playback failed: $e');
       }
@@ -190,6 +198,7 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
   void dispose() {
     _pulseCtrl.dispose();
     ablyService.removeStoreListener(_onStoreToggle);
+    ablyService.removeOrderListener(_onNewOrder);
     try {
       _audioPlayer.dispose();
     } catch (e) {
