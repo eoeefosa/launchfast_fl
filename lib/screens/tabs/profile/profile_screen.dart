@@ -7,6 +7,7 @@ import 'package:campuschow/screens/tabs/profile/widgets/theme_switcher.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../providers/auth_provider.dart';
 import '../../../widgets/home/location_selector.dart';
@@ -49,7 +50,11 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
       body: RefreshIndicator.adaptive(
-        onRefresh: () => auth.refreshUser(),
+        onRefresh: () async {
+          await Future.wait([
+            auth.refreshUser(),
+          ]);
+        },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -58,6 +63,14 @@ class ProfileScreen extends StatelessWidget {
               ProfileHeader(user: user, auth: auth),
 
               WalletCard(auth: auth),
+
+              const SectionHeader(title: 'Activity'),
+              ProfileSettingsTile(
+                icon: isIOS ? CupertinoIcons.list_bullet_indent : Icons.history_rounded,
+                title: 'Transaction History',
+                subtitle: 'View your deposits and spending',
+                onTap: () => context.push('/profile/transactions'),
+              ),
 
               const SectionHeader(title: 'Account Verification'),
               VerificationTile(

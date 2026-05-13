@@ -20,6 +20,7 @@ import 'package:campuschow/providers/notification_provider.dart';
 import 'package:campuschow/providers/store_provider.dart';
 import 'package:campuschow/providers/cart_provider.dart';
 import 'package:campuschow/providers/order_provider.dart';
+import 'package:campuschow/providers/payment_provider.dart';
 
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart'
     as dashboard_store;
@@ -37,6 +38,7 @@ import 'package:campuschow/store/lib/features/dashboard/presentation/staff_provi
     as dashboard_staff;
 
 import 'package:campuschow/store/lib/core/services/notification_service.dart';
+import 'package:campuschow/services/ably_service.dart';
 
 import 'package:campuschow/router.dart';
 
@@ -79,6 +81,13 @@ Future<void> main() async {
 
     final authProvider = AuthProvider();
     await authProvider.initialize();
+
+    if (!authProvider.isAuthenticated) {
+      debugPrint('[Main] User unauthenticated, initializing guest Ably...');
+      ablyService.initAblyGuest().catchError((e) {
+        debugPrint('[Main] Guest Ably init failed: $e');
+      });
+    }
 
     final router = createRouter(authProvider);
 
@@ -185,6 +194,7 @@ class CampusChowApp extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => PaymentProvider()),
         ChangeNotifierProvider(create: (_) => dashboard_store.StoreProvider()),
         ChangeNotifierProvider(create: (_) => dashboard_orders.OrderProvider()),
         ChangeNotifierProvider(create: (_) => dashboard_cart.CartProvider()),

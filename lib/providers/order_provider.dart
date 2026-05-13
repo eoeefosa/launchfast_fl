@@ -56,19 +56,7 @@ class OrderProvider with ChangeNotifier {
           debugPrint(
             '[OrderProvider] _loadLocalOrders: subscribing to real-time updates for userId=$userId',
           );
-          ablyService.subscribeToUserOrders(userId, (
-            orderId,
-            status,
-          ) {
-            debugPrint(
-              '[OrderProvider] Ably push received — orderId=$orderId, newStatus=${status.name}',
-            );
-            updateOrderStatus(orderId, status);
-          });
-        } else {
-          debugPrint(
-            '[OrderProvider] _loadLocalOrders: userId is null in stored user data — skipping Ably subscription.',
-          );
+          ablyService.subscribeToUserOrders(userId, _onOrderUpdate);
         }
       } catch (e) {
         debugPrint(
@@ -77,9 +65,24 @@ class OrderProvider with ChangeNotifier {
       }
     } else {
       debugPrint(
-        '[OrderProvider] _loadLocalOrders: no user session found — skipping Ably subscription.',
+        '[OrderProvider] _loadLocalOrders: no user session found — attempting guest Ably subscription.',
       );
+      try {
+        await ablyService.initAblyGuest();
+        for (final order in _orders) {
+          ablyService.subscribeToSingleOrder(order.id, _onOrderUpdate);
+        }
+      } catch (e) {
+        debugPrint('[OrderProvider] Guest Ably init failed: $e');
+      }
     }
+  }
+
+  void _onOrderUpdate(String orderId, OrderStatus status) {
+    debugPrint(
+      '[OrderProvider] Ably push received — orderId=$orderId, newStatus=${status.name}',
+    );
+    updateOrderStatus(orderId, status);
   }
 
   Future<void> refreshOrders() async {
@@ -124,6 +127,9 @@ class OrderProvider with ChangeNotifier {
       debugPrint(
         '[OrderProvider] placeOrder: success — orderId=${newOrder.id}, total=${newOrder.total}',
       );
+
+      // Subscribe to updates for this new order (especially for guests)
+      ablyService.subscribeToSingleOrder(newOrder.id, _onOrderUpdate);
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(

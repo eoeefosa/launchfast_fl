@@ -24,6 +24,7 @@ import 'screens/search_screen.dart';
 import 'screens/stores_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/payment_callback_screen.dart';
+import 'screens/tabs/profile/transactions_screen.dart';
 
 // ── Store-owner / worker screens ─────────────────────────────────────────────
 import 'package:campuschow/store/lib/features/dashboard/presentation/store_main_nav.dart';
@@ -55,6 +56,7 @@ const routeSearch = '/search';
 const routeNotifications = '/notifications';
 const routeStores = '/stores';
 const routeCheckout = '/checkout';
+const routeTransactions = '/transactions';
 
 // Dynamic customer routes
 const routeStoreDetails = '/store/:id';
@@ -257,6 +259,12 @@ role: ${auth.user?.role}
               GoRoute(
                 path: routeProfile,
                 builder: (_, _) => const ProfileScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'transactions',
+                    builder: (_, _) => const TransactionsScreen(),
+                  ),
+                ],
               ),
             ],
           ),

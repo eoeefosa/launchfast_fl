@@ -48,7 +48,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final orderProvider = context.read<OrderProvider>();
 
     final messenger = ScaffoldMessenger.of(context);
-    final router = GoRouter.of(context);
+    // final router = GoRouter.of(context);
 
     try {
       await authProvider.register({

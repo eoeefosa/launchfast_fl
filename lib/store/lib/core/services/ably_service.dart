@@ -62,6 +62,14 @@ class AblyService {
   final List<void Function(String storeId, String? menuItemId, bool? isReady)> _menuListeners = [];
 
   // ── Init ────────────────────────────────────────────────────────────────────
+
+  /// Initializes Ably for an unauthenticated user (guest).
+  Future<void> initAblyGuest() async {
+    final guestId = 'guest_${DateTime.now().millisecondsSinceEpoch}';
+    debugPrint('[AblyService] Initializing guest session: $guestId');
+    await initAbly(guestId);
+  }
+
   Future<void> initAbly(String userId) async {
     debugPrint('--- [AblyService] Initializing for user: $userId ---');
     if (_isConnecting) {
@@ -86,9 +94,11 @@ class AblyService {
     _isConnecting = true;
     _currentUserId = userId;
 
-    // Fail fast if we don't even have a session token.
+    // Fail fast if we don't even have a session token AND it is not a guest.
     final token = await apiService.storage.read(key: 'launch-fast-token');
-    if (token == null) {
+    final isGuest = userId.startsWith('guest_');
+
+    if (token == null && !isGuest) {
       debugPrint('[AblyService] No token found in storage, aborting initAbly');
       _isConnecting = false;
       _currentUserId = null;
@@ -108,12 +118,6 @@ class AblyService {
             throw Exception(
               '[AblyService] authCallback fired after disconnect',
             );
-          }
-
-          final token = await apiService.storage.read(key: 'launch-fast-token');
-          if (token == null) {
-            debugPrint('[AblyService] No token found in storage');
-            throw Exception('[AblyService] No auth token in storage');
           }
 
           try {
@@ -565,6 +569,33 @@ class AblyService {
       debugPrint(
         '[AblyService] subscribeToUserOrders called before initAbly — '
         'listener registered but channel subscription deferred until connected.',
+      );
+    }
+  }
+
+  /// Allows guest users to subscribe to a specific order's updates.
+  void subscribeToSingleOrder(
+    String orderId,
+    void Function(String orderId, OrderStatus status) onUpdate,
+  ) {
+    addOrderListener(onUpdate);
+    final rt = _realtime;
+    if (rt != null) {
+      final channelName = 'order:$orderId';
+      final channel = rt.channels.get(channelName);
+      
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: 'order-update',
+        onMessage: (data) {
+          final status = OrderStatusExtension.fromString(
+            data['status'] as String,
+          );
+          for (final cb in _orderListeners) {
+            cb(orderId, status);
+          }
+        },
       );
     }
   }

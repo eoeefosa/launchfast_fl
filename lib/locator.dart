@@ -10,6 +10,7 @@ import 'repositories/auth_repository.dart';
 import 'repositories/menu_repository.dart';
 import 'repositories/order_repository.dart';
 import 'repositories/location_repository.dart';
+import 'repositories/payment_repository.dart';
 
 final locator = GetIt.instance;
 
@@ -34,6 +35,9 @@ void setupLocator() {
     locator.registerLazySingleton<LocationRepository>(
       () => LocationRepository(),
     );
+  }
+  if (!locator.isRegistered<PaymentRepository>()) {
+    locator.registerLazySingleton<PaymentRepository>(() => PaymentRepository());
   }
 
   debugPrint('[Locator] Setup complete.');

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notification_item.dart';
+import '../services/ably_service.dart';
 
 class NotificationProvider with ChangeNotifier {
   List<NotificationItem> _notifications = [];
@@ -14,6 +15,28 @@ class NotificationProvider with ChangeNotifier {
 
   NotificationProvider() {
     _loadNotifications();
+    _initAblyListener();
+  }
+
+  void _initAblyListener() {
+    ablyService.addNotificationListener((payload) {
+      final notification = NotificationItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: payload['title'] ?? 'New Update',
+        message: payload['body'] ?? payload['message'] ?? '',
+        type: _parseNotificationType(payload['type']?.toString()),
+        timestamp: DateTime.now(),
+      );
+      addNotification(notification);
+    });
+  }
+
+  NotificationType _parseNotificationType(String? type) {
+    if (type == null) return NotificationType.serverAlert;
+    return NotificationType.values.firstWhere(
+      (t) => t.name == type,
+      orElse: () => NotificationType.serverAlert,
+    );
   }
 
   Future<void> _loadNotifications() async {

@@ -9,7 +9,6 @@ import '../../providers/order_provider.dart';
 import '../../models/order.dart';
 import '../../widgets/orders/active_order_tracker.dart';
 import '../../widgets/orders/order_history_card.dart';
-import '../../widgets/orders/login_required_view.dart';
 
 class OrdersScreen extends StatelessWidget {
   const OrdersScreen({super.key});
@@ -21,26 +20,26 @@ class OrdersScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final orderProvider = context.watch<OrderProvider>();
 
-    if (!auth.isAuthenticated) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        appBar: _OrdersAppBar(isIOS: _isIOS),
-        body: const LoginRequiredView(),
-      );
-    }
-
     final activeOrder = _resolveActiveOrder(orderProvider.orders);
     final hasActiveOrder = _isActive(activeOrder);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _OrdersAppBar(isIOS: _isIOS),
-      body: _OrdersBody(
-        orderProvider: orderProvider,
-        orders: orderProvider.orders,
-        activeOrder: activeOrder,
-        hasActiveOrder: hasActiveOrder,
-        isIOS: _isIOS,
+      body: Column(
+        children: [
+          if (!auth.isAuthenticated && orderProvider.orders.isNotEmpty)
+            _GuestBanner(),
+          Expanded(
+            child: _OrdersBody(
+              orderProvider: orderProvider,
+              orders: orderProvider.orders,
+              activeOrder: activeOrder,
+              hasActiveOrder: hasActiveOrder,
+              isIOS: _isIOS,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -261,5 +260,38 @@ class _EmptyState extends StatelessWidget {
         ],
       ),
     ).animate().fadeIn(delay: 400.ms);
+  }
+}
+
+class _GuestBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline_rounded, color: scheme.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Sign in to sync your orders across all your devices.',
+              style: TextStyle(
+                color: scheme.primary,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn().slideY(begin: -0.2);
   }
 }

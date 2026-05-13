@@ -547,7 +547,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
         if (_paymentMethod == 'Paystack') {
           // Capture platform before async gap to avoid lint error
-          final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+          // final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
           
           try {
             final customerEmail = auth.isAuthenticated

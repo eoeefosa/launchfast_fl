@@ -42,7 +42,7 @@ class _TopUpSheetState extends State<TopUpSheet> {
     }
 
     // Capture platform before async gap
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    // final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     setState(() => _isLoading = true);
 
