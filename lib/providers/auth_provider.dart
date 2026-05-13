@@ -16,7 +16,11 @@ class AuthProvider extends ChangeNotifier {
   AuthProvider({
     FlutterSecureStorage? storage,
     GoogleSignIn? googleSignIn,
-  })  : _storage = storage ?? const FlutterSecureStorage(),
+  })  : _storage = storage ?? const FlutterSecureStorage(
+          aOptions: AndroidOptions(
+            encryptedSharedPreferences: true,
+          ),
+        ),
         _googleSignIn = googleSignIn ?? GoogleSignIn(
           serverClientId: const String.fromEnvironment(
             'SERVER_CLIENT_ID',

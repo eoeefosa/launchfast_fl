@@ -60,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       if (!mounted) return;
-      
+
       final isStoreOwner = authProvider.isStoreOwner;
       final isWorker = authProvider.isWorker;
       final isAdmin = authProvider.isAdmin;
@@ -71,7 +71,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       // Explicitly trigger navigation
       if (isAdmin || isStoreOwner) {
-        context.go(authProvider.isStoreApproved ? '/dashboard' : '/awaiting-approval');
+        // context.go(authProvider.isStoreApproved ? '/dashboard' : '/awaiting-approval');
+        context.go(authProvider.isStoreApproved ? '/dashboard' : '/dashboard');
       } else if (isWorker) {
         context.go('/worker');
       } else {

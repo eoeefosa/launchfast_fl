@@ -47,7 +47,7 @@ class PaymentService {
         '/payments/verify',
         data: {
           'reference': reference,
-          if (orderId != null) 'orderId': orderId,
+          'orderId': ?orderId,
         },
       );
 

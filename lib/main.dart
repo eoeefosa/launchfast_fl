@@ -44,42 +44,104 @@ final rootNavigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    debugPrint('=== CampusChow Booting ===');
 
-  debugPrint('=== CampusChow Booting ===');
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  FlutterError.onError = (details) {
-    FlutterError.presentError(details);
-    debugPrint('[FlutterError] ${details.exception}');
-  };
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      debugPrint('[FlutterError] ${details.exception}');
+    };
 
-  PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('[PlatformError] $error');
-    return true;
-  };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      debugPrint('[PlatformError] $error');
+      return true;
+    };
 
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
 
-  setupLocator();
+    setupLocator();
 
-  final authProvider = AuthProvider();
-  await authProvider.initialize();
+    final authProvider = AuthProvider();
+    await authProvider.initialize();
 
-  final router = createRouter(authProvider);
+    final router = createRouter(authProvider);
 
-  await notificationService.init();
+    await notificationService.init();
 
-  runApp(
-    CampusChowApp(
-      authProvider: authProvider,
-      router: router,
-    ),
-  );
+    runApp(
+      CampusChowApp(
+        authProvider: authProvider,
+        router: router,
+      ),
+    );
+  } catch (e, stack) {
+    debugPrint('=== CRITICAL STARTUP ERROR ===');
+    debugPrint(e.toString());
+    debugPrint(stack.toString());
+    
+    runApp(StartupErrorApp(error: e.toString()));
+  }
+}
+
+class StartupErrorApp extends StatelessWidget {
+  final String error;
+  const StartupErrorApp({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                const SizedBox(height: 16),
+                const Text(
+                  'Initialization Failed',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'The app could not start correctly. This is often due to missing configuration or network issues.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    error,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    // Try to restart or just show info
+                  },
+                  child: const Text('Check for Updates'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class CampusChowApp extends StatelessWidget {
@@ -191,6 +253,7 @@ class _AppViewState extends State<_AppView> with WidgetsBindingObserver {
           themeMode: themeProvider.themeMode,
           routerConfig: widget.router,
           builder: (context, child) {
+            if (child == null) return const SizedBox.shrink();
             final mq = MediaQuery.of(context);
             return MediaQuery(
               data: mq.copyWith(
@@ -199,7 +262,7 @@ class _AppViewState extends State<_AppView> with WidgetsBindingObserver {
                   maxScaleFactor: 1.15,
                 ),
               ),
-              child: child!,
+              child: child,
             );
           },
         );
