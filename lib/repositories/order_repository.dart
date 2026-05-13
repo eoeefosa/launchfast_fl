@@ -88,7 +88,6 @@ class OrderRepository {
         'orderId': orderId,
         'method': method,
         'email': email,
-        'callback_url': 'campuschow://payment/callback?orderId=$orderId&type=order_payment',
       },
     );
     if (response.data is! Map) {

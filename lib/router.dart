@@ -61,7 +61,7 @@ const routeStoreDetails = '/store/:id';
 const routeItemDetails = '/item/:id';
 
 // Payment callback (Paystack deep link)
-const routePaymentCallback = '/payment/callback';
+const routePaymentCallback = '/callback';
 
 // Store owner / worker dashboards
 const routeStoreDashboard = '/dashboard';
@@ -169,6 +169,10 @@ role: ${auth.user?.role}
       // ─────────────────────────────────────────────────────────────
       // 6. Prevent store/worker users from customer UI
       // ─────────────────────────────────────────────────────────────
+
+      if (loc == routePaymentCallback) {
+        return null;
+      }
 
       if ((isStoreOwner || isAdmin) && _customerRoutes.contains(loc)) {
         return routeStoreDashboard;
@@ -286,10 +290,13 @@ role: ${auth.user?.role}
 
           final type = state.uri.queryParameters['type'];
 
+          final status = state.uri.queryParameters['status'];
+
           return PaymentCallbackScreen(
             reference: reference,
             orderId: orderId,
             type: type,
+            status: status,
           );
         },
       ),

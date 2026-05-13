@@ -583,9 +583,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             // so Chrome can handle universal links and custom scheme redirects.
             await launchUrl(
               uri,
-              mode: isIOS
-                  ? LaunchMode.inAppBrowserView
-                  : LaunchMode.externalApplication,
+              mode: LaunchMode.externalApplication,
             );
 
             // The deep link will bring the user back to /payment/callback automatically.

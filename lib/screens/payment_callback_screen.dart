@@ -9,7 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
 
 /// Displayed when the user is redirected back from the Paystack payment page
-/// via the deep link: campuschow://payment/callback?reference=REF&orderId=ID&type=TYPE
+/// via the deep link: campuschow://callback?reference=REF&orderId=ID&type=TYPE
 ///
 /// Responsibilities:
 ///   1. Show an immediate loading state ("Verifying payment…")
@@ -26,11 +26,15 @@ class PaymentCallbackScreen extends StatefulWidget {
   /// Paystack payment type hint from the deep-link URL.
   final String? type;
 
+  /// Payment status from the deep-link URL.
+  final String? status;
+
   const PaymentCallbackScreen({
     super.key,
     required this.reference,
     this.orderId,
     this.type,
+    this.status,
   });
 
   @override
@@ -46,7 +50,43 @@ class _PaymentCallbackScreenState extends State<PaymentCallbackScreen> {
   @override
   void initState() {
     super.initState();
-    _verify();
+    if (widget.status == 'success') {
+      _handleImmediateSuccess();
+    } else if (widget.status == 'failed' || widget.status == 'error') {
+      _handleImmediateFailure();
+    } else {
+      _verify();
+    }
+  }
+
+  void _handleImmediateSuccess() {
+    setState(() {
+      _state = _ScreenState.success;
+      _statusMessage = 'Payment successful!';
+      _result = PaymentResult(
+        success: true,
+        type: widget.type == 'wallet_topup' ? PaymentType.walletTopUp : PaymentType.orderPayment,
+        orderId: widget.orderId,
+      );
+    });
+
+    // Refresh data immediately
+    final auth = context.read<AuthProvider>();
+    final orders = context.read<OrderProvider>();
+    if (widget.type == 'wallet_topup') {
+      auth.refreshUser();
+    } else {
+      orders.refreshOrders();
+    }
+
+    Future.delayed(const Duration(seconds: 2), () => _navigate(_result!));
+  }
+
+  void _handleImmediateFailure() {
+    setState(() {
+      _state = _ScreenState.failed;
+      _errorMessage = 'Payment could not be completed.';
+    });
   }
 
   Future<void> _verify() async {

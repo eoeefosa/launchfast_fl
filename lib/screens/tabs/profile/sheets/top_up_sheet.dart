@@ -51,7 +51,6 @@ class _TopUpSheetState extends State<TopUpSheet> {
         '/payments/topup',
         data: {
           'amount': amt,
-          'callback_url': 'campuschow://payment/callback?type=wallet_topup',
         },
       );
 
@@ -70,7 +69,7 @@ class _TopUpSheetState extends State<TopUpSheet> {
         // user back after completing payment. Android uses external browser.
         await launchUrl(
           uri,
-          mode: isIOS ? LaunchMode.inAppBrowserView : LaunchMode.externalApplication,
+          mode: LaunchMode.externalApplication,
         );
         // Deep link (/payment/callback) handles refresh & navigation.
       } else {

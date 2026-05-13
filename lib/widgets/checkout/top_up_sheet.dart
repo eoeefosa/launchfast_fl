@@ -57,7 +57,6 @@ class _TopUpSheetState extends State<TopUpSheet> {
         '/payments/topup',
         data: {
           'amount': amt,
-          'callback_url': 'campuschow://payment/callback?type=wallet_topup',
         },
       );
 
