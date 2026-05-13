@@ -86,6 +86,15 @@ class AblyService {
     _isConnecting = true;
     _currentUserId = userId;
 
+    // Fail fast if we don't even have a session token.
+    final token = await apiService.storage.read(key: 'launch-fast-token');
+    if (token == null) {
+      debugPrint('[AblyService] No token found in storage, aborting initAbly');
+      _isConnecting = false;
+      _currentUserId = null;
+      throw Exception('[AblyService] No auth token in storage');
+    }
+
     ably.Realtime? rt;
 
     try {

@@ -18,11 +18,7 @@ class AuthProvider extends ChangeNotifier {
   AuthProvider({
     FlutterSecureStorage? storage,
     GoogleSignIn? googleSignIn,
-  })  : _storage = storage ?? const FlutterSecureStorage(
-          aOptions: AndroidOptions(
-            encryptedSharedPreferences: true,
-          ),
-        ),
+  })  : _storage = storage ?? const FlutterSecureStorage(),
         _googleSignIn = googleSignIn ?? GoogleSignIn(
           serverClientId: const String.fromEnvironment(
             'SERVER_CLIENT_ID',
@@ -230,7 +226,7 @@ class AuthProvider extends ChangeNotifier {
 
       await _persistAuthResponse(data);
 
-      await _initializeAbly();
+      unawaited(_initializeAbly());
       unawaited(syncFCMToken());
 
     } finally {
@@ -265,7 +261,7 @@ class AuthProvider extends ChangeNotifier {
 
       await _persistAuthResponse(data);
 
-      await _initializeAbly();
+      unawaited(_initializeAbly());
       unawaited(syncFCMToken());
 
     } finally {
@@ -469,7 +465,7 @@ class AuthProvider extends ChangeNotifier {
       final data = await locator<AuthRepository>().loginWithGoogle(googleAuth.idToken!);
       
       await _persistAuthResponse(data);
-      await _initializeAbly();
+      unawaited(_initializeAbly());
       unawaited(syncFCMToken());
     } catch (e) {
       debugPrint('[AuthProvider] signInWithGoogle error: $e');

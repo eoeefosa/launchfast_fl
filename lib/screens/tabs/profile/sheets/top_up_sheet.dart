@@ -49,7 +49,10 @@ class _TopUpSheetState extends State<TopUpSheet> {
     try {
       final response = await apiService.dio.post(
         '/payments/topup',
-        data: {'amount': amt},
+        data: {
+          'amount': amt,
+          'callback_url': 'campuschow://payment/callback?type=wallet_topup',
+        },
       );
 
       final data = response.data;
