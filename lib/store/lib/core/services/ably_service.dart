@@ -55,6 +55,7 @@ class AblyService {
   // ── Listener registries ─────────────────────────────────────────────────────
 
   final List<void Function(String orderId, OrderStatus status)> _orderListeners = [];
+  final List<void Function()> _walletListeners = [];
   final List<void Function(String storeId, bool isOpen)> _storeListeners = [];
   final List<void Function(String newRole)> _roleListeners = [];
   final List<void Function(String storeId)> _approvalListeners = [];
@@ -334,6 +335,18 @@ class AblyService {
         final storeId = data['storeId'] as String;
         for (final cb in _approvalListeners) {
           cb(storeId);
+        }
+      },
+    );
+
+    // 5. Wallet updates
+    _attachListener(
+      channel: channel,
+      channelName: channelName,
+      eventName: 'wallet-update',
+      onMessage: (data) {
+        for (final cb in _walletListeners) {
+          cb();
         }
       },
     );
@@ -617,6 +630,22 @@ class AblyService {
 
   void removeOrderListener(void Function(String orderId, OrderStatus status) l) =>
       _orderListeners.remove(l);
+
+  void addWalletListener(void Function() l) {
+    if (!_walletListeners.contains(l)) _walletListeners.add(l);
+  }
+
+  void removeWalletListener(void Function() l) =>
+      _walletListeners.remove(l);
+
+  /// Manually triggers all wallet update listeners.
+  /// Useful for refreshing the UI when a deposit is detected via FCM.
+  void notifyWalletUpdate() {
+    debugPrint('[AblyService] Manually triggering wallet update listeners');
+    for (final cb in _walletListeners) {
+      cb();
+    }
+  }
 
   /// See [addOrderListener] for the stable-reference requirement.
   void addMenuListener(

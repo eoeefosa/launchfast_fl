@@ -363,6 +363,8 @@ class AuthProvider extends ChangeNotifier {
       _handleStoreApproval,
     );
 
+    ablyService.addWalletListener(refreshUser);
+
     _ablyListenersAttached = true;
   }
 

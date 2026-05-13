@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:campuschow/services/ably_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -67,12 +68,33 @@ class NotificationService {
 
       // 2. Handle foreground messages
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint('[FCM] Foreground message: ${message.notification?.title}');
+        debugPrint('[FCM] Foreground message received: ${message.notification?.title}');
+        debugPrint('[FCM] Data: ${message.data}');
+
+        final String? type = message.data['type'];
+        final String? orderId = message.data['orderId'];
+
+        // Handle wallet updates/deposits automatically
+        if (type == 'wallet_update' || type == 'deposit') {
+          debugPrint('[FCM] Wallet update detected, triggering refresh');
+          ablyService.notifyWalletUpdate();
+        }
+
         if (message.notification != null) {
           showNotification(
             title: message.notification!.title ?? 'New Notification',
             body: message.notification!.body ?? '',
-            payload: message.data['orderId'],
+            payload: orderId,
+          );
+        } else if (type == 'deposit') {
+          // If backend sends data-only message for deposit, still show notification
+          final amount = message.data['amount'];
+          showNotification(
+            title: 'Deposit Successful',
+            body: amount != null 
+                ? '₦$amount has been added to your wallet.' 
+                : 'Your wallet has been topped up successfully.',
+            payload: 'wallet',
           );
         }
       });

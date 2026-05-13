@@ -59,7 +59,7 @@ class _PaymentCallbackScreenState extends State<PaymentCallbackScreen> {
     }
   }
 
-  void _handleImmediateSuccess() {
+  Future<void> _handleImmediateSuccess() async {
     setState(() {
       _state = _ScreenState.success;
       _statusMessage = 'Payment successful!';
@@ -70,16 +70,25 @@ class _PaymentCallbackScreenState extends State<PaymentCallbackScreen> {
       );
     });
 
-    // Refresh data immediately
+    HapticFeedback.mediumImpact();
+
+    // Refresh data immediately and wait for it
     final auth = context.read<AuthProvider>();
     final orders = context.read<OrderProvider>();
-    if (widget.type == 'wallet_topup') {
-      auth.refreshUser();
-    } else {
-      orders.refreshOrders();
+    
+    try {
+      if (widget.type == 'wallet_topup') {
+        await auth.refreshUser();
+      } else {
+        await orders.refreshOrders();
+      }
+    } catch (e) {
+      debugPrint('[PaymentCallback] Refresh failed but payment was success: $e');
     }
 
-    Future.delayed(const Duration(seconds: 2), () => _navigate(_result!));
+    if (mounted) {
+      Future.delayed(const Duration(seconds: 2), () => _navigate(_result!));
+    }
   }
 
   void _handleImmediateFailure() {
@@ -87,6 +96,7 @@ class _PaymentCallbackScreenState extends State<PaymentCallbackScreen> {
       _state = _ScreenState.failed;
       _errorMessage = 'Payment could not be completed.';
     });
+    HapticFeedback.vibrate();
   }
 
   Future<void> _verify() async {
@@ -106,9 +116,10 @@ class _PaymentCallbackScreenState extends State<PaymentCallbackScreen> {
           _statusMessage = result.message ?? 'Payment successful!';
         });
 
-        // Refresh data in the background
+        // Refresh data in the background and wait to ensure UI is fresh
         final auth = context.read<AuthProvider>();
         final orders = context.read<OrderProvider>();
+        
         if (result.isWalletTopUp) {
           await auth.refreshUser();
         } else {
