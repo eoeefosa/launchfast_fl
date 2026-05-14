@@ -12,7 +12,16 @@
           "package_name": "com.campuschow.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "471745302305-08e9dpqfai0danp1q4rvjj62nmdt7rcd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.campuschow.app",
+            "certificate_hash": "86d99ee776a2f33ec2c2415e2a0110052192f518"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAkGr9_24ZB1ifXAGVAJIs1990dQYpSgSw"

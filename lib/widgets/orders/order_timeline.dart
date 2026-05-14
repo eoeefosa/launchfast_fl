@@ -16,9 +16,16 @@ class OrderTimeline extends StatelessWidget {
     ];
 
     int currentStep = 0;
-    if (status == OrderStatus.preparing) currentStep = 1;
-    if (status == OrderStatus.outForDelivery) currentStep = 2;
-    if (status == OrderStatus.delivered) currentStep = 3;
+    if (status == OrderStatus.accepted || status == OrderStatus.preparing) {
+      currentStep = 1;
+    } else if (status == OrderStatus.readyForPickup || 
+               status == OrderStatus.pickingUp || 
+               status == OrderStatus.onTheWay || 
+               status == OrderStatus.outForDelivery) {
+      currentStep = 2;
+    } else if (status == OrderStatus.delivered) {
+      currentStep = 3;
+    }
 
     return Row(
       children: List.generate(steps.length, (index) {

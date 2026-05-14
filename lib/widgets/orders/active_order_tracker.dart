@@ -105,30 +105,50 @@ class ActiveOrderTracker extends StatelessWidget {
   String _getStatusText(OrderStatus status) {
     switch (status) {
       case OrderStatus.queued:
-        return 'Pending Approval';
+      case OrderStatus.pending:
+        return 'Order Placed';
+      case OrderStatus.accepted:
+        return 'Order Accepted';
       case OrderStatus.preparing:
         return 'Preparing Meal';
+      case OrderStatus.readyForPickup:
+        return 'Ready for Pickup';
+      case OrderStatus.pickingUp:
+        return 'Picking Up';
+      case OrderStatus.onTheWay:
       case OrderStatus.outForDelivery:
         return 'On the Way';
       case OrderStatus.delivered:
         return 'Arrived';
+      case OrderStatus.cancelled:
+        return 'Cancelled';
       default:
-        return 'Order Placed';
+        return 'Processing...';
     }
   }
 
   String _getStatusDescription(OrderStatus status) {
     switch (status) {
       case OrderStatus.queued:
+      case OrderStatus.pending:
         return 'We are confirming your order with the store.';
+      case OrderStatus.accepted:
+        return 'The store has accepted your order and will start soon.';
       case OrderStatus.preparing:
         return 'Your chef is working their magic right now.';
+      case OrderStatus.readyForPickup:
+        return 'Your meal is ready and waiting for a rider.';
+      case OrderStatus.pickingUp:
+        return 'A rider is picking up your order from the store.';
+      case OrderStatus.onTheWay:
       case OrderStatus.outForDelivery:
         return 'Hang tight! Your food is being delivered.';
       case OrderStatus.delivered:
         return 'Enjoy your delicious meal!';
+      case OrderStatus.cancelled:
+        return 'This order was cancelled. Please contact support for details.';
       default:
-        return 'Processing your order...';
+        return 'Hang tight while we update your order status.';
     }
   }
 }

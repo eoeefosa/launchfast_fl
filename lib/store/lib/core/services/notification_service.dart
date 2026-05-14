@@ -72,7 +72,7 @@ class NotificationService {
         debugPrint('[FCM] Data: ${message.data}');
 
         final String? type = message.data['type'];
-        final String? orderId = message.data['orderId'];
+        final String? orderId = message.data['orderId'] ?? message.data['id'];
 
         // Handle wallet updates/deposits automatically
         if (type == 'wallet_update' || type == 'deposit') {
@@ -80,22 +80,49 @@ class NotificationService {
           ablyService.notifyWalletUpdate();
         }
 
+        // Show local notification if it's a data-only message or we want custom behavior
         if (message.notification != null) {
           showNotification(
             title: message.notification!.title ?? 'New Notification',
             body: message.notification!.body ?? '',
             payload: orderId,
           );
-        } else if (type == 'deposit') {
-          // If backend sends data-only message for deposit, still show notification
-          final amount = message.data['amount'];
-          showNotification(
-            title: 'Deposit Successful',
-            body: amount != null 
-                ? '₦$amount has been added to your wallet.' 
-                : 'Your wallet has been topped up successfully.',
-            payload: 'wallet',
-          );
+        } else if (type != null) {
+          // Handle various data-only message types from backend
+          switch (type) {
+            case 'deposit':
+              final amount = message.data['amount'];
+              showNotification(
+                title: 'Deposit Successful',
+                body: amount != null 
+                    ? '₦$amount has been added to your wallet.' 
+                    : 'Your wallet has been topped up successfully.',
+                payload: 'wallet',
+              );
+              break;
+            case 'order_update':
+              final status = message.data['status']?.toString().toLowerCase() ?? '';
+              showNotification(
+                title: 'Order Updated',
+                body: 'Your order status is now: ${status.replaceAll("_", " ")}',
+                payload: orderId,
+              );
+              break;
+            case 'new_order':
+              showNotification(
+                title: 'New Order Received!',
+                body: 'A customer just placed a new order.',
+                payload: orderId,
+              );
+              break;
+            case 'payment_success':
+              showNotification(
+                title: 'Payment Successful',
+                body: 'Your payment for order #$orderId was confirmed.',
+                payload: orderId,
+              );
+              break;
+          }
         }
       });
 

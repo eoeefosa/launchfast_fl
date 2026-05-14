@@ -36,12 +36,12 @@ extension OrderStatusExtension on OrderStatus {
         return 'Picking Up';
       case OrderStatus.onTheWay:
         return 'On the Way';
+      case OrderStatus.outForDelivery:
+        return 'Out for Delivery';
       case OrderStatus.delivered:
         return 'Delivered';
       case OrderStatus.cancelled:
         return 'Cancelled';
-      case OrderStatus.outForDelivery:
-        return 'Out for Delivery';
       case OrderStatus.queued:
         return 'Queued';
     }
@@ -59,16 +59,20 @@ extension OrderStatusExtension on OrderStatus {
       case 'PREPARING':
         return OrderStatus.preparing;
       case 'READY_FOR_PICKUP':
+      case 'READY':
         return OrderStatus.readyForPickup;
       case 'PICKING_UP':
         return OrderStatus.pickingUp;
       case 'OUT_FOR_DELIVERY':
+        return OrderStatus.outForDelivery;
       case 'ON_THE_WAY':
         return OrderStatus.onTheWay;
       case 'DELIVERED':
         return OrderStatus.delivered;
       case 'CANCELLED':
         return OrderStatus.cancelled;
+      case 'QUEUED':
+        return OrderStatus.queued;
       default:
         return OrderStatus.pending;
     }

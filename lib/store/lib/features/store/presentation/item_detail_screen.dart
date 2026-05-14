@@ -124,7 +124,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
 
     final soups = item.category == 'Swallow'
         ? storeProvider.menuItems
-              .where((m) => m.category == 'Soup' && m.storeId == item.storeId)
+              .where((m) => m.category == 'Soup')
               .toList()
         : <MenuItem>[];
     final addons = (item.addonIds ?? [])
@@ -290,20 +290,34 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
 
   void _addToCart(MenuItem item) {
     final cart = context.read<CartProvider>();
+    final storeProvider = context.read<StoreProvider>();
+
     if (item.category == 'Swallow' && _selectedSoupId == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please select a soup')));
       return;
     }
-    cart.addToCart(
+    final success = cart.addToCart(
       item: item,
       quantity: _quantity,
       selectedMeats: _selectedMeats,
       hasSalad: _hasSalad,
       selectedAddons: _selectedAddons,
     );
-    context.pop();
+
+    if (success && _selectedSoupId != null) {
+      try {
+        final soup = storeProvider.menuItems.firstWhere(
+          (m) => m.id == _selectedSoupId,
+        );
+        cart.addToCart(item: soup, quantity: _quantity);
+      } catch (_) {}
+    }
+
+    if (success) {
+      context.pop();
+    }
   }
 }
 

@@ -10,11 +10,15 @@ class StatusIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     IconData icon = Icons.timer_rounded;
+    if (status == OrderStatus.accepted) icon = Icons.check_rounded;
     if (status == OrderStatus.preparing) icon = Icons.restaurant_rounded;
-    if (status == OrderStatus.outForDelivery) {
+    if (status == OrderStatus.readyForPickup) icon = Icons.inventory_2_rounded;
+    if (status == OrderStatus.pickingUp) icon = Icons.handshake_rounded;
+    if (status == OrderStatus.onTheWay || status == OrderStatus.outForDelivery) {
       icon = Icons.delivery_dining_rounded;
     }
     if (status == OrderStatus.delivered) icon = Icons.check_circle_rounded;
+    if (status == OrderStatus.cancelled) icon = Icons.cancel_rounded;
 
     return Container(
           width: 80,

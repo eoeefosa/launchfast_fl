@@ -149,7 +149,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
 
     final availableSoups = item.category == 'Swallow'
         ? storeProvider.menuItems
-              .where((m) => m.category == 'Soup' && m.storeId == item!.storeId)
+              .where((m) => m.category == 'Soup')
               .toList()
         : <MenuItem>[];
 

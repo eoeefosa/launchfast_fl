@@ -1,32 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- ── Core network ──────────────────────────────────────────────────── -->
+    <!-- ───────────────── Permissions ───────────────── -->
+
+    <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
 
-    <!-- ── Push notifications ────────────────────────────────────────────── -->
-    <!-- POST_NOTIFICATIONS requires runtime grant on API 33+ -->
+    <!-- Notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- ── Haptic feedback ───────────────────────────────────────────────── -->
+    <!-- Vibration -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <!-- ── Secure storage (BiometricPrompt / Keystore) ───────────────────── -->
+    <!-- Biometrics -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 
     <application
-        android:label="CampusChow"
         android:name="${applicationName}"
+        android:label="CampusChow"
         android:icon="@mipmap/ic_launcher"
-        android:networkSecurityConfig="@xml/network_security_config"
         android:allowBackup="false"
         android:fullBackupContent="false"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:enableOnBackInvokedCallback="true">
+
+        <!-- ───────────────── Main Activity ───────────────── -->
 
         <activity
             android:name=".MainActivity"
@@ -34,93 +37,145 @@
             android:launchMode="singleTop"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="
+                orientation|
+                keyboardHidden|
+                keyboard|
+                screenSize|
+                smallestScreenSize|
+                locale|
+                layoutDirection|
+                fontScale|
+                screenLayout|
+                density|
+                uiMode">
+
+            <!-- Flutter normal theme -->
             <meta-data
-              android:name="io.flutter.embedding.android.NormalTheme"
-              android:resource="@style/NormalTheme"
-              />
-            <!-- Main launcher intent -->
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
+
+            <!-- App launcher -->
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep links: campuschow:// -->
+            <!-- Firebase notification click -->
+            <intent-filter>
+                <action android:name="FLUTTER_NOTIFICATION_CLICK" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <!-- Custom deep links -->
+            <!-- campuschow:// -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="campuschow" />
             </intent-filter>
 
-            <!-- HTTPS deep links: https://campuschow.app/... -->
+            <!-- HTTPS deep links -->
+            <!-- https://campuschow.app -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="campuschow.app" />
+
+                <data
+                    android:scheme="https"
+                    android:host="campuschow.app" />
             </intent-filter>
+
         </activity>
 
-        <!-- Flutter embedding version -->
+        <!-- Flutter embedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- FCM / Firebase Messaging -->
+        <!-- ───────────────── Firebase Messaging ───────────────── -->
+
         <service
-            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+            android:name=".MyFirebaseMessagingService"
             android:exported="false">
+
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
+
         </service>
 
-        <!-- Ably Push Notification Receiver -->
+        <!-- ───────────────── Ably Push Receiver ───────────────── -->
+
         <receiver
             android:name="io.ably.flutter.plugin.push.PushTrampolineReceiver"
             android:enabled="true"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="io.ably.broadcast.PUSH_ACTIVATE" />
                 <action android:name="io.ably.broadcast.PUSH_DEACTIVATE" />
                 <action android:name="io.ably.broadcast.PUSH_UPDATE_FAILED" />
             </intent-filter>
+
         </receiver>
+
     </application>
 
-    <!-- ── Package visibility (required for url_launcher on API 30+) ──────── -->
+    <!-- ───────────────── Package Visibility ───────────────── -->
+
     <queries>
-        <!-- Process-text support (Flutter engine) -->
+
+        <!-- Flutter process text -->
         <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+
+            <data android:mimeType="text/plain" />
         </intent>
-        <!-- Open URLs in browser (url_launcher — Paystack checkout, etc.) -->
+
+        <!-- Open URLs -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
+
             <data android:scheme="https" />
         </intent>
+
         <intent>
             <action android:name="android.intent.action.VIEW" />
+
             <data android:scheme="http" />
         </intent>
-        <!-- mailto: links -->
+
+        <!-- Email -->
         <intent>
             <action android:name="android.intent.action.SENDTO" />
+
             <data android:scheme="mailto" />
         </intent>
-        <!-- tel: links -->
+
+        <!-- Phone -->
         <intent>
             <action android:name="android.intent.action.DIAL" />
+
             <data android:scheme="tel" />
         </intent>
-        <!-- Custom app scheme deep links -->
+
+        <!-- Custom scheme -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
+
             <data android:scheme="campuschow" />
         </intent>
+
     </queries>
+
 </manifest>

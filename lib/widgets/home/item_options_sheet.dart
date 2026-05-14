@@ -36,7 +36,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
     final availableSoups = widget.item.category == 'Swallow'
         ? storeProvider.menuItems
               .where(
-                (m) => m.category == 'Soup' && m.storeId == widget.item.storeId,
+                (m) => m.category == 'Soup',
               )
               .toList()
         : <MenuItem>[];
@@ -295,21 +295,30 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
       return;
     }
 
+    // Build the selectedSoup payload if a soup was chosen
+    Map<String, dynamic>? soupPayload;
+    if (_selectedSoupId != null) {
+      final soup = storeProvider.menuItems.firstWhere(
+        (m) => m.id == _selectedSoupId,
+      );
+      soupPayload = {
+        'id': soup.id,
+        'name': soup.name,
+        // If isFreeWithSwallow the customer pays ₦0 for the soup
+        'price': soup.isFreeWithSwallow ? 0.0 : soup.price,
+      };
+    }
+
     final success = cartProvider.addToCart(
       item: widget.item,
       quantity: _quantity,
       selectedMeats: _selectedMeats,
       hasSalad: _hasSalad,
       selectedAddons: _selectedAddons,
+      selectedSoup: soupPayload,
     );
 
     if (success) {
-      if (_selectedSoupId != null) {
-        final soup = storeProvider.menuItems.firstWhere(
-          (m) => m.id == _selectedSoupId,
-        );
-        cartProvider.addToCart(item: soup, quantity: _quantity);
-      }
       Navigator.pop(context);
     } else {
       // Logic for different store would go here,
