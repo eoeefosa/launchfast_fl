@@ -41,13 +41,27 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
               .toList()
         : <MenuItem>[];
 
-    final availableAddons = widget.item.addonIds != null
-        ? widget.item.addonIds!
-              .map(
-                (id) => storeProvider.menuItems.firstWhere((m) => m.id == id),
-              )
-              .toList()
-        : <MenuItem>[];
+    final availableAddons = <MenuItem>[];
+    
+    // 1. Addons explicitly defined by ID
+    if (widget.item.addonIds != null) {
+      availableAddons.addAll(
+        widget.item.addonIds!
+            .map((id) => storeProvider.menuItems.firstWhereOrNull((m) => m.id == id))
+            .whereType<MenuItem>(),
+      );
+    }
+
+    // 2. Dynamic addons for Rice based on categories
+    if (widget.item.category == 'Rice') {
+      final riceAddonCategories = ['Meat', 'Fish', 'Chicken', 'Eggs', 'Salad'];
+      final dynamicAddons = storeProvider.menuItems.where((m) {
+        // Only include if it's in the specified categories AND not already in the list
+        return riceAddonCategories.contains(m.category) && 
+               !availableAddons.any((existing) => existing.id == m.id);
+      });
+      availableAddons.addAll(dynamicAddons);
+    }
 
     final totalPrice = PriceCalculator.computeTotal(
       item: widget.item,

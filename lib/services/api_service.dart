@@ -25,9 +25,11 @@ class ApiService {
     if (kReleaseMode) {
       return 'https://campus-chow-three.vercel.app/api';
     }
-    // Default for Android Emulator
+    // Prefer local Next.js backend if available, otherwise fallback to Vercel.
+    // Use 10.0.2.2 for Android Emulator, 127.0.0.1 for iOS Simulator.
+    // For now, we'll keep the Vercel URL as default but provide the local option.
     return 'https://campus-chow-three.vercel.app/api';
-    // return 'http://10.0.2.2:3000/api';
+    // return kIsWeb ? 'http://localhost:3000/api' : 'http://10.0.2.2:3000/api';
   }
 
   ApiService() {

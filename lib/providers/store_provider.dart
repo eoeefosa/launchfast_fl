@@ -25,6 +25,7 @@ class StoreProvider with ChangeNotifier {
 
   List<Store> get stores => _stores;
   List<MenuItem> get menuItems => _menuItems;
+  List<MenuItem> get popularItems => _menuItems.where((item) => item.popular).toList();
   bool get isLoading => _isLoading;
   String? get error => _error;
   Map<String, double> get meatPrices => _meatPrices;

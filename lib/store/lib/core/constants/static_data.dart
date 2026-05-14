@@ -66,7 +66,7 @@ class StaticData {
       isPerPortion: true,
       isReady: true,
       calories: 450,
-      addonIds: ['egg1', 'port1', 'm1'],
+      addonIds: ['egg1', 'plantain1', 'salad1', 'port1', 'm1'],
     ),
     MenuItem(
       id: 'f1',
@@ -82,7 +82,7 @@ class StaticData {
       isReady: false,
       prepTimeMinutes: 15,
       calories: 480,
-      addonIds: ['egg1', 'port1'],
+      addonIds: ['egg1', 'plantain1', 'salad1', 'port1'],
     ),
     MenuItem(
       id: 'w1',
@@ -95,7 +95,7 @@ class StaticData {
           'https://images.unsplash.com/photo-1516684732162-798a0062be99?auto=format&fit=crop&q=80&w=500',
       isPerPortion: true,
       isReady: true,
-      addonIds: ['egg1', 'port1'],
+      addonIds: ['egg1', 'plantain1', 'salad1', 'port1'],
     ),
 
     // SWALLOW CATEGORY
@@ -217,6 +217,7 @@ class StaticData {
           'https://images.unsplash.com/photo-1549590143-d5855148a9d5?auto=format&fit=crop&q=80&w=500',
       isReady: true,
       calories: 400,
+      addonIds: ['egg1', 'plantain1', 'salad1'],
     ),
     MenuItem(
       id: 'egg1',
@@ -229,6 +230,30 @@ class StaticData {
           'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?auto=format&fit=crop&q=80&w=500',
       isReady: true,
       calories: 70,
+    ),
+    MenuItem(
+      id: 'plantain1',
+      storeId: 'homeways',
+      name: 'Fried Plantain',
+      description: 'Sweet and ripe fried plantain dodo.',
+      price: 200.00,
+      category: 'Others',
+      image:
+          'https://images.unsplash.com/photo-1601050638917-3606f5ef85b7?auto=format&fit=crop&q=80&w=500',
+      isReady: true,
+      calories: 150,
+    ),
+    MenuItem(
+      id: 'salad1',
+      storeId: 'homeways',
+      name: 'Fresh Salad',
+      description: 'Fresh vegetable salad, perfectly seasoned.',
+      price: 200.00,
+      category: 'Others',
+      image:
+          'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=500',
+      isReady: true,
+      calories: 100,
     ),
     MenuItem(
       id: 'port1',

@@ -10,6 +10,7 @@ import '../../models/notification_item.dart';
 import '../../models/order.dart';
 import '../../widgets/home/home_header.dart';
 import '../../widgets/home/store_section.dart';
+import '../../widgets/home/featured_meals.dart';
 import '../../widgets/home/menu_grouped_list.dart';
 import '../../widgets/home/category_selector.dart';
 import '../../widgets/home/cart_bar.dart';
@@ -194,6 +195,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     onRefresh: () => storeProvider.refreshData(),
                   ),
                 SliverToBoxAdapter(child: const HomeHeader()),
+                // Featured Meals Section
+                if (storeProvider.popularItems.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: FeaturedMeals(
+                      items: storeProvider.popularItems,
+                      onAdd: (item) => _handleAddItem(context, item),
+                    ),
+                  ),
                 // "Restaurants" header
                 SliverToBoxAdapter(
                   child: Padding(
