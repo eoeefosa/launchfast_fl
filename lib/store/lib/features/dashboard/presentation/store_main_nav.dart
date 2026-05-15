@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
@@ -32,6 +33,7 @@ class _StoreMainNavState extends State<StoreMainNav>
   String? _subscribedStoreId; // tracked so we can unsubscribe on dispose
   late AnimationController _badgeCtrl;
   late Animation<double> _badgeScale;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   static const List<({String label, IconData icon, IconData activeIcon})>
   _navItems = [
@@ -126,8 +128,61 @@ class _StoreMainNavState extends State<StoreMainNav>
         title: 'New Order Received! 🚀',
         body: 'You have a new pending order ($orderId). Tap to view.',
         payload: 'order_$orderId',
+        channelId: NotificationService.orderChannelId,
       );
+
+      // Also show a persistent in-app alert dialog so the owner doesn't miss it
+      _showNewOrderAlert(orderId);
+
+      // Play the alert sound
+      _playAlertSound();
     }
+  }
+
+  Future<void> _playAlertSound() async {
+    try {
+      await _audioPlayer.play(AssetSource('sounds/order_sound.mp3'));
+    } catch (e) {
+      debugPrint('[AudioPlayer] Error playing sound: $e');
+    }
+  }
+
+  void _showNewOrderAlert(String orderId) {
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.auto_awesome, color: Colors.orange),
+            SizedBox(width: 10),
+            Text('New Order!'),
+          ],
+        ),
+        content: Text('You have received a new order (#${orderId.substring(orderId.length - 6).toUpperCase()}).\n\nWould you like to view it now?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Later'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _onTabTapped(1); // Switch to Orders tab
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('View Order'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _onTabTapped(int index) {
@@ -141,6 +196,7 @@ class _StoreMainNavState extends State<StoreMainNav>
   @override
   void dispose() {
     _badgeCtrl.dispose();
+    _audioPlayer.dispose();
     if (_ablyInitialized) {
       ablyService.removeOrderListener(_onAblyOrderUpdate);
     }

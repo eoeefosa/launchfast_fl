@@ -273,10 +273,12 @@ class NotificationService {
 
     _notifyListeners(combinedData);
 
-    /// Wallet updates
+    /// Wallet updates — cover all type variants sent by backend
     final type = message.data['type'];
 
     if (type == 'wallet_update' ||
+        type == 'wallet_topup' ||
+        type == 'walletUpdate' ||
         type == 'deposit') {
       debugPrint(
         '[FCM] Wallet update detected',

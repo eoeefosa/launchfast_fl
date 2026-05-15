@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 import '../../../../providers/auth_provider.dart';
 import '../sheets/top_up_sheet.dart';
 
@@ -118,7 +119,7 @@ class WalletCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '₦${auth.user!.walletBalance.toStringAsFixed(2)}',
+                      '₦${NumberFormat('#,##0.00').format(auth.user!.walletBalance)}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 38,

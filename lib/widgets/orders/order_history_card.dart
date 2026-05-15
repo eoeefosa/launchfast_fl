@@ -24,11 +24,14 @@ class OrderHistoryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.all(20),
-          title: Row(
+      child: InkWell(
+        onTap: () {
+          context.push('/orders/${order.id}', extra: order);
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
             children: [
               Container(
                 width: 52,
@@ -70,39 +73,24 @@ class OrderHistoryCard extends StatelessWidget {
                   ],
                 ),
               ),
-            ],
-          ),
-          trailing: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '₦${order.total.toStringAsFixed(0)}',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 17,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 6),
-              _StatusBadge(status: order.status),
-            ],
-          ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: Column(
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Divider(color: AppColors.lightBorder.withValues(alpha: 0.5)),
-                  const SizedBox(height: 16),
-                  ...order.items.map((i) => _DetailItem(item: i)),
-                  const SizedBox(height: 24),
-                  if (order.status == OrderStatus.queued)
-                    _EditOrderButton(order: order),
+                  Text(
+                    '₦${order.total.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 17,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  _StatusBadge(status: order.status),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.1);
@@ -151,106 +139,4 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-class _DetailItem extends StatelessWidget {
-  final CartItem item;
 
-  const _DetailItem({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final addons = <String>[];
-    if (item.selectedMeats != null) {
-      item.selectedMeats!.forEach((k, v) {
-        if (v > 0) addons.add('${v}x $k Meat');
-      });
-    }
-    if (item.hasSalad) addons.add('Salad');
-    if (item.selectedAddons != null) {
-      item.selectedAddons!.forEach((k, v) {
-        if (v > 0) addons.add('${v}x $k');
-      });
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '${item.quantity}x',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: AppColors.primary,
-                fontSize: 12,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.menuItem.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                  ),
-                ),
-                if (addons.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      addons.join(' • '),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.lightMuted,
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EditOrderButton extends StatelessWidget {
-  final Order order;
-
-  const _EditOrderButton({required this.order});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          context.read<CartProvider>().loadOrder(order, isEditing: true);
-          context.push('/cart');
-        },
-        icon: const Icon(Icons.edit_outlined, size: 18),
-        label: const Text('Edit Selections'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.onSurface,
-          foregroundColor: Theme.of(context).colorScheme.surface,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-        ),
-      ),
-    );
-  }
-}

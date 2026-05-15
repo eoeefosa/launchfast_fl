@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'dart:io';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart' as import_go_router;
 
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
@@ -132,11 +133,16 @@ class _OrdersBody extends StatelessWidget {
   final bool hasActiveOrder;
   final bool isIOS;
 
-  List<Widget> get _children => [
+  List<Widget> _getChildren(BuildContext context) => [
     if (hasActiveOrder) ...[
       const _SectionLabel('Active Delivery'),
       const SizedBox(height: 16),
-      ActiveOrderTracker(order: activeOrder),
+      GestureDetector(
+        onTap: () {
+          import_go_router.GoRouter.of(context).push('/orders/${activeOrder.id}', extra: activeOrder);
+        },
+        child: ActiveOrderTracker(order: activeOrder),
+      ),
       const SizedBox(height: 40),
     ],
     if (orders.isEmpty)
@@ -152,11 +158,11 @@ class _OrdersBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isIOS) {
-      return _IOSScrollView(orderProvider: orderProvider, children: _children);
+      return _IOSScrollView(orderProvider: orderProvider, children: _getChildren(context));
     }
     return _AndroidScrollView(
       orderProvider: orderProvider,
-      children: _children,
+      children: _getChildren(context),
     );
   }
 }

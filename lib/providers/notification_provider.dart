@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -11,6 +12,7 @@ class NotificationProvider with ChangeNotifier {
   late Box<NotificationEntity> _box;
   List<NotificationItem> _notifications = [];
   bool _isLoading = false;
+  Timer? _pendingRefreshTimer;
 
   List<NotificationItem> get notifications => _notifications;
   bool get isLoading => _isLoading;
@@ -33,112 +35,53 @@ class NotificationProvider with ChangeNotifier {
   }
 
   void _initListeners() {
-    ablyService.addNotificationListener((payload) => _processPayload(payload));
-    notificationService.addListener((payload) => _processPayload(payload));
+    // When Ably or FCM fires a real-time notification:
+    // 1. Save it locally immediately with a temp ID for instant UI update.
+    // 2. Schedule a backend refresh after 3 seconds to replace the temp entry
+    //    with the canonical MongoDB entry (and deduplicate).
+    ablyService.addNotificationListener((payload) {
+      _processPayload(payload);
+      _scheduleDelayedRefresh();
+    });
+
+    notificationService.addListener((payload) {
+      _processPayload(payload);
+      _scheduleDelayedRefresh();
+    });
+  }
+
+  /// Schedules a backend refresh 3 seconds after a real-time event.
+  /// Debounced so rapid events only cause one refresh.
+  void _scheduleDelayedRefresh() {
+    _pendingRefreshTimer?.cancel();
+    _pendingRefreshTimer = Timer(const Duration(seconds: 3), () {
+      debugPrint('⏱ [NotificationProvider] Delayed refresh triggered after real-time event');
+      refresh();
+    });
   }
 
   void _processPayload(Map<String, dynamic> payload) {
+    debugPrint('📲 [NotificationProvider] Real-time payload received: $payload');
     final notification = NotificationItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
       title: payload['title'] ?? 'New Update',
       message: payload['body'] ?? payload['message'] ?? '',
       type: _parseNotificationType(payload['type']?.toString()),
       timestamp: DateTime.now(),
       metadata: payload,
     );
-    addNotification(notification);
+    _saveLocalOnly(notification);
   }
 
-  Future<void> refresh() async {
-    _isLoading = true;
-    notifyListeners();
+  /// Saves to local box without triggering a backend sync.
+  Future<void> _saveLocalOnly(NotificationItem item) async {
+    // Avoid duplicates by checking if a temp entry for this second already exists
+    final isDuplicate = _notifications.any(
+      (n) => n.title == item.title && 
+             n.timestamp.difference(item.timestamp).inSeconds.abs() < 5,
+    );
+    if (isDuplicate) return;
 
-    try {
-      // 1. Local
-      _notifications = _box.values
-          .map((e) => NotificationItem.fromMap({
-                'id': e.notificationId,
-                'title': e.title,
-                'message': e.message,
-                'type': e.type,
-                'timestamp': e.timestamp.toIso8601String(),
-                'isRead': e.isRead,
-                'metadata': e.metadata != null ? jsonDecode(e.metadata!) : null,
-              }))
-          .toList()
-          ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      notifyListeners();
-
-      // 2. Remote
-      try {
-        debugPrint('🚀 [NotificationProvider] Syncing with backend...');
-        final response = await apiService.dio.get('/notifications');
-        debugPrint('✅ [NotificationProvider] Backend response: ${response.statusCode}');
-        
-        if (response.statusCode == 200) {
-          final List<dynamic> data = response.data;
-          debugPrint('📬 [NotificationProvider] Received ${data.length} notifications from backend');
-          
-          // Use a Map to de-duplicate by notificationId
-          final Map<String, NotificationEntity> merged = {};
-          
-          // 1. Keep existing local items (especially those received via FCM/Ably just now)
-          for (var entity in _box.values) {
-            if (entity.notificationId.isNotEmpty) {
-              merged[entity.notificationId] = entity;
-            }
-          }
-
-          // 2. Overwrite/Add from backend (authoritative)
-          for (var item in data) {
-            final id = item['_id']?.toString() ?? '';
-            final entity = NotificationEntity()
-              ..notificationId = id
-              ..title = item['title'] ?? ''
-              ..message = item['body'] ?? ''
-              ..type = item['type'] ?? 'serverAlert'
-              ..timestamp = item['createdAt'] != null 
-                  ? DateTime.parse(item['createdAt']) 
-                  : DateTime.now()
-              ..isRead = item['isRead'] ?? false
-              ..metadata = item['data'] != null ? jsonEncode(item['data']) : null;
-            
-            merged[id] = entity;
-          }
-
-          // 3. Update the box
-          await _box.clear();
-          await _box.addAll(merged.values);
-
-          _notifications = _box.values
-              .map((e) => NotificationItem.fromMap({
-                    'id': e.notificationId,
-                    'title': e.title,
-                    'message': e.message,
-                    'type': e.type,
-                    'timestamp': e.timestamp.toIso8601String(),
-                    'isRead': e.isRead,
-                    'metadata': e.metadata != null ? jsonDecode(e.metadata!) : null,
-                  }))
-              .toList()
-              ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-          
-          debugPrint('✨ [NotificationProvider] Local cache updated with ${_notifications.length} items');
-        }
-      } catch (e) {
-        debugPrint('❌ [NotificationProvider] Sync with backend failed: $e');
-      }
-    } catch (e) {
-      debugPrint('❌ [NotificationProvider] Error loading notifications: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> _loadNotifications() async => refresh();
-
-  Future<void> addNotification(NotificationItem item) async {
     final entity = NotificationEntity()
       ..notificationId = item.id
       ..title = item.title
@@ -151,6 +94,85 @@ class NotificationProvider with ChangeNotifier {
     await _box.add(entity);
     _notifications.insert(0, item);
     notifyListeners();
+  }
+
+  Future<void> refresh() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // 1. Load from local cache first for instant display
+      _notifications = _boxToList();
+      notifyListeners();
+
+      // 2. Sync with backend (authoritative source of truth)
+      try {
+        debugPrint('🚀 [NotificationProvider] Syncing with backend...');
+        final response = await apiService.dio.get('/notifications');
+        debugPrint('✅ [NotificationProvider] Backend response: ${response.statusCode}');
+        
+        if (response.statusCode == 200) {
+          final List<dynamic> data = response.data;
+          debugPrint('📬 [NotificationProvider] Received ${data.length} notifications from backend');
+          
+          if (data.isNotEmpty) {
+            // Backend is the source of truth — replace all local data with canonical entries.
+            // This removes any temp-ID entries created by real-time events.
+            final backendEntities = data.map((item) {
+              final entity = NotificationEntity()
+                ..notificationId = item['_id']?.toString() ?? ''
+                ..title = item['title'] ?? ''
+                ..message = item['body'] ?? ''
+                ..type = item['type'] ?? 'serverAlert'
+                ..timestamp = item['createdAt'] != null 
+                    ? DateTime.parse(item['createdAt']) 
+                    : DateTime.now()
+                ..isRead = item['isRead'] ?? false
+                ..metadata = item['data'] != null ? jsonEncode(item['data']) : null;
+              return entity;
+            }).toList();
+
+            await _box.clear();
+            await _box.addAll(backendEntities);
+          } else {
+            // Backend is empty — keep local entries (may have been cleared intentionally).
+            // Only merge to avoid removing temp entries that haven't synced yet.
+            debugPrint('📭 [NotificationProvider] Backend returned 0 items, keeping local cache.');
+          }
+
+          _notifications = _boxToList();
+          debugPrint('✨ [NotificationProvider] Synced ${_notifications.length} notifications');
+        }
+      } catch (e) {
+        debugPrint('❌ [NotificationProvider] Backend sync failed (using local cache): $e');
+      }
+    } catch (e) {
+      debugPrint('❌ [NotificationProvider] Error loading notifications: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  List<NotificationItem> _boxToList() {
+    return _box.values
+        .map((e) => NotificationItem.fromMap({
+              'id': e.notificationId,
+              'title': e.title,
+              'message': e.message,
+              'type': e.type,
+              'timestamp': e.timestamp.toIso8601String(),
+              'isRead': e.isRead,
+              'metadata': e.metadata != null ? jsonDecode(e.metadata!) : null,
+            }))
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+  }
+
+  Future<void> _loadNotifications() async => refresh();
+
+  Future<void> addNotification(NotificationItem item) async {
+    await _saveLocalOnly(item);
   }
 
   Future<void> markAsRead(String id) async {
@@ -208,13 +230,30 @@ class NotificationProvider with ChangeNotifier {
 
   NotificationType _parseNotificationType(String? type) {
     if (type == null) return NotificationType.serverAlert;
+    // Normalize common backend type strings to enum names
+    final normalized = type.toLowerCase();
+    if (normalized == 'deposit' || 
+        normalized == 'walletupdate' || 
+        normalized == 'wallet_update' ||
+        normalized == 'wallet_topup') {
+      return NotificationType.walletUpdate;
+    }
+    if (normalized == 'order_update' || normalized == 'orderupdate') {
+      return NotificationType.orderUpdate;
+    }
     try {
       return NotificationType.values.firstWhere(
-        (t) => t.name == type,
+        (t) => t.name.toLowerCase() == normalized,
         orElse: () => NotificationType.serverAlert,
       );
     } catch (_) {
       return NotificationType.serverAlert;
     }
+  }
+
+  @override
+  void dispose() {
+    _pendingRefreshTimer?.cancel();
+    super.dispose();
   }
 }

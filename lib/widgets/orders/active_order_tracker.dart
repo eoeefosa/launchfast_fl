@@ -100,8 +100,7 @@ class ActiveOrderTracker extends StatelessWidget {
 
             // ── Pickup QR ──────────────────────────────────────────────
             // Show the QR code card when the order is a pickup and ready.
-            if (_isPickup(order.deliveryType) &&
-                order.status == OrderStatus.readyForPickup)
+            if (_isPickup(order.deliveryType))
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                 child: PickupQrCard(orderId: order.id),

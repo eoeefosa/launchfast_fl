@@ -91,6 +91,7 @@ flutter:
   assets:
     - assets/appicon.png
     - assets/applogo.png
+    - assets/sounds/order_sound.mp3
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

@@ -3,11 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../../providers/store_provider.dart';
 import '../../providers/cart_provider.dart';
-import '../../providers/notification_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/menu_item.dart';
-import '../../models/notification_item.dart';
-import '../../models/order.dart';
 import '../../widgets/home/home_header.dart';
 import '../../widgets/home/store_section.dart';
 import '../../widgets/home/menu_grouped_list.dart';
@@ -29,8 +26,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategory = 'All';
 
   late final void Function(String) _roleListener;
-  late final void Function(Map<String, dynamic>) _notificationListener;
-  late final void Function(String, OrderStatus) _ablyOrderListener;
 
   @override
   void initState() {
@@ -55,50 +50,13 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) context.read<AuthProvider>().updateRole(newRole);
       };
       ablyService.addRoleListener(_roleListener);
-
-      _notificationListener = (Map<String, dynamic> payload) {
-        if (mounted) {
-          final item = NotificationItem(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            title: payload['title'] ?? 'New Notification',
-            message: payload['message'] ?? '',
-            type: NotificationType.values.firstWhere(
-              (t) => t.toString().split('.').last == payload['type'],
-              orElse: () => NotificationType.serverAlert,
-            ),
-            timestamp: DateTime.now(),
-            metadata: Map<String, dynamic>.from(payload['metadata'] ?? {}),
-          );
-          context.read<NotificationProvider>().addNotification(item);
-        }
-      };
-      ablyService.addNotificationListener(_notificationListener);
-
-      _ablyOrderListener = (String orderId, OrderStatus status) {
-        if (mounted) {
-          final item = NotificationItem(
-            id: 'order-$orderId-${status.name}',
-            title: 'Order Updated',
-            message: 'Your order #$orderId is now ${status.name.toUpperCase()}',
-            type: NotificationType.orderUpdate,
-            timestamp: DateTime.now(),
-            metadata: {'orderId': orderId, 'status': status.name},
-          );
-          context.read<NotificationProvider>().addNotification(item);
-        }
-      };
-      ablyService.addOrderListener(_ablyOrderListener);
     } else {
       _roleListener = (_) {};
-      _notificationListener = (_) {};
-      _ablyOrderListener = (_, _) {};
     }
   }
   @override
   void dispose() {
     ablyService.removeRoleListener(_roleListener);
-    ablyService.removeNotificationListener(_notificationListener);
-    ablyService.removeOrderListener(_ablyOrderListener);
     super.dispose();
   }
 

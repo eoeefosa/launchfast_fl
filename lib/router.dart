@@ -13,7 +13,9 @@ import 'screens/tabs/tabs_shell.dart';
 import 'screens/tabs/home_screen.dart';
 import 'screens/tabs/cart_screen.dart';
 import 'screens/tabs/orders_screen.dart';
+import 'screens/tabs/order_details_screen.dart';
 import 'screens/tabs/profile/profile_screen.dart';
+import 'models/order.dart';
 
 import 'screens/store/store_detail_screen.dart';
 import 'screens/store/item_detail_screen.dart';
@@ -249,6 +251,15 @@ role: ${auth.user?.role}
               GoRoute(
                 path: routeOrders,
                 builder: (_, _) => const OrdersScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) {
+                      final order = state.extra as Order;
+                      return OrderDetailsScreen(order: order);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
