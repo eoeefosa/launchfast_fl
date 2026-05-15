@@ -12,6 +12,7 @@ import '../../widgets/cart/checkout_bar.dart';
 import '../../widgets/cart/empty_cart_view.dart';
 import '../../widgets/cart/editing_banner.dart';
 import '../../widgets/cart/frequently_added_section.dart';
+import '../../services/api_service.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -212,44 +213,210 @@ class _CartBody extends StatelessWidget {
         const SizedBox(height: 40),
 
         // Notes or Promo Code Placeholder
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: scheme.onSurface.withValues(alpha: 0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
+        GestureDetector(
+          onTap: () => _showPromoCodeSheet(context, cart),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: scheme.onSurface.withValues(alpha: 0.1)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.confirmation_number_outlined,
+                  color: cart.appliedPromoCode != null ? Colors.green : scheme.onSurface.withValues(alpha: 0.4),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  cart.appliedPromoCode != null ? 'Promo applied: ${cart.appliedPromoCode}' : 'Add promo code',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: cart.appliedPromoCode != null ? Colors.green : scheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+                const Spacer(),
+                if (cart.appliedPromoCode != null)
+                  GestureDetector(
+                    onTap: () => cart.removePromoCode(),
+                    child: const Icon(
+                      Icons.close,
+                      size: 20,
+                      color: Colors.red,
+                    ),
+                  )
+                else
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: scheme.onSurface.withValues(alpha: 0.3),
+                  ),
+              ],
+            ),
+          ).animate().fadeIn(delay: 400.ms),
+        ),
+      ],
+    );
+  }
+
+  void _showPromoCodeSheet(BuildContext context, CartProvider cart) {
+    if (cart.appliedPromoCode != null) return;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _PromoCodeSheet(cart: cart),
+    );
+  }
+}
+
+class _PromoCodeSheet extends StatefulWidget {
+  final CartProvider cart;
+
+  const _PromoCodeSheet({required this.cart});
+
+  @override
+  State<_PromoCodeSheet> createState() => _PromoCodeSheetState();
+}
+
+class _PromoCodeSheetState extends State<_PromoCodeSheet> {
+  final _codeController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _applyCode() async {
+    final code = _codeController.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await apiService.dio.post('/promo-codes/validate', data: {
+        'code': code,
+        'cartAmount': widget.cart.subTotal,
+      });
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        widget.cart.applyPromoCode(
+          response.data['code'],
+          (response.data['discountPercentage'] as num).toDouble(),
+          (response.data['maxDiscountAmount'] as num).toDouble(),
+        );
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Promo code applied successfully!'), backgroundColor: Colors.green),
+          );
+        }
+      } else {
+        setState(() {
+          _errorMessage = response.data['error'] ?? 'Invalid promo code';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to validate promo code';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.confirmation_number_outlined,
-                color: scheme.onSurface.withValues(alpha: 0.4),
-              ),
-              const SizedBox(width: 12),
               Text(
-                'Add promo code',
+                'Enter Promo Code',
                 style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurface.withValues(alpha: 0.5),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: scheme.onSurface,
                 ),
               ),
-              const Spacer(),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: scheme.onSurface.withValues(alpha: 0.3),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _codeController,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  hintText: 'e.g. DISCOUNT20',
+                  errorText: _errorMessage,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _applyCode,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Apply Code',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
               ),
             ],
           ),
-        ).animate().fadeIn(delay: 400.ms),
-      ],
+        ),
+      ),
     );
   }
 }

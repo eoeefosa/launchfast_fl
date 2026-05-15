@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:campuschow/store/lib/core/models/notification_model.dart';
 
 class NotificationProvider with ChangeNotifier {
@@ -14,6 +15,33 @@ class NotificationProvider with ChangeNotifier {
 
   NotificationProvider() {
     _loadNotifications();
+    _initListeners();
+  }
+
+  void _initListeners() {
+    notificationService.addListener((payload) {
+      final notification = NotificationItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: payload['title'] ?? 'New Update',
+        message: payload['body'] ?? payload['message'] ?? '',
+        type: _parseNotificationType(payload['type']?.toString()),
+        timestamp: DateTime.now(),
+        metadata: payload,
+      );
+      addNotification(notification);
+    });
+  }
+
+  NotificationType _parseNotificationType(String? type) {
+    if (type == null) return NotificationType.serverAlert;
+    try {
+      return NotificationType.values.firstWhere(
+        (t) => t.name == type,
+        orElse: () => NotificationType.serverAlert,
+      );
+    } catch (_) {
+      return NotificationType.serverAlert;
+    }
   }
 
   Future<void> _loadNotifications() async {

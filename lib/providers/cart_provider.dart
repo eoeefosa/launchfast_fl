@@ -26,7 +26,7 @@ extension DeliveryTypeX on DeliveryType {
   double get charge {
     switch (this) {
       case DeliveryType.priority:
-        return 1300;
+        return 1000;
       case DeliveryType.pickup:
         return 0;
     }
@@ -44,7 +44,7 @@ extension DeliveryTypeX on DeliveryType {
   String get priceLabel {
     switch (this) {
       case DeliveryType.priority:
-        return '₦1,300';
+        return '₦1,000';
       case DeliveryType.pickup:
         return 'FREE';
     }
@@ -62,8 +62,16 @@ class CartProvider with ChangeNotifier {
   List<MenuItem> _allMenuItems = [];
   List<Store> _allStores = [];
 
+  // Promo code state
+  String? _appliedPromoCode;
+  double _discountPercentage = 0;
+  double _maxDiscountAmount = 0;
+
   List<CartItem> get items => _items;
   String? get editingOrderId => _editingOrderId;
+  String? get appliedPromoCode => _appliedPromoCode;
+  double get discountPercentage => _discountPercentage;
+  double get maxDiscountAmount => _maxDiscountAmount;
 
   String? get currentStoreId =>
       _items.isNotEmpty ? _items[0].menuItem.storeId : null;
@@ -217,7 +225,24 @@ class CartProvider with ChangeNotifier {
   void clearCart() {
     _items = [];
     _editingOrderId = null;
+    _appliedPromoCode = null;
+    _discountPercentage = 0;
+    _maxDiscountAmount = 0;
     _saveCart();
+    notifyListeners();
+  }
+
+  void applyPromoCode(String code, double percentage, double maxAmount) {
+    _appliedPromoCode = code;
+    _discountPercentage = percentage;
+    _maxDiscountAmount = maxAmount;
+    notifyListeners();
+  }
+
+  void removePromoCode() {
+    _appliedPromoCode = null;
+    _discountPercentage = 0;
+    _maxDiscountAmount = 0;
     notifyListeners();
   }
 
@@ -320,12 +345,21 @@ class CartProvider with ChangeNotifier {
     return 500.0 * storeCount;
   }
 
+  double get discountAmount {
+    if (_appliedPromoCode == null || _discountPercentage == 0) return 0;
+    double discount = (subTotal * _discountPercentage) / 100;
+    if (_maxDiscountAmount > 0 && discount > _maxDiscountAmount) {
+      discount = _maxDiscountAmount;
+    }
+    return discount;
+  }
+
   /// Delivery charge for the given [DeliveryType]. The UI reads this; it does
   /// not compute it inline.
   double deliveryChargeFor(DeliveryType type) => type.charge;
 
   double totalFor(DeliveryType deliveryType) =>
-      subTotal + serviceFees + deliveryChargeFor(deliveryType);
+      subTotal + serviceFees + deliveryChargeFor(deliveryType) - discountAmount;
 
-  double get cartTotal => subTotal + serviceFees;
+  double get cartTotal => subTotal + serviceFees - discountAmount;
 }

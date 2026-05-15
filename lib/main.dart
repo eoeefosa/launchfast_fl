@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:campuschow/firebase_options.dart';
 
 import 'package:flutter/material.dart';
@@ -47,7 +48,77 @@ final rootNavigatorKey = GlobalKey<NavigatorState>();
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  debugPrint('Handling a background message: ${message.messageId}');
+  debugPrint('[FCM] Handling background message: ${message.messageId}');
+  debugPrint('[FCM] Background Data: ${message.data}');
+
+  // If it's a notification message, the OS will handle it.
+  // If it's a data-only message, we might need to show a local notification.
+  if (message.notification == null && message.data.isNotEmpty) {
+    final type = message.data['type'];
+    final orderId = message.data['orderId'] ?? message.data['id'];
+    
+    String? title;
+    String? body;
+
+    switch (type) {
+      case 'payment_success':
+      case 'payment_alert':
+        title = 'Payment Successful';
+        body = 'Your payment for order #$orderId was confirmed.';
+        break;
+      case 'order_update':
+      case 'order_processing':
+        final status = message.data['status']?.toString().toLowerCase() ?? '';
+        title = type == 'order_processing' ? 'Order Processing' : 'Order Updated';
+        body = status.isNotEmpty 
+            ? 'Your order status is now: ${status.replaceAll("_", " ")}'
+            : 'Your order is being processed.';
+        break;
+      case 'deposit':
+        final amount = message.data['amount'];
+        title = 'Deposit Successful';
+        body = amount != null 
+            ? '₦$amount has been added to your wallet.' 
+            : 'Your wallet has been topped up successfully.';
+        break;
+      case 'new_order':
+        title = 'New Order Received!';
+        body = 'A customer just placed a new order.';
+        break;
+    }
+
+    if (title != null && body != null) {
+      // We use a fresh instance for the background isolate
+      final localNotifications = FlutterLocalNotificationsPlugin();
+      
+      const androidInit = AndroidInitializationSettings('ic_notification');
+      const iosInit = DarwinInitializationSettings();
+      await localNotifications.initialize(
+        settings: const InitializationSettings(android: androidInit, iOS: iosInit),
+      );
+
+      const androidDetails = AndroidNotificationDetails(
+        'launchfast_order_channel',
+        'Order Notifications',
+        channelDescription: 'Channel for new order alerts',
+        importance: Importance.max,
+        priority: Priority.high,
+      );
+      
+      const notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: DarwinNotificationDetails(),
+      );
+
+      await localNotifications.show(
+        id: DateTime.now().millisecond,
+        title: title,
+        body: body,
+        notificationDetails: notificationDetails,
+        payload: orderId,
+      );
+    }
+  }
 }
 
 Future<void> main() async {

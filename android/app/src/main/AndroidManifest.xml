@@ -102,17 +102,10 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- ───────────────── Firebase Messaging ───────────────── -->
-
-        <service
-            android:name=".MyFirebaseMessagingService"
-            android:exported="false">
-
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-
-        </service>
+        <!-- Firebase / FCM background handling is provided automatically by
+             the firebase_messaging Flutter plugin (FlutterFirebaseMessagingService).
+             Do NOT declare a custom MyFirebaseMessagingService here unless you
+             have a corresponding Kotlin implementation. -->
 
         <!-- ───────────────── Ably Push Receiver ───────────────── -->
 

@@ -15,6 +15,24 @@ class NotificationService {
 
   NotificationService._internal();
 
+  final List<void Function(Map<String, dynamic> data)> _listeners = [];
+
+  void addListener(void Function(Map<String, dynamic> data) listener) {
+    if (!_listeners.contains(listener)) {
+      _listeners.add(listener);
+    }
+  }
+
+  void removeListener(void Function(Map<String, dynamic> data) listener) {
+    _listeners.remove(listener);
+  }
+
+  void _notifyListeners(Map<String, dynamic> data) {
+    for (final listener in _listeners) {
+      listener(data);
+    }
+  }
+
   Future<void> init() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('ic_notification');
@@ -71,6 +89,14 @@ class NotificationService {
         debugPrint('[FCM] Foreground message received: ${message.notification?.title}');
         debugPrint('[FCM] Data: ${message.data}');
 
+        // Notify in-app listeners (to add to notification list)
+        final Map<String, dynamic> combinedData = Map.from(message.data);
+        if (message.notification != null) {
+          combinedData['title'] = message.notification!.title;
+          combinedData['body'] = message.notification!.body;
+        }
+        _notifyListeners(combinedData);
+
         final String? type = message.data['type'];
         final String? orderId = message.data['orderId'] ?? message.data['id'];
 
@@ -101,10 +127,13 @@ class NotificationService {
               );
               break;
             case 'order_update':
+            case 'order_processing':
               final status = message.data['status']?.toString().toLowerCase() ?? '';
               showNotification(
-                title: 'Order Updated',
-                body: 'Your order status is now: ${status.replaceAll("_", " ")}',
+                title: type == 'order_processing' ? 'Order Processing' : 'Order Updated',
+                body: status.isNotEmpty 
+                    ? 'Your order status is now: ${status.replaceAll("_", " ")}'
+                    : 'Your order is being processed.',
                 payload: orderId,
               );
               break;
@@ -116,6 +145,7 @@ class NotificationService {
               );
               break;
             case 'payment_success':
+            case 'payment_alert':
               showNotification(
                 title: 'Payment Successful',
                 body: 'Your payment for order #$orderId was confirmed.',
@@ -142,6 +172,62 @@ class NotificationService {
     } catch (e) {
       debugPrint('[FCM] Error getting token: $e');
       return null;
+    }
+  }
+
+  // ── Topic subscription helpers ──────────────────────────────────────────────
+  //
+  // The backend sends notifications via FCM topics. The device MUST subscribe
+  // to each topic explicitly, otherwise the message is silently dropped.
+
+  /// Subscribe a customer/authenticated user to their personal push topic.
+  /// Call this immediately after login / session restore.
+  Future<void> subscribeToUserTopic(String userId) async {
+    try {
+      // Replicate the backend sanitization from lib/services/notifications.ts:
+      // userId.replace(/[^a-zA-Z0-9-_.~%]/g, '_')
+      final sanitized = userId.replaceAll(RegExp(r'[^a-zA-Z0-9\-_.~%]'), '_');
+      final topic = 'user_$sanitized';
+      await _fcm.subscribeToTopic(topic);
+      debugPrint('[FCM] Subscribed to topic: $topic');
+    } catch (e) {
+      debugPrint('[FCM] subscribeToUserTopic error: $e');
+    }
+  }
+
+  /// Unsubscribe when the user logs out so they stop receiving push alerts.
+  Future<void> unsubscribeFromUserTopic(String userId) async {
+    try {
+      final sanitized = userId.replaceAll(RegExp(r'[^a-zA-Z0-9\-_.~%]'), '_');
+      final topic = 'user_$sanitized';
+      await _fcm.unsubscribeFromTopic(topic);
+      debugPrint('[FCM] Unsubscribed from topic: $topic');
+    } catch (e) {
+      debugPrint('[FCM] unsubscribeFromUserTopic error: $e');
+    }
+  }
+
+  /// Subscribe a store owner to their store-specific order alert topic.
+  /// Topic format mirrors the backend: store_admin_{storeId}
+  /// Call this after the store owner's owned store ID is known.
+  Future<void> subscribeToStoreAdminTopic(String storeId) async {
+    try {
+      final topic = 'store_admin_$storeId';
+      await _fcm.subscribeToTopic(topic);
+      debugPrint('[FCM] Subscribed to store admin topic: $topic');
+    } catch (e) {
+      debugPrint('[FCM] subscribeToStoreAdminTopic error: $e');
+    }
+  }
+
+  /// Unsubscribe from the store admin topic on logout or store switch.
+  Future<void> unsubscribeFromStoreAdminTopic(String storeId) async {
+    try {
+      final topic = 'store_admin_$storeId';
+      await _fcm.unsubscribeFromTopic(topic);
+      debugPrint('[FCM] Unsubscribed from store admin topic: $topic');
+    } catch (e) {
+      debugPrint('[FCM] unsubscribeFromStoreAdminTopic error: $e');
     }
   }
 
@@ -192,4 +278,5 @@ class NotificationService {
 }
 
 final notificationService = NotificationService();
+
 

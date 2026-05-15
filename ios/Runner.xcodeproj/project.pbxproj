@@ -98,20 +98,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				84BE50C02FB5C0D800E4B626 /* FirebaseInAppMessaging-Beta in Frameworks */,
-				84BE50AC2FB5C0D800E4B626 /* FirebaseAILogic in Frameworks */,
-				84BE50C22FB5C0D800E4B626 /* FirebaseMessaging in Frameworks */,
 				C317DFD67C7CEE7668EF0503 /* Pods_Runner.framework in Frameworks */,
-				84BE50BC2FB5C0D800E4B626 /* FirebaseCore in Frameworks */,
-				84BE50B22FB5C0D800E4B626 /* FirebaseAnalyticsIdentitySupport in Frameworks */,
-				84BE50B02FB5C0D800E4B626 /* FirebaseAnalyticsCore in Frameworks */,
-				84BE50B82FB5C0D800E4B626 /* FirebaseAuth in Frameworks */,
-				84BE50B42FB5C0D800E4B626 /* FirebaseAppCheck in Frameworks */,
-				84BE50AE2FB5C0D800E4B626 /* FirebaseAnalytics in Frameworks */,
-				84BE50AA2FB5C0D800E4B626 /* FirebaseAI in Frameworks */,
-				84BE50BE2FB5C0D800E4B626 /* FirebaseCrashlytics in Frameworks */,
-				84BE50B62FB5C0D800E4B626 /* FirebaseAppDistribution-Beta in Frameworks */,
-				84BE50BA2FB5C0D800E4B626 /* FirebaseAuthCombine-Community in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -272,9 +259,6 @@
 				Base,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
-			packageReferences = (
-				84BE50A82FB5C0D800E4B626 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
-			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";

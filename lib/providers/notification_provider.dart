@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import '../models/notification_item.dart';
 import '../services/ably_service.dart';
 
@@ -15,20 +16,31 @@ class NotificationProvider with ChangeNotifier {
 
   NotificationProvider() {
     _loadNotifications();
-    _initAblyListener();
+    _initListeners();
   }
 
-  void _initAblyListener() {
+  void _initListeners() {
+    // 1. Listen to Ably
     ablyService.addNotificationListener((payload) {
-      final notification = NotificationItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: payload['title'] ?? 'New Update',
-        message: payload['body'] ?? payload['message'] ?? '',
-        type: _parseNotificationType(payload['type']?.toString()),
-        timestamp: DateTime.now(),
-      );
-      addNotification(notification);
+      _processPayload(payload);
     });
+
+    // 2. Listen to FCM
+    notificationService.addListener((payload) {
+      _processPayload(payload);
+    });
+  }
+
+  void _processPayload(Map<String, dynamic> payload) {
+    final notification = NotificationItem(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: payload['title'] ?? 'New Update',
+      message: payload['body'] ?? payload['message'] ?? '',
+      type: _parseNotificationType(payload['type']?.toString()),
+      timestamp: DateTime.now(),
+      metadata: payload,
+    );
+    addNotification(notification);
   }
 
   NotificationType _parseNotificationType(String? type) {

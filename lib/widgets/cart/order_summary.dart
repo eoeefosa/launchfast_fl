@@ -52,6 +52,14 @@ class OrderSummary extends StatelessWidget {
                   value: cart.serviceFees,
                   dimmed: true,
                 ),
+                if (cart.discountAmount > 0) ...[
+                  const SizedBox(height: 10),
+                  _SummaryRow(
+                    label: 'Discount (${cart.appliedPromoCode})',
+                    value: cart.discountAmount,
+                    isDiscount: true,
+                  ),
+                ],
               ],
             ),
           ),
@@ -72,12 +80,14 @@ class _SummaryRow extends StatelessWidget {
   final double value;
   final bool isTotal;
   final bool dimmed;
+  final bool isDiscount;
 
   const _SummaryRow({
     required this.label,
     required this.value,
     this.isTotal = false,
     this.dimmed = false,
+    this.isDiscount = false,
   });
 
   @override
@@ -98,15 +108,17 @@ class _SummaryRow extends StatelessWidget {
           ),
         ),
         Text(
-          '₦${value.toStringAsFixed(0)}',
+          isDiscount ? '-₦${value.toStringAsFixed(0)}' : '₦${value.toStringAsFixed(0)}',
           style: TextStyle(
             fontSize: isTotal ? 20 : 14,
             fontWeight: isTotal ? FontWeight.w900 : FontWeight.w700,
-            color: isTotal
-                ? AppColors.primary
-                : Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: dimmed ? 0.6 : 1.0),
+            color: isDiscount 
+                ? Colors.green
+                : isTotal
+                  ? AppColors.primary
+                  : Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: dimmed ? 0.6 : 1.0),
           ),
         ),
       ],

@@ -365,6 +365,10 @@ class AuthProvider extends ChangeNotifier {
 
     ablyService.addWalletListener(refreshUser);
 
+    // Subscribe to the personal FCM topic so push notifications are delivered.
+    // The backend sends to topic 'user_{userId}' via Firebase Admin SDK.
+    unawaited(notificationService.subscribeToUserTopic(userId));
+
     _ablyListenersAttached = true;
   }
 
@@ -551,6 +555,13 @@ class AuthProvider extends ChangeNotifier {
     _authOperationInProgress = true;
 
     try {
+
+      // Unsubscribe from FCM topic before clearing the session so we still
+      // have the userId available.
+      final userId = _user?.id;
+      if (userId != null) {
+        unawaited(notificationService.unsubscribeFromUserTopic(userId));
+      }
 
       await _clearSession();
 

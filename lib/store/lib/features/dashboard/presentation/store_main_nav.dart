@@ -29,6 +29,7 @@ class _StoreMainNavState extends State<StoreMainNav>
   // ─── Real-time notification state ─────────────────────────────────
   int _newOrderCount = 0;
   bool _ablyInitialized = false;
+  String? _subscribedStoreId; // tracked so we can unsubscribe on dispose
   late AnimationController _badgeCtrl;
   late Animation<double> _badgeScale;
 
@@ -102,6 +103,11 @@ class _StoreMainNavState extends State<StoreMainNav>
       final ownedId = storeProvider.ownedStoreId;
       if (ownedId != null) {
         await ablyService.subscribeToStoreOrders(ownedId);
+
+        // Subscribe to the FCM topic for this store so background push
+        // notifications (new order, payment confirmed) are delivered.
+        _subscribedStoreId = ownedId;
+        unawaited(notificationService.subscribeToStoreAdminTopic(ownedId));
       }
 
       _ablyInitialized = true;
@@ -137,6 +143,10 @@ class _StoreMainNavState extends State<StoreMainNav>
     _badgeCtrl.dispose();
     if (_ablyInitialized) {
       ablyService.removeOrderListener(_onAblyOrderUpdate);
+    }
+    // Unsubscribe from store admin FCM topic to prevent ghost notifications
+    if (_subscribedStoreId != null) {
+      notificationService.unsubscribeFromStoreAdminTopic(_subscribedStoreId!);
     }
     super.dispose();
   }
