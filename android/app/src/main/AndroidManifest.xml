@@ -29,6 +29,18 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:enableOnBackInvokedCallback="true">
 
+        <!-- ───────────────── Firebase FCM ───────────────── -->
+
+        <!-- Default notification channel -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="high_importance_channel" />
+
+        <!-- Flutter embedding -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+
         <!-- ───────────────── Main Activity ───────────────── -->
 
         <activity
@@ -71,9 +83,10 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
-            <!-- Custom deep links -->
+            <!-- ───────────────── Deep Links ───────────────── -->
+
             <!-- campuschow:// -->
-            <intent-filter android:autoVerify="true">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -82,7 +95,6 @@
                 <data android:scheme="campuschow" />
             </intent-filter>
 
-            <!-- HTTPS deep links -->
             <!-- https://campuschow.app -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -96,16 +108,6 @@
             </intent-filter>
 
         </activity>
-
-        <!-- Flutter embedding -->
-        <meta-data
-            android:name="flutterEmbedding"
-            android:value="2" />
-
-        <!-- Firebase / FCM background handling is provided automatically by
-             the firebase_messaging Flutter plugin (FlutterFirebaseMessagingService).
-             Do NOT declare a custom MyFirebaseMessagingService here unless you
-             have a corresponding Kotlin implementation. -->
 
         <!-- ───────────────── Ably Push Receiver ───────────────── -->
 

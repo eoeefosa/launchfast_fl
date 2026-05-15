@@ -122,8 +122,6 @@ class ActiveOrderTracker extends StatelessWidget {
         return 'Arrived';
       case OrderStatus.cancelled:
         return 'Cancelled';
-      default:
-        return 'Processing...';
     }
   }
 
@@ -147,8 +145,6 @@ class ActiveOrderTracker extends StatelessWidget {
         return 'Enjoy your delicious meal!';
       case OrderStatus.cancelled:
         return 'This order was cancelled. Please contact support for details.';
-      default:
-        return 'Hang tight while we update your order status.';
     }
   }
 }

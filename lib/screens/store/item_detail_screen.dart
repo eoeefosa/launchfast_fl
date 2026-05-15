@@ -270,7 +270,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     StoreProvider storeProvider,
   ) {
     // Guard: soup required for this swallow
-    if (item.requiresSoupSelection && _selectedSoupId == null) {
+    if ((item.category == 'Swallow' || item.requiresSoupSelection) && _selectedSoupId == null) {
       _showSnack(context, 'Please select a soup first');
       return;
     }

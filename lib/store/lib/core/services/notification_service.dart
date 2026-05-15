@@ -1,168 +1,421 @@
 import 'dart:io' show Platform;
+
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:campuschow/services/ably_service.dart';
 
 class NotificationService {
-  static final NotificationService _instance = NotificationService._internal();
-  factory NotificationService() => _instance;
+  static final NotificationService _instance =
+      NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  factory NotificationService() => _instance;
 
   NotificationService._internal();
 
-  final List<void Function(Map<String, dynamic> data)> _listeners = [];
+  final FlutterLocalNotificationsPlugin
+      _flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
-  void addListener(void Function(Map<String, dynamic> data) listener) {
+  final FirebaseMessaging _fcm =
+      FirebaseMessaging.instance;
+
+  /// Prevent duplicate foreground notifications
+  final Set<String> _handledMessageIds = {};
+
+  /// In-app listeners
+  final List<void Function(Map<String, dynamic> data)>
+      _listeners = [];
+
+  /// Notification channel IDs
+  static const String highImportanceChannelId =
+      'high_importance_channel';
+
+  static const String orderChannelId =
+      'launchfast_order_channel';
+
+  /// ─────────────────────────────────────────────────────
+  /// LISTENERS
+  /// ─────────────────────────────────────────────────────
+
+  void addListener(
+    void Function(Map<String, dynamic> data) listener,
+  ) {
     if (!_listeners.contains(listener)) {
       _listeners.add(listener);
     }
   }
 
-  void removeListener(void Function(Map<String, dynamic> data) listener) {
+  void removeListener(
+    void Function(Map<String, dynamic> data) listener,
+  ) {
     _listeners.remove(listener);
   }
 
-  void _notifyListeners(Map<String, dynamic> data) {
+  void _notifyListeners(
+    Map<String, dynamic> data,
+  ) {
     for (final listener in _listeners) {
       listener(data);
     }
   }
 
-  Future<void> init() async {
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('ic_notification');
+  /// ─────────────────────────────────────────────────────
+  /// INIT
+  /// ─────────────────────────────────────────────────────
 
-    const DarwinInitializationSettings initializationSettingsIOS =
+  Future<void> init() async {
+    await _initializeLocalNotifications();
+
+    if (Platform.isAndroid) {
+      await _requestAndroidNotificationPermission();
+    }
+
+    await _initFCM();
+
+    await _printFCMToken();
+  }
+
+  /// ─────────────────────────────────────────────────────
+  /// LOCAL NOTIFICATIONS
+  /// ─────────────────────────────────────────────────────
+
+  Future<void> _initializeLocalNotifications() async {
+    const androidSettings =
+        AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
+
+    const iosSettings =
         DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
 
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
+    const settings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
     );
 
     await _flutterLocalNotificationsPlugin.initialize(
-      settings: initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        debugPrint('Notification clicked: ${response.payload}');
+      settings: settings,
+      onDidReceiveNotificationResponse:
+          (NotificationResponse response) async {
+        debugPrint(
+          '[Notification Clicked] ${response.payload}',
+        );
+
+        // TODO:
+        // Add GoRouter navigation here if needed
       },
     );
 
-    if (Platform.isAndroid) {
-      await _flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.requestNotificationsPermission();
-    }
-
-    // --- FCM Initialization ---
-    await _initFCM();
+    /// Create Android notification channels
+    await _createNotificationChannels();
   }
+
+  Future<void> _createNotificationChannels() async {
+    final androidPlugin =
+        _flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+
+    if (androidPlugin == null) return;
+
+    /// High priority channel
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        highImportanceChannelId,
+        'High Importance Notifications',
+        description:
+            'Used for important notifications',
+        importance: Importance.high,
+      ),
+    );
+
+    /// Orders channel
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        orderChannelId,
+        'Order Notifications',
+        description:
+            'Used for order alerts and updates',
+        importance: Importance.max,
+      ),
+    );
+  }
+
+  Future<void>
+      _requestAndroidNotificationPermission() async {
+    await _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+  }
+
+  /// ─────────────────────────────────────────────────────
+  /// FCM INIT
+  /// ─────────────────────────────────────────────────────
 
   Future<void> _initFCM() async {
     try {
-      // 1. Request permissions (especially for iOS)
-      NotificationSettings settings = await _fcm.requestPermission(
+      /// Request permissions
+      final settings =
+          await _fcm.requestPermission(
         alert: true,
         badge: true,
         sound: true,
+        provisional: false,
       );
 
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        debugPrint('[FCM] User granted permission');
-      } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-        debugPrint('[FCM] User granted provisional permission');
-      } else {
-        debugPrint('[FCM] User declined or has not accepted permission');
+      debugPrint(
+        '[FCM] Permission: ${settings.authorizationStatus}',
+      );
+
+      /// Foreground notifications
+      FirebaseMessaging.onMessage.listen(
+        _handleForegroundMessage,
+      );
+
+      /// Notification opened from background
+      FirebaseMessaging.onMessageOpenedApp.listen(
+        (RemoteMessage message) {
+          debugPrint(
+            '[FCM] Opened from background',
+          );
+
+          _handleNotificationTap(message);
+        },
+      );
+
+      /// Notification opened from terminated state
+      final initialMessage =
+          await _fcm.getInitialMessage();
+
+      if (initialMessage != null) {
+        debugPrint(
+          '[FCM] Opened from terminated state',
+        );
+
+        _handleNotificationTap(initialMessage);
       }
 
-      // 2. Handle foreground messages
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint('[FCM] Foreground message received: ${message.notification?.title}');
-        debugPrint('[FCM] Data: ${message.data}');
+      /// Token refresh
+      _fcm.onTokenRefresh.listen((newToken) {
+        debugPrint(
+          '[FCM] Token refreshed: $newToken',
+        );
 
-        // Notify in-app listeners (to add to notification list)
-        final Map<String, dynamic> combinedData = Map.from(message.data);
-        if (message.notification != null) {
-          combinedData['title'] = message.notification!.title;
-          combinedData['body'] = message.notification!.body;
-        }
-        _notifyListeners(combinedData);
-
-        final String? type = message.data['type'];
-        final String? orderId = message.data['orderId'] ?? message.data['id'];
-
-        // Handle wallet updates/deposits automatically
-        if (type == 'wallet_update' || type == 'deposit') {
-          debugPrint('[FCM] Wallet update detected, triggering refresh');
-          ablyService.notifyWalletUpdate();
-        }
-
-        // Show local notification if it's a data-only message or we want custom behavior
-        if (message.notification != null) {
-          showNotification(
-            title: message.notification!.title ?? 'New Notification',
-            body: message.notification!.body ?? '',
-            payload: orderId,
-          );
-        } else if (type != null) {
-          // Handle various data-only message types from backend
-          switch (type) {
-            case 'deposit':
-              final amount = message.data['amount'];
-              showNotification(
-                title: 'Deposit Successful',
-                body: amount != null 
-                    ? '₦$amount has been added to your wallet.' 
-                    : 'Your wallet has been topped up successfully.',
-                payload: 'wallet',
-              );
-              break;
-            case 'order_update':
-            case 'order_processing':
-              final status = message.data['status']?.toString().toLowerCase() ?? '';
-              showNotification(
-                title: type == 'order_processing' ? 'Order Processing' : 'Order Updated',
-                body: status.isNotEmpty 
-                    ? 'Your order status is now: ${status.replaceAll("_", " ")}'
-                    : 'Your order is being processed.',
-                payload: orderId,
-              );
-              break;
-            case 'new_order':
-              showNotification(
-                title: 'New Order Received!',
-                body: 'A customer just placed a new order.',
-                payload: orderId,
-              );
-              break;
-            case 'payment_success':
-            case 'payment_alert':
-              showNotification(
-                title: 'Payment Successful',
-                body: 'Your payment for order #$orderId was confirmed.',
-                payload: orderId,
-              );
-              break;
-          }
-        }
+        // TODO:
+        // Send refreshed token to backend
       });
-
-      // 3. Handle notification click when app is in background but not terminated
-      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        debugPrint('[FCM] Message clicked: ${message.data}');
-      });
-
     } catch (e) {
       debugPrint('[FCM] Init error: $e');
+    }
+  }
+
+  /// ─────────────────────────────────────────────────────
+  /// FOREGROUND MESSAGE HANDLER
+  /// ─────────────────────────────────────────────────────
+
+  Future<void> _handleForegroundMessage(
+    RemoteMessage message,
+  ) async {
+    debugPrint(
+      '[FCM] Foreground message: ${message.messageId}',
+    );
+
+    debugPrint(
+      '[FCM] Data: ${message.data}',
+    );
+
+    /// Prevent duplicate notifications
+    final messageId = message.messageId;
+
+    if (messageId != null &&
+        _handledMessageIds.contains(messageId)) {
+      return;
+    }
+
+    if (messageId != null) {
+      _handledMessageIds.add(messageId);
+    }
+
+    /// Cleanup old IDs
+    if (_handledMessageIds.length > 100) {
+      _handledMessageIds.clear();
+    }
+
+    /// Notify in-app listeners
+    final Map<String, dynamic> combinedData =
+        Map.from(message.data);
+
+    if (message.notification != null) {
+      combinedData['title'] =
+          message.notification?.title;
+
+      combinedData['body'] =
+          message.notification?.body;
+    }
+
+    _notifyListeners(combinedData);
+
+    /// Wallet updates
+    final type = message.data['type'];
+
+    if (type == 'wallet_update' ||
+        type == 'deposit') {
+      debugPrint(
+        '[FCM] Wallet update detected',
+      );
+
+      ablyService.notifyWalletUpdate();
+    }
+
+    /// If Firebase already shows notification,
+    /// don't duplicate it
+    if (message.notification != null) {
+      await showNotification(
+        title:
+            message.notification?.title ??
+                'New Notification',
+        body:
+            message.notification?.body ?? '',
+        payload:
+            message.data['orderId'] ??
+                message.data['id'],
+        channelId: highImportanceChannelId,
+      );
+
+      return;
+    }
+
+    /// Handle data-only notifications
+    await _handleDataOnlyNotification(message);
+  }
+
+  /// ─────────────────────────────────────────────────────
+  /// DATA-ONLY NOTIFICATIONS
+  /// ─────────────────────────────────────────────────────
+
+  Future<void> _handleDataOnlyNotification(
+    RemoteMessage message,
+  ) async {
+    final type = message.data['type'];
+
+    final orderId =
+        message.data['orderId'] ??
+            message.data['id'];
+
+    switch (type) {
+      case 'deposit':
+        final amount = message.data['amount'];
+
+        await showNotification(
+          title: 'Deposit Successful',
+          body: amount != null
+              ? '₦$amount has been added to your wallet.'
+              : 'Your wallet has been topped up successfully.',
+          payload: 'wallet',
+          channelId: highImportanceChannelId,
+        );
+        break;
+
+      case 'order_update':
+      case 'order_processing':
+        final status =
+            message.data['status']
+                    ?.toString()
+                    .toLowerCase() ??
+                '';
+
+        await showNotification(
+          title: type == 'order_processing'
+              ? 'Order Processing'
+              : 'Order Updated',
+          body: status.isNotEmpty
+              ? 'Your order status is now: ${status.replaceAll("_", " ")}'
+              : 'Your order is being processed.',
+          payload: orderId,
+          channelId: orderChannelId,
+        );
+        break;
+
+      case 'new_order':
+        await showNotification(
+          title: 'New Order Received!',
+          body:
+              'A customer just placed a new order.',
+          payload: orderId,
+          channelId: orderChannelId,
+        );
+        break;
+
+      case 'payment_success':
+      case 'payment_alert':
+        await showNotification(
+          title: 'Payment Successful',
+          body:
+              'Your payment for order #$orderId was confirmed.',
+          payload: orderId,
+          channelId: highImportanceChannelId,
+        );
+        break;
+    }
+  }
+
+  /// ─────────────────────────────────────────────────────
+  /// HANDLE NOTIFICATION TAPS
+  /// ─────────────────────────────────────────────────────
+
+  void _handleNotificationTap(
+    RemoteMessage message,
+  ) {
+    debugPrint(
+      '[FCM] Notification tap data: ${message.data}',
+    );
+
+    final type = message.data['type'];
+
+    final orderId =
+        message.data['orderId'] ??
+            message.data['id'];
+
+    switch (type) {
+      case 'deposit':
+        debugPrint(
+          '[Navigation] Open wallet screen',
+        );
+        break;
+
+      case 'new_order':
+      case 'order_update':
+      case 'order_processing':
+      case 'payment_success':
+        debugPrint(
+          '[Navigation] Open order: $orderId',
+        );
+        break;
+    }
+  }
+
+  /// ─────────────────────────────────────────────────────
+  /// TOKEN
+  /// ─────────────────────────────────────────────────────
+
+  Future<void> _printFCMToken() async {
+    try {
+      final token = await _fcm.getToken();
+
+      debugPrint('[FCM TOKEN]');
+      debugPrint(token);
+    } catch (e) {
+      debugPrint(
+        '[FCM] Error getting token: $e',
+      );
     }
   }
 
@@ -170,113 +423,170 @@ class NotificationService {
     try {
       return await _fcm.getToken();
     } catch (e) {
-      debugPrint('[FCM] Error getting token: $e');
+      debugPrint(
+        '[FCM] Error getting token: $e',
+      );
+
       return null;
     }
   }
 
-  // ── Topic subscription helpers ──────────────────────────────────────────────
-  //
-  // The backend sends notifications via FCM topics. The device MUST subscribe
-  // to each topic explicitly, otherwise the message is silently dropped.
+  /// ─────────────────────────────────────────────────────
+  /// TOPIC SUBSCRIPTIONS
+  /// ─────────────────────────────────────────────────────
 
-  /// Subscribe a customer/authenticated user to their personal push topic.
-  /// Call this immediately after login / session restore.
-  Future<void> subscribeToUserTopic(String userId) async {
+  Future<void> subscribeToUserTopic(
+    String userId,
+  ) async {
     try {
-      // Replicate the backend sanitization from lib/services/notifications.ts:
-      // userId.replace(/[^a-zA-Z0-9-_.~%]/g, '_')
-      final sanitized = userId.replaceAll(RegExp(r'[^a-zA-Z0-9\-_.~%]'), '_');
+      final sanitized = userId.replaceAll(
+        RegExp(r'[^a-zA-Z0-9\-_.~%]'),
+        '_',
+      );
+
       final topic = 'user_$sanitized';
+
       await _fcm.subscribeToTopic(topic);
-      debugPrint('[FCM] Subscribed to topic: $topic');
+
+      debugPrint(
+        '[FCM] Subscribed: $topic',
+      );
     } catch (e) {
-      debugPrint('[FCM] subscribeToUserTopic error: $e');
+      debugPrint(
+        '[FCM] subscribeToUserTopic error: $e',
+      );
     }
   }
 
-  /// Unsubscribe when the user logs out so they stop receiving push alerts.
-  Future<void> unsubscribeFromUserTopic(String userId) async {
+  Future<void> unsubscribeFromUserTopic(
+    String userId,
+  ) async {
     try {
-      final sanitized = userId.replaceAll(RegExp(r'[^a-zA-Z0-9\-_.~%]'), '_');
+      final sanitized = userId.replaceAll(
+        RegExp(r'[^a-zA-Z0-9\-_.~%]'),
+        '_',
+      );
+
       final topic = 'user_$sanitized';
+
       await _fcm.unsubscribeFromTopic(topic);
-      debugPrint('[FCM] Unsubscribed from topic: $topic');
+
+      debugPrint(
+        '[FCM] Unsubscribed: $topic',
+      );
     } catch (e) {
-      debugPrint('[FCM] unsubscribeFromUserTopic error: $e');
+      debugPrint(
+        '[FCM] unsubscribeFromUserTopic error: $e',
+      );
     }
   }
 
-  /// Subscribe a store owner to their store-specific order alert topic.
-  /// Topic format mirrors the backend: store_admin_{storeId}
-  /// Call this after the store owner's owned store ID is known.
-  Future<void> subscribeToStoreAdminTopic(String storeId) async {
+  Future<void> subscribeToStoreAdminTopic(
+    String storeId,
+  ) async {
     try {
       final topic = 'store_admin_$storeId';
+
       await _fcm.subscribeToTopic(topic);
-      debugPrint('[FCM] Subscribed to store admin topic: $topic');
+
+      debugPrint(
+        '[FCM] Store topic subscribed: $topic',
+      );
     } catch (e) {
-      debugPrint('[FCM] subscribeToStoreAdminTopic error: $e');
+      debugPrint(
+        '[FCM] subscribeToStoreAdminTopic error: $e',
+      );
     }
   }
 
-  /// Unsubscribe from the store admin topic on logout or store switch.
-  Future<void> unsubscribeFromStoreAdminTopic(String storeId) async {
+  Future<void> unsubscribeFromStoreAdminTopic(
+    String storeId,
+  ) async {
     try {
       final topic = 'store_admin_$storeId';
+
       await _fcm.unsubscribeFromTopic(topic);
-      debugPrint('[FCM] Unsubscribed from store admin topic: $topic');
+
+      debugPrint(
+        '[FCM] Store topic unsubscribed: $topic',
+      );
     } catch (e) {
-      debugPrint('[FCM] unsubscribeFromStoreAdminTopic error: $e');
+      debugPrint(
+        '[FCM] unsubscribeFromStoreAdminTopic error: $e',
+      );
     }
   }
+
+  /// ─────────────────────────────────────────────────────
+  /// SHOW LOCAL NOTIFICATION
+  /// ─────────────────────────────────────────────────────
 
   Future<void> showNotification({
-    int id = 0,
+    int? id,
     required String title,
     required String body,
     String? payload,
+    String channelId =
+        highImportanceChannelId,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final bool isSoundEnabled = prefs.getBool('order_notifications_sound') ?? true;
+    final prefs =
+        await SharedPreferences.getInstance();
 
-    // We specify 'order_sound' here. 
-    // Android looks in: res/raw/order_sound.mp3
-    // iOS looks in: the main bundle for order_sound.aiff/mp3/wav
-    final String? soundFile = isSoundEnabled ? 'order_sound' : null;
+    final bool isSoundEnabled =
+        prefs.getBool(
+              'order_notifications_sound',
+            ) ??
+            true;
 
-    AndroidNotificationDetails androidPlatformChannelSpecifics =
+    final String? soundFile =
+        isSoundEnabled
+            ? 'order_sound'
+            : null;
+
+    final androidDetails =
         AndroidNotificationDetails(
-      'launchfast_order_channel',
-      'Order Notifications',
-      channelDescription: 'Channel for new order alerts',
+      channelId,
+      channelId ==
+              orderChannelId
+          ? 'Order Notifications'
+          : 'High Importance Notifications',
+      channelDescription:
+          'CampusChow notifications',
       importance: Importance.max,
       priority: Priority.high,
       playSound: isSoundEnabled,
-      sound: soundFile != null ? RawResourceAndroidNotificationSound(soundFile) : null,
+      enableVibration: true,
+      sound: soundFile != null
+          ? RawResourceAndroidNotificationSound(
+              soundFile,
+            )
+          : null,
     );
 
-    DarwinNotificationDetails iOSPlatformChannelSpecifics =
+    final iosDetails =
         DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
       presentSound: isSoundEnabled,
-      sound: soundFile != null ? '$soundFile.mp3' : null,
+      sound: soundFile != null
+          ? '$soundFile.mp3'
+          : null,
     );
 
-    NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: iOSPlatformChannelSpecifics,
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
     );
 
     await _flutterLocalNotificationsPlugin.show(
-      id: id,
+      id: id ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title: title,
       body: body,
-      notificationDetails: platformChannelSpecifics,
+      notificationDetails: details,
       payload: payload,
     );
   }
 }
 
-final notificationService = NotificationService();
-
-
+final notificationService =
+    NotificationService();

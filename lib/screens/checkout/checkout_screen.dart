@@ -194,7 +194,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
             BoxShadow(
               blurRadius: 30,
               offset: const Offset(0, 8),
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: .04),
             ),
           ],
         ),
@@ -301,9 +301,9 @@ class _CheckoutScreenState extends State<CheckoutScreen>
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.08),
+              color: Colors.red.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.red.withOpacity(0.2)),
+              border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
@@ -352,7 +352,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
             color: active ? primary : Colors.grey.shade200,
             width: active ? 1.5 : 1,
           ),
-          color: active ? primary.withOpacity(0.06) : Colors.grey.shade50,
+          color: active ? primary.withValues(alpha: 0.06) : Colors.grey.shade50,
         ),
         child: Row(
           children: [
@@ -364,7 +364,11 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                 borderRadius: BorderRadius.circular(12),
                 border: active ? null : Border.all(color: Colors.grey.shade200),
               ),
-              child: Icon(icon, color: active ? Colors.white : Colors.black87, size: 22),
+              child: Icon(
+                icon,
+                color: active ? Colors.white : Colors.black87,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -373,7 +377,10 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -424,7 +431,9 @@ class _CheckoutScreenState extends State<CheckoutScreen>
               width: 52,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
               ),
               child: Icon(
                 Icons.location_on_rounded,

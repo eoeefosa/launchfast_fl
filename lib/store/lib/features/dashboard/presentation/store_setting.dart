@@ -710,7 +710,7 @@ class _NotificationSettingsCard extends StatelessWidget {
           Switch.adaptive(
             value: isEnabled,
             onChanged: onChanged,
-            activeColor: AppColors.primary,
+            activeTrackColor: AppColors.primary,
           ),
         ],
       ),
