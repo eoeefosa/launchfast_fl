@@ -139,26 +139,12 @@ Future<void> _firebaseMessagingBackgroundHandler(
 
   if (title == null || body == null) return;
 
-  const androidDetails = AndroidNotificationDetails(
-    'launchfast_order_channel',
-    'Order Notifications',
-    channelDescription: 'Channel for order notifications',
-    importance: Importance.max,
-    priority: Priority.high,
-    playSound: true,
-    enableVibration: true,
-  );
-
-  const notificationDetails = NotificationDetails(
-    android: androidDetails,
-    iOS: DarwinNotificationDetails(),
-  );
-
-  await flutterLocalNotificationsPlugin.show(
+  // Use NotificationService's static method to show notifications correctly
+  // This ensures consistent channel IDs, sounds, and icons.
+  await NotificationService.showStaticNotification(
     id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     title: title,
     body: body,
-    notificationDetails: notificationDetails,
     payload: orderId?.toString(),
   );
 }
@@ -241,39 +227,12 @@ Future<void> main() async {
       provisional: false,
     );
 
-    /// Foreground notifications
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      debugPrint(
-        '[FCM] Foreground notification: ${message.messageId}',
-      );
-
-      final notification = message.notification;
-
-      if (notification == null) return;
-
-      const androidDetails = AndroidNotificationDetails(
-        'high_importance_channel',
-        'High Importance Notifications',
-        channelDescription:
-            'Used for important notifications.',
-        importance: Importance.max,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-      );
-
-      const notificationDetails = NotificationDetails(
-        android: androidDetails,
-        iOS: DarwinNotificationDetails(),
-      );
-
-      await flutterLocalNotificationsPlugin.show(
-        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        title: notification.title,
-        body: notification.body,
-        notificationDetails: notificationDetails,
-      );
-    });
+    /// Foreground notifications are now handled exclusively by NotificationService
+    /// to avoid redundant logic and crashes on Android.
+    
+    // No-op here, NotificationService.init() handles this.
+    
+    debugPrint('[Main] Initialization complete');
 
     /// Notification opened from background
     FirebaseMessaging.onMessageOpenedApp.listen((message) {

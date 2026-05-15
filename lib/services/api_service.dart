@@ -26,7 +26,7 @@ class ApiService {
       return 'https://campus-chow-three.vercel.app/api';
     }
     // For local development on iOS Simulator
-    return 'http://127.0.0.1:3000/api';
+    return 'https://campus-chow-three.vercel.app/api';
   }
 
   ApiService() {
@@ -94,7 +94,9 @@ class ApiService {
 
           // 401 = token expired or invalid → force logout via the callback.
           if (e.response?.statusCode == 401) {
-            debugPrint('🔐 [API] 401 detected — firing onUnauthorized callback');
+            debugPrint(
+              '🔐 [API] 401 detected — firing onUnauthorized callback',
+            );
             onUnauthorized?.call();
           }
 

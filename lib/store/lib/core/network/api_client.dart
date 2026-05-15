@@ -20,9 +20,9 @@ class ApiClient {
   static String get baseUrl {
     const fromEnv = String.fromEnvironment('API_BASE_URL');
     if (fromEnv.isNotEmpty) return fromEnv;
-    
+
     if (kDebugMode) {
-      return 'http://127.0.0.1:3000/api';
+      return 'https://campus-chow-three.vercel.app/api';
     }
     return 'https://campus-chow-three.vercel.app/api';
   }
@@ -56,7 +56,7 @@ class ApiClient {
 
         // Fallback to static storage
         token ??= await storage.read(key: 'launch-fast-token');
-        
+
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }

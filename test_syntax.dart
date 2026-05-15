@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
+
 void main() {
   String? email = "test@example.com";
   var map = {
     'email': email,
   };
-  print(map);
+  debugPrint(map.toString());
 }

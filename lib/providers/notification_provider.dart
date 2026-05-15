@@ -79,10 +79,21 @@ class NotificationProvider with ChangeNotifier {
           final List<dynamic> data = response.data;
           debugPrint('📬 [NotificationProvider] Received ${data.length} notifications from backend');
           
-          await _box.clear();
+          // Use a Map to de-duplicate by notificationId
+          final Map<String, NotificationEntity> merged = {};
+          
+          // 1. Keep existing local items (especially those received via FCM/Ably just now)
+          for (var entity in _box.values) {
+            if (entity.notificationId.isNotEmpty) {
+              merged[entity.notificationId] = entity;
+            }
+          }
+
+          // 2. Overwrite/Add from backend (authoritative)
           for (var item in data) {
+            final id = item['_id']?.toString() ?? '';
             final entity = NotificationEntity()
-              ..notificationId = item['_id']?.toString() ?? ''
+              ..notificationId = id
               ..title = item['title'] ?? ''
               ..message = item['body'] ?? ''
               ..type = item['type'] ?? 'serverAlert'
@@ -91,8 +102,13 @@ class NotificationProvider with ChangeNotifier {
                   : DateTime.now()
               ..isRead = item['isRead'] ?? false
               ..metadata = item['data'] != null ? jsonEncode(item['data']) : null;
-            await _box.add(entity);
+            
+            merged[id] = entity;
           }
+
+          // 3. Update the box
+          await _box.clear();
+          await _box.addAll(merged.values);
 
           _notifications = _box.values
               .map((e) => NotificationItem.fromMap({

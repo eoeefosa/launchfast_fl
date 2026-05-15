@@ -452,7 +452,10 @@ class AblyService {
     if (target.contains(key)) return;
     target.add(key);
 
+    debugPrint('[AblyService] Attaching listener for event: $eventName on channel: $channelName');
+
     final sub = channel.subscribe(name: eventName).listen((ably.Message msg) {
+      debugPrint('[AblyService] EVENT RECEIVED: $eventName | Channel: $channelName | Data: ${msg.data}');
       try {
         final data = Map<String, dynamic>.from(msg.data as Map);
         onMessage(data);

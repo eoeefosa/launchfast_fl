@@ -572,6 +572,51 @@ class NotificationService {
       payload: payload,
     );
   }
+
+  /// Static method for showing notifications from background isolates or main isolate.
+  /// This ensures consistent styling and settings without needing a service instance.
+  static Future<void> showStaticNotification({
+    int? id,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    final plugin = FlutterLocalNotificationsPlugin();
+
+    // Initialize if needed (required for background isolates)
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosInit = DarwinInitializationSettings();
+    await plugin.initialize(
+      settings: InitializationSettings(
+        android: androidInit,
+        iOS: iosInit,
+      ),
+    );
+
+    // Default to high importance
+    const androidDetails = AndroidNotificationDetails(
+      highImportanceChannelId,
+      'Notifications',
+      channelDescription: 'CampusChow notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(),
+    );
+
+    await plugin.show(
+      id: id ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000) & 0x7FFFFFFF,
+      title: title,
+      body: body,
+      notificationDetails: notificationDetails,
+      payload: payload,
+    );
+  }
 }
 
 final notificationService =

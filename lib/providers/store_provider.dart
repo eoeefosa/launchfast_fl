@@ -105,7 +105,7 @@ class StoreProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = ApiService.getErrorMessage(e);
-      // print('Fetch error: $e');
+      //debugPrint'Fetch error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
