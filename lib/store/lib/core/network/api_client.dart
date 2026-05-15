@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../error/failures.dart';
@@ -16,10 +17,15 @@ class ApiClient {
   /// triggers a logout + navigation to the login screen.
   OnUnauthorizedCallback? onUnauthorized;
 
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://campus-chow-three.vercel.app/api',
-  );
+  static String get baseUrl {
+    const fromEnv = String.fromEnvironment('API_BASE_URL');
+    if (fromEnv.isNotEmpty) return fromEnv;
+    
+    if (kDebugMode) {
+      return 'http://127.0.0.1:3000/api';
+    }
+    return 'https://campus-chow-three.vercel.app/api';
+  }
 
   ApiClient() {
     dio = Dio(

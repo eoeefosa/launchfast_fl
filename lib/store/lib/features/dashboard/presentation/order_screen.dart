@@ -6,6 +6,7 @@ import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:campuschow/store/lib/core/services/ably_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'widgets/pickup_scanner_sheet.dart';
 
 class StoreOrdersScreen extends StatefulWidget {
   const StoreOrdersScreen({super.key});
@@ -126,6 +127,75 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     }
   }
 
+  // ── Pickup scanner ─────────────────────────────────────────────────────────
+
+  Future<void> _openPickupScanner() async {
+    // Pass all orders — scanner will validate which ones are pickup-ready
+    final allOrders = _orders.map((o) => ScanOrder(o.id)).toList();
+
+    if (!mounted) return;
+
+    final confirmedId = await PickupScannerSheet.show(
+      context,
+      orders: allOrders,
+    );
+
+    if (confirmedId == null || !mounted) return;
+
+    // Check the matched order is actually pickup-ready
+    final matched = _orders.cast<Order?>().firstWhere(
+          (o) => o!.id == confirmedId,
+          orElse: () => null,
+        );
+
+    if (matched == null) return;
+
+    if (!_isPickupType(matched.deliveryType)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('This order is not a pickup order.'),
+          backgroundColor: Colors.orange.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    if (matched.status != OrderStatus.readyForPickup) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Order is not ready for pickup (status: ${matched.status.name}).'),
+          backgroundColor: Colors.orange.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    // Show confirmation dialog before marking delivered
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => _PickupConfirmDialog(
+        shortCode: confirmedId.length >= 8
+            ? confirmedId.substring(confirmedId.length - 8).toUpperCase()
+            : confirmedId.toUpperCase(),
+        customerName: matched.user?.name ?? 'Customer',
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      await _updateStatus(confirmedId, OrderStatus.delivered);
+    }
+  }
+
+  bool _isPickupType(String deliveryType) {
+    final t = deliveryType.toLowerCase();
+    return t == 'pickup' || t == 'store_pickup';
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -182,6 +252,12 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
           ],
         ),
         actions: [
+          // ── Pickup scanner ──────────────────────────────────────────
+          IconButton(
+            tooltip: 'Verify Pickup',
+            icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),
+            onPressed: _openPickupScanner,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
@@ -593,4 +669,99 @@ class _ActionBtn {
   final Color color;
   final IconData icon;
   const _ActionBtn(this.label, this.status, this.color, this.icon);
+}
+
+// ── Pickup confirmation dialog ─────────────────────────────────────────────────
+
+class _PickupConfirmDialog extends StatelessWidget {
+  final String shortCode;
+  final String customerName;
+
+  const _PickupConfirmDialog({
+    required this.shortCode,
+    required this.customerName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.green,
+              size: 36,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Confirm Pickup',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Hand the order to $customerName\nand mark it as delivered?',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              'Order #$shortCode',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: AppColors.primary,
+                letterSpacing: 2,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+        FilledButton.icon(
+          onPressed: () => Navigator.of(context).pop(true),
+          icon: const Icon(Icons.check_rounded, size: 18),
+          label: const Text(
+            'Mark Delivered',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.green,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

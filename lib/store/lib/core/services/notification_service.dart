@@ -76,6 +76,9 @@ class NotificationService {
     await _initFCM();
 
     await _printFCMToken();
+
+    // Automatically subscribe to the global broadcast topic
+    await subscribeToTopic('broadcast');
   }
 
   /// ─────────────────────────────────────────────────────
@@ -173,6 +176,13 @@ class NotificationService {
 
       debugPrint(
         '[FCM] Permission: ${settings.authorizationStatus}',
+      );
+
+      /// Force iOS to show banner/alert when app is in the foreground
+      await _fcm.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
       );
 
       /// Foreground notifications
@@ -408,14 +418,22 @@ class NotificationService {
 
   Future<void> _printFCMToken() async {
     try {
-      final token = await _fcm.getToken();
+      if (Platform.isIOS) {
+        // On iOS, we need to wait for APNS token before FCM token is available
+        final apnsToken = await _fcm.getAPNSToken();
+        debugPrint('[FCM] APNS Token: $apnsToken');
+        
+        if (apnsToken == null) {
+          debugPrint('[FCM] WARNING: APNS token is null. Push notifications will NOT work.');
+          debugPrint('[FCM] If on Simulator, this is expected behavior. Please test on a REAL device.');
+        }
+      }
 
+      final token = await _fcm.getToken();
       debugPrint('[FCM TOKEN]');
       debugPrint(token);
     } catch (e) {
-      debugPrint(
-        '[FCM] Error getting token: $e',
-      );
+      debugPrint('[FCM] Error getting token: $e');
     }
   }
 
@@ -435,86 +453,54 @@ class NotificationService {
   /// TOPIC SUBSCRIPTIONS
   /// ─────────────────────────────────────────────────────
 
+  Future<void> subscribeToTopic(String topic) async {
+    try {
+      await _fcm.subscribeToTopic(topic);
+      debugPrint('[FCM] Subscribed to topic: $topic');
+    } catch (e) {
+      debugPrint('[FCM] subscribeToTopic error: $e');
+    }
+  }
+
+  Future<void> unsubscribeFromTopic(String topic) async {
+    try {
+      await _fcm.unsubscribeFromTopic(topic);
+      debugPrint('[FCM] Unsubscribed from topic: $topic');
+    } catch (e) {
+      debugPrint('[FCM] unsubscribeFromTopic error: $e');
+    }
+  }
+
   Future<void> subscribeToUserTopic(
     String userId,
   ) async {
-    try {
-      final sanitized = userId.replaceAll(
-        RegExp(r'[^a-zA-Z0-9\-_.~%]'),
-        '_',
-      );
-
-      final topic = 'user_$sanitized';
-
-      await _fcm.subscribeToTopic(topic);
-
-      debugPrint(
-        '[FCM] Subscribed: $topic',
-      );
-    } catch (e) {
-      debugPrint(
-        '[FCM] subscribeToUserTopic error: $e',
-      );
-    }
+    final sanitized = userId.replaceAll(
+      RegExp(r'[^a-zA-Z0-9\-_.~%]'),
+      '_',
+    );
+    await subscribeToTopic('user_$sanitized');
   }
 
   Future<void> unsubscribeFromUserTopic(
     String userId,
   ) async {
-    try {
-      final sanitized = userId.replaceAll(
-        RegExp(r'[^a-zA-Z0-9\-_.~%]'),
-        '_',
-      );
-
-      final topic = 'user_$sanitized';
-
-      await _fcm.unsubscribeFromTopic(topic);
-
-      debugPrint(
-        '[FCM] Unsubscribed: $topic',
-      );
-    } catch (e) {
-      debugPrint(
-        '[FCM] unsubscribeFromUserTopic error: $e',
-      );
-    }
+    final sanitized = userId.replaceAll(
+      RegExp(r'[^a-zA-Z0-9\-_.~%]'),
+      '_',
+    );
+    await unsubscribeFromTopic('user_$sanitized');
   }
 
   Future<void> subscribeToStoreAdminTopic(
     String storeId,
   ) async {
-    try {
-      final topic = 'store_admin_$storeId';
-
-      await _fcm.subscribeToTopic(topic);
-
-      debugPrint(
-        '[FCM] Store topic subscribed: $topic',
-      );
-    } catch (e) {
-      debugPrint(
-        '[FCM] subscribeToStoreAdminTopic error: $e',
-      );
-    }
+    await subscribeToTopic('store_admin_$storeId');
   }
 
   Future<void> unsubscribeFromStoreAdminTopic(
     String storeId,
   ) async {
-    try {
-      final topic = 'store_admin_$storeId';
-
-      await _fcm.unsubscribeFromTopic(topic);
-
-      debugPrint(
-        '[FCM] Store topic unsubscribed: $topic',
-      );
-    } catch (e) {
-      debugPrint(
-        '[FCM] unsubscribeFromStoreAdminTopic error: $e',
-      );
-    }
+    await unsubscribeFromTopic('store_admin_$storeId');
   }
 
   /// ─────────────────────────────────────────────────────

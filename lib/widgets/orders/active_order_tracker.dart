@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/order.dart';
 import '../../constants/app_colors.dart';
 import 'order_timeline.dart';
+import 'pickup_qr_card.dart';
 
 class ActiveOrderTracker extends StatelessWidget {
   final Order order;
@@ -96,6 +97,15 @@ class ActiveOrderTracker extends StatelessWidget {
               ),
             ),
             if (rider != null) RiderCard(rider: rider, isIOS: isIOS),
+
+            // ── Pickup QR ──────────────────────────────────────────────
+            // Show the QR code card when the order is a pickup and ready.
+            if (_isPickup(order.deliveryType) &&
+                order.status == OrderStatus.readyForPickup)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                child: PickupQrCard(orderId: order.id),
+              ),
           ],
         ),
       ),
@@ -146,5 +156,11 @@ class ActiveOrderTracker extends StatelessWidget {
       case OrderStatus.cancelled:
         return 'This order was cancelled. Please contact support for details.';
     }
+  }
+
+  /// True for any pickup/store-collection delivery type.
+  bool _isPickup(String deliveryType) {
+    final t = deliveryType.toLowerCase();
+    return t == 'pickup' || t == 'store_pickup' || t == 'storепickup';
   }
 }

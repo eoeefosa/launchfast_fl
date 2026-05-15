@@ -693,14 +693,21 @@ class AblyService {
   // ── Teardown ────────────────────────────────────────────────────────────────
 
   /// Cancels every subscription atomically, then closes the Ably connection.
-  void disconnect() {
-    // FIX: Cancel the connection subscription first so it cannot fire
-    // reconnection events while teardown is in progress.
-    _connectionSubscription?.cancel();
+  Future<void> disconnect() async {
+    // FIX: Cancel the connection subscription first to prevent re-connect events.
+    await _connectionSubscription?.cancel();
     _connectionSubscription = null;
 
     _cancelAllSubscriptions();
-    _realtime?.close();
+
+    if (_realtime != null) {
+      try {
+        await _realtime!.close();
+      } catch (e) {
+        debugPrint('[AblyService] Error during disconnect: $e');
+      }
+    }
+    
     _realtime = null;
     _currentUserId = null;
     _orderListeners.clear();
@@ -708,8 +715,6 @@ class AblyService {
     _roleListeners.clear();
     _approvalListeners.clear();
     _notificationListeners.clear();
-    // FIX: _menuListeners was previously omitted from teardown — old menu
-    // callbacks would survive logout and fire for a subsequent user's session.
     _menuListeners.clear();
     _riderSubscriptionKeys.clear();
     _riderSubscriptions.clear();

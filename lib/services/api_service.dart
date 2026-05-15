@@ -25,9 +25,8 @@ class ApiService {
     if (kReleaseMode) {
       return 'https://campus-chow-three.vercel.app/api';
     }
-    // Default for Android Emulator
-    return 'https://campus-chow-three.vercel.app/api';
-    // return 'http://10.0.2.2:3000/api';
+    // For local development on iOS Simulator
+    return 'http://127.0.0.1:3000/api';
   }
 
   ApiService() {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:campuschow/services/api_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:campuschow/constants/app_colors.dart';
 import 'widgets/apptextfield.dart';
 import 'widgets/constants.dart';
@@ -29,13 +29,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await apiService.dio.post(
-        '/auth/forgot-password',
-        data: {'email': _emailCtrl.text.trim()},
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: _emailCtrl.text.trim(),
       );
       if (mounted) setState(() => _emailSent = true);
-    } catch (_) {
-      // Always show the "sent" state to avoid email enumeration attacks
+    } catch (e) {
+      debugPrint('[ForgotPassword] Error: $e');
+      // Always show the "sent" state to avoid email enumeration attacks,
+      // or show a generic message. Firebase might throw if user not found
+      // depending on project settings.
       if (mounted) setState(() => _emailSent = true);
     } finally {
       if (mounted) setState(() => _isLoading = false);

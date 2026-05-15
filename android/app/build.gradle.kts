@@ -78,3 +78,8 @@ implementation("com.google.firebase:firebase-analytics")
   // When using the BoM, don't specify versions in Firebase dependencies
   // https://firebase.google.com/docs/android/setup#available-libraries
 }
+
+android {
+    // ... other configs
+    namespace = "com.campuschow.app"
+}

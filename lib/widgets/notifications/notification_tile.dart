@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:campuschow/utils/notification_router.dart';
 import '../../models/notification_item.dart';
 import '../../providers/notification_provider.dart';
 
@@ -12,18 +12,7 @@ class NotificationTile extends StatelessWidget {
 
   void _handleTap(BuildContext context) {
     context.read<NotificationProvider>().markAsRead(item.id);
-
-    switch (item.type) {
-      case NotificationType.orderUpdate:
-        context.go('/orders');
-      case NotificationType.walletUpdate:
-      case NotificationType.profileUpdate:
-        context.go('/profile');
-      case NotificationType.serverAlert:
-      case NotificationType.promotion:
-        // Optionally handle metadata URL if present
-        break;
-    }
+    NotificationRouter.handleNotificationTap(context, item);
   }
 
   @override

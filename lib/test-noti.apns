@@ -1,0 +1,11 @@
+{"Simulator Target Bundle": "com.campuschow.app",
+"aps": {
+"alert":
+{
+"title":
+"Test Notification",
+"body": "This is a test of the notifications in the iOS simulator."
+} ,
+ "sound": "default"
+}
+}

@@ -99,5 +99,9 @@
 	<false/>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 <true/>
+	<key>NSCameraUsageDescription</key>
+	<string>CampusChow needs camera access to scan QR codes for order pickup and verification.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CampusChow needs access to your photo library to allow you to upload profile pictures or store documents.</string>
 </dict>
 </plist>

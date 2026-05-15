@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,6 +23,7 @@ import 'package:campuschow/providers/notification_provider.dart';
 
 import 'package:campuschow/providers/store_provider.dart';
 import 'package:campuschow/providers/cart_provider.dart';
+import 'package:campuschow/providers/rider_job_provider.dart';
 import 'package:campuschow/providers/order_provider.dart';
 import 'package:campuschow/providers/payment_provider.dart';
 
@@ -180,6 +182,16 @@ Future<void> main() async {
     FirebaseMessaging.onBackgroundMessage(
       _firebaseMessagingBackgroundHandler,
     );
+
+    // Pass all uncaught "fatal" errors from the framework to Crashlytics
+    FlutterError.onError = (errorDetails) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    };
+    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
 
     /// Local notifications init
     const androidInit =
@@ -384,6 +396,7 @@ class CampusChowApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => StoreProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => RiderJobProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         // Dashboard providers

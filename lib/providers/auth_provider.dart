@@ -229,7 +229,7 @@ class AuthProvider extends ChangeNotifier {
       unawaited(_initializeAbly());
       unawaited(syncFCMToken());
 
-    } finally {
+      } finally {
 
       _authOperationInProgress = false;
 
@@ -264,7 +264,7 @@ class AuthProvider extends ChangeNotifier {
       unawaited(_initializeAbly());
       unawaited(syncFCMToken());
 
-    } finally {
+      } finally {
 
       _authOperationInProgress = false;
 
