@@ -21,6 +21,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   final _taglineCtrl = TextEditingController();
   final _deliveryTimeCtrl = TextEditingController();
   final _deliveryFeeCtrl = TextEditingController();
+  final _priorityFeeCtrl = TextEditingController();
 
   // ─── State ────────────────────────────────────────────────────────────────
   String? _storeId;
@@ -44,6 +45,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
     _taglineCtrl.dispose();
     _deliveryTimeCtrl.dispose();
     _deliveryFeeCtrl.dispose();
+    _priorityFeeCtrl.dispose();
     super.dispose();
   }
 
@@ -60,6 +62,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
       _storeId = store.id;
       _deliveryTimeCtrl.text = store.deliveryTime;
       _deliveryFeeCtrl.text = store.deliveryFee.toString();
+      _priorityFeeCtrl.text = store.priorityFee.toString();
 
       // Load sound preference
       final prefs = await SharedPreferences.getInstance();
@@ -82,6 +85,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         'tagline': _taglineCtrl.text.trim(),
         'deliveryTime': _deliveryTimeCtrl.text.trim(),
         'deliveryFee': double.tryParse(_deliveryFeeCtrl.text.trim()) ?? 0,
+        'priorityFee': double.tryParse(_priorityFeeCtrl.text.trim()) ?? 1000,
       });
       if (mounted) _showSnackBar('Store updated successfully', success: true);
     } catch (e) {
@@ -165,6 +169,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
               taglineCtrl: _taglineCtrl,
               deliveryTimeCtrl: _deliveryTimeCtrl,
               deliveryFeeCtrl: _deliveryFeeCtrl,
+              priorityFeeCtrl: _priorityFeeCtrl,
               workers: staffProvider.staff,
               isLoadingStaff: staffProvider.isLoading,
               onAddStaff: _showAddStaffDialog,
@@ -287,6 +292,7 @@ class _SettingsBody extends StatelessWidget {
     required this.taglineCtrl,
     required this.deliveryTimeCtrl,
     required this.deliveryFeeCtrl,
+    required this.priorityFeeCtrl,
     required this.workers,
     required this.isLoadingStaff,
     required this.onAddStaff,
@@ -302,6 +308,7 @@ class _SettingsBody extends StatelessWidget {
   final TextEditingController taglineCtrl;
   final TextEditingController deliveryTimeCtrl;
   final TextEditingController deliveryFeeCtrl;
+  final TextEditingController priorityFeeCtrl;
   final List<StaffMember> workers;
   final bool isLoadingStaff;
   final VoidCallback onAddStaff;
@@ -327,6 +334,7 @@ class _SettingsBody extends StatelessWidget {
             taglineCtrl: taglineCtrl,
             deliveryTimeCtrl: deliveryTimeCtrl,
             deliveryFeeCtrl: deliveryFeeCtrl,
+            priorityFeeCtrl: priorityFeeCtrl,
           ),
           const SizedBox(height: 24),
           _SectionLabel('Staff Management', theme.textColor),
@@ -487,6 +495,7 @@ class _StoreFieldsCard extends StatelessWidget {
     required this.taglineCtrl,
     required this.deliveryTimeCtrl,
     required this.deliveryFeeCtrl,
+    required this.priorityFeeCtrl,
   });
 
   final _SettingsTheme theme;
@@ -494,6 +503,7 @@ class _StoreFieldsCard extends StatelessWidget {
   final TextEditingController taglineCtrl;
   final TextEditingController deliveryTimeCtrl;
   final TextEditingController deliveryFeeCtrl;
+  final TextEditingController priorityFeeCtrl;
 
   @override
   Widget build(BuildContext context) {
@@ -526,6 +536,14 @@ class _StoreFieldsCard extends StatelessWidget {
             label: 'Delivery Fee (₦)',
             controller: deliveryFeeCtrl,
             icon: Icons.local_shipping_outlined,
+            theme: theme,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 14),
+          _SettingsInputField(
+            label: 'Priority Transport Fee (₦)',
+            controller: priorityFeeCtrl,
+            icon: Icons.flash_on_outlined,
             theme: theme,
             keyboardType: TextInputType.number,
           ),

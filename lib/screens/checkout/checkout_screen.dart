@@ -107,7 +107,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
               SliverToBoxAdapter(
                 child: _buildSection(
                   title: 'DELIVERY OPTION',
-                  child: _buildDeliveryTabs(),
+                  child: _buildDeliveryTabs(cart),
                 ),
               ),
 
@@ -228,13 +228,13 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   // DELIVERY TABS
   // ─────────────────────────────────────────────────────────────
 
-  Widget _buildDeliveryTabs() {
+  Widget _buildDeliveryTabs(CartProvider cart) {
     return Column(
       children: [
         _optionTile(
           title: 'Priority Delivery',
           subtitle: 'Fast delivery to your location',
-          trailingText: DeliveryType.priority.priceLabel,
+          trailingText: '₦${cart.deliveryChargeFor(DeliveryType.priority).toStringAsFixed(0).replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]},")}',
           icon: Icons.flash_on_rounded,
           active: _deliveryType == DeliveryType.priority,
           onTap: () {
@@ -247,7 +247,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         _optionTile(
           title: 'Store Pickup',
           subtitle: 'Pick up your order yourself',
-          trailingText: DeliveryType.pickup.priceLabel,
+          trailingText: 'FREE',
           icon: Icons.storefront_rounded,
           active: _deliveryType == DeliveryType.pickup,
           onTap: () {
@@ -674,6 +674,8 @@ class _CheckoutScreenState extends State<CheckoutScreen>
             .toList(),
 
         'subtotal': subtotal,
+        'deliveryFee': cart.deliveryChargeFor(_deliveryType),
+        'serviceFee': cart.serviceFees,
 
         'deliveryType': _deliveryType.name,
 
@@ -697,6 +699,9 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         'deliveryAddress': auth.currentAddress,
 
         'stores': cart.items.map((i) => i.menuItem.storeId).toSet().toList(),
+        'restaurantIds': cart.items.map((i) => i.menuItem.storeId).toSet().toList(),
+        'restaurantId': cart.items.isNotEmpty ? cart.items.first.menuItem.storeId : null,
+        'storeId': cart.items.isNotEmpty ? cart.items.first.menuItem.storeId : null,
       };
 
       final Order? success = await orderProvider.placeOrder(orderData);

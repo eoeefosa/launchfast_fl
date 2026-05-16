@@ -46,8 +46,12 @@ class OrderSummarySection extends StatelessWidget {
         const SizedBox(height: 4),
         _row(context, 'Subtotal', cart.subTotal),
         _row(context, 'Service Charge', cart.serviceFees),
-        _row(context, 'Delivery Charge', deliveryType.charge,
-            valueLabel: deliveryType.charge == 0 ? 'FREE' : null),
+        _row(
+          context,
+          'Delivery Charge',
+          cart.deliveryChargeFor(deliveryType),
+          valueLabel: cart.deliveryChargeFor(deliveryType) == 0 ? 'FREE' : null,
+        ),
       ],
     );
   }

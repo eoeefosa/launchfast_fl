@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../providers/cart_provider.dart';
 import 'selection_dialog.dart';
 import 'selection_option.dart';
@@ -28,13 +29,17 @@ class DeliveryTypeSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    final priorityFee = cart.deliveryChargeFor(DeliveryType.priority);
+    final formattedFee = '₦${priorityFee.toStringAsFixed(0).replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]},")}';
+
     return SelectionDialog(
       title: 'Delivery Type',
       options: [
         _option(
           context,
           DeliveryType.priority,
-          '₦1,300 • Processed immediately',
+          '$formattedFee • Processed immediately',
         ),
         _option(context, DeliveryType.pickup, 'FREE • Collect from the store'),
       ],

@@ -9,10 +9,12 @@ class OrderRepository {
   }
 
   Future<List<Order>> getStoreOrders(String storeId) async {
-    final response = await apiService.dio.get('/orders');
+    final response = await apiService.dio.get('/orders', queryParameters: {
+      'storeId': storeId,
+      'restaurantId': storeId,
+    });
     final List<Order> allOrders = (response.data as List).map((i) => Order.fromJson(i)).toList();
-    // In a real app, backend should filter by storeId using a query param like /orders?storeId=xyz
-    // For now, doing local filtering to match the old implementation and ensure backward compatibility
+    // Keep local filtering as a safety fallback in case server ignores query params
     return allOrders.where((o) => o.stores.any((s) => s.id == storeId)).toList();
   }
 
@@ -43,8 +45,12 @@ class OrderRepository {
     return (response.data as List).map((i) => Order.fromJson(i)).toList();
   }
 
-  Future<Order> updateOrderStatus(String id, String status) async {
-    final response = await apiService.dio.patch('/orders/$id/status', data: {'status': status});
+  Future<Order> updateOrderStatus(String id, String status, {String? storeId}) async {
+    final response = await apiService.dio.patch('/orders/$id/status', data: {
+      'status': status,
+      if (storeId != null) 'storeId': storeId,
+      if (storeId != null) 'restaurantId': storeId,
+    });
     return Order.fromJson(response.data);
   }
 

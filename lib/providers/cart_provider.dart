@@ -23,10 +23,10 @@ extension DeliveryTypeX on DeliveryType {
     }
   }
 
-  double get charge {
+  double charge(double storePriorityFee) {
     switch (this) {
       case DeliveryType.priority:
-        return 1000;
+        return storePriorityFee;
       case DeliveryType.pickup:
         return 0;
     }
@@ -41,10 +41,10 @@ extension DeliveryTypeX on DeliveryType {
     }
   }
 
-  String get priceLabel {
+  String priceLabel(double storePriorityFee) {
     switch (this) {
       case DeliveryType.priority:
-        return '₦1,000';
+        return '₦${storePriorityFee.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
       case DeliveryType.pickup:
         return 'FREE';
     }
@@ -362,7 +362,19 @@ class CartProvider with ChangeNotifier {
 
   /// Delivery charge for the given [DeliveryType]. The UI reads this; it does
   /// not compute it inline.
-  double deliveryChargeFor(DeliveryType type) => type.charge;
+  double deliveryChargeFor(DeliveryType type) {
+    if (type == DeliveryType.pickup) return 0;
+    
+    final storeId = currentStoreId;
+    if (storeId == null) return 1000.0; // Fallback
+
+    final store = _allStores.firstWhere(
+      (s) => s.id == storeId,
+      orElse: () => _allStores.isNotEmpty ? _allStores.first : null as dynamic,
+    );
+    
+    return store?.priorityFee ?? 1000.0;
+  }
 
   double totalFor(DeliveryType deliveryType) =>
       subTotal + serviceFees + deliveryChargeFor(deliveryType) - discountAmount;

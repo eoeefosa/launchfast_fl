@@ -11,6 +11,7 @@ class Store {
   final bool isOpen;
   final String? adminUsername;
   final double deliveryFee;
+  final double priorityFee;
   final String image;
   final String? ownerId;
 
@@ -24,6 +25,7 @@ class Store {
     required this.isOpen,
     this.adminUsername,
     required this.deliveryFee,
+    this.priorityFee = 1000.0,
     required this.image,
     this.ownerId,
   });
@@ -46,6 +48,7 @@ class Store {
       isOpen: json['isOpen'] ?? true,
       adminUsername: json['adminUsername'],
       deliveryFee: (json['deliveryFee'] as num?)?.toDouble() ?? 0.0,
+      priorityFee: (json['priorityFee'] as num?)?.toDouble() ?? 1000.0,
       image: json['image'] ?? '',
       ownerId: json['ownerId']?.toString(),
     );
@@ -63,6 +66,7 @@ class Store {
       'isOpen': isOpen,
       'adminUsername': adminUsername,
       'deliveryFee': deliveryFee,
+      'priorityFee': priorityFee,
       'image': image,
       'ownerId': ownerId,
     };
@@ -78,6 +82,7 @@ class Store {
     bool? isOpen,
     String? adminUsername,
     double? deliveryFee,
+    double? priorityFee,
     String? image,
     String? ownerId,
   }) {
@@ -91,6 +96,7 @@ class Store {
       isOpen: isOpen ?? this.isOpen,
       adminUsername: adminUsername ?? this.adminUsername,
       deliveryFee: deliveryFee ?? this.deliveryFee,
+      priorityFee: priorityFee ?? this.priorityFee,
       image: image ?? this.image,
       ownerId: ownerId ?? this.ownerId,
     );

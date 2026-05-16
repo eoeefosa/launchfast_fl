@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/providers/base_provider.dart';
+import '../../../core/error/failures.dart';
 import '../../../core/services/ably_service.dart';
 import 'package:campuschow/store/lib/features/store/data/store_model.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
@@ -229,11 +230,22 @@ class StoreProvider extends BaseProvider {
   }
 
   Future<void> updateStore(String storeId, Map<String, dynamic> data) async {
-    // Add logic to update a store
-    final i = _stores.indexWhere((s) => s.id == storeId);
-    if (i != -1) {
-      // Dummy update, real app would call repo
+    setLoading(true);
+    try {
+      final updatedStore = await storeRepository.updateStore(storeId, data);
+      final i = _stores.indexWhere((s) => s.id == storeId);
+      if (i != -1) {
+        _stores[i] = updatedStore;
+      }
+      if (_activeStoreId == storeId) {
+        _activeStore = updatedStore;
+      }
       notifyListeners();
+    } catch (e) {
+      setFailure(ServerFailure(e.toString()));
+      rethrow;
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -250,7 +262,8 @@ class StoreProvider extends BaseProvider {
   }
 
   Future<void> updateOrderStatus(String orderId, String status) async {
-    await orderRepository.updateOrderStatus(orderId, status);
+    if (_activeStoreId == null) return;
+    await orderRepository.updateOrderStatus(orderId, status, storeId: _activeStoreId!);
     notifyListeners();
   }
 
