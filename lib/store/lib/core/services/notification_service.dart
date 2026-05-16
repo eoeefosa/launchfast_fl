@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:campuschow/locator.dart';
+import 'package:campuschow/repositories/auth_repository.dart';
 import 'package:campuschow/services/ably_service.dart';
 import 'package:campuschow/router.dart';
 import 'package:go_router/go_router.dart';
@@ -217,13 +219,21 @@ class NotificationService {
       }
 
       /// Token refresh
-      _fcm.onTokenRefresh.listen((newToken) {
+      _fcm.onTokenRefresh.listen((newToken) async {
         debugPrint(
           '[FCM] Token refreshed: $newToken',
         );
 
-        // TODO:
-        // Send refreshed token to backend
+        try {
+          // Send refreshed token to backend
+          await locator<AuthRepository>().updateProfile({
+            'fcmToken': newToken,
+            'deviceToken': newToken,
+          });
+          debugPrint('[FCM] Successfully synced refreshed token to backend');
+        } catch (e) {
+          debugPrint('[FCM] Failed to sync refreshed token (user might not be logged in): $e');
+        }
       });
     } catch (e) {
       debugPrint('[FCM] Init error: $e');

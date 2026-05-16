@@ -6,7 +6,7 @@ class PaymentRepository {
     final response = await apiService.dio.get(
       '/payments/transactions',
       queryParameters: {
-        if (type != null) 'type': type,
+        'type': ?type,
         'limit': limit,
       },
     );
