@@ -486,14 +486,14 @@ class _FinancialSummary extends StatelessWidget {
         child: Column(
           children: [
             _SummaryRow(
-              label: 'Subtotal',
+              label: 'Food Sales',
               value: '₦${order.subtotal.toStringAsFixed(0)}',
               muted: muted,
               textColor: textColor,
             ),
             const SizedBox(height: 8),
             _SummaryRow(
-              label: 'Transportation (${order.deliveryType})',
+              label: 'Delivery Revenue (${order.deliveryType})',
               value: '₦${order.deliveryFee.toStringAsFixed(0)}',
               muted: muted,
               textColor: textColor,
