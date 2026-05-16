@@ -368,10 +368,9 @@ class CartProvider with ChangeNotifier {
     final storeId = currentStoreId;
     if (storeId == null) return 1000.0; // Fallback
 
-    final store = _allStores.firstWhere(
-      (s) => s.id == storeId,
-      orElse: () => _allStores.isNotEmpty ? _allStores.first : null as dynamic,
-    );
+    final store = _allStores.any((s) => s.id == storeId)
+        ? _allStores.firstWhere((s) => s.id == storeId)
+        : (_allStores.isNotEmpty ? _allStores.first : null);
     
     return store?.priorityFee ?? 1000.0;
   }
