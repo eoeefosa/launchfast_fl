@@ -11,10 +11,7 @@ class PhoneConfirmSheet extends StatefulWidget {
 
   /// Shows the sheet and returns the confirmed phone number.
   /// Returns null if the user dismissed without confirming.
-  static Future<String?> show(
-    BuildContext context, {
-    String? currentPhone,
-  }) {
+  static Future<String?> show(BuildContext context, {String? currentPhone}) {
     return showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -68,9 +65,9 @@ class _PhoneConfirmSheetState extends State<PhoneConfirmSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
         child: Column(
@@ -83,7 +80,9 @@ class _PhoneConfirmSheetState extends State<PhoneConfirmSheet> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.black12,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -109,18 +108,23 @@ class _PhoneConfirmSheetState extends State<PhoneConfirmSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Confirm Contact Number',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
-                          color: Colors.black87,
+                          color: Theme.of(context).colorScheme.onSurface,
                           letterSpacing: -0.3,
                         ),
                       ),
-                      const Text(
+                      Text(
                         'The restaurant will call this number',
-                        style: TextStyle(fontSize: 12, color: Colors.black45),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
                       ),
                     ],
                   ),
@@ -157,10 +161,10 @@ class _PhoneConfirmSheetState extends State<PhoneConfirmSheet> {
                       Expanded(
                         child: Text(
                           _ctrl.text,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: Colors.black87,
+                            color: Theme.of(context).colorScheme.onSurface,
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -173,15 +177,19 @@ class _PhoneConfirmSheetState extends State<PhoneConfirmSheet> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.06),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Change',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: Colors.black54,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ),
@@ -215,16 +223,18 @@ class _PhoneConfirmSheetState extends State<PhoneConfirmSheet> {
                 controller: _ctrl,
                 autofocus: _isEditing,
                 keyboardType: TextInputType.phone,
-                inputFormatters: [FilteringTextInputFormatter.allow(
-                  RegExp(r'[0-9+\-\s()]'),
-                )],
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s()]')),
+                ],
                 onChanged: (_) => setState(() => _error = null),
                 decoration: InputDecoration(
                   hintText: '08012345678',
                   prefixIcon: const Icon(Icons.phone_rounded),
                   errorText: _error,
                   filled: true,
-                  fillColor: Colors.black.withValues(alpha: 0.03),
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.03),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,

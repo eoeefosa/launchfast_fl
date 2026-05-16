@@ -255,8 +255,9 @@ role: ${auth.user?.role}
                   GoRoute(
                     path: ':id',
                     builder: (context, state) {
-                      final order = state.extra as Order;
-                      return OrderDetailsScreen(order: order);
+                      final id = state.pathParameters['id'];
+                      final order = state.extra as Order?;
+                      return OrderDetailsScreen(order: order, orderId: id);
                     },
                   ),
                 ],

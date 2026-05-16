@@ -1,19 +1,87 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'package:campuschow/models/order.dart';
 import 'package:campuschow/providers/cart_provider.dart';
 import 'package:campuschow/constants/app_colors.dart';
 import 'package:campuschow/widgets/orders/active_order_tracker.dart';
 
-class OrderDetailsScreen extends StatelessWidget {
-  final Order order;
+import 'package:campuschow/repositories/order_repository.dart';
 
-  const OrderDetailsScreen({super.key, required this.order});
+class OrderDetailsScreen extends StatefulWidget {
+  final Order? order;
+  final String? orderId;
+
+  const OrderDetailsScreen({super.key, this.order, this.orderId});
+
+  @override
+  State<OrderDetailsScreen> createState() => _OrderDetailsScreenState();
+}
+
+class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
+  Order? _order;
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.order != null) {
+      _order = widget.order;
+    } else if (widget.orderId != null) {
+      _fetchOrder();
+    }
+  }
+
+  Future<void> _fetchOrder() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final order = await OrderRepository().getOrderById(widget.orderId!);
+      setState(() {
+        _order = order;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to load order details';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Order Details')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null || _order == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Order Details')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(_error ?? 'Order not found'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _fetchOrder,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final order = _order!;
     final isActive = order.status != OrderStatus.delivered && 
                      order.status != OrderStatus.cancelled;
 

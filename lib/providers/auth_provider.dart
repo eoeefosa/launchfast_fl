@@ -429,6 +429,22 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> toggleFavorite(String storeId) async {
+    if (!isAuthenticated) return;
+    try {
+      final data = await locator<AuthRepository>().toggleFavorite(storeId);
+      if (data['success'] == true) {
+        final favorites = List<String>.from(data['favoriteStores']);
+        updateUser({
+          'favoriteStores': favorites,
+        });
+      }
+    } catch (e) {
+      debugPrint('[AuthProvider] toggleFavorite error: $e');
+      rethrow;
+    }
+  }
+
   void updateRole(String role) {
     _handleRoleUpdate(role);
   }

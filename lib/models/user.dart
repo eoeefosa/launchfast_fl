@@ -13,6 +13,7 @@ class UserProfile {
   final bool emailVerified;
   final bool phoneVerified;
   final bool isOnline;
+  final List<String> favoriteStores;
 
   UserProfile({
     required this.id,
@@ -27,6 +28,7 @@ class UserProfile {
     this.emailVerified = false,
     this.phoneVerified = false,
     this.isOnline = false,
+    this.favoriteStores = const [],
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -43,6 +45,7 @@ class UserProfile {
       emailVerified: json['emailVerified'] ?? false,
       phoneVerified: json['phoneVerified'] ?? false,
       isOnline: json['isOnline'] ?? false,
+      favoriteStores: List<String>.from(json['favoriteStores'] ?? []),
     );
   }
 
@@ -60,6 +63,7 @@ class UserProfile {
       'emailVerified': emailVerified,
       'phoneVerified': phoneVerified,
       'isOnline': isOnline,
+      'favoriteStores': favoriteStores,
     };
   }
 }

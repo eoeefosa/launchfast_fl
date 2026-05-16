@@ -115,31 +115,26 @@ class NotificationProvider with ChangeNotifier {
           final List<dynamic> data = response.data;
           debugPrint('📬 [NotificationProvider] Received ${data.length} notifications from backend');
           
-          if (data.isNotEmpty) {
-            // Backend is the source of truth — replace all local data with canonical entries.
-            // This removes any temp-ID entries created by real-time events.
-            final backendEntities = data.map((item) {
-              final entity = NotificationEntity()
-                ..notificationId = item['_id']?.toString() ?? ''
-                ..title = item['title'] ?? ''
-                ..message = item['body'] ?? ''
-                ..type = item['type'] ?? 'serverAlert'
-                ..timestamp = item['createdAt'] != null 
-                    ? DateTime.parse(item['createdAt']) 
-                    : DateTime.now()
-                ..isRead = item['isRead'] ?? false
-                ..metadata = item['data'] != null ? jsonEncode(item['data']) : null;
-              return entity;
-            }).toList();
+          // Backend is the source of truth — replace all local data with canonical entries.
+          final backendEntities = data.map((item) {
+            final entity = NotificationEntity()
+              ..notificationId = item['_id']?.toString() ?? ''
+              ..title = item['title'] ?? ''
+              ..message = item['body'] ?? ''
+              ..type = item['type'] ?? 'serverAlert'
+              ..timestamp = item['createdAt'] != null 
+                  ? DateTime.parse(item['createdAt']) 
+                  : DateTime.now()
+              ..isRead = item['isRead'] ?? false
+              ..metadata = item['data'] != null ? jsonEncode(item['data']) : null;
+            return entity;
+          }).toList();
 
-            await _box.clear();
+          await _box.clear();
+          if (backendEntities.isNotEmpty) {
             await _box.addAll(backendEntities);
-          } else {
-            // Backend is empty — keep local entries (may have been cleared intentionally).
-            // Only merge to avoid removing temp entries that haven't synced yet.
-            debugPrint('📭 [NotificationProvider] Backend returned 0 items, keeping local cache.');
           }
-
+          
           _notifications = _boxToList();
           debugPrint('✨ [NotificationProvider] Synced ${_notifications.length} notifications');
         }
@@ -215,6 +210,13 @@ class NotificationProvider with ChangeNotifier {
     }
     _notifications.removeWhere((n) => n.id == id);
     notifyListeners();
+    try {
+      if (!id.startsWith('temp_')) {
+        await apiService.dio.delete('/notifications?notificationId=$id');
+      }
+    } catch (e) {
+      debugPrint('Backend removeNotification failed: $e');
+    }
   }
 
   Future<void> clearAll() async {
@@ -222,7 +224,7 @@ class NotificationProvider with ChangeNotifier {
     _notifications.clear();
     notifyListeners();
     try {
-      await apiService.dio.patch('/notifications', data: {});
+      await apiService.dio.delete('/notifications');
     } catch (e) {
       debugPrint('Backend clearAll failed: $e');
     }

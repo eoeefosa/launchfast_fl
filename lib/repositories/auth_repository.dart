@@ -54,4 +54,11 @@ class AuthRepository {
     final response = await apiService.dio.post('/stores/apply', data: data);
     return response.data;
   }
+
+  Future<Map<String, dynamic>> toggleFavorite(String storeId) async {
+    final response = await apiService.dio.post('/users/favorites/toggle', data: {
+      'storeId': storeId,
+    });
+    return response.data;
+  }
 }

@@ -76,7 +76,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
         children: [
           CustomScrollView(
@@ -163,18 +163,18 @@ class _CheckoutScreenState extends State<CheckoutScreen>
       pinned: true,
       elevation: 0,
       scrolledUnderElevation: 0,
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       centerTitle: true,
       leading: Padding(
         padding: const EdgeInsets.only(left: 12),
         child: IconButton(
           onPressed: () => context.pop(),
-          icon: const Icon(Icons.close_rounded),
+          icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.onSurface),
         ),
       ),
-      title: const Text(
+      title: Text(
         'Checkout',
-        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
+        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Theme.of(context).colorScheme.onSurface),
       ),
     );
   }
@@ -188,13 +188,14 @@ class _CheckoutScreenState extends State<CheckoutScreen>
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
           boxShadow: [
             BoxShadow(
               blurRadius: 30,
               offset: const Offset(0, 8),
-              color: Colors.black.withValues(alpha: .04),
+              color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.04),
             ),
           ],
         ),
@@ -209,7 +210,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                   fontSize: 12,
                   letterSpacing: 1,
                   fontWeight: FontWeight.w800,
-                  color: Colors.grey.shade600,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
 
@@ -349,10 +350,10 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: active ? primary : Colors.grey.shade200,
+            color: active ? primary : Theme.of(context).colorScheme.outlineVariant,
             width: active ? 1.5 : 1,
           ),
-          color: active ? primary.withValues(alpha: 0.06) : Colors.grey.shade50,
+          color: active ? primary.withValues(alpha: 0.06) : Theme.of(context).colorScheme.surfaceContainerLow,
         ),
         child: Row(
           children: [
@@ -366,7 +367,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
               ),
               child: Icon(
                 icon,
-                color: active ? Colors.white : Colors.black87,
+                color: active ? Colors.white : Theme.of(context).colorScheme.onSurface,
                 size: 22,
               ),
             ),
@@ -386,7 +387,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: error ? Colors.red : Colors.grey.shade600,
+                      color: error ? Colors.red : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: 12,
                       fontWeight: error ? FontWeight.w600 : FontWeight.w500,
                     ),
@@ -400,7 +401,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 14,
-                  color: active ? primary : Colors.black87,
+                  color: active ? primary : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
           ],

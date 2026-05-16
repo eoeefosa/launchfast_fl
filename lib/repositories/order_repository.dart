@@ -81,6 +81,16 @@ class OrderRepository {
     return (response.data as List).map((i) => Order.fromJson(i)).toList();
   }
 
+  Future<Order> getOrderById(String id) async {
+    final response = await apiService.dio.get('/orders/$id');
+    if (response.data is! Map) {
+      throw FormatException(
+        'Expected Map from /orders/$id, got ${response.data.runtimeType}',
+      );
+    }
+    return Order.fromJson(response.data);
+  }
+
   Future<Map<String, dynamic>> initializePayment(String orderId, String method, {String? email}) async {
     final response = await apiService.dio.post(
       '/payments/initialize',
@@ -88,6 +98,7 @@ class OrderRepository {
         'orderId': orderId,
         'method': method,
         'email': email,
+        'source': 'mobile',
       },
     );
     if (response.data is! Map) {
