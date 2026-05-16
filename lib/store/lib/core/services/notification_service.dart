@@ -6,6 +6,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:campuschow/services/ably_service.dart';
+import 'package:campuschow/router.dart';
+import 'package:go_router/go_router.dart';
 
 class NotificationService {
   static final NotificationService _instance =
@@ -111,8 +113,9 @@ class NotificationService {
           '[Notification Clicked] ${response.payload}',
         );
 
-        // TODO:
-        // Add GoRouter navigation here if needed
+        if (response.payload != null && response.payload!.isNotEmpty) {
+          _handleNavigation(null, response.payload);
+        }
       },
     );
 
@@ -390,27 +393,33 @@ class NotificationService {
       '[FCM] Notification tap data: ${message.data}',
     );
 
-    final type = message.data['type'];
+    final type = message.data['type']?.toString();
+    final orderId = (message.data['orderId'] ?? message.data['id'])?.toString();
 
-    final orderId =
-        message.data['orderId'] ??
-            message.data['id'];
+    _handleNavigation(type, orderId);
+  }
 
-    switch (type) {
-      case 'deposit':
-        debugPrint(
-          '[Navigation] Open wallet screen',
-        );
-        break;
+  /// ─────────────────────────────────────────────────────
+  /// NAVIGATION LOGIC
+  /// ─────────────────────────────────────────────────────
 
-      case 'new_order':
-      case 'order_update':
-      case 'order_processing':
-      case 'payment_success':
-        debugPrint(
-          '[Navigation] Open order: $orderId',
-        );
-        break;
+  void _handleNavigation(String? type, String? id) {
+    debugPrint('[Notification] Navigating — type: $type, id: $id');
+
+    final context = rootNavigatorKey.currentContext;
+    if (context == null) {
+      debugPrint('[Notification] Navigation failed: Navigator context is null');
+      return;
+    }
+
+    if (type == 'deposit' || id == 'wallet') {
+      context.push(routeTransactions);
+      return;
+    }
+
+    if (id != null && id.isNotEmpty) {
+      // Use the dedicated order details route
+      context.push('/order-details/$id');
     }
   }
 

@@ -45,13 +45,20 @@ class StoreAppBar extends StatelessWidget {
           child: CircleIconButton(
             icon: Icons.share_rounded,
             scheme: scheme,
-            onPressed: () {
+            onPressed: () async {
+              final box = context.findRenderObject() as RenderBox?;
               final String name = store.name as String;
               final String tagline = store.tagline as String;
-              Share.share(
-                'Check out $name on CampusChow! $tagline\n\n'
-                'Order your favorite meals now!',
-                subject: 'Delicious food from $name',
+              await SharePlus.instance.share(
+                ShareParams(
+                  text:
+                      'Check out $name on CampusChow! $tagline\n\n'
+                      'Order your favorite meals now!',
+                  subject: 'Delicious food from $name',
+                  sharePositionOrigin: box != null
+                      ? box.localToGlobal(Offset.zero) & box.size
+                      : null,
+                ),
               );
             },
           ),
@@ -101,11 +108,12 @@ class AppBarBackground extends StatelessWidget {
             ),
           ),
           child: Center(
-            child: Icon(
-              Icons.storefront_rounded,
-              size: 100,
-              color: Colors.white.withValues(alpha: 0.2),
-            ).animate().scale(
+            child:
+                Icon(
+                  Icons.storefront_rounded,
+                  size: 100,
+                  color: Colors.white.withValues(alpha: 0.2),
+                ).animate().scale(
                   duration: const Duration(milliseconds: 800),
                   curve: Curves.easeOutBack,
                 ),

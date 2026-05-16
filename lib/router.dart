@@ -1,8 +1,9 @@
+import 'package:campuschow/screens/tabs/profile/profile_screen.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'providers/auth_provider.dart';
-
 // ── Customer screens ──────────────────────────────────────────────────────────
 import 'splash_screen.dart';
 import 'screens/auth/login_screen.dart';
@@ -14,7 +15,6 @@ import 'screens/tabs/home_screen.dart';
 import 'screens/tabs/cart_screen.dart';
 import 'screens/tabs/orders_screen.dart';
 import 'screens/tabs/order_details_screen.dart';
-import 'screens/tabs/profile/profile_screen.dart';
 import 'models/order.dart';
 
 import 'screens/store/store_detail_screen.dart';
@@ -34,6 +34,12 @@ import 'package:campuschow/store/lib/features/dashboard/presentation/worker_main
 
 import 'package:campuschow/store/lib/features/auth/presentation/register_screen.dart'
     as store_register;
+
+/// Root navigator key exposed to the router and services for navigation without context.
+final GlobalKey<NavigatorState> rootNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'root');
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Route constants
@@ -89,6 +95,7 @@ const _customerRoutes = {
   routeNotifications,
   routeStores,
   routeCheckout,
+  routeTransactions,
 };
 
 const _protectedExactRoutes = {routeStoreDashboard, routeWorkerDashboard};
@@ -102,6 +109,7 @@ GoRouter createRouter(AuthProvider auth) {
 
   return GoRouter(
     initialLocation: routeSplash,
+    navigatorKey: rootNavigatorKey,
 
     refreshListenable: auth,
 
@@ -330,6 +338,17 @@ role: ${auth.user?.role}
           final id = state.pathParameters['id']!;
 
           return StoreDetailScreen(id: id);
+        },
+      ),
+
+      // ───────────────────────────────────────────────────────────
+      // Dynamic routes for customer details
+      // ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: '/order-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id'];
+          return OrderDetailsScreen(orderId: id);
         },
       ),
 

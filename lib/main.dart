@@ -41,9 +41,7 @@ import 'package:campuschow/store/lib/features/store/presentation/store_provider.
 // Globals — only what truly must be global
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Root navigator key exposed to the router.
-final GlobalKey<NavigatorState> rootNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'root');
+/// Root navigator key is now defined in router.dart
 
 /// Plugin instance shared across main and background isolate.
 final FlutterLocalNotificationsPlugin _localNotifications =
