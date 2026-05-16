@@ -162,7 +162,16 @@ class _DetailItem extends StatelessWidget {
         if (v > 0) addons.add('${v}x $k Meat');
       });
     }
-    if (item.hasSalad) addons.add('Salad');
+    if (item.selectedSides != null) {
+      item.selectedSides!.forEach((k, v) {
+        if (v > 0) addons.add('${v}x $k Side');
+      });
+    }
+    if (item.selectedDrinks != null) {
+      item.selectedDrinks!.forEach((k, v) {
+        if (v > 0) addons.add('${v}x $k Drink');
+      });
+    }
     if (item.selectedAddons != null) {
       item.selectedAddons!.forEach((k, v) {
         if (v > 0) addons.add('${v}x $k');

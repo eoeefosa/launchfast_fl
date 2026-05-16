@@ -23,7 +23,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
   int _quantity = 1;
   String? _selectedSoupId;
   final Map<String, int> _selectedMeats = {};
-  bool _hasSalad = false;
+  final Map<String, int> _selectedSides = {};
+  final Map<String, int> _selectedDrinks = {};
   final Map<String, int> _selectedAddons = {};
   StreamSubscription? _alertSub;
 
@@ -101,10 +102,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
         total += (meatPrices[id] ?? 0) * count;
       }
     });
-    if (_hasSalad) {
-      final salad = availableSalads.firstOrNull;
-      total += salad?.price ?? saladPrice;
-    }
+    _selectedSides.forEach((id, count) {
+      final side = availableSalads.where((m) => m.id == id).firstOrNull;
+      if (side != null) {
+        total += side.price * count;
+      } else {
+        total += saladPrice * count;
+      }
+    });
+    _selectedDrinks.forEach((id, count) {
+      final drink = availableSalads.where((m) => m.id == id).firstOrNull;
+      if (drink != null) total += drink.price * count;
+    });
     if (_selectedSoupId != null) {
       final soup = soups.where((s) => s.id == _selectedSoupId).firstOrNull;
       if (soup != null && !soup.isFreeWithSwallow) total += soup.price;
@@ -211,20 +220,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               onChanged: (c) => setState(() => _selectedMeats[meat.id] = c),
             )).toList(),
           ),
-        if (availableSalads.isNotEmpty && (item.category == 'Rice' || item.name == 'Moi Moi')) ...[
+        if (availableSalads.isNotEmpty) ...[
           const SizedBox(height: 32),
           OptionSection(
-            title: 'Extras',
-            children: availableSalads.map((salad) => SelectionCard(
-              title: salad.name,
-              subtitle: '₦${salad.price}',
-              isSelected: _hasSalad,
-              onTap: () => setState(() => _hasSalad = !_hasSalad),
-              trailing: Checkbox(
-                value: _hasSalad,
-                onChanged: (v) => setState(() => _hasSalad = v ?? false),
-                activeColor: accent,
-              ),
+            title: 'Add Sides',
+            children: availableSalads.map((side) => _ItemOptionTile(
+              item: side,
+              count: _selectedSides[side.id] ?? 0,
+              accent: accent,
+              onChanged: (c) => setState(() => _selectedSides[side.id] = c),
             )).toList(),
           ),
         ],
@@ -338,7 +342,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       item: item,
       quantity: _quantity,
       selectedMeats: _selectedMeats,
-      hasSalad: _hasSalad,
+      selectedSides: _selectedSides,
+      selectedDrinks: _selectedDrinks,
       selectedAddons: _selectedAddons,
     );
 

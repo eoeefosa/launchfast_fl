@@ -24,7 +24,8 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
   int _quantity = 1;
   String? _selectedSoupId;
   final Map<String, int> _selectedMeats = {};
-  bool _hasSalad = false;
+  final Map<String, int> _selectedSides = {};
+  final Map<String, int> _selectedDrinks = {};
   String? _selectedSizeId;
   final Map<String, int> _selectedAddons = {};
 
@@ -33,20 +34,24 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
     final storeProvider = context.watch<StoreProvider>();
     final cartProvider = context.read<CartProvider>();
 
-    final availableSoups = widget.item.category == 'Swallow'
+    final availableSoups = widget.item.type == 'swallow' || widget.item.compatibleWith?.contains('soup') == true
         ? storeProvider.menuItems
               .where(
-                (m) => m.category == 'Soup',
+                (m) => m.type == 'soup',
               )
               .toList()
         : <MenuItem>[];
 
-    final availableMeats = storeProvider.menuItems
-        .where((m) => m.storeId == widget.item.storeId && m.category == 'Meat')
+    final availableProteins = storeProvider.menuItems
+        .where((m) => m.storeId == widget.item.storeId && m.type == 'protein' && widget.item.compatibleWith?.contains('protein') == true)
         .toList();
 
-    final availableSalads = storeProvider.menuItems
-        .where((m) => m.storeId == widget.item.storeId && m.category == 'Salad')
+    final availableSides = storeProvider.menuItems
+        .where((m) => m.storeId == widget.item.storeId && m.type == 'side' && widget.item.compatibleWith?.contains('side') == true)
+        .toList();
+
+    final availableDrinks = storeProvider.menuItems
+        .where((m) => m.storeId == widget.item.storeId && m.type == 'drink' && widget.item.compatibleWith?.contains('drink') == true)
         .toList();
 
     final availableAddons = widget.item.addonIds != null
@@ -61,13 +66,15 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
       item: widget.item,
       quantity: _quantity,
       selectedMeats: _selectedMeats,
-      hasSalad: _hasSalad,
+      selectedSides: _selectedSides,
+      selectedDrinks: _selectedDrinks,
       selectedAddons: _selectedAddons,
       selectedSoupId: _selectedSoupId,
       availableSoups: availableSoups,
       availableAddons: availableAddons,
-      availableMeats: availableMeats,
-      availableSalads: availableSalads,
+      availableMeats: availableProteins,
+      availableSides: availableSides,
+      availableDrinks: availableDrinks,
       meatPrices: storeProvider.meatPrices,
       saladPrice: storeProvider.saladPrice,
       selectedSizeId: _selectedSizeId,
@@ -161,13 +168,13 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                     ),
                     const SizedBox(height: 24),
                   ],
-                  if (availableMeats.isNotEmpty) ...[
+                  if (availableProteins.isNotEmpty) ...[
                     ItemDetailOptionsSection(
-                      title: 'Add Meat',
-                      children: availableMeats
+                      title: 'Add Protein',
+                      children: availableProteins
                           .map(
-                            (meat) => ItemDetailMeatOption(
-                              meat: meat,
+                            (meat) => ItemDetailQuantityOption(
+                              item: meat,
                               count: _selectedMeats[meat.id] ?? 0,
                               accentColor: widget.accentColor,
                               onChanged: (c) =>
@@ -177,43 +184,24 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                           .toList(),
                     ),
                   ],
-                  if (availableAddons.isNotEmpty) ...[
+                  if (availableSides.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     ItemDetailOptionsSection(
-                      title: 'Add-ons',
-                      children: availableAddons
+                      title: 'Add Sides',
+                      children: availableSides
                           .map(
-                            (addon) => ItemDetailAddonOption(
-                              addon: addon,
-                              count: _selectedAddons[addon.id] ?? 0,
+                            (side) => ItemDetailQuantityOption(
+                              item: side,
+                              count: _selectedSides[side.id] ?? 0,
                               accentColor: widget.accentColor,
                               onChanged: (c) =>
-                                  setState(() => _selectedAddons[addon.id] = c),
+                                  setState(() => _selectedSides[side.id] = c),
                             ),
                           )
                           .toList(),
                     ),
                   ],
-                  if (availableSalads.isNotEmpty &&
-                      (widget.item.category == 'Rice' ||
-                          widget.item.name == 'Moi Moi')) ...[
-                    const SizedBox(height: 24),
-                    ItemDetailOptionsSection(
-                      title: 'Extras',
-                      children: availableSalads
-                          .map(
-                            (salad) => ItemDetailSaladOption(
-                              salad: salad,
-                              isSelected: _hasSalad,
-                              accentColor: widget.accentColor,
-                              onChanged: (val) =>
-                                  setState(() => _hasSalad = val),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ],
-                  if (widget.item.category == 'Swallow') ...[
+                  if (widget.item.type == 'swallow' || widget.item.compatibleWith?.contains('soup') == true) ...[
                     const SizedBox(height: 24),
                     ItemDetailOptionsSection(
                       title: 'Choose a Soup',
@@ -226,6 +214,40 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                               accentColor: widget.accentColor,
                               onTap: () =>
                                   setState(() => _selectedSoupId = soup.id),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                  if (availableDrinks.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    ItemDetailOptionsSection(
+                      title: 'Add Drinks',
+                      children: availableDrinks
+                          .map(
+                            (drink) => ItemDetailQuantityOption(
+                              item: drink,
+                              count: _selectedDrinks[drink.id] ?? 0,
+                              accentColor: widget.accentColor,
+                              onChanged: (c) =>
+                                  setState(() => _selectedDrinks[drink.id] = c),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                  if (availableAddons.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    ItemDetailOptionsSection(
+                      title: 'Extras & Add-ons',
+                      children: availableAddons
+                          .map(
+                            (addon) => ItemDetailQuantityOption(
+                              item: addon,
+                              count: _selectedAddons[addon.id] ?? 0,
+                              accentColor: widget.accentColor,
+                              onChanged: (c) =>
+                                  setState(() => _selectedAddons[addon.id] = c),
                             ),
                           )
                           .toList(),
@@ -297,7 +319,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
     CartProvider cartProvider,
     StoreProvider storeProvider,
   ) {
-    if (widget.item.category == 'Swallow' && _selectedSoupId == null) {
+    if (widget.item.type == 'swallow' && _selectedSoupId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a soup first')),
       );
@@ -322,9 +344,11 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
       item: widget.item,
       quantity: _quantity,
       selectedMeats: _selectedMeats,
-      hasSalad: _hasSalad,
+      selectedSides: _selectedSides,
+      selectedDrinks: _selectedDrinks,
       selectedAddons: _selectedAddons,
       selectedSoup: soupPayload,
+      selectedSizeId: _selectedSizeId,
     );
 
     if (success) {

@@ -29,7 +29,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
   int _quantity = 1;
   String? _selectedSoupId;
   final Map<String, int> _selectedMeats = {};
-  bool _hasSalad = false;
+  final Map<String, int> _selectedSides = {};
+  final Map<String, int> _selectedDrinks = {};
   final Map<String, int> _selectedAddons = {};
   StreamSubscription<String>? _alertSub;
 
@@ -169,21 +170,33 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       );
     }
 
-    final availableSoups = item.category == 'Swallow'
+    final compatible = item.compatibleWith ?? [];
+
+    final availableSoups = compatible.contains('soup') || item.type == 'swallow'
         ? storeProvider.menuItems
-            .where((m) => m.category == 'Soup')
+            .where((m) => m.type == 'soup')
             .toList()
         : <MenuItem>[];
 
-    final availableMeats = storeProvider.menuItems
-        .where((m) => m.storeId == item.storeId && m.category == 'Meat')
-        .toList();
+    final availableProteins = compatible.contains('protein')
+        ? storeProvider.menuItems
+            .where((m) => m.storeId == item.storeId && m.type == 'protein')
+            .toList()
+        : <MenuItem>[];
 
-    final availableSalads = storeProvider.menuItems
-        .where((m) => m.storeId == item.storeId && m.category == 'Salad')
-        .toList();
+    final availableSides = compatible.contains('side')
+        ? storeProvider.menuItems
+            .where((m) => m.storeId == item.storeId && m.type == 'side')
+            .toList()
+        : <MenuItem>[];
 
-    // Filter addon IDs — skip any that haven't loaded yet
+    final availableDrinks = compatible.contains('drink')
+        ? storeProvider.menuItems
+            .where((m) => m.storeId == item.storeId && m.type == 'drink')
+            .toList()
+        : <MenuItem>[];
+
+    // Keep old logic for addons if needed
     final availableAddons = (item.addonIds ?? [])
         .map((id) => storeProvider.menuItems.cast<MenuItem?>().firstWhere(
               (m) => m?.id == id,
@@ -196,13 +209,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       item: item,
       quantity: _quantity,
       selectedMeats: _selectedMeats,
-      hasSalad: _hasSalad,
+      selectedSides: _selectedSides,
+      selectedDrinks: _selectedDrinks,
       selectedAddons: _selectedAddons,
       selectedSoupId: _selectedSoupId,
       availableSoups: availableSoups,
       availableAddons: availableAddons,
-      availableMeats: availableMeats,
-      availableSalads: availableSalads,
+      availableMeats: availableProteins,
+      availableSides: availableSides,
+      availableDrinks: availableDrinks,
       meatPrices: storeProvider.meatPrices,
       saladPrice: storeProvider.saladPrice,
     );
@@ -223,20 +238,23 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               accentColor: store.accentColor,
               availableSoups: availableSoups,
               availableAddons: availableAddons,
-              availableMeats: availableMeats,
-              availableSalads: availableSalads,
+              availableProteins: availableProteins,
+              availableSides: availableSides,
+              availableDrinks: availableDrinks,
               selectedMeats: _selectedMeats,
               selectedAddons: _selectedAddons,
-              hasSalad: _hasSalad,
+              selectedSides: _selectedSides,
+              selectedDrinks: _selectedDrinks,
               selectedSoupId: _selectedSoupId,
-              meatPrices: storeProvider.meatPrices,
-              saladPrice: storeProvider.saladPrice,
               isDark: isDark,
               onMeatChanged: (id, count) =>
                   setState(() => _selectedMeats[id] = count),
               onAddonChanged: (id, count) =>
                   setState(() => _selectedAddons[id] = count),
-              onSaladChanged: (val) => setState(() => _hasSalad = val),
+              onSideChanged: (id, count) => 
+                  setState(() => _selectedSides[id] = count),
+              onDrinkChanged: (id, count) => 
+                  setState(() => _selectedDrinks[id] = count),
               onSoupSelected: (id) => setState(() => _selectedSoupId = id),
             ),
             Positioned(
@@ -253,7 +271,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                   isDark: isDark,
                   selectedSoupId: _selectedSoupId,
                   selectedMeats: _selectedMeats,
-                  hasSalad: _hasSalad,
+                  selectedSides: _selectedSides,
+                  selectedDrinks: _selectedDrinks,
                   selectedAddons: _selectedAddons,
                   availableSoups: availableSoups,
                   cartProvider: cartProvider,
@@ -308,7 +327,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       item: item,
       quantity: _quantity,
       selectedMeats: _selectedMeats,
-      hasSalad: _hasSalad,
+      selectedSides: _selectedSides,
+      selectedDrinks: _selectedDrinks,
       selectedAddons: _selectedAddons,
       selectedSoup: soupPayload,
     );
@@ -365,7 +385,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
             item: item,
             quantity: _quantity,
             selectedMeats: _selectedMeats,
-            hasSalad: _hasSalad,
+            selectedSides: _selectedSides,
+            selectedDrinks: _selectedDrinks,
             selectedAddons: _selectedAddons,
             selectedSoup: soupPayload,
           );

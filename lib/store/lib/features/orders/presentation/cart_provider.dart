@@ -73,7 +73,8 @@ class CartProvider with ChangeNotifier {
     required int quantity,
     List<String>? extras,
     Map<String, int>? selectedMeats,
-    bool hasSalad = false,
+    Map<String, int>? selectedSides,
+    Map<String, int>? selectedDrinks,
     Map<String, int>? selectedAddons,
   }) {
     // Check if item is from same store
@@ -86,7 +87,10 @@ class CartProvider with ChangeNotifier {
           i.menuItem.id == item.id &&
           jsonEncode(i.selectedMeats ?? {}) ==
               jsonEncode(selectedMeats ?? {}) &&
-          i.hasSalad == hasSalad &&
+          jsonEncode(i.selectedSides ?? {}) ==
+              jsonEncode(selectedSides ?? {}) &&
+          jsonEncode(i.selectedDrinks ?? {}) ==
+              jsonEncode(selectedDrinks ?? {}) &&
           jsonEncode(i.selectedAddons ?? {}) ==
               jsonEncode(selectedAddons ?? {}),
     );
@@ -100,7 +104,8 @@ class CartProvider with ChangeNotifier {
           quantity: quantity,
           extras: extras,
           selectedMeats: selectedMeats,
-          hasSalad: hasSalad,
+          selectedSides: selectedSides,
+          selectedDrinks: selectedDrinks,
           selectedAddons: selectedAddons,
         ),
       );
@@ -115,7 +120,8 @@ class CartProvider with ChangeNotifier {
     required int quantity,
     List<String>? extras,
     Map<String, int>? selectedMeats,
-    bool hasSalad = false,
+    Map<String, int>? selectedSides,
+    Map<String, int>? selectedDrinks,
     Map<String, int>? selectedAddons,
   }) {
     _items = [
@@ -124,7 +130,8 @@ class CartProvider with ChangeNotifier {
         quantity: quantity,
         extras: extras,
         selectedMeats: selectedMeats,
-        hasSalad: hasSalad,
+        selectedSides: selectedSides,
+        selectedDrinks: selectedDrinks,
         selectedAddons: selectedAddons,
       ),
     ];
@@ -170,7 +177,8 @@ class CartProvider with ChangeNotifier {
             quantity: i.quantity,
             extras: i.extras,
             selectedMeats: i.selectedMeats,
-            hasSalad: i.hasSalad,
+            selectedSides: i.selectedSides,
+            selectedDrinks: i.selectedDrinks,
             selectedAddons: i.selectedAddons,
           ),
         )
@@ -203,13 +211,28 @@ class CartProvider with ChangeNotifier {
         });
       }
 
-      // Salad extra
-      if (item.hasSalad) {
-        final saladItem = _allMenuItems
-            .where((m) =>
-                m.storeId == item.menuItem.storeId && m.category == 'Salad')
-            .firstOrNull;
-        itemPrice += saladItem?.price ?? _saladPrice;
+      // Sides extra
+      if (item.selectedSides != null) {
+        item.selectedSides!.forEach((id, count) {
+          final sideItem =
+              _allMenuItems.where((m) => m.id == id).firstOrNull;
+          if (sideItem != null) {
+            itemPrice += sideItem.price * count;
+          } else {
+            itemPrice += _saladPrice * count;
+          }
+        });
+      }
+
+      // Drinks extra
+      if (item.selectedDrinks != null) {
+        item.selectedDrinks!.forEach((id, count) {
+          final drinkItem =
+              _allMenuItems.where((m) => m.id == id).firstOrNull;
+          if (drinkItem != null) {
+            itemPrice += drinkItem.price * count;
+          }
+        });
       }
 
       // Addons extras

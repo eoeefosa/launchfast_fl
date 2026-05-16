@@ -5,7 +5,8 @@ class CartItem {
   int quantity;
   final List<String>? extras;
   final Map<String, int>? selectedMeats;
-  final bool hasSalad;
+  final Map<String, int>? selectedSides;
+  final Map<String, int>? selectedDrinks;
   final Map<String, int>? selectedAddons;
 
   CartItem({
@@ -13,7 +14,8 @@ class CartItem {
     required this.quantity,
     this.extras,
     this.selectedMeats,
-    this.hasSalad = false,
+    this.selectedSides,
+    this.selectedDrinks,
     this.selectedAddons,
   });
 
@@ -25,7 +27,12 @@ class CartItem {
       selectedMeats: json['selectedMeats'] != null
           ? Map<String, int>.from(json['selectedMeats'])
           : null,
-      hasSalad: json['hasSalad'] ?? false,
+      selectedSides: json['selectedSides'] != null
+          ? Map<String, int>.from(json['selectedSides'])
+          : null,
+      selectedDrinks: json['selectedDrinks'] != null
+          ? Map<String, int>.from(json['selectedDrinks'])
+          : null,
       selectedAddons: json['selectedAddons'] != null
           ? Map<String, int>.from(json['selectedAddons'])
           : null,
@@ -38,7 +45,8 @@ class CartItem {
       'quantity': quantity,
       'extras': extras,
       'selectedMeats': selectedMeats,
-      'hasSalad': hasSalad,
+      'selectedSides': selectedSides,
+      'selectedDrinks': selectedDrinks,
       'selectedAddons': selectedAddons,
     };
   }

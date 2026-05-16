@@ -19,20 +19,21 @@ class ItemDetailScrollBody extends StatelessWidget {
   final Color accentColor;
   final List<MenuItem> availableSoups;
   final List<MenuItem> availableAddons;
-  final List<MenuItem> availableMeats;
-  final List<MenuItem> availableSalads;
+  final List<MenuItem> availableProteins;
+  final List<MenuItem> availableSides;
+  final List<MenuItem> availableDrinks;
 
   final Map<String, int> selectedMeats;
   final Map<String, int> selectedAddons;
-  final bool hasSalad;
+  final Map<String, int> selectedSides;
+  final Map<String, int> selectedDrinks;
   final String? selectedSoupId;
-  final Map<String, double> meatPrices;
-  final double saladPrice;
   final bool isDark;
 
-  final void Function(String type, int count) onMeatChanged;
+  final void Function(String id, int count) onMeatChanged;
   final void Function(String id, int count) onAddonChanged;
-  final void Function(bool val) onSaladChanged;
+  final void Function(String id, int count) onSideChanged;
+  final void Function(String id, int count) onDrinkChanged;
   final void Function(String id) onSoupSelected;
 
   const ItemDetailScrollBody({
@@ -46,18 +47,19 @@ class ItemDetailScrollBody extends StatelessWidget {
     required this.accentColor,
     required this.availableSoups,
     required this.availableAddons,
-    required this.availableMeats,
-    required this.availableSalads,
+    required this.availableProteins,
+    required this.availableSides,
+    required this.availableDrinks,
     required this.selectedMeats,
     required this.selectedAddons,
-    required this.hasSalad,
+    required this.selectedSides,
+    required this.selectedDrinks,
     required this.selectedSoupId,
-    required this.meatPrices,
-    required this.saladPrice,
     required this.isDark,
     required this.onMeatChanged,
     required this.onAddonChanged,
-    required this.onSaladChanged,
+    required this.onSideChanged,
+    required this.onDrinkChanged,
     required this.onSoupSelected,
   });
 
@@ -84,14 +86,14 @@ class ItemDetailScrollBody extends StatelessWidget {
                       accentColor: accentColor,
                       isDark: isDark,
                     ),
-                    if (availableMeats.isNotEmpty) ...[
+                    if (availableProteins.isNotEmpty) ...[
                       const SizedBox(height: 32),
                       ItemDetailOptionsSection(
-                        title: 'Add Meat',
-                        children: availableMeats
+                        title: 'Add Protein',
+                        children: availableProteins
                             .map(
-                              (meat) => ItemDetailMeatOption(
-                                meat: meat,
+                              (meat) => ItemDetailQuantityOption(
+                                item: meat,
                                 count: selectedMeats[meat.id] ?? 0,
                                 accentColor: accentColor,
                                 onChanged: (c) => onMeatChanged(meat.id, c),
@@ -100,40 +102,23 @@ class ItemDetailScrollBody extends StatelessWidget {
                             .toList(),
                       ),
                     ],
-                    if (availableAddons.isNotEmpty) ...[
+                    if (availableSides.isNotEmpty) ...[
                       const SizedBox(height: 32),
                       ItemDetailOptionsSection(
-                        title: 'Add-ons',
-                        children: availableAddons
+                        title: 'Add Sides',
+                        children: availableSides
                             .map(
-                              (addon) => ItemDetailAddonOption(
-                                addon: addon,
-                                count: selectedAddons[addon.id] ?? 0,
+                              (side) => ItemDetailQuantityOption(
+                                item: side,
+                                count: selectedSides[side.id] ?? 0,
                                 accentColor: accentColor,
-                                onChanged: (c) => onAddonChanged(addon.id, c),
+                                onChanged: (c) => onSideChanged(side.id, c),
                               ),
                             )
                             .toList(),
                       ),
                     ],
-                    if (availableSalads.isNotEmpty &&
-                        (item.category == 'Rice' || item.name == 'Moi Moi')) ...[
-                      const SizedBox(height: 32),
-                      ItemDetailOptionsSection(
-                        title: 'Extras',
-                        children: availableSalads
-                            .map(
-                              (salad) => ItemDetailSaladOption(
-                                salad: salad,
-                                isSelected: hasSalad,
-                                accentColor: accentColor,
-                                onChanged: onSaladChanged,
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ],
-                    if (item.category == 'Swallow') ...[
+                    if (item.type == 'swallow' || item.compatibleWith?.contains('soup') == true) ...[
                       const SizedBox(height: 32),
                       ItemDetailOptionsSection(
                         title: 'Choose a Soup',
@@ -145,6 +130,38 @@ class ItemDetailScrollBody extends StatelessWidget {
                                 isSelected: selectedSoupId == soup.id,
                                 accentColor: accentColor,
                                 onTap: () => onSoupSelected(soup.id),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
+                    if (availableDrinks.isNotEmpty) ...[
+                      const SizedBox(height: 32),
+                      ItemDetailOptionsSection(
+                        title: 'Add Drinks',
+                        children: availableDrinks
+                            .map(
+                              (drink) => ItemDetailQuantityOption(
+                                item: drink,
+                                count: selectedDrinks[drink.id] ?? 0,
+                                accentColor: accentColor,
+                                onChanged: (c) => onDrinkChanged(drink.id, c),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
+                    if (availableAddons.isNotEmpty) ...[
+                      const SizedBox(height: 32),
+                      ItemDetailOptionsSection(
+                        title: 'Extras & Add-ons',
+                        children: availableAddons
+                            .map(
+                              (addon) => ItemDetailQuantityOption(
+                                item: addon,
+                                count: selectedAddons[addon.id] ?? 0,
+                                accentColor: accentColor,
+                                onChanged: (c) => onAddonChanged(addon.id, c),
                               ),
                             )
                             .toList(),

@@ -37,6 +37,8 @@ class MenuItem {
   final List<String>? addonIds;
   final List<ItemOption>? sizes;
   final List<ItemOption>? meatOptions;
+  final String? type;
+  final List<String>? compatibleWith;
 
   MenuItem({
     required this.id,
@@ -56,6 +58,8 @@ class MenuItem {
     this.addonIds,
     this.sizes,
     this.meatOptions,
+    this.type,
+    this.compatibleWith,
   });
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
@@ -75,6 +79,8 @@ class MenuItem {
       isReady: json['isReady'] ?? json['available'] ?? true, // Support both isReady and available
       calories: json['calories'],
       addonIds: json['addonIds'] != null ? List<String>.from(json['addonIds']) : null,
+      type: json['type']?.toString(),
+      compatibleWith: json['compatibleWith'] != null ? List<String>.from(json['compatibleWith']) : null,
       sizes: json['sizes'] != null
           ? (json['sizes'] as List).map((e) => ItemOption.fromJson(e)).toList()
           : null,
@@ -102,6 +108,8 @@ class MenuItem {
       'available': isReady, // For backend compatibility
       'calories': calories,
       'addonIds': addonIds,
+      'type': type,
+      'compatibleWith': compatibleWith,
       'sizes': sizes?.map((e) => e.toJson()).toList(),
       'meatOptions': meatOptions?.map((e) => e.toJson()).toList(),
     };
@@ -125,6 +133,8 @@ class MenuItem {
     List<String>? addonIds,
     List<ItemOption>? sizes,
     List<ItemOption>? meatOptions,
+    String? type,
+    List<String>? compatibleWith,
   }) {
     return MenuItem(
       id: id ?? this.id,
@@ -144,6 +154,8 @@ class MenuItem {
       addonIds: addonIds ?? this.addonIds,
       sizes: sizes ?? this.sizes,
       meatOptions: meatOptions ?? this.meatOptions,
+      type: type ?? this.type,
+      compatibleWith: compatibleWith ?? this.compatibleWith,
     );
   }
 }

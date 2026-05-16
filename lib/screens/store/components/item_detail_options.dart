@@ -223,18 +223,18 @@ class ItemDetailStepButton extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-//  Meat option
+//  Generic Quantity option
 // ─────────────────────────────────────────────
 
-class ItemDetailMeatOption extends StatelessWidget {
-  final MenuItem meat;
+class ItemDetailQuantityOption extends StatelessWidget {
+  final MenuItem item;
   final int count;
   final Color accentColor;
   final ValueChanged<int> onChanged;
 
-  const ItemDetailMeatOption({
+  const ItemDetailQuantityOption({
     super.key,
-    required this.meat,
+    required this.item,
     required this.count,
     required this.accentColor,
     required this.onChanged,
@@ -243,8 +243,8 @@ class ItemDetailMeatOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ItemDetailSelectionCard(
-      title: meat.name,
-      subtitle: '+₦${meat.price.toStringAsFixed(2)}',
+      title: item.name,
+      subtitle: '+₦${item.price.toStringAsFixed(2)}',
       isSelected: count > 0,
       trailing: ItemDetailStepperControl(
         count: count,
@@ -254,6 +254,16 @@ class ItemDetailMeatOption extends StatelessWidget {
       ),
     );
   }
+}
+
+class ItemDetailMeatOption extends ItemDetailQuantityOption {
+  const ItemDetailMeatOption({
+    super.key,
+    required MenuItem meat,
+    required super.count,
+    required super.accentColor,
+    required super.onChanged,
+  }) : super(item: meat);
 }
 
 // ─────────────────────────────────────────────

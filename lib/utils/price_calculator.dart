@@ -33,13 +33,25 @@ abstract final class PriceCalculator {
       });
     }
 
-    if (item.hasSalad) {
-      final saladItem = allMenuItems.firstWhereOrNull((m) => m.category == 'Salad');
-      if (saladItem != null) {
-        price += saladItem.price;
-      } else {
-        price += saladPrice;
-      }
+    if (item.selectedSides != null) {
+      item.selectedSides!.forEach((key, count) {
+        final sideItem = allMenuItems.firstWhereOrNull((m) => m.id == key);
+        if (sideItem != null) {
+          price += sideItem.price * count;
+        } else {
+          // Fallback if needed, though usually sides are in allMenuItems
+          price += saladPrice * count;
+        }
+      });
+    }
+
+    if (item.selectedDrinks != null) {
+      item.selectedDrinks!.forEach((key, count) {
+        final drinkItem = allMenuItems.firstWhereOrNull((m) => m.id == key);
+        if (drinkItem != null) {
+          price += drinkItem.price * count;
+        }
+      });
     }
 
     if (item.selectedAddons != null) {
@@ -64,13 +76,15 @@ abstract final class PriceCalculator {
     required MenuItem item,
     required int quantity,
     required Map<String, int> selectedMeats,
-    required bool hasSalad,
+    required Map<String, int> selectedSides,
+    required Map<String, int> selectedDrinks,
     required Map<String, int> selectedAddons,
     required String? selectedSoupId,
     required List<MenuItem> availableSoups,
     required List<MenuItem> availableAddons,
     required List<MenuItem> availableMeats,
-    required List<MenuItem> availableSalads,
+    required List<MenuItem> availableSides,
+    required List<MenuItem> availableDrinks,
     required Map<String, double> meatPrices,
     required double saladPrice,
     String? selectedSizeId,
@@ -98,14 +112,21 @@ abstract final class PriceCalculator {
       }
     });
     
-    if (hasSalad) {
-      final saladItem = availableSalads.firstWhereOrNull((m) => m.category == 'Salad');
-      if (saladItem != null) {
-        total += saladItem.price;
+    selectedSides.forEach((key, count) {
+      final sideItem = availableSides.firstWhereOrNull((m) => m.id == key);
+      if (sideItem != null) {
+        total += sideItem.price * count;
       } else {
-        total += saladPrice;
+        total += saladPrice * count;
       }
-    }
+    });
+
+    selectedDrinks.forEach((key, count) {
+      final drinkItem = availableDrinks.firstWhereOrNull((m) => m.id == key);
+      if (drinkItem != null) {
+        total += drinkItem.price * count;
+      }
+    });
     
     if (selectedSoupId != null) {
       final soup = availableSoups.firstWhereOrNull((s) => s.id == selectedSoupId);
@@ -147,9 +168,24 @@ abstract final class PriceCalculator {
       });
     }
 
-    if (item.hasSalad) {
-      final saladItem = allMenuItems.firstWhereOrNull((m) => m.category == 'Salad');
-      parts.add(saladItem != null ? saladItem.name : 'Salad');
+    if (item.selectedSides != null) {
+      item.selectedSides!.forEach((key, count) {
+        if (count > 0) {
+          final sideItem = allMenuItems.firstWhereOrNull((m) => m.id == key);
+          final label = sideItem != null ? sideItem.name : 'Side';
+          parts.add('$count x $label');
+        }
+      });
+    }
+
+    if (item.selectedDrinks != null) {
+      item.selectedDrinks!.forEach((key, count) {
+        if (count > 0) {
+          final drinkItem = allMenuItems.firstWhereOrNull((m) => m.id == key);
+          final label = drinkItem != null ? drinkItem.name : 'Drink';
+          parts.add('$count x $label');
+        }
+      });
     }
 
     if (item.selectedAddons != null) {

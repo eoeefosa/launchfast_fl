@@ -115,13 +115,13 @@ class CartProvider with ChangeNotifier {
     if (!_isLoaded) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-      'launch-fast-cart',
+      'campuschow-cart',
       jsonEncode(_items.map((i) => i.toJson()).toList()),
     );
     if (_editingOrderId != null) {
-      await prefs.setString('launch-fast-editing-order-id', _editingOrderId!);
+      await prefs.setString('campuschow-editing-order-id', _editingOrderId!);
     } else {
-      await prefs.remove('launch-fast-editing-order-id');
+      await prefs.remove('campuschow-editing-order-id');
     }
   }
 
@@ -130,7 +130,8 @@ class CartProvider with ChangeNotifier {
     required int quantity,
     List<String>? extras,
     Map<String, int>? selectedMeats,
-    bool hasSalad = false,
+    Map<String, int>? selectedSides,
+    Map<String, int>? selectedDrinks,
     Map<String, int>? selectedAddons,
     String? selectedSizeId,
     Map<String, dynamic>? selectedSoup,
@@ -143,7 +144,8 @@ class CartProvider with ChangeNotifier {
       (i) => i.sameSlotAs(
         menuItemId: item.id,
         selectedMeats: selectedMeats,
-        hasSalad: hasSalad,
+        selectedSides: selectedSides,
+        selectedDrinks: selectedDrinks,
         selectedAddons: selectedAddons,
         selectedSizeId: selectedSizeId,
         selectedSoupId: selectedSoup?['id'] as String?,
@@ -159,7 +161,8 @@ class CartProvider with ChangeNotifier {
           quantity: quantity,
           extras: extras,
           selectedMeats: selectedMeats,
-          hasSalad: hasSalad,
+          selectedSides: selectedSides,
+          selectedDrinks: selectedDrinks,
           selectedAddons: selectedAddons,
           selectedSizeId: selectedSizeId,
           selectedSoup: selectedSoup,
@@ -176,7 +179,8 @@ class CartProvider with ChangeNotifier {
     required int quantity,
     List<String>? extras,
     Map<String, int>? selectedMeats,
-    bool hasSalad = false,
+    Map<String, int>? selectedSides,
+    Map<String, int>? selectedDrinks,
     Map<String, int>? selectedAddons,
     String? selectedSizeId,
     Map<String, dynamic>? selectedSoup,
@@ -187,7 +191,8 @@ class CartProvider with ChangeNotifier {
         quantity: quantity,
         extras: extras,
         selectedMeats: selectedMeats,
-        hasSalad: hasSalad,
+        selectedSides: selectedSides,
+        selectedDrinks: selectedDrinks,
         selectedAddons: selectedAddons,
         selectedSizeId: selectedSizeId,
         selectedSoup: selectedSoup,
@@ -254,7 +259,8 @@ class CartProvider with ChangeNotifier {
             quantity: i.quantity,
             extras: i.extras,
             selectedMeats: i.selectedMeats,
-            hasSalad: i.hasSalad,
+            selectedSides: i.selectedSides,
+            selectedDrinks: i.selectedDrinks,
             selectedAddons: i.selectedAddons,
           ),
         )

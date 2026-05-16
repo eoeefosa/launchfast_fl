@@ -380,15 +380,20 @@ class _ItemRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              if (item.hasSalad) _Modifier('Salad Included', muted),
+              if (item.selectedSides?.isNotEmpty ?? false)
+                for (final e in item.selectedSides!.entries)
+                  if (e.value > 0) _Modifier('Side: ${e.key} (x${e.value})', muted),
+              if (item.selectedDrinks?.isNotEmpty ?? false)
+                for (final e in item.selectedDrinks!.entries)
+                  if (e.value > 0) _Modifier('Drink: ${e.key} (x${e.value})', muted),
               if (item.extras?.isNotEmpty ?? false)
                 _Modifier('Extras: ${item.extras!.join(", ")}', muted),
               if (item.selectedMeats?.isNotEmpty ?? false)
                 for (final e in item.selectedMeats!.entries)
-                  _Modifier('Meat: ${e.key} (x${e.value})', muted),
+                  if (e.value > 0) _Modifier('Meat: ${e.key} (x${e.value})', muted),
               if (item.selectedAddons?.isNotEmpty ?? false)
                 for (final e in item.selectedAddons!.entries)
-                  _Modifier('Addon: ${e.key} (x${e.value})', muted),
+                  if (e.value > 0) _Modifier('Addon: ${e.key} (x${e.value})', muted),
             ],
           ),
         ),

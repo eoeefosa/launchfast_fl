@@ -26,10 +26,21 @@ class CartItemTile extends StatelessWidget {
       }
     });
 
-    if (item.hasSalad) {
-      final saladItem = storeProvider.saladItems.firstOrNull;
-      total += saladItem?.price ?? storeProvider.saladPrice;
-    }
+    item.selectedSides?.forEach((id, count) {
+      final sideItem = storeProvider.menuItems.where((m) => m.id == id).firstOrNull;
+      if (sideItem != null) {
+        total += sideItem.price * count;
+      } else {
+        total += storeProvider.saladPrice * count;
+      }
+    });
+
+    item.selectedDrinks?.forEach((id, count) {
+      final drinkItem = storeProvider.menuItems.where((m) => m.id == id).firstOrNull;
+      if (drinkItem != null) {
+        total += drinkItem.price * count;
+      }
+    });
 
     item.selectedAddons?.forEach((id, count) {
       try {

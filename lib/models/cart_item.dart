@@ -7,7 +7,8 @@ class CartItem {
   int quantity;
   final List<String>? extras;
   final Map<String, int>? selectedMeats;
-  final bool hasSalad;
+  final Map<String, int>? selectedSides;
+  final Map<String, int>? selectedDrinks;
   final Map<String, int>? selectedAddons;
   final String? selectedSizeId;
 
@@ -20,7 +21,8 @@ class CartItem {
     required this.quantity,
     this.extras,
     this.selectedMeats,
-    this.hasSalad = false,
+    this.selectedSides,
+    this.selectedDrinks,
     this.selectedAddons,
     this.selectedSizeId,
     this.selectedSoup,
@@ -42,14 +44,16 @@ class CartItem {
   bool sameSlotAs({
     required String menuItemId,
     Map<String, int>? selectedMeats,
-    bool hasSalad = false,
+    Map<String, int>? selectedSides,
+    Map<String, int>? selectedDrinks,
     Map<String, int>? selectedAddons,
     String? selectedSizeId,
     String? selectedSoupId,
   }) {
     return menuItem.id == menuItemId &&
         _mapsEqual(this.selectedMeats, selectedMeats) &&
-        this.hasSalad == hasSalad &&
+        _mapsEqual(this.selectedSides, selectedSides) &&
+        _mapsEqual(this.selectedDrinks, selectedDrinks) &&
         _mapsEqual(this.selectedAddons, selectedAddons) &&
         this.selectedSizeId == selectedSizeId &&
         (selectedSoup?['id'] as String?) == selectedSoupId;
@@ -61,7 +65,8 @@ class CartItem {
     return other is CartItem &&
         other.menuItem.id == menuItem.id &&
         _mapsEqual(other.selectedMeats, selectedMeats) &&
-        other.hasSalad == hasSalad &&
+        _mapsEqual(other.selectedSides, selectedSides) &&
+        _mapsEqual(other.selectedDrinks, selectedDrinks) &&
         _mapsEqual(other.selectedAddons, selectedAddons) &&
         other.selectedSizeId == selectedSizeId &&
         (other.selectedSoup?['id'] as String?) ==
@@ -74,7 +79,12 @@ class CartItem {
     Object.hashAllUnordered(
       selectedMeats?.entries.map((e) => Object.hash(e.key, e.value)) ?? [],
     ),
-    hasSalad,
+    Object.hashAllUnordered(
+      selectedSides?.entries.map((e) => Object.hash(e.key, e.value)) ?? [],
+    ),
+    Object.hashAllUnordered(
+      selectedDrinks?.entries.map((e) => Object.hash(e.key, e.value)) ?? [],
+    ),
     Object.hashAllUnordered(
       selectedAddons?.entries.map((e) => Object.hash(e.key, e.value)) ?? [],
     ),
@@ -130,6 +140,8 @@ class CartItem {
 
     final meatsData = json['selectedMeats'] as Map<String, dynamic>?;
     final addonsData = json['selectedAddons'] as Map<String, dynamic>?;
+    final sidesData = json['selectedSides'] as Map<String, dynamic>?;
+    final drinksData = json['selectedDrinks'] as Map<String, dynamic>?;
 
     return CartItem(
       id: json['id'],
@@ -139,7 +151,12 @@ class CartItem {
       selectedMeats: meatsData != null
           ? Map<String, int>.from(meatsData)
           : null,
-      hasSalad: json['hasSalad'] ?? false,
+      selectedSides: sidesData != null
+          ? Map<String, int>.from(sidesData)
+          : null,
+      selectedDrinks: drinksData != null
+          ? Map<String, int>.from(drinksData)
+          : null,
       selectedAddons: addonsData != null
           ? Map<String, int>.from(addonsData)
           : null,
@@ -157,7 +174,8 @@ class CartItem {
       'quantity': quantity,
       'extras': extras,
       'selectedMeats': selectedMeats,
-      'hasSalad': hasSalad,
+      'selectedSides': selectedSides,
+      'selectedDrinks': selectedDrinks,
       'selectedAddons': selectedAddons,
       'selectedSizeId': selectedSizeId,
       if (selectedSoup != null) 'selectedSoup': selectedSoup,

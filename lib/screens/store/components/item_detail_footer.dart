@@ -14,7 +14,8 @@ class ItemDetailFooter extends StatelessWidget {
   final bool isDark;
   final String? selectedSoupId;
   final Map<String, int> selectedMeats;
-  final bool hasSalad;
+  final Map<String, int> selectedSides;
+  final Map<String, int> selectedDrinks;
   final Map<String, int> selectedAddons;
   final List<MenuItem> availableSoups;
   final CartProvider cartProvider;
@@ -30,7 +31,8 @@ class ItemDetailFooter extends StatelessWidget {
     required this.isDark,
     required this.selectedSoupId,
     required this.selectedMeats,
-    required this.hasSalad,
+    required this.selectedSides,
+    required this.selectedDrinks,
     required this.selectedAddons,
     required this.availableSoups,
     required this.cartProvider,

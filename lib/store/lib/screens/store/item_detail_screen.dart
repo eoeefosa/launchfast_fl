@@ -26,7 +26,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
   int _quantity = 1;
   String? _selectedSoupId;
   final Map<String, int> _selectedMeats = {};
-  bool _hasSalad = false;
+  final Map<String, int> _selectedSides = {};
+  final Map<String, int> _selectedDrinks = {};
   final Map<String, int> _selectedAddons = {};
 
   // ── Animation controllers ──────────────────
@@ -115,10 +116,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
         total += (meatPrices[id] ?? 0) * count;
       }
     });
-    if (_hasSalad) {
-      final salad = availableSalads.firstOrNull;
-      total += salad?.price ?? saladPrice;
-    }
+    _selectedSides.forEach((id, count) {
+      final side = availableSalads.where((m) => m.id == id).firstOrNull;
+      if (side != null) {
+        total += side.price * count;
+      } else {
+        total += saladPrice * count;
+      }
+    });
+    // Store module uses old variable names like availableSalads. We can use it for both.
+    _selectedDrinks.forEach((id, count) {
+      final drink = availableSalads.where((m) => m.id == id).firstOrNull;
+      if (drink != null) total += drink.price * count;
+    });
     if (_selectedSoupId != null) {
       try {
         final soup = availableSoups.firstWhere((s) => s.id == _selectedSoupId);
@@ -207,15 +217,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               availableMeats: availableMeats,
               availableSalads: availableSalads,
               selectedMeats: _selectedMeats,
+              selectedSides: _selectedSides,
+              selectedDrinks: _selectedDrinks,
               selectedAddons: _selectedAddons,
-              hasSalad: _hasSalad,
               selectedSoupId: _selectedSoupId,
               isDark: isDark,
               onMeatChanged: (id, count) =>
                   setState(() => _selectedMeats[id] = count),
+              onSideChanged: (id, count) =>
+                  setState(() => _selectedSides[id] = count),
+              onDrinkChanged: (id, count) =>
+                  setState(() => _selectedDrinks[id] = count),
               onAddonChanged: (id, count) =>
                   setState(() => _selectedAddons[id] = count),
-              onSaladChanged: (val) => setState(() => _hasSalad = val),
               onSoupSelected: (id) => setState(() => _selectedSoupId = id),
             ),
             Positioned(
@@ -232,7 +246,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                   isDark: isDark,
                   selectedSoupId: _selectedSoupId,
                   selectedMeats: _selectedMeats,
-                  hasSalad: _hasSalad,
+                  selectedSides: _selectedSides,
+                  selectedDrinks: _selectedDrinks,
                   selectedAddons: _selectedAddons,
                   availableSoups: availableSoups,
                   cartProvider: cartProvider,
@@ -267,7 +282,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       item: item,
       quantity: _quantity,
       selectedMeats: _selectedMeats,
-      hasSalad: _hasSalad,
+      selectedSides: _selectedSides,
+      selectedDrinks: _selectedDrinks,
       selectedAddons: _selectedAddons,
     );
 
@@ -318,7 +334,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
             item: item,
             quantity: _quantity,
             selectedMeats: _selectedMeats,
-            hasSalad: _hasSalad,
+            selectedSides: _selectedSides,
+            selectedDrinks: _selectedDrinks,
             selectedAddons: _selectedAddons,
           );
           _addSoupIfNeeded(cartProvider, storeProvider);
@@ -349,14 +366,16 @@ class _ScrollBody extends StatelessWidget {
   final List<MenuItem> availableSalads;
 
   final Map<String, int> selectedMeats;
+  final Map<String, int> selectedSides;
+  final Map<String, int> selectedDrinks;
   final Map<String, int> selectedAddons;
-  final bool hasSalad;
   final String? selectedSoupId;
   final bool isDark;
 
   final void Function(String id, int count) onMeatChanged;
+  final void Function(String id, int count) onSideChanged;
+  final void Function(String id, int count) onDrinkChanged;
   final void Function(String id, int count) onAddonChanged;
-  final void Function(bool val) onSaladChanged;
   final void Function(String id) onSoupSelected;
 
   const _ScrollBody({
@@ -372,13 +391,15 @@ class _ScrollBody extends StatelessWidget {
     required this.availableMeats,
     required this.availableSalads,
     required this.selectedMeats,
+    required this.selectedSides,
+    required this.selectedDrinks,
     required this.selectedAddons,
-    required this.hasSalad,
     required this.selectedSoupId,
     required this.isDark,
     required this.onMeatChanged,
+    required this.onSideChanged,
+    required this.onDrinkChanged,
     required this.onAddonChanged,
-    required this.onSaladChanged,
     required this.onSoupSelected,
   });
 
@@ -437,18 +458,17 @@ class _ScrollBody extends StatelessWidget {
                             .toList(),
                       ),
                     ],
-                    if (availableSalads.isNotEmpty && 
-                        (item.category == 'Rice' || item.name == 'Moi Moi')) ...[
+                    if (availableSalads.isNotEmpty) ...[
                       const SizedBox(height: 32),
                       _OptionsSection(
-                        title: 'Extras',
+                        title: 'Add Sides',
                         children: availableSalads
                             .map(
-                              (salad) => _SaladOption(
-                                salad: salad,
-                                isSelected: hasSalad,
+                              (side) => _OptionTile(
+                                item: side,
+                                count: selectedSides[side.id] ?? 0,
                                 accentColor: accentColor,
-                                onChanged: onSaladChanged,
+                                onChanged: (c) => onSideChanged(side.id, c),
                               ),
                             )
                             .toList(),
@@ -1096,7 +1116,8 @@ class _Footer extends StatelessWidget {
   final bool isDark;
   final String? selectedSoupId;
   final Map<String, int> selectedMeats;
-  final bool hasSalad;
+  final Map<String, int> selectedSides;
+  final Map<String, int> selectedDrinks;
   final Map<String, int> selectedAddons;
   final List<MenuItem> availableSoups;
   final CartProvider cartProvider;
@@ -1111,7 +1132,8 @@ class _Footer extends StatelessWidget {
     required this.isDark,
     required this.selectedSoupId,
     required this.selectedMeats,
-    required this.hasSalad,
+    required this.selectedSides,
+    required this.selectedDrinks,
     required this.selectedAddons,
     required this.availableSoups,
     required this.cartProvider,
