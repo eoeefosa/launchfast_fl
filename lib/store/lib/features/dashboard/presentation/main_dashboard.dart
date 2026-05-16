@@ -285,10 +285,6 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
                       const SizedBox(height: 20),
                     ] else
                       const SizedBox(height: 8),
-                    DashboardTopSellingItems(
-                      isLoading: _statsLoading,
-                      items: _topSellingItems,
-                    ),
                     Text(
                       "Today's Overview",
                       style: TextStyle(
@@ -306,6 +302,12 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
                       totalOrders: _totalOrders,
                       pendingOrders: _pendingOrders,
                       preparingOrders: _preparingOrders,
+                    ),
+                    const SizedBox(height: 24),
+                    DashboardTopSellingItems(
+                      isLoading: _statsLoading,
+                      items: _topSellingItems,
+                      orders: _recentOrders,
                     ),
                     const SizedBox(height: 24),
                     DashboardRecentOrdersList(

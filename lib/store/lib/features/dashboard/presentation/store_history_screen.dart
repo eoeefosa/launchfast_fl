@@ -25,17 +25,17 @@ const _kFilters = <OrderStatus?>[
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// StoreOrdersScreen
+// StoreHistoryScreen
 // ─────────────────────────────────────────────────────────────────────────────
 
-class StoreOrdersScreen extends StatefulWidget {
-  const StoreOrdersScreen({super.key});
+class StoreHistoryScreen extends StatefulWidget {
+  const StoreHistoryScreen({super.key});
 
   @override
-  State<StoreOrdersScreen> createState() => _StoreOrdersScreenState();
+  State<StoreHistoryScreen> createState() => _StoreHistoryScreenState();
 }
 
-class _StoreOrdersScreenState extends State<StoreOrdersScreen>
+class _StoreHistoryScreenState extends State<StoreHistoryScreen>
     with TickerProviderStateMixin {
   // ── State ──────────────────────────────────────────────────────────────────
   List<Order> _orders = [];
@@ -58,7 +58,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       if (o.date.isEmpty) return false;
       try {
         final d = DateTime.parse(o.date).toLocal();
-        return d.year == now.year && d.month == now.month && d.day == now.day;
+        return !(d.year == now.year && d.month == now.month && d.day == now.day);
       } catch (_) { return false; }
     }).toList();
 
@@ -131,7 +131,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       orders.sort((a, b) => b.date.compareTo(a.date));
       if (mounted) setState(() => _orders = orders);
     } catch (e, stack) {
-      debugPrint('[StoreOrdersScreen] _loadOrders: $e\n$stack');
+      debugPrint('[StoreHistoryScreen] _loadOrders: $e\n$stack');
       _showSnackBar('Failed to load orders', isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -146,7 +146,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       await _loadOrders();
       _showSnackBar('Order updated to ${newStatus.displayLabel}');
     } catch (e, stack) {
-      debugPrint('[StoreOrdersScreen] _updateStatus: $e\n$stack');
+      debugPrint('[StoreHistoryScreen] _updateStatus: $e\n$stack');
       _showSnackBar('Failed to update order', isError: true);
     }
   }
@@ -254,9 +254,13 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: OrderAppBarTitle(
-          hasNewOrder: _hasNewOrder,
-          badgeScale: _badgeScale,
+        title: const Text(
+          'Order History',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(

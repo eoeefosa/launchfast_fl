@@ -14,6 +14,7 @@ import 'package:campuschow/models/menu_item.dart' as main_menu_item;
 import 'main_dashboard.dart';
 import 'order_screen.dart';
 import 'menu_screen.dart';
+import 'store_history_screen.dart';
 import 'store_setting.dart';
 
 class StoreMainNav extends StatefulWidget {
@@ -56,6 +57,11 @@ class _StoreMainNavState extends State<StoreMainNav>
       activeIcon: Icons.restaurant_menu_rounded,
     ),
     (
+      label: 'History',
+      icon: Icons.history_outlined,
+      activeIcon: Icons.history_rounded,
+    ),
+    (
       label: 'Settings',
       icon: Icons.settings_outlined,
       activeIcon: Icons.settings_rounded,
@@ -78,6 +84,7 @@ class _StoreMainNavState extends State<StoreMainNav>
       StoreDashboardHome(),
       StoreOrdersScreen(),
       StoreMenuScreen(),
+      StoreHistoryScreen(),
       StoreSettingsScreen(),
     ];
 
