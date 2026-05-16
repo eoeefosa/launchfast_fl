@@ -693,6 +693,14 @@ class AblyService {
   void removeStoreApprovalListener(void Function(String storeId) l) =>
       _approvalListeners.remove(l);
 
+  /// Removes a subscription key from the active set, allowing a channel/event
+  /// to be re-subscribed. Use this when you need to force a fresh subscription
+  /// (e.g. after reconnection where the key exists but no listener is active).
+  void removeSubscriptionKey(String key) {
+    _activeSubscriptionKeys.remove(key);
+    debugPrint('[AblyService] Removed subscription key: $key');
+  }
+
   // ── Teardown ────────────────────────────────────────────────────────────────
 
   /// Cancels every subscription atomically, then closes the Ably connection.

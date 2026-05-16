@@ -118,27 +118,20 @@ class StoreProvider extends BaseProvider {
 
   Future<void> refreshData() async {
     _riders.clear();
-    if (_activeStoreId != null) {
+    final storeId = _activeStoreId;
+    if (storeId != null) {
       try {
-        final storeResult = await menuRepository.getStores();
-        storeResult.fold(
-          (stores) {
-            _stores = stores;
-            try {
-              _activeStore = stores.firstWhere((s) => s.id == _activeStoreId);
-            } catch (_) {
-              // keep old _activeStore if not found in list
-            }
+        // Fetch fresh menu items for the store
+        final menuResult = await menuRepository.getMenuItems(storeId);
+        menuResult.fold(
+          (items) {
+            _menuItems = items;
+            debugPrint('[StoreProvider] Fetched ${items.length} menu items');
           },
           (failure) => setFailure(failure),
         );
 
-        final menuResult = await menuRepository.getMenuItems(_activeStoreId!);
-        menuResult.fold(
-          (items) => _menuItems = items,
-          (failure) => setFailure(failure),
-        );
-
+        // Fetch platform settings (pricing, etc.)
         final settingsResult = await menuRepository.getSettings();
         settingsResult.fold(
           (settings) {

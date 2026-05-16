@@ -100,25 +100,32 @@ class _StoreMainNavState extends State<StoreMainNav>
       '[StoreMainNav] Initializing real-time services for owner: $userId',
     );
 
-    // Tell the provider who the owner is — all child screens will use this
+    // 1. Tell the provider who the owner is — all child screens will use this
     await storeProvider.setOwner(userId, linkedStoreId: auth.user?.adminStore);
+    if (!mounted) return;
+
+    // 2. Register listener BEFORE connecting so we never miss an event
+    ablyService.addOrderListener(_onAblyOrderUpdate);
 
     try {
       await ablyService.initAbly(userId);
       if (!mounted) return;
 
-      // Listen for new orders via the order-update listener
-      ablyService.addOrderListener(_onAblyOrderUpdate);
-
-      // Subscribe to the owned store's orders channel
-      // The ownedId is now guaranteed to be populated after the await above
+      // 3. Subscribe to the owned store's orders channel.
+      //    We explicitly remove the old key first so that even if Ably was
+      //    already connected (initAbly returned early), we force a fresh
+      //    channel subscription. This fixes the "already connected" no-op bug.
       final ownedId = storeProvider.ownedStoreId;
       if (ownedId != null) {
         debugPrint('[StoreMainNav] Subscribing to store channels: $ownedId');
+        final storeChannelKey = 'store:$ownedId:orders:new-order';
+        final updateChannelKey = 'store:$ownedId:orders:order-update';
+        // Force fresh subscription by removing old keys
+        ablyService.removeSubscriptionKey(storeChannelKey);
+        ablyService.removeSubscriptionKey(updateChannelKey);
         await ablyService.subscribeToStoreOrders(ownedId);
 
-        // Subscribe to the FCM topic for this store so background push
-        // notifications (new order, payment confirmed) are delivered.
+        // 4. Subscribe to the FCM topic for background push notifications
         _subscribedStoreId = ownedId;
         unawaited(notificationService.subscribeToStoreAdminTopic(ownedId));
       } else {
@@ -240,8 +247,65 @@ class _StoreMainNavState extends State<StoreMainNav>
         builder: (context, auth, storeProvider, child) {
           final ownedStore = storeProvider.ownedStore;
 
+          // 1. Show spinner while provider is doing its initial work
+          if (storeProvider.isLoading && ownedStore == null) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          // 2. Handle cases where no store is linked to this account
           if (ownedStore == null) {
-            return const Center(child: CircularProgressIndicator());
+            return Scaffold(
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.storefront_outlined, 
+                        size: 80, 
+                        color: Colors.orange.withValues(alpha: 0.5)),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'No Store Linked',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'We couldn\'t find a store associated with your account. If you just applied, it might be pending approval.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                      ),
+                      const SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => auth.refreshUser(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Refresh Profile', style: TextStyle(fontSize: 16)),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => auth.logout(),
+                        child: const Text('Sign Out', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
           }
 
           return Consumer<CartProvider>(
