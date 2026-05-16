@@ -112,24 +112,29 @@ class _HomeScreenState extends State<HomeScreen> {
       final matchesStore = item.storeId == _activeStoreId;
       final matchesCategory =
           _selectedCategory == 'All' || item.category == _selectedCategory;
-      final isNotStandaloneOption =
-          item.category != 'Meat' && item.category != 'Salad';
-      return matchesStore && matchesCategory && isNotStandaloneOption;
+      // Soup is the ONLY type that is never shown standalone —
+      // it only appears as an add-on inside swallow items.
+      // Protein, Side, Drink, Snack, and main items are all orderable.
+      final isNotSoup = item.type != 'soup';
+      return matchesStore && matchesCategory && isNotSoup;
     }).toList();
 
     final groupedItems = <String, List<MenuItem>>{};
-    final predefinedOrder = [
-      'Rice',
-      'Swallow',
-      'Soup',
+    // Canonical display order — Soup is excluded entirely from top-level
+    const predefinedOrder = [
+      'Rice & Pasta',
+      'Swallow & Soup',
       'Drinks',
-      'Extras',
+      'Side',
+      'Protein',
+      'Snacks & Pastries',
       'Others',
     ];
     final categories = storeProvider.menuItems
-        .where((item) => item.storeId == _activeStoreId)
+        .where((item) =>
+            item.storeId == _activeStoreId && item.type != 'soup')
         .map((item) => item.category)
-        .where((cat) => cat != 'Meat' && cat != 'Salad')
+        .whereType<String>()
         .toSet()
         .toList()
       ..sort((a, b) {
@@ -249,9 +254,16 @@ class _HomeScreenState extends State<HomeScreen> {
     final storeProvider = context.read<StoreProvider>();
     final store = storeProvider.stores.firstWhere((s) => s.id == item.storeId);
 
-    if (item.category == 'Swallow' ||
-        (item.addonIds != null && item.addonIds!.isNotEmpty)) {
-      // Use ModalBottomSheet for quick configuration instead of SnackBars and navigation
+    // Always open the options sheet for orderable meal bases so users
+    // can pair their food. Simple snacks with no compatible add-ons skip it.
+    final hasCompatibleItems = (item.compatibleWith?.isNotEmpty ?? false) ||
+        (item.addonIds?.isNotEmpty ?? false) ||
+        item.sizes.isNotEmpty;
+    final needsSheet = item.type == 'main' ||
+        item.type == 'swallow' ||
+        hasCompatibleItems;
+
+    if (needsSheet) {
       final result = await showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
@@ -264,6 +276,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (result == 'CLEAR_REQUIRED') {
         if (context.mounted) _showClearCartDialog(context, item);
+      } else if (result == 'SUCCESS') {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${item.name} added to cart'),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 1),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
       }
     } else {
       final success = cartProvider.addToCart(item: item, quantity: 1);

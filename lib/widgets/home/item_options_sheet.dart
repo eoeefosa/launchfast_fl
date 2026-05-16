@@ -352,12 +352,40 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
     );
 
     if (success) {
-      Navigator.pop(context);
+      Navigator.pop(context, 'SUCCESS');
     } else {
-      // Logic for different store would go here,
-      // but for simplicity in the sheet we can just show a message
-      // or let the HomeScreen handle the dialog.
-      Navigator.pop(context, 'CLEAR_REQUIRED');
+      // Handle cross-store cart clearing directly in the sheet to preserve options
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Start a new order?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+          content: const Text('Your cart has items from another store. Clear it and add this item?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                cartProvider.forceClearAndAdd(
+                  item: widget.item,
+                  quantity: _quantity,
+                  selectedMeats: _selectedMeats,
+                  selectedSides: _selectedSides,
+                  selectedDrinks: _selectedDrinks,
+                  selectedAddons: _selectedAddons,
+                  selectedSoup: soupPayload,
+                  selectedSizeId: _selectedSizeId,
+                );
+                Navigator.pop(context); // close dialog
+                Navigator.pop(context, 'SUCCESS'); // close sheet
+              },
+              child: const Text('Clear & Add', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w800)),
+            ),
+          ],
+        ),
+      );
     }
   }
 }

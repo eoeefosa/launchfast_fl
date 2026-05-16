@@ -16,11 +16,12 @@ import 'components/store_detail_menu.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const _kCategories = <String>[
-  'Rice',
-  'Swallow',
-  'Soup',
+  'Rice & Pasta',
+  'Swallow & Soup',
   'Drinks',
-  'Extras',
+  'Side',
+  'Protein',
+  'Snacks & Pastries',
   'Others',
 ];
 
@@ -103,7 +104,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     final store = storeProvider.stores.firstWhere((s) => s.id == widget.id);
 
     final groupedItems = _groupByCategory(
-      storeProvider.menuItems.where((m) => m.storeId == widget.id).toList(),
+      storeProvider.menuItems.where((m) => m.storeId == widget.id && m.type != 'soup').toList(),
     );
 
     final scheme = Theme.of(context).colorScheme;

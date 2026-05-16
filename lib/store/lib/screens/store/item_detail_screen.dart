@@ -166,9 +166,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     }
     final accentColor = store.color;
 
-    final availableSoups = item.category == 'Swallow'
+    final availableSoups = item.type == 'swallow' || item.compatibleWith?.contains('soup') == true
         ? storeProvider.menuItems
-              .where((m) => m.category == 'Soup')
+              .where((m) => m.type == 'soup')
               .toList()
         : <MenuItem>[];
 
@@ -275,7 +275,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     MenuItem item,
     StoreProvider storeProvider,
   ) {
-    if (item.category == 'Swallow' && _selectedSoupId == null) {
+    if ((item.type == 'swallow' || item.compatibleWith?.contains('soup') == true) && _selectedSoupId == null) {
       _showSnack(context, 'Please select a soup first');
       return;
     }

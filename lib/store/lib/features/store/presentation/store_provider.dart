@@ -35,11 +35,11 @@ class StoreProvider extends BaseProvider {
   double get saladPrice => _saladPrice;
 
   List<MenuItem> get meatItems => _menuItems
-      .where((m) => m.storeId == _activeStoreId && m.category == 'Meat')
+      .where((m) => m.storeId == _activeStoreId && m.type == 'protein')
       .toList();
 
   List<MenuItem> get saladItems => _menuItems
-      .where((m) => m.storeId == _activeStoreId && m.category == 'Salad')
+      .where((m) => m.storeId == _activeStoreId && m.type == 'side')
       .toList();
 
   Future<dynamic> getRider(String id) async {

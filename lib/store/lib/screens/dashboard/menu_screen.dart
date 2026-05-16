@@ -15,7 +15,7 @@ class StoreMenuScreen extends StatefulWidget {
 class _StoreMenuScreenState extends State<StoreMenuScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'All';
-  final List<String> _categories = ['All', 'Rice', 'Swallow', 'Soup', 'Others'];
+  final List<String> _categories = ['All', 'Rice & Pasta', 'Swallow & Soup', 'Soup', 'Drinks', 'Side', 'Protein', 'Snacks & Pastries', 'Others'];
 
   @override
   void initState() {

@@ -28,7 +28,7 @@ class StoreDetailScreen extends StatelessWidget {
         .toList();
 
     // Group items by category
-    final categories = ['Rice', 'Swallow', 'Soup', 'Others'];
+    final categories = ['Rice & Pasta', 'Swallow & Soup', 'Soup', 'Drinks', 'Side', 'Protein', 'Snacks & Pastries', 'Others'];
     final groupedItems = <String, List<MenuItem>>{};
     for (var cat in categories) {
       final catItems = items.where((i) => i.category == cat).toList();

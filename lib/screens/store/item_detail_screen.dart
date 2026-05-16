@@ -305,6 +305,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     );
 
     if (success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${item.name} added to cart'),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 1),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
       context.pop();
     } else {
       _showClearCartDialog(context, cartProvider, item, storeProvider, soupPayload);

@@ -42,7 +42,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     _descCtrl = TextEditingController(text: item?.description ?? '');
     _priceCtrl = TextEditingController(text: item != null ? '${item.price}' : '');
     _selectedImageStr = item?.image;
-    _selectedCat = item?.category ?? 'Rice';
+    _selectedCat = item?.category ?? 'Rice & Pasta';
     _isReady = item?.isReady ?? true;
     _popular = item?.popular ?? false;
     _isFreeWithSwallow = item?.isFreeWithSwallow ?? false;
@@ -97,11 +97,27 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
       'price': double.tryParse(m['price']!.text.trim()) ?? 0.0,
     }).toList();
 
+    String type = 'main';
+    List<String> compatibleWith = [];
+    
+    switch (_selectedCat) {
+      case 'Rice & Pasta': type = 'main'; compatibleWith = ['protein', 'side', 'drink']; break;
+      case 'Swallow & Soup': type = 'swallow'; compatibleWith = ['soup', 'protein', 'drink']; break;
+      case 'Soup': type = 'soup'; compatibleWith = []; break;
+      case 'Drinks': type = 'drink'; compatibleWith = []; break;
+      case 'Side': type = 'side'; compatibleWith = []; break;
+      case 'Protein': type = 'protein'; compatibleWith = []; break;
+      case 'Snacks & Pastries': type = 'snack'; compatibleWith = ['drink']; break;
+      default: type = 'main'; compatibleWith = []; break;
+    }
+
     final data = {
       'name': name,
       'description': desc,
       'price': price,
       'category': _selectedCat,
+      'type': type,
+      'compatibleWith': compatibleWith,
       'image': _selectedImageStr,
       'isReady': _isReady,
       'popular': _popular,
@@ -285,7 +301,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: ['Rice', 'Swallow', 'Soup', 'Others'].map((c) => GestureDetector(
+                children: ['Rice & Pasta', 'Swallow & Soup', 'Soup', 'Drinks', 'Side', 'Protein', 'Snacks & Pastries', 'Others'].map((c) => GestureDetector(
                   onTap: () => setState(() => _selectedCat = c),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -307,7 +323,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
                   ),
                 )).toList(),
               ),
-              if (_selectedCat == 'Swallow') ...[
+              if (_selectedCat == 'Swallow & Soup') ...[
                 const SizedBox(height: 16),
                 _toggleRow('Requires Soup Selection', _requiresSoupSelection, muted, textColor, border, (v) => setState(() => _requiresSoupSelection = v)),
                 const SizedBox(height: 4),

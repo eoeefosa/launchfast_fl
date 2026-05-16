@@ -32,9 +32,9 @@ class StoreProvider with ChangeNotifier {
   List<String> get halls => _halls;
 
   List<MenuItem> get meatItems =>
-      _menuItems.where((m) => m.category == 'Meat').toList();
+      _menuItems.where((m) => m.type == 'protein').toList();
   List<MenuItem> get saladItems =>
-      _menuItems.where((m) => m.category == 'Salad').toList();
+      _menuItems.where((m) => m.type == 'side').toList();
 
   StoreProvider() {
     refreshData();

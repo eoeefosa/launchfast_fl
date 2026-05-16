@@ -140,9 +140,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       return const Scaffold(body: Center(child: Text('Store not found')));
     }
 
-    final soups = item.category == 'Swallow'
+    final soups = item.type == 'swallow' || item.compatibleWith?.contains('soup') == true
         ? storeProvider.menuItems
-              .where((m) => m.category == 'Soup')
+              .where((m) => m.type == 'soup')
               .toList()
         : <MenuItem>[];
     final addons = (item.addonIds ?? [])
@@ -332,7 +332,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     final cart = context.read<CartProvider>();
     final storeProvider = context.read<StoreProvider>();
 
-    if (item.category == 'Swallow' && _selectedSoupId == null) {
+    if ((item.type == 'swallow' || item.compatibleWith?.contains('soup') == true) && _selectedSoupId == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please select a soup')));

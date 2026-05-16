@@ -96,7 +96,17 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
 
   Map<String, List<MenuItem>> _groupItems(List<MenuItem> items) {
     final grouped = <String, List<MenuItem>>{};
-    for (var cat in ['Rice', 'Swallow', 'Soup', 'Others']) {
+    const order = [
+      'Rice & Pasta',
+      'Swallow & Soup',
+      'Soup',
+      'Drinks',
+      'Side',
+      'Protein',
+      'Snacks & Pastries',
+      'Others'
+    ];
+    for (var cat in order) {
       final catItems = items.where((i) => i.category == cat).toList();
       if (catItems.isNotEmpty) grouped[cat] = catItems;
     }
