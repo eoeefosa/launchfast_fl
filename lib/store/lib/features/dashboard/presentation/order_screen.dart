@@ -137,7 +137,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
           .read<StoreProvider>()
           .updateOrderStatus(orderId, newStatus.backendName);
       await _loadOrders();
-      _showSnackBar('Order updated to ${newStatus.name}');
+      _showSnackBar('Order updated to ${newStatus.displayLabel}');
     } catch (e, stack) {
       debugPrint('[StoreOrdersScreen] _updateStatus: $e\n$stack');
       _showSnackBar('Failed to update order', isError: true);
@@ -277,7 +277,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
           unselectedLabelColor: Colors.white70,
           labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
           tabs: _kFilters
-              .map((f) => Tab(text: f == null ? 'All' : f.name))
+              .map((f) => Tab(text: f == null ? 'All' : f.displayLabel))
               .toList(),
         ),
       ),

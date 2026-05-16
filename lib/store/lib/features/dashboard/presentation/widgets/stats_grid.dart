@@ -3,7 +3,9 @@ import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 
 class DashboardStatsGrid extends StatelessWidget {
   final bool isLoading;
-  final double revenue;
+  final double foodRevenue;
+  final double deliveryRevenue;
+  final double totalRevenue;
   final int totalOrders;
   final int pendingOrders;
   final int preparingOrders;
@@ -11,7 +13,9 @@ class DashboardStatsGrid extends StatelessWidget {
   const DashboardStatsGrid({
     super.key,
     required this.isLoading,
-    required this.revenue,
+    required this.foodRevenue,
+    required this.deliveryRevenue,
+    required this.totalRevenue,
     required this.totalOrders,
     required this.pendingOrders,
     required this.preparingOrders,
@@ -39,10 +43,22 @@ class DashboardStatsGrid extends StatelessWidget {
 
     final stats = [
       _StatItem(
-        label: 'Revenue',
-        value: '₦${revenue.toStringAsFixed(0)}',
-        icon: Icons.payments_rounded,
+        label: 'Food Sales',
+        value: '₦${foodRevenue.toStringAsFixed(0)}',
+        icon: Icons.restaurant_rounded,
         color: AppColors.primary,
+      ),
+      _StatItem(
+        label: 'Delivery Rev',
+        value: '₦${deliveryRevenue.toStringAsFixed(0)}',
+        icon: Icons.delivery_dining_rounded,
+        color: const Color(0xFF8B5CF6),
+      ),
+      _StatItem(
+        label: 'Total Earnings',
+        value: '₦${totalRevenue.toStringAsFixed(0)}',
+        icon: Icons.payments_rounded,
+        color: const Color(0xFF10B981),
       ),
       _StatItem(
         label: 'Total Orders',

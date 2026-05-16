@@ -93,7 +93,7 @@ class ActiveOrderTracker extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 40),
-                  OrderTimeline(status: order.status),
+                  OrderTimeline(order: order),
                 ],
               ),
             ),
@@ -114,20 +114,26 @@ class ActiveOrderTracker extends StatelessWidget {
   }
 
   String _getStatusText(OrderStatus status) {
+    final isPickup = order.deliveryType.toLowerCase() == 'pickup' || order.deliveryType.toLowerCase() == 'store_pickup';
     switch (status) {
       case OrderStatus.queued: return 'Pending Approval';
       case OrderStatus.preparing: return 'Preparing Meal';
-      case OrderStatus.outForDelivery: return 'On the Way';
-      case OrderStatus.delivered: return 'Arrived';
+      case OrderStatus.readyForPickup: return isPickup ? 'Ready for Pickup' : 'Ready for Delivery';
+      case OrderStatus.outForDelivery: 
+      case OrderStatus.onTheWay: return 'On the Way';
+      case OrderStatus.delivered: return isPickup ? 'Picked Up' : 'Arrived';
       default: return 'Order Placed';
     }
   }
 
   String _getStatusDescription(OrderStatus status) {
+    final isPickup = order.deliveryType.toLowerCase() == 'pickup' || order.deliveryType.toLowerCase() == 'store_pickup';
     switch (status) {
       case OrderStatus.queued: return 'We are confirming your order with the store.';
       case OrderStatus.preparing: return 'Your chef is working their magic right now.';
-      case OrderStatus.outForDelivery: return 'Hang tight! Your food is being delivered.';
+      case OrderStatus.readyForPickup: return isPickup ? 'Your order is ready! Please come pick it up.' : 'Your order is ready and waiting for delivery.';
+      case OrderStatus.outForDelivery:
+      case OrderStatus.onTheWay: return 'Hang tight! Your food is being delivered.';
       case OrderStatus.delivered: return 'Enjoy your delicious meal!';
       default: return 'Processing your order...';
     }

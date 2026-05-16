@@ -2,17 +2,27 @@ import 'package:flutter/material.dart';
 import '../../models/order.dart';
 
 class OrderTimeline extends StatelessWidget {
-  final OrderStatus status;
+  final Order order;
 
-  const OrderTimeline({super.key, required this.status});
+  const OrderTimeline({super.key, required this.order});
 
   @override
   Widget build(BuildContext context) {
+    final status = order.status;
+    final isPickup = order.deliveryType.toLowerCase() == 'pickup' || 
+                    order.deliveryType.toLowerCase() == 'store_pickup';
+
     final steps = [
       {'title': 'Confirmed', 'icon': Icons.check_circle_outline_rounded},
       {'title': 'Cooking', 'icon': Icons.outdoor_grill_rounded},
-      {'title': 'On Way', 'icon': Icons.moped_rounded},
-      {'title': 'Arrived', 'icon': Icons.home_rounded},
+      {
+        'title': isPickup ? 'Ready' : 'On Way', 
+        'icon': isPickup ? Icons.shopping_bag_outlined : Icons.moped_rounded
+      },
+      {
+        'title': isPickup ? 'Picked Up' : 'Arrived', 
+        'icon': isPickup ? Icons.check_circle_rounded : Icons.home_rounded
+      },
     ];
 
     int currentStep = 0;

@@ -19,6 +19,7 @@ import 'widgets/insufficient_funds_dialog.dart';
 import 'widgets/order_summary_section.dart';
 import 'widgets/phone_confirm_sheet.dart';
 import 'widgets/success_view.dart';
+import '../../widgets/home/location_selector.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Domain types
@@ -240,7 +241,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
 
     if (auth.currentAddress?.trim().isEmpty ?? true) {
-      _showErrorDialog('Please set a delivery location.');
+      LocationSelector.show(context);
       return;
     }
 

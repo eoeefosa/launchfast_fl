@@ -9,7 +9,9 @@ class NotificationRouter {
   static void handleNotificationTap(BuildContext context, NotificationItem item) {
     final metadata = item.metadata;
     final type = (metadata?['type']?.toString() ?? item.type.name).toLowerCase();
-    final orderId = metadata?['orderId']?.toString() ?? metadata?['id']?.toString();
+    final orderId = metadata?['orderId']?.toString() ?? 
+                    metadata?['order_id']?.toString() ?? 
+                    metadata?['id']?.toString();
 
     debugPrint('[NotificationRouter] Handling tap: type=$type, orderId=$orderId');
 
@@ -35,11 +37,12 @@ class NotificationRouter {
         case 'order_ready':
         case 'delivery_update':
         case 'order_update':
+        case 'orderupdate':
           _routeByRole(context, orderId, metadata?['role']?.toString());
           break;
 
         default:
-          context.push('/orders/$orderId');
+          context.push('/order-details/$orderId');
       }
       return;
     }
@@ -57,7 +60,7 @@ class NotificationRouter {
         context.push('/store/orders/detail', extra: orderId);
         break;
       default:
-        context.push('/orders/$orderId');
+        context.push('/order-details/$orderId');
     }
   }
 }

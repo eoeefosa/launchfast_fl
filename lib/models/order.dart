@@ -22,7 +22,7 @@ enum OrderStatus {
 }
 
 extension OrderStatusExtension on OrderStatus {
-  String get name {
+  String get displayLabel {
     switch (this) {
       case OrderStatus.pending:
         return 'Pending';
@@ -47,11 +47,35 @@ extension OrderStatusExtension on OrderStatus {
     }
   }
 
-  String get backendName => name.toUpperCase().replaceAll(' ', '_');
+  String get backendName {
+    switch (this) {
+      case OrderStatus.pending:
+        return 'PENDING';
+      case OrderStatus.accepted:
+        return 'ACCEPTED';
+      case OrderStatus.preparing:
+        return 'PREPARING';
+      case OrderStatus.readyForPickup:
+        return 'READY_FOR_PICKUP';
+      case OrderStatus.pickingUp:
+        return 'PICKING_UP';
+      case OrderStatus.onTheWay:
+        return 'ON_THE_WAY';
+      case OrderStatus.outForDelivery:
+        return 'OUT_FOR_DELIVERY';
+      case OrderStatus.delivered:
+        return 'DELIVERED';
+      case OrderStatus.cancelled:
+        return 'CANCELLED';
+      case OrderStatus.queued:
+        return 'QUEUED';
+    }
+  }
 
   static OrderStatus fromString(String status) {
-    final s = status.toUpperCase().replaceAll(' ', '_');
+    final s = status.toUpperCase().replaceAll(' ', '_').replaceAll('-', '_');
     switch (s) {
+      case 'PLACED':
       case 'PENDING':
         return OrderStatus.pending;
       case 'ACCEPTED':
@@ -59,6 +83,7 @@ extension OrderStatusExtension on OrderStatus {
       case 'PREPARING':
         return OrderStatus.preparing;
       case 'READY_FOR_PICKUP':
+      case 'READY_FOR_DELIVERY':
       case 'READY':
         return OrderStatus.readyForPickup;
       case 'PICKING_UP':
@@ -67,6 +92,7 @@ extension OrderStatusExtension on OrderStatus {
         return OrderStatus.outForDelivery;
       case 'ON_THE_WAY':
         return OrderStatus.onTheWay;
+      case 'COMPLETED':
       case 'DELIVERED':
         return OrderStatus.delivered;
       case 'CANCELLED':

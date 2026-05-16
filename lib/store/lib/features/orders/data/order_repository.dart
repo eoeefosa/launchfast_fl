@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:campuschow/store/lib/core/network/api_client.dart';
 import 'order_model.dart';
 import 'package:campuschow/store/lib/features/dashboard/data/store_stats_model.dart';
@@ -27,11 +28,14 @@ class OrderRepository {
     try {
       final response = await apiService.dio.get('/stores/$storeId/stats');
       return StoreStats.fromJson(response.data);
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint('[OrderRepository] getStoreStats error: $e\n$stack');
       // Backend endpoint may not exist yet — return empty stats
       // so the UI degrades gracefully instead of crashing.
       return StoreStats(
         revenue: 0,
+        foodRevenue: 0,
+        deliveryRevenue: 0,
         totalOrders: 0,
         pendingOrders: 0,
         preparingOrders: 0,

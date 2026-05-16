@@ -250,8 +250,17 @@ class StoreProvider extends BaseProvider {
   }
 
   Future<StoreStats> fetchStoreStats() async {
+    debugPrint('[StoreProvider] fetchStoreStats called with _activeStoreId: $_activeStoreId');
     if (_activeStoreId == null) {
-      return StoreStats(revenue: 0, totalOrders: 0, pendingOrders: 0, preparingOrders: 0, topSellingItems: {});
+      return StoreStats(
+        revenue: 0,
+        foodRevenue: 0,
+        deliveryRevenue: 0,
+        totalOrders: 0,
+        pendingOrders: 0,
+        preparingOrders: 0,
+        topSellingItems: {},
+      );
     }
     return await orderRepository.getStoreStats(_activeStoreId!);
   }

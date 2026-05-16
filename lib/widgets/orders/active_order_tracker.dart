@@ -92,7 +92,7 @@ class ActiveOrderTracker extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 40),
-                  OrderTimeline(status: order.status),
+                  OrderTimeline(order: order),
                 ],
               ),
             ),
@@ -112,6 +112,7 @@ class ActiveOrderTracker extends StatelessWidget {
   }
 
   String _getStatusText(OrderStatus status) {
+    final isPickup = _isPickup(order.deliveryType);
     switch (status) {
       case OrderStatus.queued:
       case OrderStatus.pending:
@@ -121,20 +122,21 @@ class ActiveOrderTracker extends StatelessWidget {
       case OrderStatus.preparing:
         return 'Preparing Meal';
       case OrderStatus.readyForPickup:
-        return 'Ready for Pickup';
+        return isPickup ? 'Ready for Pickup' : 'Ready for Delivery';
       case OrderStatus.pickingUp:
         return 'Picking Up';
       case OrderStatus.onTheWay:
       case OrderStatus.outForDelivery:
         return 'On the Way';
       case OrderStatus.delivered:
-        return 'Arrived';
+        return isPickup ? 'Picked Up' : 'Arrived';
       case OrderStatus.cancelled:
         return 'Cancelled';
     }
   }
 
   String _getStatusDescription(OrderStatus status) {
+    final isPickup = _isPickup(order.deliveryType);
     switch (status) {
       case OrderStatus.queued:
       case OrderStatus.pending:
@@ -144,14 +146,16 @@ class ActiveOrderTracker extends StatelessWidget {
       case OrderStatus.preparing:
         return 'Your chef is working their magic right now.';
       case OrderStatus.readyForPickup:
-        return 'Your meal is ready and waiting for a rider.';
+        return isPickup 
+            ? 'Your meal is ready! Please come pick it up.' 
+            : 'Your meal is ready and waiting for a rider.';
       case OrderStatus.pickingUp:
         return 'A rider is picking up your order from the store.';
       case OrderStatus.onTheWay:
       case OrderStatus.outForDelivery:
         return 'Hang tight! Your food is being delivered.';
       case OrderStatus.delivered:
-        return 'Enjoy your delicious meal!';
+        return isPickup ? 'Hope you enjoyed your meal!' : 'Enjoy your delicious meal!';
       case OrderStatus.cancelled:
         return 'This order was cancelled. Please contact support for details.';
     }

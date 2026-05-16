@@ -44,7 +44,11 @@ class OrderCard extends StatelessWidget {
         _ => AppColors.lightMuted,
       };
 
-  List<ActionConfig> get _actions => switch (order.status) {
+  List<ActionConfig> get _actions {
+    final isPickup = order.deliveryType.toLowerCase() == 'pickup' || 
+                    order.deliveryType.toLowerCase() == 'store_pickup';
+                    
+    return switch (order.status) {
         OrderStatus.pending => [
             const ActionConfig(
               'Accept',
@@ -68,15 +72,39 @@ class OrderCard extends StatelessWidget {
             ),
           ],
         OrderStatus.preparing => [
-            const ActionConfig(
-              'Mark Ready',
+            ActionConfig(
+              isPickup ? 'Ready for Pickup' : 'Ready for Delivery',
               OrderStatus.readyForPickup,
-              Color(0xFF8B5CF6),
+              const Color(0xFF8B5CF6),
               Icons.done_all,
+            ),
+          ],
+        OrderStatus.readyForPickup => [
+            const ActionConfig(
+              'On the Way',
+              OrderStatus.onTheWay,
+              AppColors.primary,
+              Icons.directions_bike_rounded,
+            ),
+            if (isPickup)
+              const ActionConfig(
+                'Mark Picked Up',
+                OrderStatus.delivered,
+                Colors.green,
+                Icons.check_circle_rounded,
+              ),
+          ],
+        OrderStatus.onTheWay || OrderStatus.outForDelivery => [
+            ActionConfig(
+              isPickup ? 'Mark Picked Up' : 'Mark Arrived',
+              OrderStatus.delivered,
+              Colors.green,
+              isPickup ? Icons.check_circle_rounded : Icons.home_work_rounded,
             ),
           ],
         _ => const [],
       };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +134,7 @@ class OrderCard extends StatelessWidget {
               shortId: shortId,
               date: order.date,
               statusColor: _statusColor,
-              statusLabel: order.status.name,
+              statusLabel: order.status.displayLabel,
               textColor: textColor,
               muted: muted,
             ),
@@ -509,7 +537,7 @@ class _FinancialSummary extends StatelessWidget {
                       ),
                     if (order.isPriority) const SizedBox(width: 8),
                     Text(
-                      '₦${order.total.toStringAsFixed(0)}',
+                      '₦${(order.subtotal + order.deliveryFee).toStringAsFixed(0)}',
                       style: const TextStyle(
                         color: AppColors.primary,
                         fontSize: 18,

@@ -92,7 +92,7 @@ class DashboardRecentOrdersList extends StatelessWidget {
     return Column(
       children: orders.map((order) {
         final statusColor = _statusColor(order.status);
-        final statusLabel = order.status.name;
+        final statusLabel = order.status.displayLabel;
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
@@ -127,7 +127,7 @@ class DashboardRecentOrdersList extends StatelessWidget {
               ),
             ),
             subtitle: Text(
-              '₦${order.total.toStringAsFixed(0)} • ${order.items.length} item(s)',
+              'Food: ₦${order.subtotal.toStringAsFixed(0)} • Del: ₦${order.deliveryFee.toStringAsFixed(0)} • ${order.items.length} item(s)',
               style: TextStyle(color: muted, fontSize: 12),
             ),
             trailing: Container(
