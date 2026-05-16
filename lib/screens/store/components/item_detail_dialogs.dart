@@ -50,3 +50,33 @@ class ItemDetailClearCartDialog extends StatelessWidget {
     );
   }
 }
+
+class ItemUnavailableDialog extends StatelessWidget {
+  const ItemUnavailableDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Text(
+        'Item Unavailable',
+        style: TextStyle(fontWeight: FontWeight.w900),
+      ),
+      content: const Text(
+        'We apologize, but this item has just become unavailable. '
+        'You will be returned to the store menu.',
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () {
+            Navigator.pop(context);
+            // We assume the caller handles the screen pop if needed, 
+            // or we can use Navigator.of(context).pop() multiple times.
+            // But here we just pop the dialog.
+          },
+          child: const Text('Back to Menu'),
+        ),
+      ],
+    );
+  }
+}

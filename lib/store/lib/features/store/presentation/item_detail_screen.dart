@@ -213,7 +213,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
         if (availableMeats.isNotEmpty)
           OptionSection(
             title: 'Add Meat',
-            children: availableMeats.map((meat) => _ItemOptionTile(
+            children: availableMeats.map((meat) => ItemOptionTile(
               item: meat,
               count: _selectedMeats[meat.id] ?? 0,
               accent: accent,
@@ -224,7 +224,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
           const SizedBox(height: 32),
           OptionSection(
             title: 'Add Sides',
-            children: availableSalads.map((side) => _ItemOptionTile(
+            children: availableSalads.map((side) => ItemOptionTile(
               item: side,
               count: _selectedSides[side.id] ?? 0,
               accent: accent,
@@ -266,7 +266,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
           const SizedBox(height: 32),
           OptionSection(
             title: 'Add-ons',
-            children: addons.map((addon) => _ItemOptionTile(
+            children: addons.map((addon) => ItemOptionTile(
               item: addon,
               count: _selectedAddons[addon.id] ?? 0,
               accent: accent,
@@ -359,33 +359,5 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     if (success) {
       context.pop();
     }
-  }
-}
-
-class _ItemOptionTile extends StatelessWidget {
-  final MenuItem item;
-  final int count;
-  final Color accent;
-  final ValueChanged<int> onChanged;
-  const _ItemOptionTile({
-    required this.item,
-    required this.count,
-    required this.accent,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SelectionCard(
-      title: item.name,
-      subtitle: '₦${item.price}',
-      isSelected: count > 0,
-      trailing: StepperControl(
-        count: count,
-        accentColor: accent,
-        onDecrement: () => onChanged(count > 0 ? count - 1 : 0),
-        onIncrement: () => onChanged(count + 1),
-      ),
-    );
   }
 }

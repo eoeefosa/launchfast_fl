@@ -1,21 +1,34 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dio/dio.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../models/order.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../models/order.dart';
-import '../../widgets/home/location_selector.dart';
-
-import 'widgets/success_view.dart';
-import 'widgets/order_summary_section.dart';
 import 'widgets/bottom_bar.dart';
+import 'widgets/checkout_app_bar.dart';
+import 'widgets/checkout_dialogs.dart';
+import 'widgets/checkout_guest_widgets.dart';
+import 'widgets/checkout_payment_delivery.dart';
+import 'widgets/checkout_section.dart';
 import 'widgets/insufficient_funds_dialog.dart';
+import 'widgets/order_summary_section.dart';
 import 'widgets/phone_confirm_sheet.dart';
+import 'widgets/success_view.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Domain types
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum CheckoutPaymentMethod { wallet, paystack }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CheckoutScreen
+// ─────────────────────────────────────────────────────────────────────────────
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -24,22 +37,27 @@ class CheckoutScreen extends StatefulWidget {
   State<CheckoutScreen> createState() => _CheckoutScreenState();
 }
 
-enum CheckoutPaymentMethod { wallet, paystack }
-
-class _CheckoutScreenState extends State<CheckoutScreen>
-    with TickerProviderStateMixin {
+class _CheckoutScreenState extends State<CheckoutScreen> {
+  // ── State ──────────────────────────────────────────────────────────────────
   DeliveryType _deliveryType = DeliveryType.priority;
   CheckoutPaymentMethod _paymentMethod = CheckoutPaymentMethod.paystack;
-
   bool _isSuccess = false;
-
-  // ───────────────── Guest Checkout ─────────────────
-
   bool _isGuestCheckout = false;
 
-  final TextEditingController _guestNameController = TextEditingController();
+  // ── Controllers ────────────────────────────────────────────────────────────
+  late final TextEditingController _guestNameController;
+  late final TextEditingController _guestPhoneController;
 
-  final TextEditingController _guestPhoneController = TextEditingController();
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
+
+  @override
+  void initState() {
+    super.initState();
+    _guestNameController = TextEditingController();
+    _guestPhoneController = TextEditingController();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _resolveGuestState());
+  }
 
   @override
   void dispose() {
@@ -48,32 +66,39 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final cart = context.watch<CartProvider>();
-    final orderProvider = context.watch<OrderProvider>();
+  // ── Guest resolution ───────────────────────────────────────────────────────
+
+  void _resolveGuestState() {
+    if (!mounted) return;
     final auth = context.read<AuthProvider>();
-
-    final total = cart.totalFor(_deliveryType);
-
-    final bool hasQueuedItems = cart.items.any(
-      (item) => !item.menuItem.isReady,
-    );
-
-    final bool hasGuestDetails =
-        auth.guestName != null &&
+    final hasGuestDetails = auth.guestName != null &&
         auth.guestPhone != null &&
         auth.currentAddress != null;
 
-    if (!auth.isAuthenticated && !hasGuestDetails && !_isGuestCheckout) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() => _isGuestCheckout = true);
-      });
+    if (!auth.isAuthenticated && !hasGuestDetails) {
+      setState(() => _isGuestCheckout = true);
     }
+  }
 
-    if (_isSuccess) {
-      return const SuccessView();
-    }
+  // ── Derived helpers ────────────────────────────────────────────────────────
+
+  bool _hasQueuedItems(CartProvider cart) =>
+      cart.items.any((item) => !item.menuItem.isReady);
+
+  bool _walletInsufficient(AuthProvider auth, double total) =>
+      _paymentMethod == CheckoutPaymentMethod.wallet &&
+      !auth.hasSufficientFunds(total);
+
+  // ── Build ──────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isSuccess) return const SuccessView();
+
+    final cart = context.watch<CartProvider>();
+    final orderProvider = context.watch<OrderProvider>();
+    final auth = context.watch<AuthProvider>();
+    final total = cart.totalFor(_deliveryType);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -82,46 +107,52 @@ class _CheckoutScreenState extends State<CheckoutScreen>
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              _buildAppBar(),
-
-              // ───────────────── Address ─────────────────
+              const SliverToBoxAdapter(child: CheckoutAppBar()),
               SliverToBoxAdapter(
-                child: _buildSection(
+                child: CheckoutSection(
                   title: 'DELIVERY ADDRESS',
-                  child: _isGuestCheckout
-                      ? _buildGuestAddress(auth)
-                      : const LocationSelector(),
+                  child: GuestAddressTile(auth: auth),
                 ),
               ),
-
-              // ───────────────── Guest Contact ─────────────────
               if (_isGuestCheckout)
                 SliverToBoxAdapter(
-                  child: _buildSection(
+                  child: CheckoutSection(
                     title: 'CONTACT DETAILS',
-                    child: _buildGuestContactForm(),
+                    child: GuestContactForm(
+                      nameController: _guestNameController,
+                      phoneController: _guestPhoneController,
+                      onContinue: _onGuestContinue,
+                      onError: _showErrorDialog,
+                    ),
                   ),
                 ),
-
-              // ───────────────── Delivery Type ─────────────────
               SliverToBoxAdapter(
-                child: _buildSection(
+                child: CheckoutSection(
                   title: 'DELIVERY OPTION',
-                  child: _buildDeliveryTabs(cart),
+                  child: DeliveryOptions(
+                    cart: cart,
+                    selected: _deliveryType,
+                    onChanged: (t) => setState(() => _deliveryType = t),
+                  ),
                 ),
               ),
-
-              // ───────────────── Payment ─────────────────
               SliverToBoxAdapter(
-                child: _buildSection(
+                child: CheckoutSection(
                   title: 'PAYMENT METHOD',
-                  child: _buildPaymentTabs(auth, total),
+                  child: PaymentOptions(
+                    auth: auth,
+                    total: total,
+                    selected: _paymentMethod,
+                    onChanged: (m) => setState(() => _paymentMethod = m),
+                    onFundWallet: () => _showInsufficientFundsDialog(
+                      auth.user?.walletBalance ?? 0,
+                      total,
+                    ),
+                  ),
                 ),
               ),
-
-              // ───────────────── Summary ─────────────────
               SliverToBoxAdapter(
-                child: _buildSection(
+                child: CheckoutSection(
                   title: 'ORDER SUMMARY',
                   child: OrderSummarySection(
                     cart: cart,
@@ -129,21 +160,20 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                   ),
                 ),
               ),
-
               const SliverToBoxAdapter(child: SizedBox(height: 150)),
             ],
           ),
-
-          // ───────────────── Bottom Bar ─────────────────
           BottomBar(
             total: total,
             isLoading: orderProvider.isLoading,
-            hasQueuedItems: hasQueuedItems,
-            isWalletInsufficient:
-                _paymentMethod == CheckoutPaymentMethod.wallet &&
-                !auth.hasSufficientFunds(total),
-            onPlaceOrder: () =>
-                _placeOrder(total, cart, orderProvider, auth, hasQueuedItems),
+            hasQueuedItems: _hasQueuedItems(cart),
+            isWalletInsufficient: _walletInsufficient(auth, total),
+            onPlaceOrder: () => _placeOrder(
+              total: total,
+              cart: cart,
+              orderProvider: orderProvider,
+              auth: auth,
+            ),
             onInsufficientFunds: () => _showInsufficientFundsDialog(
               auth.user?.walletBalance ?? 0,
               total,
@@ -154,650 +184,220 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // APP BAR
-  // ─────────────────────────────────────────────────────────────
+  // ── Guest form submit ──────────────────────────────────────────────────────
 
-  SliverAppBar _buildAppBar() {
-    return SliverAppBar(
-      pinned: true,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      centerTitle: true,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 12),
-        child: IconButton(
-          onPressed: () => context.pop(),
-          icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.onSurface),
-        ),
-      ),
-      title: Text(
-        'Checkout',
-        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Theme.of(context).colorScheme.onSurface),
-      ),
-    );
+  void _onGuestContinue() {
+    context.read<AuthProvider>().setGuestInfo(
+          name: _guestNameController.text,
+          phone: _guestPhoneController.text,
+        );
+    setState(() => _isGuestCheckout = false);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // SECTION
-  // ─────────────────────────────────────────────────────────────
-
-  Widget _buildSection({required String title, required Widget child}) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 30,
-              offset: const Offset(0, 8),
-              color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.04),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  fontWeight: FontWeight.w800,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              child,
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // DELIVERY TABS
-  // ─────────────────────────────────────────────────────────────
-
-  Widget _buildDeliveryTabs(CartProvider cart) {
-    return Column(
-      children: [
-        _optionTile(
-          title: 'Priority Delivery',
-          subtitle: 'Fast delivery to your location',
-          trailingText: '₦${cart.deliveryChargeFor(DeliveryType.priority).toStringAsFixed(0).replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]},")}',
-          icon: Icons.flash_on_rounded,
-          active: _deliveryType == DeliveryType.priority,
-          onTap: () {
-            setState(() {
-              _deliveryType = DeliveryType.priority;
-            });
-          },
-        ),
-        const SizedBox(height: 10),
-        _optionTile(
-          title: 'Store Pickup',
-          subtitle: 'Pick up your order yourself',
-          trailingText: 'FREE',
-          icon: Icons.storefront_rounded,
-          active: _deliveryType == DeliveryType.pickup,
-          onTap: () {
-            setState(() {
-              _deliveryType = DeliveryType.pickup;
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // PAYMENT TABS
-  // ─────────────────────────────────────────────────────────────
-
-  Widget _buildPaymentTabs(AuthProvider auth, double total) {
-    final balance = auth.user?.walletBalance ?? 0;
-    final bool insufficient = !auth.hasSufficientFunds(total);
-
-    return Column(
-      children: [
-        _optionTile(
-          title: 'Wallet',
-          subtitle: 'Balance: ₦${balance.toStringAsFixed(0)}',
-          icon: Icons.account_balance_wallet_rounded,
-          active: _paymentMethod == CheckoutPaymentMethod.wallet,
-          error: insufficient,
-          onTap: () {
-            setState(() {
-              _paymentMethod = CheckoutPaymentMethod.wallet;
-            });
-          },
-        ),
-        const SizedBox(height: 10),
-        _optionTile(
-          title: 'Paystack',
-          subtitle: 'Card • Transfer • USSD',
-          icon: Icons.credit_card_rounded,
-          active: _paymentMethod == CheckoutPaymentMethod.paystack,
-          onTap: () {
-            setState(() {
-              _paymentMethod = CheckoutPaymentMethod.paystack;
-            });
-          },
-        ),
-
-        if (_paymentMethod == CheckoutPaymentMethod.wallet && insufficient) ...[
-          const SizedBox(height: 16),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.red),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Insufficient wallet balance for this order.',
-                    style: TextStyle(
-                      color: Colors.red.shade700,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => _showInsufficientFundsDialog(balance, total),
-                  child: const Text('Fund'),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _optionTile({
-    required String title,
-    required String subtitle,
-    String? trailingText,
-    required IconData icon,
-    required bool active,
-    required VoidCallback onTap,
-    bool error = false,
-  }) {
-    final primary = error ? Colors.red : Theme.of(context).colorScheme.primary;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: active ? primary : Theme.of(context).colorScheme.outlineVariant,
-            width: active ? 1.5 : 1,
-          ),
-          color: active ? primary.withValues(alpha: 0.06) : Theme.of(context).colorScheme.surfaceContainerLow,
-        ),
-        child: Row(
-          children: [
-            Container(
-              height: 42,
-              width: 42,
-              decoration: BoxDecoration(
-                color: active ? primary : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: active ? null : Border.all(color: Colors.grey.shade200),
-              ),
-              child: Icon(
-                icon,
-                color: active ? Colors.white : Theme.of(context).colorScheme.onSurface,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: error ? Colors.red : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontSize: 12,
-                      fontWeight: error ? FontWeight.w600 : FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (trailingText != null)
-              Text(
-                trailingText,
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14,
-                  color: active ? primary : Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // GUEST ADDRESS
-  // ─────────────────────────────────────────────────────────────
-
-  Widget _buildGuestAddress(AuthProvider auth) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () => LocationSelector.show(context),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          color: Colors.grey.shade50,
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Row(
-          children: [
-            Container(
-              height: 52,
-              width: 52,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.1),
-              ),
-              child: Icon(
-                Icons.location_on_rounded,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-
-            const SizedBox(width: 14),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    auth.currentAddress ?? 'Set delivery address',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  Text(
-                    'Tap to select location',
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            ),
-
-            const Icon(Icons.chevron_right_rounded),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // GUEST FORM
-  // ─────────────────────────────────────────────────────────────
-
-  Widget _buildGuestContactForm() {
-    return Column(
-      children: [
-        TextField(
-          controller: _guestNameController,
-          textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            labelText: 'Full name',
-            prefixIcon: const Icon(Icons.person_outline_rounded),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
-          ),
-        ),
-
-        const SizedBox(height: 18),
-
-        TextField(
-          controller: _guestPhoneController,
-          keyboardType: TextInputType.phone,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: InputDecoration(
-            labelText: 'Phone number',
-            prefixIcon: const Icon(Icons.phone_outlined),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
-          ),
-        ),
-
-        const SizedBox(height: 22),
-
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(56),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-            ),
-            onPressed: () {
-              if (_guestNameController.text.isEmpty ||
-                  _guestPhoneController.text.isEmpty) {
-                _showErrorDialog(
-                  'Please enter your full name and phone number.',
-                );
-                return;
-              }
-
-              context.read<AuthProvider>().setGuestInfo(
-                name: _guestNameController.text,
-                phone: _guestPhoneController.text,
-              );
-
-              setState(() {
-                _isGuestCheckout = false;
-              });
-            },
-            child: const Text(
-              'Continue',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // ERROR DIALOG
-  // ─────────────────────────────────────────────────────────────
+  // ── Dialogs ────────────────────────────────────────────────────────────────
 
   void _showErrorDialog(String message) {
+    if (!mounted) return;
     HapticFeedback.heavyImpact();
-
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (_) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          icon: const Icon(
-            Icons.error_outline_rounded,
-            color: Colors.red,
-            size: 42,
-          ),
-          title: const Text(
-            'Something went wrong',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.w800),
-          ),
-          content: Text(message, textAlign: TextAlign.center),
-          actions: [
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ),
-          ],
-        );
-      },
+      builder: (_) => CheckoutErrorDialog(message: message),
     );
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // WALLET DIALOG
-  // ─────────────────────────────────────────────────────────────
 
   void _showInsufficientFundsDialog(double balance, double total) {
+    if (!mounted) return;
     HapticFeedback.mediumImpact();
-
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (dialogContext) {
-        return InsufficientFundsDialog(
-          balance: balance,
-          total: total,
-          onPayWithPaystack: () {
-            Navigator.pop(dialogContext);
-
-            setState(() {
-              _paymentMethod = CheckoutPaymentMethod.paystack;
-            });
-          },
-        );
-      },
+      builder: (ctx) => InsufficientFundsDialog(
+        balance: balance,
+        total: total,
+        onPayWithPaystack: () {
+          Navigator.pop(ctx);
+          setState(() => _paymentMethod = CheckoutPaymentMethod.paystack);
+        },
+      ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // PLACE ORDER
-  // ─────────────────────────────────────────────────────────────
+  // ── Place order ────────────────────────────────────────────────────────────
 
-  Future<void> _placeOrder(
-    double total,
-    CartProvider cart,
-    OrderProvider orderProvider,
-    AuthProvider auth,
-    bool hasQueuedItems,
-  ) async {
+  Future<void> _placeOrder({
+    required double total,
+    required CartProvider cart,
+    required OrderProvider orderProvider,
+    required AuthProvider auth,
+  }) async {
     if (!auth.isAuthenticated) {
-      if (!auth.guestName.isNotNullOrEmpty() ||
-          !auth.guestPhone.isNotNullOrEmpty()) {
+      final nameOk = auth.guestName?.isNotEmpty ?? false;
+      final phoneOk = auth.guestPhone?.isNotEmpty ?? false;
+      if (!nameOk || !phoneOk) {
         setState(() => _isGuestCheckout = true);
-
         _showErrorDialog('Please provide your contact information.');
-
         return;
       }
     }
 
-    if (auth.currentAddress == null || auth.currentAddress!.trim().isEmpty) {
+    if (auth.currentAddress?.trim().isEmpty ?? true) {
       _showErrorDialog('Please set a delivery location.');
-
       return;
     }
 
-    final currentPhone = auth.isAuthenticated
+    final rawPhone = auth.isAuthenticated
         ? (auth.user?.phone ?? auth.guestPhone ?? '')
         : (auth.guestPhone ?? '');
 
     final confirmedPhone = await PhoneConfirmSheet.show(
       context,
-      currentPhone: currentPhone.trim().isEmpty ? null : currentPhone.trim(),
+      currentPhone: rawPhone.trim().isEmpty ? null : rawPhone.trim(),
     );
 
-    if (!mounted) return;
+    if (!mounted || confirmedPhone == null) return;
 
-    if (confirmedPhone == null) return;
-
-    if (_paymentMethod == CheckoutPaymentMethod.wallet) {
-      if (!auth.hasSufficientFunds(total)) {
-        _showInsufficientFundsDialog(auth.user?.walletBalance ?? 0, total);
-
-        return;
-      }
+    if (_paymentMethod == CheckoutPaymentMethod.wallet &&
+        !auth.hasSufficientFunds(total)) {
+      _showInsufficientFundsDialog(auth.user?.walletBalance ?? 0, total);
+      return;
     }
 
     try {
       HapticFeedback.mediumImpact();
 
-      final subtotal = cart.subTotal;
+      final orderData = _buildOrderPayload(
+        cart: cart,
+        auth: auth,
+        confirmedPhone: confirmedPhone,
+      );
 
-      final orderData = {
-        'items': cart.items
-            .map(
-              (i) => {
-                'menuItemId': i.menuItem.id,
-                'quantity': i.quantity,
-                'extras': i.extras,
-                'selectedMeats': i.selectedMeats,
-                'selectedSides': i.selectedSides,
-                'selectedDrinks': i.selectedDrinks,
-                'selectedAddons': i.selectedAddons,
-                if (i.selectedSoup != null) 'selectedSoup': i.selectedSoup,
-              },
-            )
-            .toList(),
-
-        'subtotal': subtotal,
-        'deliveryFee': cart.deliveryChargeFor(_deliveryType),
-        'serviceFee': cart.serviceFees,
-
-        'deliveryType': _deliveryType.name,
-
-        'paymentMethod': _paymentMethod == CheckoutPaymentMethod.wallet
-            ? 'Wallet'
-            : 'Paystack',
-
-        'userId': auth.user?.id,
-
-        'customerDetails': {
-          'name': auth.isAuthenticated
-              ? (auth.user?.name ?? '')
-              : (auth.guestName ?? ''),
-          'phone': confirmedPhone,
-          'email': auth.isAuthenticated
-              ? (auth.user?.email ?? 'user@campuschow.com')
-              : 'guest@campuschow.com',
-          'address': auth.currentAddress ?? '',
-        },
-
-        'deliveryAddress': auth.currentAddress,
-
-        'stores': cart.items.map((i) => i.menuItem.storeId).toSet().toList(),
-        'restaurantIds': cart.items.map((i) => i.menuItem.storeId).toSet().toList(),
-        'restaurantId': cart.items.isNotEmpty ? cart.items.first.menuItem.storeId : null,
-        'storeId': cart.items.isNotEmpty ? cart.items.first.menuItem.storeId : null,
-      };
-
-      final Order? success = await orderProvider.placeOrder(orderData);
+      final Order? order = await orderProvider.placeOrder(orderData);
 
       if (!mounted) return;
 
-      if (success == null) {
+      if (order == null) {
         _showErrorDialog(orderProvider.error ?? 'Could not place order.');
-
         return;
       }
-
-      // ───────────────── Paystack ─────────────────
 
       if (_paymentMethod == CheckoutPaymentMethod.paystack) {
-        final customerEmail = auth.isAuthenticated
-            ? (auth.user?.email ?? 'user@campuschow.com')
-            : 'guest@campuschow.com';
-
-        final paymentData = await orderProvider.initializePayment(
-          success.id,
-          'Card',
-          email: customerEmail,
+        await _handlePaystackPayment(
+          orderId: order.id,
+          auth: auth,
+          cart: cart,
+          orderProvider: orderProvider,
         );
-
-        final paystackData = paymentData['data'] as Map<String, dynamic>?;
-
-        final authorizationUrl = paystackData?['authorization_url'] as String?;
-
-        if (authorizationUrl == null) {
-          _showErrorDialog('Payment initialization failed.');
-
-          return;
-        }
-
-        final uri = Uri.parse(authorizationUrl);
-
-        if (!await canLaunchUrl(uri)) {
-          _showErrorDialog('Could not open payment page.');
-
-          return;
-        }
-
-        cart.clearCart();
-
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-
-        if (mounted) {
-          context.pop();
-        }
-
         return;
       }
 
-      // ───────────────── Wallet ─────────────────
-
-      if (_paymentMethod == CheckoutPaymentMethod.wallet) {
-        await auth.refreshUser();
-      }
-
+      await auth.refreshUser();
       cart.clearCart();
-
       HapticFeedback.heavyImpact();
-
-      setState(() {
-        _isSuccess = true;
-      });
+      if (mounted) setState(() => _isSuccess = true);
     } on DioException catch (e) {
       if (!mounted) return;
-
-      String message = 'An error occurred during checkout.';
-
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        message = 'Connection timeout. Please try again.';
-      } else if (e.type == DioExceptionType.connectionError) {
-        message = 'No internet connection.';
-      } else if (e.response?.data is Map) {
-        message = e.response?.data['message'] ?? message;
-      }
-
-      _showErrorDialog(message);
+      _showErrorDialog(_messageFromDioException(e));
     } catch (_) {
       if (!mounted) return;
-
       _showErrorDialog('Unexpected error occurred.');
     }
   }
-}
 
-// ─────────────────────────────────────────────────────────────
-// EXTENSIONS
-// ─────────────────────────────────────────────────────────────
+  Future<void> _handlePaystackPayment({
+    required String orderId,
+    required AuthProvider auth,
+    required CartProvider cart,
+    required OrderProvider orderProvider,
+  }) async {
+    final email = auth.isAuthenticated
+        ? (auth.user?.email ?? 'user@campuschow.com')
+        : 'guest@campuschow.com';
 
-extension NullableStringExtension on String? {
-  bool isNotNullOrEmpty() {
-    return this != null && this!.isNotEmpty;
+    final paymentData = await orderProvider.initializePayment(
+      orderId,
+      'Card',
+      email: email,
+    );
+
+    final authorizationUrl =
+        (paymentData['data'] as Map<String, dynamic>?)?['authorization_url']
+            as String?;
+
+    if (!mounted) return;
+
+    if (authorizationUrl == null) {
+      _showErrorDialog('Payment initialization failed.');
+      return;
+    }
+
+    final uri = Uri.parse(authorizationUrl);
+    if (!await canLaunchUrl(uri)) {
+      if (mounted) _showErrorDialog('Could not open payment page.');
+      return;
+    }
+
+    cart.clearCart();
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (mounted) context.pop();
+  }
+
+  Map<String, dynamic> _buildOrderPayload({
+    required CartProvider cart,
+    required AuthProvider auth,
+    required String confirmedPhone,
+  }) {
+    final storeIds = cart.items.map((i) => i.menuItem.storeId).toSet().toList();
+    final name = auth.isAuthenticated
+        ? (auth.user?.name ?? '')
+        : (auth.guestName ?? '');
+    final email = auth.isAuthenticated
+        ? (auth.user?.email ?? 'user@campuschow.com')
+        : 'guest@campuschow.com';
+
+    return {
+      'items': [
+        for (final i in cart.items)
+          {
+            'menuItemId': i.menuItem.id,
+            'quantity': i.quantity,
+            'extras': i.extras,
+            'selectedMeats': i.selectedMeats,
+            'selectedSides': i.selectedSides,
+            'selectedDrinks': i.selectedDrinks,
+            'selectedAddons': i.selectedAddons,
+            if (i.selectedSoup != null) 'selectedSoup': i.selectedSoup,
+          },
+      ],
+      'subtotal': cart.subTotal,
+      'deliveryFee': cart.deliveryChargeFor(_deliveryType),
+      'serviceFee': cart.serviceFees,
+      'deliveryType': _deliveryType.name,
+      'paymentMethod':
+          _paymentMethod == CheckoutPaymentMethod.wallet ? 'Wallet' : 'Paystack',
+      'userId': auth.user?.id,
+      'customerDetails': {
+        'name': name,
+        'phone': confirmedPhone,
+        'email': email,
+        'address': auth.currentAddress ?? '',
+      },
+      'deliveryAddress': auth.currentAddress,
+      'stores': storeIds,
+      'restaurantIds': storeIds,
+      'restaurantId': storeIds.isNotEmpty ? storeIds.first : null,
+      'storeId': storeIds.isNotEmpty ? storeIds.first : null,
+    };
+  }
+
+  static String _messageFromDioException(DioException e) {
+    return switch (e.type) {
+      DioExceptionType.connectionTimeout ||
+      DioExceptionType.receiveTimeout =>
+        'Connection timeout. Please try again.',
+      DioExceptionType.connectionError => 'No internet connection.',
+      _ => (e.response?.data is Map
+              ? e.response?.data['message'] as String?
+              : null) ??
+          'An error occurred during checkout.',
+    };
   }
 }

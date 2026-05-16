@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
+import 'stepper_control.dart';
 
 class OptionSection extends StatelessWidget {
   final String title;
@@ -121,6 +123,35 @@ class SelectionCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class ItemOptionTile extends StatelessWidget {
+  final MenuItem item;
+  final int count;
+  final Color accent;
+  final ValueChanged<int> onChanged;
+  const ItemOptionTile({
+    super.key,
+    required this.item,
+    required this.count,
+    required this.accent,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SelectionCard(
+      title: item.name,
+      subtitle: '₦${item.price}',
+      isSelected: count > 0,
+      trailing: StepperControl(
+        count: count,
+        accentColor: accent,
+        onDecrement: () => onChanged(count > 0 ? count - 1 : 0),
+        onIncrement: () => onChanged(count + 1),
       ),
     );
   }

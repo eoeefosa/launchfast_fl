@@ -12,6 +12,7 @@ import '../../models/menu_item.dart';
 import 'components/item_detail_scroll_body.dart';
 import 'components/item_detail_footer.dart';
 import 'components/item_detail_dialogs.dart';
+import 'components/item_detail_placeholders.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final String id;
@@ -88,15 +89,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       CurvedAnimation(parent: _footerController, curve: Curves.easeOutBack),
     );
 
-    // Staggered entrance
     _heroController.forward();
     Future.delayed(const Duration(milliseconds: 180), _contentController.forward);
     Future.delayed(const Duration(milliseconds: 320), _footerController.forward);
   }
 
   void _setupAlertListener() {
-    // context.read is safe in initState — the widget is already in the tree
-    // and providers are mounted above it. Never use context.watch here.
     _alertSub = context.read<StoreProvider>().alertStream.listen((alert) {
       if (alert == 'ITEM_UNAVAILABLE:${widget.id}') {
         _showUnavailableDialog();
@@ -122,33 +120,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // ── Resolve item safely ────────────────────────────────────────────────
-    // menuItems may still be loading; show a spinner rather than throwing.
     final item = storeProvider.menuItems.cast<MenuItem?>().firstWhere(
       (m) => m?.id == widget.id,
       orElse: () => null,
     );
 
     if (item == null) {
-      return Scaffold(
-        body: Center(
-          child: storeProvider.isLoading
-              ? const CircularProgressIndicator()
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.grey),
-                    const SizedBox(height: 12),
-                    const Text('Item not found', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => context.pop(),
-                      child: const Text('Go back'),
-                    ),
-                  ],
-                ),
-        ),
-      );
+      return storeProvider.isLoading
+          ? const ItemDetailLoadingView()
+          : const ItemDetailErrorView(message: 'Item not found');
     }
 
     final store = storeProvider.stores.cast<dynamic>().firstWhere(
@@ -157,53 +137,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     );
 
     if (store == null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Store not found'),
-              TextButton(onPressed: () => context.pop(), child: const Text('Go back')),
-            ],
-          ),
-        ),
-      );
+      return const ItemDetailErrorView(message: 'Store not found');
     }
 
-    final compatible = item.compatibleWith ?? [];
-
-    final availableSoups = compatible.contains('soup') || item.type == 'swallow'
-        ? storeProvider.menuItems
-            .where((m) => m.type == 'soup')
-            .toList()
-        : <MenuItem>[];
-
-    final availableProteins = compatible.contains('protein')
-        ? storeProvider.menuItems
-            .where((m) => m.storeId == item.storeId && m.type == 'protein')
-            .toList()
-        : <MenuItem>[];
-
-    final availableSides = compatible.contains('side')
-        ? storeProvider.menuItems
-            .where((m) => m.storeId == item.storeId && m.type == 'side')
-            .toList()
-        : <MenuItem>[];
-
-    final availableDrinks = compatible.contains('drink')
-        ? storeProvider.menuItems
-            .where((m) => m.storeId == item.storeId && m.type == 'drink')
-            .toList()
-        : <MenuItem>[];
-
-    // Keep old logic for addons if needed
-    final availableAddons = (item.addonIds ?? [])
-        .map((id) => storeProvider.menuItems.cast<MenuItem?>().firstWhere(
-              (m) => m?.id == id,
-              orElse: () => null,
-            ))
-        .whereType<MenuItem>()
-        .toList();
+    final components = _resolveAvailableComponents(item, storeProvider);
 
     final totalPrice = PriceCalculator.computeTotal(
       item: item,
@@ -213,11 +150,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       selectedDrinks: _selectedDrinks,
       selectedAddons: _selectedAddons,
       selectedSoupId: _selectedSoupId,
-      availableSoups: availableSoups,
-      availableAddons: availableAddons,
-      availableMeats: availableProteins,
-      availableSides: availableSides,
-      availableDrinks: availableDrinks,
+      availableSoups: components.soups,
+      availableAddons: components.addons,
+      availableMeats: components.proteins,
+      availableSides: components.sides,
+      availableDrinks: components.drinks,
       meatPrices: storeProvider.meatPrices,
       saladPrice: storeProvider.saladPrice,
     );
@@ -236,25 +173,21 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               item: item,
               store: store,
               accentColor: store.accentColor,
-              availableSoups: availableSoups,
-              availableAddons: availableAddons,
-              availableProteins: availableProteins,
-              availableSides: availableSides,
-              availableDrinks: availableDrinks,
+              availableSoups: components.soups,
+              availableAddons: components.addons,
+              availableProteins: components.proteins,
+              availableSides: components.sides,
+              availableDrinks: components.drinks,
               selectedMeats: _selectedMeats,
               selectedAddons: _selectedAddons,
               selectedSides: _selectedSides,
               selectedDrinks: _selectedDrinks,
               selectedSoupId: _selectedSoupId,
               isDark: isDark,
-              onMeatChanged: (id, count) =>
-                  setState(() => _selectedMeats[id] = count),
-              onAddonChanged: (id, count) =>
-                  setState(() => _selectedAddons[id] = count),
-              onSideChanged: (id, count) => 
-                  setState(() => _selectedSides[id] = count),
-              onDrinkChanged: (id, count) => 
-                  setState(() => _selectedDrinks[id] = count),
+              onMeatChanged: (id, count) => setState(() => _selectedMeats[id] = count),
+              onAddonChanged: (id, count) => setState(() => _selectedAddons[id] = count),
+              onSideChanged: (id, count) => setState(() => _selectedSides[id] = count),
+              onDrinkChanged: (id, count) => setState(() => _selectedDrinks[id] = count),
               onSoupSelected: (id) => setState(() => _selectedSoupId = id),
             ),
             Positioned(
@@ -274,7 +207,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                   selectedSides: _selectedSides,
                   selectedDrinks: _selectedDrinks,
                   selectedAddons: _selectedAddons,
-                  availableSoups: availableSoups,
+                  availableSoups: components.soups,
                   cartProvider: cartProvider,
                   onQuantityChanged: (q) => setState(() => _quantity = q),
                   onAddToCart: () => _handleAddToCart(
@@ -292,6 +225,47 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     );
   }
 
+  // ── Data Resolution ────────────────────────────────────────────────────────
+
+  AvailableComponents _resolveAvailableComponents(
+    MenuItem item,
+    StoreProvider storeProvider,
+  ) {
+    final compatible = item.compatibleWith ?? [];
+
+    final soups = compatible.contains('soup') || item.type == 'swallow'
+        ? storeProvider.menuItems.where((m) => m.type == 'soup').toList()
+        : <MenuItem>[];
+
+    final proteins = compatible.contains('protein')
+        ? storeProvider.menuItems.where((m) => m.storeId == item.storeId && m.type == 'protein').toList()
+        : <MenuItem>[];
+
+    final sides = compatible.contains('side')
+        ? storeProvider.menuItems.where((m) => m.storeId == item.storeId && m.type == 'side').toList()
+        : <MenuItem>[];
+
+    final drinks = compatible.contains('drink')
+        ? storeProvider.menuItems.where((m) => m.storeId == item.storeId && m.type == 'drink').toList()
+        : <MenuItem>[];
+
+    final addons = (item.addonIds ?? [])
+        .map((id) => storeProvider.menuItems.cast<MenuItem?>().firstWhere(
+              (m) => m?.id == id,
+              orElse: () => null,
+            ))
+        .whereType<MenuItem>()
+        .toList();
+
+    return AvailableComponents(
+      soups: soups,
+      proteins: proteins,
+      sides: sides,
+      drinks: drinks,
+      addons: addons,
+    );
+  }
+
   // ── Cart logic ─────────────────────────────────────────────────────────────
 
   void _handleAddToCart(
@@ -300,13 +274,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     MenuItem item,
     StoreProvider storeProvider,
   ) {
-    // Guard: soup required for this swallow
     if ((item.category == 'Swallow' || item.requiresSoupSelection) && _selectedSoupId == null) {
       _showSnack(context, 'Please select a soup first');
       return;
     }
 
-    // Build the selectedSoup payload if a soup was chosen
     Map<String, dynamic>? soupPayload;
     if (_selectedSoupId != null) {
       final soup = storeProvider.menuItems.cast<MenuItem?>().firstWhere(
@@ -317,7 +289,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
         soupPayload = {
           'id': soup.id,
           'name': soup.name,
-          // If isFreeWithSwallow the customer pays ₦0 for the soup
           'price': soup.isFreeWithSwallow ? 0.0 : soup.price,
         };
       }
@@ -347,27 +318,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Item Unavailable',
-          style: TextStyle(fontWeight: FontWeight.w900),
-        ),
-        content: const Text(
-          'We apologize, but this item has just become unavailable. '
-          'You will be returned to the store menu.',
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.pop();
-            },
-            child: const Text('Back to Menu'),
-          ),
-        ],
-      ),
-    );
+      builder: (_) => const ItemUnavailableDialog(),
+    ).then((_) {
+      if (mounted) context.pop();
+    });
   }
 
   void _showClearCartDialog(
@@ -406,4 +360,20 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       ),
     );
   }
+}
+
+class AvailableComponents {
+  final List<MenuItem> soups;
+  final List<MenuItem> proteins;
+  final List<MenuItem> sides;
+  final List<MenuItem> drinks;
+  final List<MenuItem> addons;
+
+  AvailableComponents({
+    required this.soups,
+    required this.proteins,
+    required this.sides,
+    required this.drinks,
+    required this.addons,
+  });
 }
