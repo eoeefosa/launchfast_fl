@@ -3,15 +3,31 @@ import 'package:flutter/material.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
-import 'package:campuschow/store/lib/core/constants/static_data.dart';
+import 'package:campuschow/store/lib/features/store/data/store_model.dart';
 
 class CartProvider with ChangeNotifier {
   List<CartItem> _items = [];
   bool _isLoaded = false;
   String? _editingOrderId;
+  Map<String, double> _meatPrices = {};
+  double _saladPrice = 0;
+  List<MenuItem> _allMenuItems = [];
+  List<Store> _allStores = [];
 
   List<CartItem> get items => _items;
   String? get editingOrderId => _editingOrderId;
+
+  void updatePricing({
+    required Map<String, double> meatPrices,
+    required double saladPrice,
+    required List<MenuItem> allMenuItems,
+    required List<Store> allStores,
+  }) {
+    _meatPrices = meatPrices;
+    _saladPrice = saladPrice;
+    _allMenuItems = allMenuItems;
+    _allStores = allStores;
+  }
 
   String? get currentStoreId =>
       _items.isNotEmpty ? _items[0].menuItem.storeId : null;
@@ -176,20 +192,31 @@ class CartProvider with ChangeNotifier {
 
       // Meat extras
       if (item.selectedMeats != null) {
-        item.selectedMeats!.forEach((type, count) {
-          itemPrice += (StaticData.meatPrices[type] ?? 0) * count;
+        item.selectedMeats!.forEach((id, count) {
+          final meatItem =
+              _allMenuItems.where((m) => m.id == id).firstOrNull;
+          if (meatItem != null) {
+            itemPrice += meatItem.price * count;
+          } else {
+            itemPrice += (_meatPrices[id] ?? 0) * count;
+          }
         });
       }
 
       // Salad extra
       if (item.hasSalad) {
-        itemPrice += StaticData.saladPrice;
+        final saladItem = _allMenuItems
+            .where((m) =>
+                m.storeId == item.menuItem.storeId && m.category == 'Salad')
+            .firstOrNull;
+        itemPrice += saladItem?.price ?? _saladPrice;
       }
 
       // Addons extras
       if (item.selectedAddons != null) {
         item.selectedAddons!.forEach((addonId, count) {
-          final addonItem = StaticData.menuItemsMap[addonId];
+          final addonItem =
+              _allMenuItems.where((m) => m.id == addonId).firstOrNull;
           if (addonItem != null) {
             itemPrice += addonItem.price * count;
           }
@@ -224,12 +251,8 @@ class CartProvider with ChangeNotifier {
     if (_items.isEmpty) return 0;
     final storeIds = _items.map((i) => i.menuItem.storeId).toSet();
     return storeIds.fold(0.0, (sum, id) {
-      try {
-        final store = StaticData.stores.firstWhere((s) => s.id == id);
-        return sum + store.deliveryFee;
-      } catch (_) {
-        return sum;
-      }
+      final store = _allStores.where((s) => s.id == id).firstOrNull;
+      return sum + (store?.deliveryFee ?? 0);
     });
   }
 

@@ -185,11 +185,15 @@ class AuthProvider extends ChangeNotifier {
       _selectedAddress =
           values['launch-fast-selected-address'];
 
-      debugPrint(
-        '[AuthProvider] session restored '
-        'user=${_user?.id} '
-        'role=${_user?.role}',
-      );
+      debugPrint('''
+[AuthProvider] Session restored:
+  User ID: ${_user?.id}
+  Name: ${_user?.name}
+  Email: ${_user?.email}
+  Role: ${_user?.role}
+  Token: ${_token != null ? 'Present' : 'Missing'}
+  Admin Store ID: $_adminStoreId
+''');
 
     } catch (e) {
 
@@ -335,6 +339,14 @@ class AuthProvider extends ChangeNotifier {
         value: jsonEncode(user.toJson()),
       ),
     ]);
+
+    debugPrint('''
+[AuthProvider] Auth persisted:
+  User ID: ${user.id}
+  Name: ${user.name}
+  Role: ${user.role}
+  Token: ${token != null ? 'Present' : 'Missing'}
+''');
 
     _safeNotify();
   }

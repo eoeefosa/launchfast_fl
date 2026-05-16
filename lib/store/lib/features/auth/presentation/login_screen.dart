@@ -60,13 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       final auth = context.read<AuthProvider>();
       if (auth.isStoreOwner) {
-        if (auth.isStoreApproved) {
-          router.go('/store');
-        } else {
-          router.go('/store');
-
-          // router.go('/awaiting-approval');
-        }
+        router.go('/dashboard');
       } else if (auth.user?.role == 'STORE_WORKER') {
         router.go('/worker');
       } else {

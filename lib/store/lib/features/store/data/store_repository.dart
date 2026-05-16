@@ -10,6 +10,15 @@ class StoreRepository {
         .toList();
   }
 
+  Future<Store?> getStore(String storeId) async {
+    try {
+      final response = await apiService.dio.get('/stores/$storeId');
+      return Store.fromJson(response.data);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<Store?> getOwnerStore(String userId) async {
     try {
       // Let the backend filter — don't download the whole table

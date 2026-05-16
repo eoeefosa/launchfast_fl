@@ -62,6 +62,11 @@ class OrderRepository {
     final response = await apiService.dio.get('/orders', queryParameters: {'riderId': riderId});
     return (response.data as List).map((i) => Order.fromJson(i)).toList();
   }
+
+  Future<Map<String, dynamic>> getRider(String id) async {
+    final response = await apiService.dio.get('/riders/$id');
+    return response.data as Map<String, dynamic>;
+  }
 }
 
 final orderRepository = OrderRepository();

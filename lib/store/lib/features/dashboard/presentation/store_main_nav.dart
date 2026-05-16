@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:campuschow/providers/cart_provider.dart';
 import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -8,6 +9,8 @@ import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/auth/presentation/auth_provider.dart';
 import 'package:campuschow/store/lib/core/services/ably_service.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
+import 'package:campuschow/models/store.dart' as main_store;
+import 'package:campuschow/models/menu_item.dart' as main_menu_item;
 import 'main_dashboard.dart';
 import 'order_screen.dart';
 import 'menu_screen.dart';
@@ -88,10 +91,17 @@ class _StoreMainNavState extends State<StoreMainNav>
     final auth = context.read<AuthProvider>();
     final storeProvider = context.read<StoreProvider>();
     final userId = auth.user?.id;
-    if (userId == null) return;
+    if (userId == null) {
+      debugPrint('[StoreMainNav] Ably init failed: No user ID');
+      return;
+    }
+
+    debugPrint(
+      '[StoreMainNav] Initializing real-time services for owner: $userId',
+    );
 
     // Tell the provider who the owner is — all child screens will use this
-    await storeProvider.setOwner(userId);
+    await storeProvider.setOwner(userId, linkedStoreId: auth.user?.adminStore);
 
     try {
       await ablyService.initAbly(userId);
@@ -104,16 +114,24 @@ class _StoreMainNavState extends State<StoreMainNav>
       // The ownedId is now guaranteed to be populated after the await above
       final ownedId = storeProvider.ownedStoreId;
       if (ownedId != null) {
+        debugPrint('[StoreMainNav] Subscribing to store channels: $ownedId');
         await ablyService.subscribeToStoreOrders(ownedId);
 
         // Subscribe to the FCM topic for this store so background push
         // notifications (new order, payment confirmed) are delivered.
         _subscribedStoreId = ownedId;
         unawaited(notificationService.subscribeToStoreAdminTopic(ownedId));
+      } else {
+        debugPrint(
+          '[StoreMainNav] Warning: No owned store ID found for owner $userId',
+        );
       }
 
       _ablyInitialized = true;
-    } catch (_) {}
+      debugPrint('[StoreMainNav] Real-time services initialized successfully');
+    } catch (e) {
+      debugPrint('[StoreMainNav] Real-time services init error: $e');
+    }
   }
 
   void _onAblyOrderUpdate(String orderId, OrderStatus status) {
@@ -149,7 +167,7 @@ class _StoreMainNavState extends State<StoreMainNav>
 
   void _showNewOrderAlert(String orderId) {
     if (!mounted) return;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -162,7 +180,9 @@ class _StoreMainNavState extends State<StoreMainNav>
             Text('New Order!'),
           ],
         ),
-        content: Text('You have received a new order (#${orderId.substring(orderId.length - 6).toUpperCase()}).\n\nWould you like to view it now?'),
+        content: Text(
+          'You have received a new order (#${orderId.substring(orderId.length - 6).toUpperCase()}).\n\nWould you like to view it now?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -176,7 +196,9 @@ class _StoreMainNavState extends State<StoreMainNav>
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('View Order'),
           ),
@@ -218,49 +240,28 @@ class _StoreMainNavState extends State<StoreMainNav>
         builder: (context, auth, storeProvider, child) {
           final ownedStore = storeProvider.ownedStore;
 
-          if (ownedStore == null || !ownedStore.isApproved) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.pending_actions, size: 80, color: Colors.orange),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Approval Pending',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Your store "${ownedStore?.name ?? 'your store'}" is currently being reviewed by our administrators. You will be notified once it is approved.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 32),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (auth.user?.id != null) {
-                          storeProvider.setOwner(auth.user!.id);
-                        } else {
-                          storeProvider.refreshData();
-                        }
-                      },
-                      child: const Text('Check Status'),
-                    ),
-                    TextButton(
-                      onPressed: () => auth.logout(),
-                      child: const Text('Logout'),
-                    ),
-                  ],
-                ),
-              ),
-            );
+          if (ownedStore == null) {
+            return const Center(child: CircularProgressIndicator());
           }
 
-          return IndexedStack(
-            index: _currentIndex,
-            children: _pages,
+          return Consumer<CartProvider>(
+            builder: (context, cartProvider, child) {
+              // Sync pricing from store provider to cart provider
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                cartProvider.updatePricing(
+                  meatPrices: storeProvider.meatPrices,
+                  saladPrice: storeProvider.saladPrice,
+                  allMenuItems: storeProvider.menuItems
+                      .map((m) => main_menu_item.MenuItem.fromJson(m.toJson()))
+                      .toList(),
+                  allStores: storeProvider.stores
+                      .map((s) => main_store.Store.fromJson(s.toJson()))
+                      .toList(),
+                );
+              });
+
+              return IndexedStack(index: _currentIndex, children: _pages);
+            },
           );
         },
       ),

@@ -72,28 +72,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       if (_isGoogleLoggedIn) {
         await authProvider.applyForStore({
-          'storeName': _storeNameController.text.trim(),
+          'name': _storeNameController.text.trim(),
           'fullName': _nameController.text.trim(),
+          'category': 'Fast Food', // Backend requires category
         });
       } else {
         await authProvider.register({
-          'storeName': _storeNameController.text.trim(),
+          'restaurantName': _storeNameController.text.trim(),
           'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
           'password': _passwordController.text,
           'storeDescription': _descriptionController.text.trim(),
+          'restaurantCategory': 'Fast Food', // Backend requires category
         });
       }
 
       if (!mounted) return;
       final auth = context.read<AuthProvider>();
       if (auth.isStoreOwner) {
-        if (auth.isStoreApproved) {
-          router.go('/dashboard');
-        } else {
-          router.go('/dashboard');
-          // router.go('/awaiting-approval');
-        }
+        router.go('/dashboard');
       } else {
         router.go('/profile');
       }
@@ -177,9 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
                 const SizedBox(height: 32),
                 CustomButton(
-                  label: _isGoogleLoggedIn
-                      ? 'Apply for Approval'
-                      : 'Register Store',
+                  label: 'Register Store',
                   isLoading: isLoading,
                   onPressed: _submit,
                   primaryColor: primaryColor,

@@ -227,16 +227,14 @@ class ItemDetailStepButton extends StatelessWidget {
 // ─────────────────────────────────────────────
 
 class ItemDetailMeatOption extends StatelessWidget {
-  final String type;
-  final double price;
+  final MenuItem meat;
   final int count;
   final Color accentColor;
   final ValueChanged<int> onChanged;
 
   const ItemDetailMeatOption({
     super.key,
-    required this.type,
-    required this.price,
+    required this.meat,
     required this.count,
     required this.accentColor,
     required this.onChanged,
@@ -245,8 +243,8 @@ class ItemDetailMeatOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ItemDetailSelectionCard(
-      title: '$type Meat',
-      subtitle: '+₦${price.toStringAsFixed(2)}',
+      title: meat.name,
+      subtitle: '+₦${meat.price.toStringAsFixed(2)}',
       isSelected: count > 0,
       trailing: ItemDetailStepperControl(
         count: count,
@@ -297,15 +295,15 @@ class ItemDetailAddonOption extends StatelessWidget {
 // ─────────────────────────────────────────────
 
 class ItemDetailSaladOption extends StatelessWidget {
-  final bool hasSalad;
-  final double price;
+  final MenuItem salad;
+  final bool isSelected;
   final Color accentColor;
   final ValueChanged<bool> onChanged;
 
   const ItemDetailSaladOption({
     super.key,
-    required this.hasSalad,
-    required this.price,
+    required this.salad,
+    required this.isSelected,
     required this.accentColor,
     required this.onChanged,
   });
@@ -313,12 +311,12 @@ class ItemDetailSaladOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ItemDetailSelectionCard(
-      title: 'Fresh Salad',
-      subtitle: '+₦${price.toStringAsFixed(2)}',
-      isSelected: hasSalad,
-      onTap: () => onChanged(!hasSalad),
+      title: salad.name,
+      subtitle: '+₦${salad.price.toStringAsFixed(2)}',
+      isSelected: isSelected,
+      onTap: () => onChanged(!isSelected),
       trailing: ItemDetailAnimatedCheckbox(
-        value: hasSalad,
+        value: isSelected,
         accentColor: accentColor,
         onChanged: onChanged,
       ),

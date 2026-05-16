@@ -1,10 +1,10 @@
+import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
-import 'package:campuschow/store/lib/core/constants/static_data.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/orders/data/cart_item.dart';
 import 'package:campuschow/store/lib/features/orders/presentation/cart_provider.dart';
@@ -14,18 +14,26 @@ class CartItemTile extends StatelessWidget {
 
   const CartItemTile({super.key, required this.item});
 
-  double _calculatePrice() {
+  double _calculatePrice(StoreProvider storeProvider) {
     double total = item.menuItem.price;
 
-    item.selectedMeats?.forEach((type, count) {
-      total += (StaticData.meatPrices[type] ?? 0) * count;
+    item.selectedMeats?.forEach((id, count) {
+      final meatItem = storeProvider.menuItems.where((m) => m.id == id).firstOrNull;
+      if (meatItem != null) {
+        total += meatItem.price * count;
+      } else {
+        total += (storeProvider.meatPrices[id] ?? 0) * count;
+      }
     });
 
-    if (item.hasSalad) total += StaticData.saladPrice;
+    if (item.hasSalad) {
+      final saladItem = storeProvider.saladItems.firstOrNull;
+      total += saladItem?.price ?? storeProvider.saladPrice;
+    }
 
     item.selectedAddons?.forEach((id, count) {
       try {
-        final addon = StaticData.menuItems.firstWhere((m) => m.id == id);
+        final addon = storeProvider.menuItems.firstWhere((m) => m.id == id);
         total += addon.price * count;
       } catch (_) {}
     });
@@ -36,6 +44,7 @@ class CartItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = context.read<CartProvider>();
+    final storeProvider = context.watch<StoreProvider>();
     final isIOS = Platform.isIOS;
 
     return Container(
@@ -93,7 +102,7 @@ class CartItemTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '₦${_calculatePrice().toStringAsFixed(2)}',
+                        '₦${_calculatePrice(storeProvider).toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,

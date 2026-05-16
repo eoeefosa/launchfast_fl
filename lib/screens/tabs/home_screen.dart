@@ -112,14 +112,24 @@ class _HomeScreenState extends State<HomeScreen> {
       final matchesStore = item.storeId == _activeStoreId;
       final matchesCategory =
           _selectedCategory == 'All' || item.category == _selectedCategory;
-      return matchesStore && matchesCategory;
+      final isNotStandaloneOption =
+          item.category != 'Meat' && item.category != 'Salad';
+      return matchesStore && matchesCategory && isNotStandaloneOption;
     }).toList();
 
     final groupedItems = <String, List<MenuItem>>{};
-    final predefinedOrder = ['Rice', 'Swallow', 'Soup', 'Drinks', 'Extras', 'Others'];
+    final predefinedOrder = [
+      'Rice',
+      'Swallow',
+      'Soup',
+      'Drinks',
+      'Extras',
+      'Others',
+    ];
     final categories = storeProvider.menuItems
         .where((item) => item.storeId == _activeStoreId)
         .map((item) => item.category)
+        .where((cat) => cat != 'Meat' && cat != 'Salad')
         .toSet()
         .toList()
       ..sort((a, b) {

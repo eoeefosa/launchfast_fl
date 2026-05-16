@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
-import 'package:campuschow/store/lib/core/constants/static_data.dart';
+import 'package:provider/provider.dart';
+import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 
 import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,13 +20,7 @@ class ActiveOrderTracker extends StatelessWidget {
     final isIOS = Platform.isIOS;
     final statusText = _getStatusText(order.status);
     final statusDescription = _getStatusDescription(order.status);
-    
-    final rider = order.riderId != null
-        ? StaticData.riders.cast<dynamic>().firstWhere(
-            (r) => r.id == order.riderId, 
-            orElse: () => null
-          )
-        : null;
+    final storeProvider = context.read<StoreProvider>();
 
     return Container(
       decoration: BoxDecoration(
@@ -102,7 +97,16 @@ class ActiveOrderTracker extends StatelessWidget {
                 ],
               ),
             ),
-            if (rider != null) _RiderCard(rider: rider, isIOS: isIOS),
+            if (order.riderId != null) 
+              FutureBuilder<dynamic>(
+                future: storeProvider.getRider(order.riderId!),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.data != null) {
+                    return _RiderCard(rider: snapshot.data, isIOS: isIOS);
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
           ],
         ),
       ),
@@ -170,6 +174,9 @@ class _RiderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final riderName = rider is Map ? (rider['name'] ?? 'Rider') : (rider.name ?? 'Rider');
+    final riderPhone = rider is Map ? (rider['phoneNumber'] ?? '') : (rider.phoneNumber ?? '');
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -207,7 +214,7 @@ class _RiderCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  rider.name,
+                  riderName,
                   style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
@@ -217,7 +224,7 @@ class _RiderCard extends StatelessWidget {
               ],
             ),
           ),
-          _CallButton(phoneNumber: rider.phoneNumber, isIOS: isIOS),
+          if (riderPhone.isNotEmpty) _CallButton(phoneNumber: riderPhone, isIOS: isIOS),
         ],
       ),
     );

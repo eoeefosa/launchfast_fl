@@ -31,6 +31,11 @@ class StoreProvider with ChangeNotifier {
   double get saladPrice => _saladPrice;
   List<String> get halls => _halls;
 
+  List<MenuItem> get meatItems =>
+      _menuItems.where((m) => m.category == 'Meat').toList();
+  List<MenuItem> get saladItems =>
+      _menuItems.where((m) => m.category == 'Salad').toList();
+
   StoreProvider() {
     refreshData();
     _setupListeners();

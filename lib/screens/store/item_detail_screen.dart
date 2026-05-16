@@ -28,7 +28,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
 
   int _quantity = 1;
   String? _selectedSoupId;
-  final Map<String, int> _selectedMeats = {'Small': 0, 'Big': 0};
+  final Map<String, int> _selectedMeats = {};
   bool _hasSalad = false;
   final Map<String, int> _selectedAddons = {};
   StreamSubscription<String>? _alertSub;
@@ -175,6 +175,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
             .toList()
         : <MenuItem>[];
 
+    final availableMeats = storeProvider.menuItems
+        .where((m) => m.storeId == item.storeId && m.category == 'Meat')
+        .toList();
+
+    final availableSalads = storeProvider.menuItems
+        .where((m) => m.storeId == item.storeId && m.category == 'Salad')
+        .toList();
+
     // Filter addon IDs — skip any that haven't loaded yet
     final availableAddons = (item.addonIds ?? [])
         .map((id) => storeProvider.menuItems.cast<MenuItem?>().firstWhere(
@@ -193,6 +201,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       selectedSoupId: _selectedSoupId,
       availableSoups: availableSoups,
       availableAddons: availableAddons,
+      availableMeats: availableMeats,
+      availableSalads: availableSalads,
       meatPrices: storeProvider.meatPrices,
       saladPrice: storeProvider.saladPrice,
     );
@@ -213,6 +223,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               accentColor: store.accentColor,
               availableSoups: availableSoups,
               availableAddons: availableAddons,
+              availableMeats: availableMeats,
+              availableSalads: availableSalads,
               selectedMeats: _selectedMeats,
               selectedAddons: _selectedAddons,
               hasSalad: _hasSalad,
@@ -220,8 +232,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               meatPrices: storeProvider.meatPrices,
               saladPrice: storeProvider.saladPrice,
               isDark: isDark,
-              onMeatChanged: (type, count) =>
-                  setState(() => _selectedMeats[type] = count),
+              onMeatChanged: (id, count) =>
+                  setState(() => _selectedMeats[id] = count),
               onAddonChanged: (id, count) =>
                   setState(() => _selectedAddons[id] = count),
               onSaladChanged: (val) => setState(() => _hasSalad = val),

@@ -3,10 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:campuschow/store/lib/core/constants/static_data.dart';
 import 'package:campuschow/store/lib/features/orders/presentation/cart_provider.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
-import 'package:campuschow/store/lib/features/store/data/store_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 
 // ─────────────────────────────────────────────
@@ -27,7 +25,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
   // ── State ──────────────────────────────────
   int _quantity = 1;
   String? _selectedSoupId;
-  final Map<String, int> _selectedMeats = {'Small': 0, 'Big': 0};
+  final Map<String, int> _selectedMeats = {};
   bool _hasSalad = false;
   final Map<String, int> _selectedAddons = {};
 
@@ -99,16 +97,28 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
 
   // ── Derived data ───────────────────────────
 
-  double _computeTotal(
-    MenuItem item,
-    List<MenuItem> availableSoups,
-    List<MenuItem> availableAddons,
-  ) {
+  double _computeTotal({
+    required MenuItem item,
+    required List<MenuItem> availableSoups,
+    required List<MenuItem> availableAddons,
+    required List<MenuItem> availableMeats,
+    required List<MenuItem> availableSalads,
+    required Map<String, double> meatPrices,
+    required double saladPrice,
+  }) {
     var total = item.price;
-    _selectedMeats.forEach(
-      (type, count) => total += (StaticData.meatPrices[type] ?? 0) * count,
-    );
-    if (_hasSalad) total += StaticData.saladPrice;
+    _selectedMeats.forEach((id, count) {
+      final meat = availableMeats.where((m) => m.id == id).firstOrNull;
+      if (meat != null) {
+        total += meat.price * count;
+      } else {
+        total += (meatPrices[id] ?? 0) * count;
+      }
+    });
+    if (_hasSalad) {
+      final salad = availableSalads.firstOrNull;
+      total += salad?.price ?? saladPrice;
+    }
     if (_selectedSoupId != null) {
       try {
         final soup = availableSoups.firstWhere((s) => s.id == _selectedSoupId);
@@ -138,11 +148,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       return const Scaffold(body: Center(child: Text('Item not found')));
     }
 
-    Store? store;
-    try {
-      store = StaticData.stores.firstWhere((s) => s.id == item!.storeId);
-    } catch (_) {
-      // Fallback or error
+    final store = storeProvider.activeStore;
+    if (store == null) {
       return const Scaffold(body: Center(child: Text('Store not found')));
     }
     final accentColor = store.color;
@@ -168,7 +175,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               .toList()
         : <MenuItem>[];
 
-    final totalPrice = _computeTotal(item, availableSoups, availableAddons);
+    final availableMeats = storeProvider.meatItems;
+    final availableSalads = storeProvider.saladItems;
+
+    final totalPrice = _computeTotal(
+      item: item,
+      availableSoups: availableSoups,
+      availableAddons: availableAddons,
+      availableMeats: availableMeats,
+      availableSalads: availableSalads,
+      meatPrices: storeProvider.meatPrices,
+      saladPrice: storeProvider.saladPrice,
+    );
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
@@ -186,24 +204,20 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               accentColor: accentColor,
               availableSoups: availableSoups,
               availableAddons: availableAddons,
+              availableMeats: availableMeats,
+              availableSalads: availableSalads,
               selectedMeats: _selectedMeats,
               selectedAddons: _selectedAddons,
               hasSalad: _hasSalad,
               selectedSoupId: _selectedSoupId,
               isDark: isDark,
-              onMeatChanged: (type, count) =>
-                  setState(() => _selectedMeats[type] = count),
+              onMeatChanged: (id, count) =>
+                  setState(() => _selectedMeats[id] = count),
               onAddonChanged: (id, count) =>
                   setState(() => _selectedAddons[id] = count),
               onSaladChanged: (val) => setState(() => _hasSalad = val),
               onSoupSelected: (id) => setState(() => _selectedSoupId = id),
             ),
-            // ── FIX: Positioned must be a direct child of Stack.
-            // Previously SlideTransition wrapped Positioned, which caused
-            // "ParentData of incompatible type" because FractionalTranslation
-            // (used by SlideTransition) intercepted the StackParentData
-            // handshake. Solution: flip the order so Positioned is the direct
-            // Stack child and SlideTransition lives inside it.
             Positioned(
               bottom: 0,
               left: 0,
@@ -331,6 +345,8 @@ class _ScrollBody extends StatelessWidget {
   final Color accentColor;
   final List<MenuItem> availableSoups;
   final List<MenuItem> availableAddons;
+  final List<MenuItem> availableMeats;
+  final List<MenuItem> availableSalads;
 
   final Map<String, int> selectedMeats;
   final Map<String, int> selectedAddons;
@@ -338,7 +354,7 @@ class _ScrollBody extends StatelessWidget {
   final String? selectedSoupId;
   final bool isDark;
 
-  final void Function(String type, int count) onMeatChanged;
+  final void Function(String id, int count) onMeatChanged;
   final void Function(String id, int count) onAddonChanged;
   final void Function(bool val) onSaladChanged;
   final void Function(String id) onSoupSelected;
@@ -353,6 +369,8 @@ class _ScrollBody extends StatelessWidget {
     required this.accentColor,
     required this.availableSoups,
     required this.availableAddons,
+    required this.availableMeats,
+    required this.availableSalads,
     required this.selectedMeats,
     required this.selectedAddons,
     required this.hasSalad,
@@ -387,34 +405,30 @@ class _ScrollBody extends StatelessWidget {
                       accentColor: accentColor,
                       isDark: isDark,
                     ),
-                    const SizedBox(height: 32),
-                    _OptionsSection(
-                      title: 'Add Meat',
-                      children: [
-                        _MeatOption(
-                          type: 'Small',
-                          price: StaticData.meatPrices['Small']!,
-                          count: selectedMeats['Small']!,
-                          accentColor: accentColor,
-                          onChanged: (c) => onMeatChanged('Small', c),
-                        ),
-                        _MeatOption(
-                          type: 'Big',
-                          price: StaticData.meatPrices['Big']!,
-                          count: selectedMeats['Big']!,
-                          accentColor: accentColor,
-                          onChanged: (c) => onMeatChanged('Big', c),
-                        ),
-                      ],
-                    ),
+                    if (availableMeats.isNotEmpty) ...[
+                      const SizedBox(height: 32),
+                      _OptionsSection(
+                        title: 'Add Meat',
+                        children: availableMeats
+                            .map(
+                              (meat) => _OptionTile(
+                                item: meat,
+                                count: selectedMeats[meat.id] ?? 0,
+                                accentColor: accentColor,
+                                onChanged: (c) => onMeatChanged(meat.id, c),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
                     if (availableAddons.isNotEmpty) ...[
                       const SizedBox(height: 32),
                       _OptionsSection(
                         title: 'Add-ons',
                         children: availableAddons
                             .map(
-                              (addon) => _AddonOption(
-                                addon: addon,
+                              (addon) => _OptionTile(
+                                item: addon,
                                 count: selectedAddons[addon.id] ?? 0,
                                 accentColor: accentColor,
                                 onChanged: (c) => onAddonChanged(addon.id, c),
@@ -423,17 +437,21 @@ class _ScrollBody extends StatelessWidget {
                             .toList(),
                       ),
                     ],
-                    if (item.category == 'Rice' || item.name == 'Moi Moi') ...[
+                    if (availableSalads.isNotEmpty && 
+                        (item.category == 'Rice' || item.name == 'Moi Moi')) ...[
                       const SizedBox(height: 32),
                       _OptionsSection(
                         title: 'Extras',
-                        children: [
-                          _SaladOption(
-                            hasSalad: hasSalad,
-                            accentColor: accentColor,
-                            onChanged: onSaladChanged,
-                          ),
-                        ],
+                        children: availableSalads
+                            .map(
+                              (salad) => _SaladOption(
+                                salad: salad,
+                                isSelected: hasSalad,
+                                accentColor: accentColor,
+                                onChanged: onSaladChanged,
+                              ),
+                            )
+                            .toList(),
                       ),
                     ],
                     if (item.category == 'Swallow') ...[
@@ -898,19 +916,17 @@ class _StepButton extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-//  Meat option
+//  Generic option tile (Meat, Addon)
 // ─────────────────────────────────────────────
 
-class _MeatOption extends StatelessWidget {
-  final String type;
-  final double price;
+class _OptionTile extends StatelessWidget {
+  final MenuItem item;
   final int count;
   final Color accentColor;
   final ValueChanged<int> onChanged;
 
-  const _MeatOption({
-    required this.type,
-    required this.price,
+  const _OptionTile({
+    required this.item,
     required this.count,
     required this.accentColor,
     required this.onChanged,
@@ -919,41 +935,8 @@ class _MeatOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SelectionCard(
-      title: '$type Meat',
-      subtitle: '+₦${price.toStringAsFixed(2)}',
-      isSelected: count > 0,
-      trailing: _StepperControl(
-        count: count,
-        accentColor: accentColor,
-        onDecrement: () => onChanged(count - 1),
-        onIncrement: () => onChanged(count + 1),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-//  Addon option
-// ─────────────────────────────────────────────
-
-class _AddonOption extends StatelessWidget {
-  final MenuItem addon;
-  final int count;
-  final Color accentColor;
-  final ValueChanged<int> onChanged;
-
-  const _AddonOption({
-    required this.addon,
-    required this.count,
-    required this.accentColor,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _SelectionCard(
-      title: addon.name,
-      subtitle: '+₦${addon.price.toStringAsFixed(2)}',
+      title: item.name,
+      subtitle: '+₦${item.price.toStringAsFixed(2)}',
       isSelected: count > 0,
       trailing: _StepperControl(
         count: count,
@@ -970,12 +953,14 @@ class _AddonOption extends StatelessWidget {
 // ─────────────────────────────────────────────
 
 class _SaladOption extends StatelessWidget {
-  final bool hasSalad;
+  final MenuItem salad;
+  final bool isSelected;
   final Color accentColor;
   final ValueChanged<bool> onChanged;
 
   const _SaladOption({
-    required this.hasSalad,
+    required this.salad,
+    required this.isSelected,
     required this.accentColor,
     required this.onChanged,
   });
@@ -983,12 +968,12 @@ class _SaladOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SelectionCard(
-      title: 'Fresh Salad',
-      subtitle: '+₦${StaticData.saladPrice.toStringAsFixed(2)}',
-      isSelected: hasSalad,
-      onTap: () => onChanged(!hasSalad),
+      title: salad.name,
+      subtitle: '+₦${salad.price.toStringAsFixed(2)}',
+      isSelected: isSelected,
+      onTap: () => onChanged(!isSelected),
       trailing: _AnimatedCheckbox(
-        value: hasSalad,
+        value: isSelected,
         accentColor: accentColor,
         onChanged: onChanged,
       ),

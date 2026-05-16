@@ -71,8 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       // Explicitly trigger navigation
       if (isAdmin || isStoreOwner) {
-        // context.go(authProvider.isStoreApproved ? '/dashboard' : '/awaiting-approval');
-        context.go(authProvider.isStoreApproved ? '/dashboard' : '/dashboard');
+        context.go('/dashboard');
       } else if (isWorker) {
         context.go('/worker');
       } else {

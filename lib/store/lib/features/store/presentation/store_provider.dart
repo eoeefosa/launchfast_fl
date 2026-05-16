@@ -1,6 +1,6 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import '../../../core/providers/base_provider.dart';
-import 'package:campuschow/store/lib/core/constants/static_data.dart';
 import '../../../core/services/ably_service.dart';
 import 'package:campuschow/store/lib/features/store/data/store_model.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
@@ -11,10 +11,13 @@ import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_repository.dart';
 
 class StoreProvider extends BaseProvider {
-  List<Store> _stores = StaticData.stores;
-  List<MenuItem> _menuItems = StaticData.menuItems;
+  List<Store> _stores = [];
+  List<MenuItem> _menuItems = [];
   String? _activeStoreId;
   Store? _activeStore;
+  Map<String, double> _meatPrices = {};
+  double _saladPrice = 0;
+  final Map<String, dynamic> _riders = {};
 
   // Stream for UI alerts
   final _alertController = StreamController<String>.broadcast();
@@ -27,6 +30,28 @@ class StoreProvider extends BaseProvider {
   List<Store> get stores => _stores;
   List<MenuItem> get menuItems => _menuItems;
   Store? get activeStore => _activeStore;
+  Map<String, double> get meatPrices => _meatPrices;
+  double get saladPrice => _saladPrice;
+
+  List<MenuItem> get meatItems => _menuItems
+      .where((m) => m.storeId == _activeStoreId && m.category == 'Meat')
+      .toList();
+
+  List<MenuItem> get saladItems => _menuItems
+      .where((m) => m.storeId == _activeStoreId && m.category == 'Salad')
+      .toList();
+
+  Future<dynamic> getRider(String id) async {
+    if (_riders.containsKey(id)) return _riders[id];
+    try {
+      final rider = await orderRepository.getRider(id);
+      _riders[id] = rider;
+      return rider;
+    } catch (e) {
+      debugPrint('Error fetching rider $id: $e');
+      return null;
+    }
+  }
 
   void setActiveStore(String storeId) {
     _activeStoreId = storeId;
@@ -92,6 +117,7 @@ class StoreProvider extends BaseProvider {
   }
 
   Future<void> refreshData() async {
+    _riders.clear();
     if (_activeStoreId != null) {
       try {
         final storeResult = await menuRepository.getStores();
@@ -112,8 +138,25 @@ class StoreProvider extends BaseProvider {
           (items) => _menuItems = items,
           (failure) => setFailure(failure),
         );
+
+        final settingsResult = await menuRepository.getSettings();
+        settingsResult.fold(
+          (settings) {
+            if (settings['meatPrices'] != null) {
+              _meatPrices = Map<String, double>.from(
+                (settings['meatPrices'] as Map).map(
+                  (k, v) => MapEntry(k.toString(), (v as num).toDouble()),
+                ),
+              );
+            }
+            if (settings['saladPrice'] != null) {
+              _saladPrice = (settings['saladPrice'] as num).toDouble();
+            }
+          },
+          (failure) => debugPrint('Failed to fetch settings: $failure'),
+        );
       } catch (e) {
-        // unexpected error
+        debugPrint('Error in refreshData: $e');
       }
       notifyListeners();
     }
@@ -147,9 +190,32 @@ class StoreProvider extends BaseProvider {
     setLoading(false);
   }
 
-  Future<void> setOwner(String userId) async {
+  Future<void> setOwner(String userId, {String? linkedStoreId}) async {
     setLoading(true);
-    final store = await storeRepository.getOwnerStore(userId);
+    
+    Store? store;
+    
+    // 1. Try fetching by the linked restaurantId/adminStore if provided
+    if (linkedStoreId != null && linkedStoreId.isNotEmpty) {
+      debugPrint('[StoreProvider] Fetching linked store by ID: $linkedStoreId');
+      store = await storeRepository.getStore(linkedStoreId);
+    }
+    
+    // 2. Fallback to searching by ownerId if not found or no link
+    if (store == null) {
+      debugPrint('[StoreProvider] Searching for store by ownerId: $userId');
+      store = await storeRepository.getOwnerStore(userId);
+    }
+    
+    debugPrint('''
+[StoreProvider] Setting Owner Result:
+  User ID: $userId
+  Store Found: ${store != null}
+  Store ID: ${store?.id}
+  Store Name: ${store?.name}
+  Is Approved: ${store?.isApproved}
+''');
+
     if (store != null) {
       _activeStoreId = store.id;
       _activeStore = store;

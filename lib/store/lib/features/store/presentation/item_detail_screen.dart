@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:campuschow/store/lib/features/orders/presentation/cart_provider.dart';
-import 'package:campuschow/store/lib/core/constants/static_data.dart';
 import 'widgets/item_detail_header.dart';
 import 'widgets/item_hero_image.dart';
 import 'widgets/item_option_widgets.dart';
@@ -23,8 +22,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     with TickerProviderStateMixin {
   int _quantity = 1;
   String? _selectedSoupId;
-  final Map<String, int> _selectedMeats = {'Small': 0, 'Big': 0};
-  final bool _hasSalad = false;
+  final Map<String, int> _selectedMeats = {};
+  bool _hasSalad = false;
   final Map<String, int> _selectedAddons = {};
   StreamSubscription? _alertSub;
 
@@ -88,12 +87,24 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     MenuItem item,
     List<MenuItem> soups,
     List<MenuItem> addons,
+    List<MenuItem> availableMeats,
+    List<MenuItem> availableSalads,
+    Map<String, double> meatPrices,
+    double saladPrice,
   ) {
     var total = item.price;
-    _selectedMeats.forEach(
-      (type, count) => total += (StaticData.meatPrices[type] ?? 0) * count,
-    );
-    if (_hasSalad) total += StaticData.saladPrice;
+    _selectedMeats.forEach((id, count) {
+      final meat = availableMeats.where((m) => m.id == id).firstOrNull;
+      if (meat != null) {
+        total += meat.price * count;
+      } else {
+        total += (meatPrices[id] ?? 0) * count;
+      }
+    });
+    if (_hasSalad) {
+      final salad = availableSalads.firstOrNull;
+      total += salad?.price ?? saladPrice;
+    }
     if (_selectedSoupId != null) {
       final soup = soups.where((s) => s.id == _selectedSoupId).firstOrNull;
       if (soup != null && !soup.isFreeWithSwallow) total += soup.price;
@@ -115,9 +126,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       return const Scaffold(body: Center(child: Text('Item not found')));
     }
 
-    final store = StaticData.stores
-        .where((s) => s.id == item.storeId)
-        .firstOrNull;
+    final store = storeProvider.activeStore;
     if (store == null) {
       return const Scaffold(body: Center(child: Text('Store not found')));
     }
@@ -133,6 +142,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
         )
         .whereType<MenuItem>()
         .toList();
+
+    final availableMeats = storeProvider.meatItems;
+    final availableSalads = storeProvider.saladItems;
 
     return Scaffold(
       body: Stack(
@@ -153,7 +165,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                         isDark: Theme.of(context).brightness == Brightness.dark,
                       ),
                       const SizedBox(height: 32),
-                      _buildOptions(item, soups, addons, store.color),
+                      _buildOptions(item, soups, addons, availableMeats, availableSalads, store.color),
                       const SizedBox(height: 120),
                     ],
                   ),
@@ -161,7 +173,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               ],
             ),
           ),
-          _buildFooter(item, _computeTotal(item, soups, addons), store.color),
+          _buildFooter(
+            item, 
+            _computeTotal(
+              item, 
+              soups, 
+              addons, 
+              availableMeats, 
+              availableSalads, 
+              storeProvider.meatPrices, 
+              storeProvider.saladPrice
+            ), 
+            store.color
+          ),
         ],
       ),
     );
@@ -171,67 +195,79 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     MenuItem item,
     List<MenuItem> soups,
     List<MenuItem> addons,
+    List<MenuItem> availableMeats,
+    List<MenuItem> availableSalads,
     Color accent,
   ) {
     return Column(
       children: [
-        OptionSection(
-          title: 'Add Meat',
-          children: [
-            _MeatTile(
-              type: 'Small',
-              count: _selectedMeats['Small']!,
+        if (availableMeats.isNotEmpty)
+          OptionSection(
+            title: 'Add Meat',
+            children: availableMeats.map((meat) => _ItemOptionTile(
+              item: meat,
+              count: _selectedMeats[meat.id] ?? 0,
               accent: accent,
-              onChanged: (c) => setState(() => _selectedMeats['Small'] = c),
-            ),
-            _MeatTile(
-              type: 'Big',
-              count: _selectedMeats['Big']!,
-              accent: accent,
-              onChanged: (c) => setState(() => _selectedMeats['Big'] = c),
-            ),
-          ],
-        ),
+              onChanged: (c) => setState(() => _selectedMeats[meat.id] = c),
+            )).toList(),
+          ),
+        if (availableSalads.isNotEmpty && (item.category == 'Rice' || item.name == 'Moi Moi')) ...[
+          const SizedBox(height: 32),
+          OptionSection(
+            title: 'Extras',
+            children: availableSalads.map((salad) => SelectionCard(
+              title: salad.name,
+              subtitle: '₦${salad.price}',
+              isSelected: _hasSalad,
+              onTap: () => setState(() => _hasSalad = !_hasSalad),
+              trailing: Checkbox(
+                value: _hasSalad,
+                onChanged: (v) => setState(() => _hasSalad = v ?? false),
+                activeColor: accent,
+              ),
+            )).toList(),
+          ),
+        ],
         if (soups.isNotEmpty) ...[
           const SizedBox(height: 32),
-          // FIX: RadioGroup wraps all Radio widgets in the group and owns the
-          // selected value + onChange. The deprecated groupValue/onChanged props
-          // on individual Radio widgets are replaced by the ancestor RadioGroup.
           OptionSection(
             title: 'Choose a Soup',
             subtitle: 'Required',
             children: [
-              if (soups.isNotEmpty) ...[
-                const SizedBox(height: 32),
-                OptionSection(
-                  title: 'Choose a Soup',
-                  subtitle: 'Required',
-                  children: [
-                    RadioGroup<String>(
-                      groupValue: _selectedSoupId,
-                      onChanged: (value) =>
-                          setState(() => _selectedSoupId = value),
-                      child: Column(
-                        children: soups
-                            .map(
-                              (s) => SelectionCard(
-                                title: s.name,
-                                subtitle: s.isFreeWithSwallow
-                                    ? 'Free'
-                                    : '₦${s.price}',
-                                isSelected: _selectedSoupId == s.id,
-                                onTap: () =>
-                                    setState(() => _selectedSoupId = s.id),
-                                trailing: Radio<String>(value: s.id),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                  ],
+              RadioGroup<String>(
+                groupValue: _selectedSoupId,
+                onChanged: (value) =>
+                    setState(() => _selectedSoupId = value),
+                child: Column(
+                  children: soups
+                      .map(
+                        (s) => SelectionCard(
+                          title: s.name,
+                          subtitle: s.isFreeWithSwallow
+                              ? 'Free'
+                              : '₦${s.price}',
+                          isSelected: _selectedSoupId == s.id,
+                          onTap: () =>
+                              setState(() => _selectedSoupId = s.id),
+                          trailing: Radio<String>(value: s.id),
+                        ),
+                      )
+                      .toList(),
                 ),
-              ],
+              ),
             ],
+          ),
+        ],
+        if (addons.isNotEmpty) ...[
+          const SizedBox(height: 32),
+          OptionSection(
+            title: 'Add-ons',
+            children: addons.map((addon) => _ItemOptionTile(
+              item: addon,
+              count: _selectedAddons[addon.id] ?? 0,
+              accent: accent,
+              onChanged: (c) => setState(() => _selectedAddons[addon.id] = c),
+            )).toList(),
           ),
         ],
       ],
@@ -321,13 +357,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
   }
 }
 
-class _MeatTile extends StatelessWidget {
-  final String type;
+class _ItemOptionTile extends StatelessWidget {
+  final MenuItem item;
   final int count;
   final Color accent;
   final ValueChanged<int> onChanged;
-  const _MeatTile({
-    required this.type,
+  const _ItemOptionTile({
+    required this.item,
     required this.count,
     required this.accent,
     required this.onChanged,
@@ -336,8 +372,8 @@ class _MeatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SelectionCard(
-      title: '$type Meat',
-      subtitle: '₦${StaticData.meatPrices[type]}',
+      title: item.name,
+      subtitle: '₦${item.price}',
       isSelected: count > 0,
       trailing: StepperControl(
         count: count,

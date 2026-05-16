@@ -56,9 +56,13 @@ class _SearchScreenState extends State<SearchScreen> {
     final results = _query.isEmpty
         ? <MenuItem>[]
         : storeProvider.menuItems.where((item) {
-            return item.name.toLowerCase().contains(_query.toLowerCase()) ||
+            final matchesQuery =
+                item.name.toLowerCase().contains(_query.toLowerCase()) ||
                 item.description.toLowerCase().contains(_query.toLowerCase()) ||
                 item.category.toLowerCase().contains(_query.toLowerCase());
+            final isNotStandaloneOption =
+                item.category != 'Meat' && item.category != 'Salad';
+            return matchesQuery && isNotStandaloneOption;
           }).toList();
 
     return Scaffold(

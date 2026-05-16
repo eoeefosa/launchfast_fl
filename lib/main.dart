@@ -170,6 +170,14 @@ Future<void> main() async {
 
     final router = createRouter(authProvider);
 
+    debugPrint('''
+[Main] Boot summary:
+  Authenticated: ${authProvider.isAuthenticated}
+  User ID: ${authProvider.user?.id}
+  Role: ${authProvider.user?.role}
+  Is Store Owner: ${authProvider.isStoreOwner}
+''');
+
     debugPrint('[Main] Boot complete — running app');
 
     runApp(CampusChowApp(authProvider: authProvider, router: router));
@@ -316,7 +324,7 @@ class CampusChowApp extends StatelessWidget {
             designSize: const Size(390, 844),
             minTextAdapt: true,
             splitScreenMode: true,
-            builder: (_, __) => MaterialApp.router(
+            builder: (_, _) => MaterialApp.router(
               debugShowCheckedModeBanner: false,
               title: 'CampusChow',
               theme: AppTheme.lightTheme,

@@ -23,7 +23,7 @@ class ItemOptionsSheet extends StatefulWidget {
 class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
   int _quantity = 1;
   String? _selectedSoupId;
-  final Map<String, int> _selectedMeats = {'Small': 0, 'Big': 0};
+  final Map<String, int> _selectedMeats = {};
   bool _hasSalad = false;
   String? _selectedSizeId;
   final Map<String, int> _selectedAddons = {};
@@ -40,6 +40,14 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
               )
               .toList()
         : <MenuItem>[];
+
+    final availableMeats = storeProvider.menuItems
+        .where((m) => m.storeId == widget.item.storeId && m.category == 'Meat')
+        .toList();
+
+    final availableSalads = storeProvider.menuItems
+        .where((m) => m.storeId == widget.item.storeId && m.category == 'Salad')
+        .toList();
 
     final availableAddons = widget.item.addonIds != null
         ? widget.item.addonIds!
@@ -58,6 +66,8 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
       selectedSoupId: _selectedSoupId,
       availableSoups: availableSoups,
       availableAddons: availableAddons,
+      availableMeats: availableMeats,
+      availableSalads: availableSalads,
       meatPrices: storeProvider.meatPrices,
       saladPrice: storeProvider.saladPrice,
       selectedSizeId: _selectedSizeId,
@@ -151,27 +161,22 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                     ),
                     const SizedBox(height: 24),
                   ],
-                  ItemDetailOptionsSection(
-                    title: 'Add Meat',
-                    children: [
-                      ItemDetailMeatOption(
-                        type: 'Small',
-                        price: storeProvider.meatPrices['Small']!,
-                        count: _selectedMeats['Small']!,
-                        accentColor: widget.accentColor,
-                        onChanged: (c) =>
-                            setState(() => _selectedMeats['Small'] = c),
-                      ),
-                      ItemDetailMeatOption(
-                        type: 'Big',
-                        price: storeProvider.meatPrices['Big']!,
-                        count: _selectedMeats['Big']!,
-                        accentColor: widget.accentColor,
-                        onChanged: (c) =>
-                            setState(() => _selectedMeats['Big'] = c),
-                      ),
-                    ],
-                  ),
+                  if (availableMeats.isNotEmpty) ...[
+                    ItemDetailOptionsSection(
+                      title: 'Add Meat',
+                      children: availableMeats
+                          .map(
+                            (meat) => ItemDetailMeatOption(
+                              meat: meat,
+                              count: _selectedMeats[meat.id] ?? 0,
+                              accentColor: widget.accentColor,
+                              onChanged: (c) =>
+                                  setState(() => _selectedMeats[meat.id] = c),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
                   if (availableAddons.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     ItemDetailOptionsSection(
@@ -189,19 +194,23 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                           .toList(),
                     ),
                   ],
-                  if (widget.item.category == 'Rice' ||
-                      widget.item.name == 'Moi Moi') ...[
+                  if (availableSalads.isNotEmpty &&
+                      (widget.item.category == 'Rice' ||
+                          widget.item.name == 'Moi Moi')) ...[
                     const SizedBox(height: 24),
                     ItemDetailOptionsSection(
                       title: 'Extras',
-                      children: [
-                        ItemDetailSaladOption(
-                          hasSalad: _hasSalad,
-                          price: storeProvider.saladPrice,
-                          accentColor: widget.accentColor,
-                          onChanged: (val) => setState(() => _hasSalad = val),
-                        ),
-                      ],
+                      children: availableSalads
+                          .map(
+                            (salad) => ItemDetailSaladOption(
+                              salad: salad,
+                              isSelected: _hasSalad,
+                              accentColor: widget.accentColor,
+                              onChanged: (val) =>
+                                  setState(() => _hasSalad = val),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ],
                   if (widget.item.category == 'Swallow') ...[

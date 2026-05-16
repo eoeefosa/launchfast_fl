@@ -62,6 +62,17 @@ class MenuRepository {
       return Result.failure(ServerFailure(e.toString()));
     }
   }
+
+  Future<Result<Map<String, dynamic>>> getSettings() async {
+    try {
+      final response = await apiService.dio.get('/platform/settings');
+      return Result.success(Map<String, dynamic>.from(response.data));
+    } on DioException catch (e) {
+      return Result.failure(apiService.handleDioError(e));
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
 }
 
 final menuRepository = MenuRepository();

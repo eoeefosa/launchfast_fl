@@ -22,13 +22,24 @@ abstract final class PriceCalculator {
     double price = basePrice;
 
     if (item.selectedMeats != null) {
-      item.selectedMeats!.forEach((type, count) {
-        price += (meatPrices[type] ?? 0) * count;
+      item.selectedMeats!.forEach((key, count) {
+        // Try finding by ID first
+        final meatItem = allMenuItems.firstWhereOrNull((m) => m.id == key);
+        if (meatItem != null) {
+          price += meatItem.price * count;
+        } else {
+          price += (meatPrices[key] ?? 0) * count;
+        }
       });
     }
 
     if (item.hasSalad) {
-      price += saladPrice;
+      final saladItem = allMenuItems.firstWhereOrNull((m) => m.category == 'Salad');
+      if (saladItem != null) {
+        price += saladItem.price;
+      } else {
+        price += saladPrice;
+      }
     }
 
     if (item.selectedAddons != null) {
@@ -58,6 +69,8 @@ abstract final class PriceCalculator {
     required String? selectedSoupId,
     required List<MenuItem> availableSoups,
     required List<MenuItem> availableAddons,
+    required List<MenuItem> availableMeats,
+    required List<MenuItem> availableSalads,
     required Map<String, double> meatPrices,
     required double saladPrice,
     String? selectedSizeId,
@@ -76,11 +89,23 @@ abstract final class PriceCalculator {
 
     var total = basePrice;
     
-    selectedMeats.forEach(
-      (type, count) => total += (meatPrices[type] ?? 0) * count,
-    );
+    selectedMeats.forEach((key, count) {
+      final meatItem = availableMeats.firstWhereOrNull((m) => m.id == key);
+      if (meatItem != null) {
+        total += meatItem.price * count;
+      } else {
+        total += (meatPrices[key] ?? 0) * count;
+      }
+    });
     
-    if (hasSalad) total += saladPrice;
+    if (hasSalad) {
+      final saladItem = availableSalads.firstWhereOrNull((m) => m.category == 'Salad');
+      if (saladItem != null) {
+        total += saladItem.price;
+      } else {
+        total += saladPrice;
+      }
+    }
     
     if (selectedSoupId != null) {
       final soup = availableSoups.firstWhereOrNull((s) => s.id == selectedSoupId);
@@ -113,13 +138,18 @@ abstract final class PriceCalculator {
     }
 
     if (item.selectedMeats != null) {
-      item.selectedMeats!.forEach((type, count) {
-        if (count > 0) parts.add('$count x $type Meat');
+      item.selectedMeats!.forEach((key, count) {
+        if (count > 0) {
+          final meatItem = allMenuItems.firstWhereOrNull((m) => m.id == key);
+          final label = meatItem != null ? meatItem.name : '$key Meat';
+          parts.add('$count x $label');
+        }
       });
     }
 
     if (item.hasSalad) {
-      parts.add('Salad');
+      final saladItem = allMenuItems.firstWhereOrNull((m) => m.category == 'Salad');
+      parts.add(saladItem != null ? saladItem.name : 'Salad');
     }
 
     if (item.selectedAddons != null) {

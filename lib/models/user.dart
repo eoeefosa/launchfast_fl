@@ -41,7 +41,7 @@ class UserProfile {
       walletBalance: (json['walletBalance'] as num?)?.toDouble() ?? 0.0,
       role: json['role'] ?? 'user',
       isStoreApproved: json['isStoreApproved'] ?? false,
-      adminStore: json['adminStore'],
+      adminStore: json['adminStore'] ?? json['restaurantId']?.toString(),
       emailVerified: json['emailVerified'] ?? false,
       phoneVerified: json['phoneVerified'] ?? false,
       isOnline: json['isOnline'] ?? false,

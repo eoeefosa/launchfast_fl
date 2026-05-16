@@ -19,6 +19,8 @@ class ItemDetailScrollBody extends StatelessWidget {
   final Color accentColor;
   final List<MenuItem> availableSoups;
   final List<MenuItem> availableAddons;
+  final List<MenuItem> availableMeats;
+  final List<MenuItem> availableSalads;
 
   final Map<String, int> selectedMeats;
   final Map<String, int> selectedAddons;
@@ -44,6 +46,8 @@ class ItemDetailScrollBody extends StatelessWidget {
     required this.accentColor,
     required this.availableSoups,
     required this.availableAddons,
+    required this.availableMeats,
+    required this.availableSalads,
     required this.selectedMeats,
     required this.selectedAddons,
     required this.hasSalad,
@@ -80,26 +84,22 @@ class ItemDetailScrollBody extends StatelessWidget {
                       accentColor: accentColor,
                       isDark: isDark,
                     ),
-                    const SizedBox(height: 32),
-                    ItemDetailOptionsSection(
-                      title: 'Add Meat',
-                      children: [
-                        ItemDetailMeatOption(
-                          type: 'Small',
-                          price: meatPrices['Small']!,
-                          count: selectedMeats['Small']!,
-                          accentColor: accentColor,
-                          onChanged: (c) => onMeatChanged('Small', c),
-                        ),
-                        ItemDetailMeatOption(
-                          type: 'Big',
-                          price: meatPrices['Big']!,
-                          count: selectedMeats['Big']!,
-                          accentColor: accentColor,
-                          onChanged: (c) => onMeatChanged('Big', c),
-                        ),
-                      ],
-                    ),
+                    if (availableMeats.isNotEmpty) ...[
+                      const SizedBox(height: 32),
+                      ItemDetailOptionsSection(
+                        title: 'Add Meat',
+                        children: availableMeats
+                            .map(
+                              (meat) => ItemDetailMeatOption(
+                                meat: meat,
+                                count: selectedMeats[meat.id] ?? 0,
+                                accentColor: accentColor,
+                                onChanged: (c) => onMeatChanged(meat.id, c),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
                     if (availableAddons.isNotEmpty) ...[
                       const SizedBox(height: 32),
                       ItemDetailOptionsSection(
@@ -116,18 +116,21 @@ class ItemDetailScrollBody extends StatelessWidget {
                             .toList(),
                       ),
                     ],
-                    if (item.category == 'Rice' || item.name == 'Moi Moi') ...[
+                    if (availableSalads.isNotEmpty &&
+                        (item.category == 'Rice' || item.name == 'Moi Moi')) ...[
                       const SizedBox(height: 32),
                       ItemDetailOptionsSection(
                         title: 'Extras',
-                        children: [
-                          ItemDetailSaladOption(
-                            hasSalad: hasSalad,
-                            price: saladPrice,
-                            accentColor: accentColor,
-                            onChanged: onSaladChanged,
-                          ),
-                        ],
+                        children: availableSalads
+                            .map(
+                              (salad) => ItemDetailSaladOption(
+                                salad: salad,
+                                isSelected: hasSalad,
+                                accentColor: accentColor,
+                                onChanged: onSaladChanged,
+                              ),
+                            )
+                            .toList(),
                       ),
                     ],
                     if (item.category == 'Swallow') ...[
