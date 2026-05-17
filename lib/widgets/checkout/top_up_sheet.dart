@@ -26,8 +26,6 @@ class _TopUpSheetState extends State<TopUpSheet> {
   late final TextEditingController _amountCtrl;
   bool _isLoading = false;
 
-  static const _quickAmounts = [1000, 2000, 5000];
-
   @override
   void initState() {
     super.initState();
@@ -103,208 +101,265 @@ class _TopUpSheetState extends State<TopUpSheet> {
     final scheme = Theme.of(context).colorScheme;
 
     return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: scheme.onSurface.withValues(alpha: 0.08),
           ),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _TopUpHeader(),
+            const SizedBox(height: 24),
+            _AmountInputField(controller: _amountCtrl, onChanged: (_) => setState(() {})),
+            const SizedBox(height: 16),
+            _QuickAmountChips(
+              selectedAmount: _amountCtrl.text,
+              onAmountSelected: (amt) => setState(() => _amountCtrl.text = amt),
+            ),
+            const SizedBox(height: 12),
+            const _SecurityBadge(),
+            const SizedBox(height: 24),
+            _DepositButton(isLoading: _isLoading, onPressed: _deposit),
+          ],
+        ),
+      ),
+    )
+    .animate()
+    .fadeIn(duration: 180.ms)
+    .scale(begin: const Offset(0.95, 0.95), curve: Curves.easeOutBack);
+  }
+}
+
+class _TopUpHeader extends StatelessWidget {
+  const _TopUpHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Top Up Wallet',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
+            color: scheme.onSurface,
+          ),
+        ),
+        GestureDetector(
+          onTap: () => Navigator.pop(context),
           child: Container(
-            padding: const EdgeInsets.all(28),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(28),
+              color: scheme.onSurface.withValues(alpha: 0.06),
+              shape: BoxShape.circle,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Top Up Wallet',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close_rounded,
-                          size: 20,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Amount input
-                TextField(
-                  controller: _amountCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Enter Amount',
-                    labelStyle: const TextStyle(
-                      color: Colors.black45,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    floatingLabelStyle: TextStyle(
-                      color: scheme.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    hintText: '0',
-                    prefixText: '₦ ',
-                    prefixStyle: TextStyle(
-                      color: scheme.primary,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 22,
-                    ),
-                    filled: true,
-                    fillColor: Colors.black.withValues(alpha: 0.04),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide(color: scheme.primary, width: 2),
-                    ),
-                    contentPadding: const EdgeInsets.all(20),
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  autofocus: true,
-                  onChanged: (_) => setState(() {}),
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black87,
-                    letterSpacing: -1,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Quick chips
-                Row(
-                  children: _quickAmounts
-                      .map(
-                        (amt) => Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: GestureDetector(
-                              onTap: () => setState(
-                                () => _amountCtrl.text = amt.toString(),
-                              ),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 180),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 13,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _amountCtrl.text == amt.toString()
-                                      ? scheme.primary.withValues(alpha: 0.1)
-                                      : Colors.black.withValues(alpha: 0.04),
-                                  border: Border.all(
-                                    color: _amountCtrl.text == amt.toString()
-                                        ? scheme.primary
-                                        : Colors.transparent,
-                                    width: 2,
-                                  ),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '₦$amt',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 13,
-                                      color: _amountCtrl.text == amt.toString()
-                                          ? scheme.primary
-                                          : Colors.black54,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 12),
-
-                // Security badge
-                Row(
-                  children: const [
-                    Icon(
-                      Icons.lock_outline_rounded,
-                      size: 13,
-                      color: Colors.black38,
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'Secured by Paystack',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.black38,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Deposit button
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _isLoading ? null : _deposit,
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'Deposit via Paystack',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 15,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
+            child: Icon(
+              Icons.close_rounded,
+              size: 20,
+              color: scheme.onSurface,
             ),
           ),
-        )
-        .animate()
-        .fadeIn(duration: 180.ms)
-        .scale(begin: const Offset(0.95, 0.95), curve: Curves.easeOutBack);
+        ),
+      ],
+    );
+  }
+}
+
+class _AmountInputField extends StatelessWidget {
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  const _AmountInputField({required this.controller, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: 'Enter Amount',
+        labelStyle: TextStyle(
+          color: scheme.onSurface.withValues(alpha: 0.45),
+          fontWeight: FontWeight.w600,
+        ),
+        floatingLabelStyle: TextStyle(
+          color: scheme.primary,
+          fontWeight: FontWeight.w800,
+        ),
+        hintText: '0',
+        prefixText: '₦ ',
+        prefixStyle: TextStyle(
+          color: scheme.primary,
+          fontWeight: FontWeight.w900,
+          fontSize: 22,
+        ),
+        filled: true,
+        fillColor: scheme.onSurface.withValues(alpha: 0.04),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: scheme.primary, width: 2),
+        ),
+        contentPadding: const EdgeInsets.all(20),
+      ),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      autofocus: true,
+      onChanged: onChanged,
+      style: TextStyle(
+        fontSize: 26,
+        fontWeight: FontWeight.w900,
+        color: scheme.onSurface,
+        letterSpacing: -1,
+      ),
+    );
+  }
+}
+
+class _QuickAmountChips extends StatelessWidget {
+  final String selectedAmount;
+  final ValueChanged<String> onAmountSelected;
+
+  const _QuickAmountChips({required this.selectedAmount, required this.onAmountSelected});
+
+  static const _quickAmounts = [1000, 2000, 5000];
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Row(
+      children: _quickAmounts
+          .map(
+            (amt) => Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: GestureDetector(
+                  onTap: () => onAmountSelected(amt.toString()),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    decoration: BoxDecoration(
+                      color: selectedAmount == amt.toString()
+                          ? scheme.primary.withValues(alpha: 0.1)
+                          : (isDark ? scheme.surfaceContainerHighest : Colors.black.withValues(alpha: 0.04)),
+                      border: Border.all(
+                        color: selectedAmount == amt.toString()
+                            ? scheme.primary
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '₦$amt',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          color: selectedAmount == amt.toString()
+                              ? scheme.primary
+                              : scheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _SecurityBadge extends StatelessWidget {
+  const _SecurityBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(
+          Icons.lock_outline_rounded,
+          size: 13,
+          color: scheme.onSurface.withValues(alpha: 0.4),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          'Secured by Paystack',
+          style: TextStyle(
+            fontSize: 11,
+            color: scheme.onSurface.withValues(alpha: 0.4),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DepositButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  const _DepositButton({required this.isLoading, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: isLoading ? null : onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Text(
+                'Deposit via Paystack',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                  letterSpacing: 0.2,
+                ),
+              ),
+      ),
+    );
   }
 }

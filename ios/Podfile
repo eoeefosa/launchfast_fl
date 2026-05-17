@@ -46,4 +46,21 @@ post_install do |installer|
       config.build_settings['GENERATE_INFOPLIST_FILE'] = 'NO'
     end
   end
+
+  # Fix for objective_c.framework simulator slice issue during validation
+  installer.aggregate_targets.each do |target|
+    target.user_project.targets.each do |user_target|
+      user_target.build_configurations.each do |config|
+        config.build_settings['VALIDATE_WORKSPACE'] = 'YES'
+      end
+    end
+  end
+
+  # Additional fix: Ensure all frameworks are stripped of simulator slices
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['ARCHS[sdk=iphoneos*]'] = 'arm64'
+    end
+  end
 end
+

@@ -320,8 +320,17 @@ class AblyService {
       channelName: channelName,
       eventName: 'general-notification',
       onMessage: (data) {
+        // Forward to notification listeners for the bell/notification list
         for (final cb in _notificationListeners) {
           cb(data);
+        }
+        // If this is a wallet/deposit event, also trigger wallet listeners
+        // so the balance refreshes immediately without a manual pull-to-refresh.
+        final type = (data['type']?.toString() ?? '').toLowerCase();
+        if (type == 'deposit' || type == 'wallet_topup' || type == 'wallet_update') {
+          for (final cb in _walletListeners) {
+            cb();
+          }
         }
       },
     );

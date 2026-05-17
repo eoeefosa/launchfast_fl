@@ -89,7 +89,7 @@ class _StoreTopSellingScreenState extends State<StoreTopSellingScreen> {
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: widget.items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        separatorBuilder: (_, _) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
           final entry = widget.items[index];
           final itemName = entry.key;

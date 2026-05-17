@@ -24,6 +24,19 @@ class OrdersScreen extends StatelessWidget {
     final activeOrder = _resolveActiveOrder(orderProvider.orders);
     final hasActiveOrder = _isActive(activeOrder);
 
+    // Filter for today's orders
+    final now = DateTime.now();
+    final todayOrders = orderProvider.orders.where((o) {
+      try {
+        final orderDate = DateTime.parse(o.date);
+        return orderDate.year == now.year &&
+               orderDate.month == now.month &&
+               orderDate.day == now.day;
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _OrdersAppBar(isIOS: _isIOS),
@@ -34,7 +47,7 @@ class OrdersScreen extends StatelessWidget {
           Expanded(
             child: _OrdersBody(
               orderProvider: orderProvider,
-              orders: orderProvider.orders,
+              orders: todayOrders, // Only today's orders here
               activeOrder: activeOrder,
               hasActiveOrder: hasActiveOrder,
               isIOS: _isIOS,
@@ -88,13 +101,19 @@ class _OrdersAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     if (isIOS) {
       return CupertinoNavigationBar(
         middle: const Text(
           'My Orders',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
-        backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          child: const Icon(CupertinoIcons.clock, size: 22),
+          onPressed: () => import_go_router.GoRouter.of(context).push('/orders/history'),
+        ),
+        backgroundColor: scheme.surface.withValues(alpha: 0.8),
         border: null,
       );
     }
@@ -108,9 +127,17 @@ class _OrdersAppBar extends StatelessWidget implements PreferredSizeWidget {
           letterSpacing: -1,
         ),
       ),
+      actions: [
+        IconButton(
+          onPressed: () => import_go_router.GoRouter.of(context).push('/orders/history'),
+          icon: const Icon(Icons.history_rounded),
+          tooltip: 'Order History',
+        ),
+        const SizedBox(width: 8),
+      ],
       centerTitle: false,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      surfaceTintColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: scheme.surface,
+      surfaceTintColor: scheme.surface,
       elevation: 0,
     );
   }
@@ -148,7 +175,7 @@ class _OrdersBody extends StatelessWidget {
     if (orders.isEmpty)
       const _EmptyState()
     else ...[
-      const _SectionLabel('Past Orders', animationDelay: 200),
+      const _SectionLabel("Today's Orders", animationDelay: 200),
       const SizedBox(height: 16),
       ...orders.map((o) => OrderHistoryCard(order: o)),
       const SizedBox(height: 40),

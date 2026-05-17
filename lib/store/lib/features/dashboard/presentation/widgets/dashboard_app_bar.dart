@@ -8,10 +8,12 @@ class DashboardAppBar extends StatelessWidget {
     required this.hasNewOrder,
     required this.pulse,
     required this.onNotificationTap,
+    this.unreadCount = 0,
   });
 
   final String? userName;
   final bool hasNewOrder;
+  final int unreadCount;
   final Animation<double> pulse;
   final VoidCallback onNotificationTap;
 
@@ -60,19 +62,27 @@ class DashboardAppBar extends StatelessWidget {
               const Icon(Icons.notifications_outlined, color: Colors.white),
               if (hasNewOrder)
                 Positioned(
-                  top: -2,
-                  right: -2,
+                  top: -4,
+                  right: -4,
                   child: ScaleTransition(
                     scale: pulse,
-                    child: const SizedBox(
-                      width: 10,
-                      height: 10,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent,
-                          shape: BoxShape.circle,
-                        ),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
                       ),
+                      child: unreadCount > 0
+                          ? Text(
+                              unreadCount > 9 ? '9+' : unreadCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                height: 1,
+                              ),
+                            )
+                          : const SizedBox(width: 4, height: 4),
                     ),
                   ),
                 ),

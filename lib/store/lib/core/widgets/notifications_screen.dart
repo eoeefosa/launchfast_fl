@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:campuschow/store/lib/core/models/notification_model.dart';
 import 'package:campuschow/store/lib/core/providers/notification_provider.dart';
+import 'package:campuschow/store/lib/features/dashboard/presentation/store_order_detail_screen.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -130,22 +130,24 @@ class _NotificationTile extends StatelessWidget {
           // Handle navigation based on notification type and metadata
           switch (item.type) {
             case NotificationType.orderUpdate:
-              // Navigate to the Orders tab
-              context.go('/orders');
+              // Try to extract orderId from metadata for direct navigation
+              final meta = item.metadata;
+              final orderId = meta?['orderId']?.toString() ??
+                              meta?['order_id']?.toString() ??
+                              meta?['id']?.toString();
+              if (orderId != null) {
+                Navigator.of(context, rootNavigator: true).push(
+                  MaterialPageRoute(
+                    builder: (_) => StoreOrderDetailScreen(orderId: orderId),
+                  ),
+                );
+              }
               break;
             case NotificationType.walletUpdate:
             case NotificationType.profileUpdate:
-              // Navigate to the Profile tab
-              context.go('/profile');
-              break;
             case NotificationType.serverAlert:
             case NotificationType.promotion:
-              // For these, we might just stay on the notifications screen
-              // or navigate to a specific promotional page if metadata exists.
-              if (item.metadata != null && item.metadata!['url'] != null) {
-                // If there's a specific URL in metadata, we could open it
-                // launchUrl(Uri.parse(item.metadata!['url']));
-              }
+              // Stay on notifications screen — no specific deep link for these
               break;
           }
         },

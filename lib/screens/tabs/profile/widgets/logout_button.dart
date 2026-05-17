@@ -75,19 +75,34 @@ class LogoutButton extends StatelessWidget {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+            ),
           ),
           title: const Text(
             'Sign Out',
             style: TextStyle(fontWeight: FontWeight.w900),
           ),
-          content: const Text('Are you sure you want to sign out?'),
+          content: Text(
+            'Are you sure you want to sign out?',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('CANCEL'),
+              child: Text(
+                'CANCEL',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -97,7 +112,10 @@ class LogoutButton extends StatelessWidget {
               },
               child: const Text(
                 'SIGN OUT',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
           ],

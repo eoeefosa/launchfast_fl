@@ -13,6 +13,9 @@ import 'widgets/stats_grid.dart';
 import 'widgets/status_card.dart';
 import 'widgets/top_selling_items.dart';
 import 'widgets/dashboard_app_bar.dart';
+import 'package:campuschow/store/lib/core/widgets/notifications_screen.dart';
+import 'package:campuschow/store/lib/core/providers/notification_provider.dart';
+
 import 'widgets/busy_mode_button.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -253,6 +256,8 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
     // context.select so only the greeting re-renders on user change.
     final userName =
         context.select<AuthProvider, String?>((p) => p.user?.name);
+        
+    final unreadCount = context.select<NotificationProvider, int>((p) => p.unreadCount);
 
     return Scaffold(
       backgroundColor: bg,
@@ -264,9 +269,18 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
           slivers: [
             DashboardAppBar(
               userName: userName,
-              hasNewOrder: _hasNewOrder,
+              hasNewOrder: _hasNewOrder || unreadCount > 0,
+              unreadCount: unreadCount,
               pulse: _pulse,
-              onNotificationTap: _dismissNewOrderAlert,
+              onNotificationTap: () {
+                _dismissNewOrderAlert();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationsScreen(),
+                  ),
+                );
+              },
             ),
             SliverToBoxAdapter(
               child: Padding(

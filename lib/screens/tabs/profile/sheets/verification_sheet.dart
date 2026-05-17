@@ -3,7 +3,6 @@ import '../../../../providers/auth_provider.dart';
 import '../../../../services/api_service.dart';
 import '../../../auth/widgets/constants.dart';
 import '../../../auth/widgets/custom_button.dart';
-import '../widgets/bottom_sheet_scaffold.dart';
 
 class VerificationSheet extends StatefulWidget {
   const VerificationSheet({
@@ -117,21 +116,46 @@ class _VerificationSheetState extends State<VerificationSheet> {
   }
 
   Color get _networkColor {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (!isDark) {
+      switch (_predictedNetwork) {
+        case 'MTN':
+          return Colors.yellow.shade50;
+        case 'Glo':
+          return Colors.green.shade50;
+        case 'Airtel':
+          return Colors.red.shade50;
+        case '9mobile':
+          return Colors.orange.shade50;
+        default:
+          return Colors.white;
+      }
+    } else {
+      // In dark mode, we use the standard surface but with a hint of the network color
+      return Theme.of(context).colorScheme.surface;
+    }
+  }
+
+  Color get _accentColor {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     switch (_predictedNetwork) {
       case 'MTN':
-        return Colors.yellow.shade100;
+        return isDark ? Colors.yellowAccent.shade700 : Colors.yellow.shade800;
       case 'Glo':
-        return Colors.green.shade100;
+        return isDark ? Colors.greenAccent.shade400 : Colors.green.shade700;
       case 'Airtel':
-        return Colors.red.shade100;
+        return isDark ? Colors.redAccent.shade200 : Colors.red.shade700;
       case '9mobile':
-        return Colors.orange.shade200;
+        return isDark ? Colors.orangeAccent.shade400 : Colors.orange.shade800;
       default:
-        return Colors.white;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 
   Color get _titleColor {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (isDark) return Theme.of(context).colorScheme.onSurface;
+
     switch (_predictedNetwork) {
       case 'MTN':
         return Colors.brown.shade900;
@@ -147,6 +171,9 @@ class _VerificationSheetState extends State<VerificationSheet> {
   }
 
   Color get _subtitleColor {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (isDark) return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
+
     switch (_predictedNetwork) {
       case 'MTN':
         return Colors.brown.shade700;
@@ -163,72 +190,174 @@ class _VerificationSheetState extends State<VerificationSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final title = _isPhone ? 'Verify Phone via Telegram' : 'Verify Email';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    final title = _isPhone ? 'Phone Verification' : 'Email Verification';
 
-    return BottomSheetScaffold(
-      title: title,
-      backgroundColor: _networkColor,
-      textColor: _titleColor,
-      child: _codeSent ? _buildOtpStep() : _buildSendStep(context),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        decoration: BoxDecoration(
+          color: _networkColor,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: isDark ? scheme.onSurface.withValues(alpha: 0.1) : Colors.transparent,
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: _titleColor,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.close_rounded, color: _titleColor.withValues(alpha: 0.5)),
+                      style: IconButton.styleFrom(
+                        backgroundColor: _titleColor.withValues(alpha: 0.05),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: isDark && _predictedNetwork.isNotEmpty ? BoxDecoration(
+                    border: Border(
+                      left: BorderSide(color: _accentColor, width: 4),
+                    ),
+                  ) : null,
+                  padding: isDark && _predictedNetwork.isNotEmpty ? const EdgeInsets.only(left: 16) : null,
+                  child: _codeSent ? _buildOtpStep() : _buildSendStep(context),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildSendStep(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (_isPhone) ...[
           Text(
-            'To receive your OTP, please enter your Nigerian Phone Number.',
-            style: TextStyle(color: _subtitleColor, fontSize: 14),
+            'Enter your phone number to receive a 6-digit OTP via Telegram or SMS.',
+            style: TextStyle(
+              color: _subtitleColor, 
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              height: 1.5,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
           TextField(
             controller: _phoneCtrl,
-            style: TextStyle(color: _titleColor, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: _titleColor, 
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
             decoration: InputDecoration(
               labelText: 'Phone Number',
-              labelStyle: TextStyle(color: _subtitleColor),
-              hintText: 'e.g. 0803 123 4567',
+              labelStyle: TextStyle(
+                color: _subtitleColor,
+                fontWeight: FontWeight.w600,
+              ),
+              hintText: '0803 123 4567',
               hintStyle: TextStyle(
-                color: _subtitleColor.withValues(alpha: 0.5),
+                color: _subtitleColor.withValues(alpha: 0.3),
+              ),
+              filled: true,
+              fillColor: isDark 
+                  ? scheme.onSurface.withValues(alpha: 0.05) 
+                  : (_predictedNetwork.isNotEmpty ? Colors.white.withValues(alpha: 0.5) : Colors.grey[100]),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: _subtitleColor.withValues(alpha: 0.3),
-                ),
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: _titleColor, width: 2),
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: _accentColor, width: 2),
               ),
-              suffixIcon: SizedBox(
-                width: 60,
-                child: Center(
-                  child: _predictedNetwork.isNotEmpty
-                      ? Text(
+              prefixIcon: Icon(Icons.phone_iphone_rounded, color: _accentColor),
+              suffixIcon: Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_predictedNetwork.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _accentColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
                           _predictedNetwork,
                           style: TextStyle(
-                            color: _titleColor,
-                            fontWeight: FontWeight.bold,
+                            color: _accentColor,
+                            fontWeight: FontWeight.w900,
                             fontSize: 10,
                           ),
-                        )
-                      : const SizedBox.shrink(),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
             keyboardType: TextInputType.phone,
             maxLength: 11,
+            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
           ),
         ] else
           Text(
-            'We will send a 6-digit OTP to ${widget.auth.user!.email}.',
-            style: TextStyle(color: _subtitleColor, fontSize: 14),
+            'We will send a 6-digit verification code to your email address: ${widget.auth.user!.email}.',
+            style: TextStyle(
+              color: _subtitleColor, 
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              height: 1.5,
+            ),
           ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 32),
         CustomButton(
-          primaryColor: Theme.of(context).primaryColor,
-          label: 'Send Code',
+          primaryColor: _accentColor,
+          label: 'Send Verification Code',
           onPressed: _isSending ? null : _sendCode,
           isLoading: _isSending,
         ),
@@ -237,46 +366,84 @@ class _VerificationSheetState extends State<VerificationSheet> {
   }
 
   Widget _buildOtpStep() {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Enter the 6-digit code you received.',
-          style: TextStyle(color: _subtitleColor, fontSize: 14),
+          'A 6-digit code has been sent. Please enter it below to verify.',
+          style: TextStyle(
+            color: _subtitleColor, 
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            height: 1.5,
+          ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 24),
         TextField(
           controller: _otpCtrl,
           style: TextStyle(
             color: _titleColor,
-            fontSize: 24,
-            letterSpacing: 8,
-            fontWeight: FontWeight.bold,
+            fontSize: 32,
+            letterSpacing: 12,
+            fontWeight: FontWeight.w900,
           ),
           decoration: InputDecoration(
-            labelText: 'OTP Code',
-            labelStyle: TextStyle(color: _subtitleColor),
-            hintText: '123456',
-            hintStyle: TextStyle(color: _subtitleColor.withValues(alpha: 0.5)),
+            labelText: 'Verification Code',
+            labelStyle: TextStyle(
+              color: _subtitleColor,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0,
+            ),
+            hintText: '000000',
+            hintStyle: TextStyle(
+              color: _subtitleColor.withValues(alpha: 0.2),
+              letterSpacing: 12,
+            ),
+            filled: true,
+            fillColor: isDark 
+                ? scheme.onSurface.withValues(alpha: 0.05) 
+                : Colors.white.withValues(alpha: 0.5),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide.none,
+            ),
             enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(
-                color: _subtitleColor.withValues(alpha: 0.3),
-              ),
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: _titleColor, width: 2),
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(color: _accentColor, width: 2),
             ),
+            contentPadding: const EdgeInsets.symmetric(vertical: 20),
           ),
           keyboardType: TextInputType.number,
           maxLength: 6,
           textAlign: TextAlign.center,
+          buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 32),
         CustomButton(
-          primaryColor: Theme.of(context).primaryColor,
+          primaryColor: _accentColor,
           isLoading: _isVerifying,
-          label: 'Verify Now',
+          label: 'Verify & Continue',
           onPressed: _isVerifying ? null : _verifyOtp,
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: TextButton(
+            onPressed: _isSending ? null : _sendCode,
+            child: Text(
+              'Resend Code',
+              style: TextStyle(
+                color: _accentColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
         ),
       ],
     );

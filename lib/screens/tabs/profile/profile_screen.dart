@@ -149,10 +149,9 @@ class ProfileScreen extends StatelessWidget {
     String method,
   ) {
     HapticFeedback.lightImpact();
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
       builder: (_) => VerificationSheet(auth: auth, method: method),
     );
   }
@@ -164,15 +163,16 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-          color: Colors.grey[500],
-          letterSpacing: 1.2,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          color: scheme.onSurface.withValues(alpha: 0.4),
+          letterSpacing: 1.5,
         ),
       ),
     ).animate().fadeIn(delay: 100.ms);

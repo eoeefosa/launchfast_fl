@@ -347,8 +347,9 @@ class CartProvider with ChangeNotifier {
     final storeCount = _items.map((i) => i.menuItem.storeId).toSet().length;
     if (subTotal < 2000) return 150.0 * storeCount;
     if (subTotal <= 5000) return 250.0 * storeCount;
-    if (subTotal <= 10000) return 350.0 * storeCount;
-    return 500.0 * storeCount;
+    if (subTotal <= 7000) return 350.0 * storeCount;
+    if (subTotal <= 10000) return 400.0 * storeCount;
+    return 450.0 * storeCount;
   }
 
   double get discountAmount {

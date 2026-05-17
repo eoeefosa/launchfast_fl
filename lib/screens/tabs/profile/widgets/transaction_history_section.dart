@@ -30,6 +30,7 @@ class _TransactionHistorySectionState extends State<TransactionHistorySection> {
   Widget build(BuildContext context) {
     final payment = context.watch<PaymentProvider>();
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,17 +51,17 @@ class _TransactionHistorySectionState extends State<TransactionHistorySection> {
                   onSelected: (selected) {
                     if (selected) {
                       setState(() => _selectedFilter = filter);
-                      // In a real app, you might pass the filter to the API
-                      // For now, we'll filter locally for responsiveness
                     }
                   },
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? Colors.white : Colors.grey[700],
+                    color: isSelected 
+                        ? Colors.white 
+                        : (isDark ? scheme.onSurface.withValues(alpha: 0.7) : Colors.grey[700]),
                   ),
                   selectedColor: scheme.primary,
-                  backgroundColor: Colors.grey[100],
+                  backgroundColor: isDark ? scheme.surfaceContainerHighest : Colors.grey[100],
                   side: BorderSide.none,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -88,11 +89,18 @@ class _TransactionHistorySectionState extends State<TransactionHistorySection> {
               padding: const EdgeInsets.all(40.0),
               child: Column(
                 children: [
-                  Icon(Icons.history, size: 48, color: Colors.grey[300]),
+                  Icon(
+                    Icons.history, 
+                    size: 48, 
+                    color: isDark ? scheme.onSurface.withValues(alpha: 0.1) : Colors.grey[300]
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'No transactions yet',
-                    style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      color: isDark ? scheme.onSurface.withValues(alpha: 0.4) : Colors.grey[500], 
+                      fontWeight: FontWeight.w500
+                    ),
                   ),
                 ],
               ),
@@ -128,7 +136,11 @@ class _TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCredit = tx.isCredit;
+
+    final creditColor = isDark ? Colors.greenAccent[400]! : Colors.green[700]!;
+    final debitColor = scheme.onSurface;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -136,8 +148,11 @@ class _TransactionTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[100]!),
-        boxShadow: [
+        border: Border.all(
+          color: isDark ? scheme.outlineVariant.withValues(alpha: 0.5) : Colors.grey[100]!,
+          width: 1,
+        ),
+        boxShadow: isDark ? null : [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
@@ -151,12 +166,13 @@ class _TransactionTile extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: (isCredit ? Colors.green : Colors.blue).withValues(alpha: 0.1),
+              color: (isCredit ? creditColor : (isDark ? scheme.primary : Colors.blue))
+                  .withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               isCredit ? Icons.add_rounded : Icons.shopping_bag_outlined,
-              color: isCredit ? Colors.green : Colors.blue,
+              color: isCredit ? creditColor : (isDark ? scheme.primary : Colors.blue),
               size: 20,
             ),
           ),
@@ -167,16 +183,17 @@ class _TransactionTile extends StatelessWidget {
               children: [
                 Text(
                   tx.purpose,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
+                    color: scheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   DateFormat('MMM d, yyyy • hh:mm a').format(tx.createdAt),
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.6),
                     fontSize: 12,
                   ),
                 ),
@@ -191,7 +208,7 @@ class _TransactionTile extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 16,
-                  color: isCredit ? Colors.green : Colors.black87,
+                  color: isCredit ? creditColor : debitColor,
                 ),
               ),
               const SizedBox(height: 4),
@@ -211,20 +228,21 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     Color color;
     String label;
 
     switch (status) {
       case TransactionStatus.success:
-        color = Colors.green;
+        color = isDark ? Colors.greenAccent[400]! : Colors.green;
         label = 'Completed';
         break;
       case TransactionStatus.failed:
-        color = Colors.red;
+        color = Colors.redAccent;
         label = 'Failed';
         break;
       case TransactionStatus.pending:
-        color = Colors.orange;
+        color = Colors.orangeAccent;
         label = 'Pending';
         break;
     }
@@ -246,3 +264,4 @@ class _StatusBadge extends StatelessWidget {
     );
   }
 }
+

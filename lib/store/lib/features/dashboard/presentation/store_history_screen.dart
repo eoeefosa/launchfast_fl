@@ -40,14 +40,11 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
   // ── State ──────────────────────────────────────────────────────────────────
   List<Order> _orders = [];
   bool _isLoading = true;
-  bool _hasNewOrder = false;
   String _searchQuery = '';
 
   // ── Controllers ────────────────────────────────────────────────────────────
   late final TabController _tabController;
   late final TextEditingController _searchController;
-  late final AnimationController _badgePulse;
-  late final Animation<double> _badgeScale;
 
   // ── Derived ────────────────────────────────────────────────────────────────
   OrderStatus? get _activeFilter => _kFilters[_tabController.index];
@@ -91,15 +88,6 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
 
     _searchController = TextEditingController();
 
-    _badgePulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    )..repeat(reverse: true);
-
-    _badgeScale = Tween<double>(begin: 0.85, end: 1.15).animate(
-      CurvedAnimation(parent: _badgePulse, curve: Curves.easeInOut),
-    );
-
     _loadOrders();
     _subscribeAbly();
   }
@@ -110,7 +98,6 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
       ..removeListener(_onTabChanged)
       ..dispose();
     _searchController.dispose();
-    _badgePulse.dispose();
     super.dispose();
   }
 
@@ -156,7 +143,6 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
   void _subscribeAbly() {
     ablyService.addOrderListener((orderId, status) {
       _loadOrders();
-      if (mounted) setState(() => _hasNewOrder = true);
     });
   }
 
@@ -276,7 +262,6 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
               _loadOrders();
-              setState(() => _hasNewOrder = false);
             },
           ),
         ],

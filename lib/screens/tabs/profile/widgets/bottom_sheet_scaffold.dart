@@ -25,10 +25,16 @@ class BottomSheetScaffold extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor ?? scheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark 
+              ? scheme.onSurface.withValues(alpha: 0.1) 
+              : Colors.transparent,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 30,
+            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.4 : 0.1),
+            blurRadius: 40,
             offset: const Offset(0, -10),
           ),
         ],
@@ -45,12 +51,12 @@ class BottomSheetScaffold extends StatelessWidget {
         children: [
           Center(
             child: Container(
-              width: 40,
-              height: 4,
+              width: 48,
+              height: 5,
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
-                color: scheme.onSurface.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(2),
+                color: scheme.onSurface.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(2.5),
               ),
             ),
           ),

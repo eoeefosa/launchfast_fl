@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:campuschow/models/notification_item.dart';
 import 'package:campuschow/widgets/notifications/notification_detail_sheet.dart';
+import 'package:campuschow/store/lib/features/dashboard/presentation/store_order_detail_screen.dart';
 
 /// Routes notifications to the correct application flow.
 /// Handles Rider, Store, and User navigation roles.
@@ -30,7 +31,13 @@ class NotificationRouter {
           break;
 
         case 'new_order':
-          context.push('/store/orders/detail', extra: orderId);
+          // Store owner — push a native screen since the store dashboard
+          // is outside the GoRouter shell.
+          Navigator.of(context, rootNavigator: true).push(
+            MaterialPageRoute(
+              builder: (_) => StoreOrderDetailScreen(orderId: orderId),
+            ),
+          );
           break;
 
         case 'order_processing':
@@ -57,7 +64,12 @@ class NotificationRouter {
         context.push('/rider/orders/detail', extra: orderId);
         break;
       case 'store':
-        context.push('/store/orders/detail', extra: orderId);
+        // Use native Navigator for store — no GoRouter shell route exists.
+        Navigator.of(context, rootNavigator: true).push(
+          MaterialPageRoute(
+            builder: (_) => StoreOrderDetailScreen(orderId: orderId),
+          ),
+        );
         break;
       default:
         context.push('/order-details/$orderId');

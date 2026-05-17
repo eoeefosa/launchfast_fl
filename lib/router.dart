@@ -14,6 +14,7 @@ import 'screens/tabs/tabs_shell.dart';
 import 'screens/tabs/home_screen.dart';
 import 'screens/tabs/cart_screen.dart';
 import 'screens/tabs/orders_screen.dart';
+import 'screens/tabs/order_history_screen.dart';
 import 'screens/tabs/order_details_screen.dart';
 import 'models/order.dart';
 
@@ -260,6 +261,10 @@ role: ${auth.user?.role}
                 path: routeOrders,
                 builder: (_, _) => const OrdersScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'history',
+                    builder: (_, _) => const OrderHistoryScreen(),
+                  ),
                   GoRoute(
                     path: ':id',
                     builder: (context, state) {
