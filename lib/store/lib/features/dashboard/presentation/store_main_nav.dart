@@ -160,7 +160,7 @@ class _StoreMainNavState extends State<StoreMainNav>
         title: 'New Order Received! 🚀',
         body: 'You have a new pending order ($orderId). Tap to view.',
         payload: 'order_$orderId',
-        channelId: NotificationService.orderChannelId,
+        channelId: kOrderChannelId,
       );
 
       // Also show a persistent in-app alert dialog so the owner doesn't miss it

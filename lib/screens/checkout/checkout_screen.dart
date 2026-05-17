@@ -10,27 +10,26 @@ import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
 import 'widgets/bottom_bar.dart';
-import 'widgets/checkout_app_bar.dart';
 import 'widgets/checkout_dialogs.dart';
 import 'widgets/checkout_guest_widgets.dart';
-import 'widgets/checkout_payment_delivery.dart';
-import 'widgets/checkout_section.dart';
+import 'widgets/checkout_scroll_body.dart';
 import 'widgets/insufficient_funds_dialog.dart';
-import 'widgets/order_summary_section.dart';
 import 'widgets/phone_confirm_sheet.dart';
 import 'widgets/success_view.dart';
 import '../../widgets/home/location_selector.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 // Domain types
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 
 enum CheckoutPaymentMethod { wallet, paystack }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 // CheckoutScreen
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 
+/// The checkout flow: delivery options, payment method selection,
+/// order summary, and order placement (wallet or Paystack).
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
 
@@ -40,12 +39,14 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   // ── State ──────────────────────────────────────────────────────────────────
+
   DeliveryType _deliveryType = DeliveryType.priority;
   CheckoutPaymentMethod _paymentMethod = CheckoutPaymentMethod.paystack;
   bool _isSuccess = false;
   bool _isGuestCheckout = false;
 
   // ── Controllers ────────────────────────────────────────────────────────────
+
   late final TextEditingController _guestNameController;
   late final TextEditingController _guestPhoneController;
 
@@ -57,6 +58,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _guestNameController = TextEditingController();
     _guestPhoneController = TextEditingController();
 
+    // Defer provider reads until after the first frame so the widget tree is
+    // fully built — required by Flutter's provider documentation.
     WidgetsBinding.instance.addPostFrameCallback((_) => _resolveGuestState());
   }
 
@@ -72,7 +75,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void _resolveGuestState() {
     if (!mounted) return;
     final auth = context.read<AuthProvider>();
-    final hasGuestDetails = auth.guestName != null &&
+    final hasGuestDetails =
+        auth.guestName != null &&
         auth.guestPhone != null &&
         auth.currentAddress != null;
 
@@ -86,7 +90,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _hasQueuedItems(CartProvider cart) =>
       cart.items.any((item) => !item.menuItem.isReady);
 
-  bool _walletInsufficient(AuthProvider auth, double total) =>
+  bool _isWalletInsufficient(AuthProvider auth, double total) =>
       _paymentMethod == CheckoutPaymentMethod.wallet &&
       !auth.hasSufficientFunds(total);
 
@@ -105,70 +109,31 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
         children: [
-          CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              const SliverToBoxAdapter(child: CheckoutAppBar()),
-              SliverToBoxAdapter(
-                child: CheckoutSection(
-                  title: 'DELIVERY ADDRESS',
-                  child: GuestAddressTile(auth: auth),
-                ),
-              ),
-              if (_isGuestCheckout)
-                SliverToBoxAdapter(
-                  child: CheckoutSection(
-                    title: 'CONTACT DETAILS',
-                    child: GuestContactForm(
-                      nameController: _guestNameController,
-                      phoneController: _guestPhoneController,
-                      onContinue: _onGuestContinue,
-                      onError: _showErrorDialog,
-                    ),
-                  ),
-                ),
-              SliverToBoxAdapter(
-                child: CheckoutSection(
-                  title: 'DELIVERY OPTION',
-                  child: DeliveryOptions(
-                    cart: cart,
-                    selected: _deliveryType,
-                    onChanged: (t) => setState(() => _deliveryType = t),
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: CheckoutSection(
-                  title: 'PAYMENT METHOD',
-                  child: PaymentOptions(
-                    auth: auth,
-                    total: total,
-                    selected: _paymentMethod,
-                    onChanged: (m) => setState(() => _paymentMethod = m),
-                    onFundWallet: () => _showInsufficientFundsDialog(
-                      auth.user?.walletBalance ?? 0,
-                      total,
-                    ),
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: CheckoutSection(
-                  title: 'ORDER SUMMARY',
-                  child: OrderSummarySection(
-                    cart: cart,
-                    deliveryType: _deliveryType,
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 150)),
-            ],
+          CheckoutScrollBody(
+            auth: auth,
+            cart: cart,
+            deliveryType: _deliveryType,
+            paymentMethod: _paymentMethod,
+            isGuestCheckout: _isGuestCheckout,
+            guestNameController: _guestNameController,
+            guestPhoneController: _guestPhoneController,
+            total: total,
+            onDeliveryTypeChanged: (type) =>
+                setState(() => _deliveryType = type),
+            onPaymentMethodChanged: (method) =>
+                setState(() => _paymentMethod = method),
+            onGuestContinue: _onGuestContinue,
+            onShowError: _showErrorDialog,
+            onFundWallet: () => _showInsufficientFundsDialog(
+              auth.user?.walletBalance ?? 0,
+              total,
+            ),
           ),
           BottomBar(
             total: total,
             isLoading: orderProvider.isLoading,
             hasQueuedItems: _hasQueuedItems(cart),
-            isWalletInsufficient: _walletInsufficient(auth, total),
+            isWalletInsufficient: _isWalletInsufficient(auth, total),
             onPlaceOrder: () => _placeOrder(
               total: total,
               cart: cart,
@@ -189,8 +154,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   void _onGuestContinue() {
     context.read<AuthProvider>().setGuestInfo(
-          name: _guestNameController.text,
-          phone: _guestPhoneController.text,
+          name: _guestNameController.text.trim(),
+          phone: _guestPhoneController.text.trim(),
         );
     setState(() => _isGuestCheckout = false);
   }
@@ -206,166 +171,32 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  /// Prompts the guest to enter/confirm their contact details before ordering.
+  /// Returns `true` if the user saved valid information, `false` if cancelled.
   Future<bool> _showGuestContactDialog(AuthProvider auth) async {
     final nameController = TextEditingController(text: auth.guestName ?? '');
     final phoneController = TextEditingController(text: auth.guestPhone ?? '');
-    final formKey = GlobalKey<FormState>();
 
-    final result = await showDialog<bool>(
+    final saved = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        final primary = Theme.of(context).colorScheme.primary;
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        final dialogBg = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-        final textColor = isDark ? Colors.white : Colors.black;
-        final subtitleColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
-
-        return AlertDialog(
-          backgroundColor: dialogBg,
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          icon: Icon(
-            Icons.contact_phone_outlined,
-            color: primary,
-            size: 42,
-          ),
-          title: Text(
-            'Contact Information',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              color: textColor,
-            ),
-          ),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Please enter your details to receive delivery and order updates.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: subtitleColor),
-                ),
-                const SizedBox(height: 18),
-                TextFormField(
-                  controller: nameController,
-                  textCapitalization: TextCapitalization.words,
-                  style: TextStyle(color: textColor),
-                  decoration: InputDecoration(
-                    labelText: 'Full name',
-                    labelStyle: TextStyle(color: subtitleColor),
-                    prefixIcon: Icon(Icons.person_outline_rounded, color: subtitleColor),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Name is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  style: TextStyle(color: textColor),
-                  decoration: InputDecoration(
-                    labelText: 'Phone number',
-                    labelStyle: TextStyle(color: subtitleColor),
-                    prefixIcon: Icon(Icons.phone_outlined, color: subtitleColor),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Phone is required';
-                    }
-                    return null;
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      side: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(
-                        color: isDark ? Colors.white70 : Colors.black87,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () {
-                      if (formKey.currentState!.validate()) {
-                        Navigator.pop(context, true);
-                      }
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: primary,
-                      minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: const Text(
-                      'Save',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
+      builder: (dialogContext) => GuestContactDialog(
+        nameController: nameController,
+        phoneController: phoneController,
+      ),
     );
 
-    if (result == true) {
-      auth.setGuestInfo(
-        name: nameController.text.trim(),
-        phone: phoneController.text.trim(),
-      );
-      _guestNameController.text = nameController.text.trim();
-      _guestPhoneController.text = phoneController.text.trim();
-      setState(() => _isGuestCheckout = false);
-      return true;
-    }
-    return false;
+    if (saved != true) return false;
+
+    auth.setGuestInfo(
+      name: nameController.text.trim(),
+      phone: phoneController.text.trim(),
+    );
+    // Mirror into the inline form controllers so they stay in sync.
+    _guestNameController.text = nameController.text.trim();
+    _guestPhoneController.text = phoneController.text.trim();
+    setState(() => _isGuestCheckout = false);
+    return true;
   }
 
   void _showInsufficientFundsDialog(double balance, double total) {
@@ -373,11 +204,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     HapticFeedback.mediumImpact();
     showDialog<void>(
       context: context,
-      builder: (ctx) => InsufficientFundsDialog(
+      builder: (dialogContext) => InsufficientFundsDialog(
         balance: balance,
         total: total,
         onPayWithPaystack: () {
-          Navigator.pop(ctx);
+          Navigator.of(dialogContext).pop();
           setState(() => _paymentMethod = CheckoutPaymentMethod.paystack);
         },
       ),
@@ -392,30 +223,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     required OrderProvider orderProvider,
     required AuthProvider auth,
   }) async {
-    final hasSwallowWithoutSoup = cart.items.any((item) =>
-        (item.menuItem.type == 'swallow' || item.menuItem.category == 'Swallow' || item.menuItem.requiresSoupSelection) &&
-        (item.selectedSoup == null || item.selectedSoup!['id'] == null)
+    // 1. Validate swallow items have a soup selected.
+    final hasSwallowWithoutSoup = cart.items.any(
+      (item) =>
+          (item.menuItem.type == 'swallow' ||
+              item.menuItem.category == 'Swallow' ||
+              item.menuItem.requiresSoupSelection) &&
+          (item.selectedSoup == null || item.selectedSoup!['id'] == null),
     );
-
     if (hasSwallowWithoutSoup) {
-      _showErrorDialog('A soup selection is required for your Swallow items before ordering.');
+      _showErrorDialog(
+        'A soup selection is required for your Swallow items before ordering.',
+      );
       return;
     }
 
+    // 2. Ensure guest has contact details.
     if (!auth.isAuthenticated) {
-      final nameOk = auth.guestName?.isNotEmpty ?? false;
-      final phoneOk = auth.guestPhone?.isNotEmpty ?? false;
-      if (!nameOk || !phoneOk) {
-        final dialogSaved = await _showGuestContactDialog(auth);
-        if (!dialogSaved) return;
+      final hasContact =
+          (auth.guestName?.isNotEmpty ?? false) &&
+          (auth.guestPhone?.isNotEmpty ?? false);
+      if (!hasContact) {
+        final saved = await _showGuestContactDialog(auth);
+        if (!saved) return;
       }
     }
 
+    // 3. Ensure a delivery address is set.
+    if (!mounted) return;
     if (auth.currentAddress?.trim().isEmpty ?? true) {
       LocationSelector.show(context);
       return;
     }
 
+    // 4. Confirm / update the phone number.
     final rawPhone = auth.isAuthenticated
         ? (auth.user?.phone ?? auth.guestPhone ?? '')
         : (auth.guestPhone ?? '');
@@ -424,26 +265,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       context,
       currentPhone: rawPhone.trim().isEmpty ? null : rawPhone.trim(),
     );
-
     if (!mounted || confirmedPhone == null) return;
 
+    // 5. Re-check wallet balance at submission time.
     if (_paymentMethod == CheckoutPaymentMethod.wallet &&
         !auth.hasSufficientFunds(total)) {
       _showInsufficientFundsDialog(auth.user?.walletBalance ?? 0, total);
       return;
     }
 
+    // 6. Submit.
     try {
       HapticFeedback.mediumImpact();
 
-      final orderData = _buildOrderPayload(
+      final orderPayload = _buildOrderPayload(
         cart: cart,
         auth: auth,
         confirmedPhone: confirmedPhone,
       );
 
-      final Order? order = await orderProvider.placeOrder(orderData);
-
+      final Order? order = await orderProvider.placeOrder(orderPayload);
       if (!mounted) return;
 
       if (order == null) {
@@ -461,6 +302,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return;
       }
 
+      // Wallet payment succeeded.
       await auth.refreshUser();
       cart.clearCart();
       HapticFeedback.heavyImpact();
@@ -470,7 +312,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       _showErrorDialog(_messageFromDioException(e));
     } catch (_) {
       if (!mounted) return;
-      _showErrorDialog('Unexpected error occurred.');
+      _showErrorDialog('An unexpected error occurred.');
     }
   }
 
@@ -490,11 +332,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       email: email,
     );
 
+    if (!mounted) return;
+
     final authorizationUrl =
         (paymentData['data'] as Map<String, dynamic>?)?['authorization_url']
             as String?;
-
-    if (!mounted) return;
 
     if (authorizationUrl == null) {
       _showErrorDialog('Payment initialization failed.');
@@ -512,12 +354,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (mounted) context.pop();
   }
 
+  // ── Private helpers ────────────────────────────────────────────────────────
+
   Map<String, dynamic> _buildOrderPayload({
     required CartProvider cart,
     required AuthProvider auth,
     required String confirmedPhone,
   }) {
-    final storeIds = cart.items.map((i) => i.menuItem.storeId).toSet().toList();
+    final storeIds =
+        cart.items.map((i) => i.menuItem.storeId).toSet().toList();
     final name = auth.isAuthenticated
         ? (auth.user?.name ?? '')
         : (auth.guestName ?? '');
@@ -527,16 +372,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return {
       'items': [
-        for (final i in cart.items)
+        for (final item in cart.items)
           {
-            'menuItemId': i.menuItem.id,
-            'quantity': i.quantity,
-            'extras': i.extras,
-            'selectedMeats': i.selectedMeats,
-            'selectedSides': i.selectedSides,
-            'selectedDrinks': i.selectedDrinks,
-            'selectedAddons': i.selectedAddons,
-            if (i.selectedSoup != null) 'selectedSoup': i.selectedSoup,
+            'menuItemId': item.menuItem.id,
+            'quantity': item.quantity,
+            'extras': item.extras,
+            'selectedMeats': item.selectedMeats,
+            'selectedSides': item.selectedSides,
+            'selectedDrinks': item.selectedDrinks,
+            'selectedAddons': item.selectedAddons,
+            if (item.selectedSoup != null) 'selectedSoup': item.selectedSoup,
           },
       ],
       'subtotal': cart.subTotal,
@@ -560,6 +405,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     };
   }
 
+  /// Maps a [DioException] to a user-readable message using Dart's exhaustive
+  /// switch expression (introduced in Dart 3).
   static String _messageFromDioException(DioException e) {
     return switch (e.type) {
       DioExceptionType.connectionTimeout ||
