@@ -67,7 +67,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       try {
         final d = DateTime.parse(o.date).toLocal();
         return d.year == now.year && d.month == now.month && d.day == now.day;
-      } catch (_) { return false; }
+      } catch (_) {
+        return false;
+      }
     }).toList();
 
     final filter = _activeFilter;
@@ -110,9 +112,10 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       duration: const Duration(milliseconds: 700),
     )..repeat(reverse: true);
 
-    _badgeScale = Tween<double>(begin: 0.85, end: 1.15).animate(
-      CurvedAnimation(parent: _badgePulse, curve: Curves.easeInOut),
-    );
+    _badgeScale = Tween<double>(
+      begin: 0.85,
+      end: 1.15,
+    ).animate(CurvedAnimation(parent: _badgePulse, curve: Curves.easeInOut));
 
     _initAudioPlayer();
     _loadOrders();
@@ -162,9 +165,10 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
 
   Future<void> _updateStatus(String orderId, OrderStatus newStatus) async {
     try {
-      await context
-          .read<StoreProvider>()
-          .updateOrderStatus(orderId, newStatus.backendName);
+      await context.read<StoreProvider>().updateOrderStatus(
+        orderId,
+        newStatus.backendName,
+      );
       await _loadOrders();
       _showSnackBar('Order updated to ${newStatus.displayLabel}');
     } catch (e, stack) {
@@ -210,9 +214,10 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       final isPickup = _isPickupDeliveryType(order.deliveryType);
       if (isPickup) continue;
 
-      final isActive = order.status == OrderStatus.pending ||
-                       order.status == OrderStatus.accepted ||
-                       order.status == OrderStatus.preparing;
+      final isActive =
+          order.status == OrderStatus.pending ||
+          order.status == OrderStatus.accepted ||
+          order.status == OrderStatus.preparing;
       if (!isActive) continue;
 
       if (order.date.isNotEmpty) {
@@ -230,7 +235,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     }
 
     if (hasUnattended) {
-      if (_lastNotificationTime == null || 
+      if (_lastNotificationTime == null ||
           now.difference(_lastNotificationTime!).inMinutes >= 5) {
         _lastNotificationTime = now;
         _playReminderSound();
@@ -249,12 +254,16 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
 
   void _showUnattendedAlert(int minutes) {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 28)
+            const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.white,
+                  size: 28,
+                )
                 .animate(onPlay: (controller) => controller.repeat())
                 .shake(delay: 500.ms, duration: 1000.ms),
             const SizedBox(width: 12),
@@ -265,7 +274,11 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
                 children: [
                   const Text(
                     'UNATTENDED DELIVERY ORDERS',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Colors.white,
+                    ),
                   ),
                   Text(
                     'An order has been waiting for $minutes mins! Please attend to it.',
@@ -306,9 +319,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     if (confirmedId == null || !mounted) return;
 
     final matched = _orders.cast<Order?>().firstWhere(
-          (o) => o!.id == confirmedId,
-          orElse: () => null,
-        );
+      (o) => o!.id == confirmedId,
+      orElse: () => null,
+    );
 
     if (matched == null) return;
 
@@ -357,8 +370,8 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     final color = isError
         ? Colors.red.shade700
         : isWarning
-            ? Colors.orange.shade700
-            : Colors.green.shade700;
+        ? Colors.orange.shade700
+        : Colors.green.shade700;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -370,36 +383,44 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     );
   }
 
-  Widget _buildTypeChip(String type, String label, Color surfaceColor, Color borderColor, bool isDark) {
+  Widget _buildTypeChip(
+    String type,
+    String label,
+    Color surfaceColor,
+    Color borderColor,
+    bool isDark,
+  ) {
     final isSelected = _deliveryTypeFilter == type;
     final primary = AppColors.primary;
-    
+
     return GestureDetector(
       onTap: () => setState(() => _deliveryTypeFilter = type),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? primary.withValues(alpha: 0.15) 
-              : surfaceColor,
+          color: isSelected ? primary.withValues(alpha: 0.15) : surfaceColor,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
             color: isSelected ? primary : borderColor,
             width: isSelected ? 1.5 : 1.0,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: primary.withValues(alpha: 0.25),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            )
-          ] : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: primary.withValues(alpha: 0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? primary : (isDark ? Colors.white70 : Colors.black87),
+            color: isSelected
+                ? primary
+                : (isDark ? Colors.white70 : Colors.black87),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             fontSize: 13,
           ),
@@ -452,7 +473,10 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
           tabs: _kFilters
               .map((f) => Tab(text: f == null ? 'All' : f.displayLabel))
               .toList(),
@@ -481,11 +505,29 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  _buildTypeChip('all', '🍱 All Orders', surface, border, isDark),
+                  _buildTypeChip(
+                    'all',
+                    '🍱 All Orders',
+                    surface,
+                    border,
+                    isDark,
+                  ),
                   const SizedBox(width: 10),
-                  _buildTypeChip('delivery', '🛵 Delivery', surface, border, isDark),
+                  _buildTypeChip(
+                    'delivery',
+                    '🛵 Delivery',
+                    surface,
+                    border,
+                    isDark,
+                  ),
                   const SizedBox(width: 10),
-                  _buildTypeChip('pickup', '🛍️ Pickup', surface, border, isDark),
+                  _buildTypeChip(
+                    'pickup',
+                    '🛍️ Pickup',
+                    surface,
+                    border,
+                    isDark,
+                  ),
                 ],
               ),
             ),

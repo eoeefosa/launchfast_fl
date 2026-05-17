@@ -461,6 +461,27 @@ class AuthProvider extends ChangeNotifier {
     _handleRoleUpdate(role);
   }
 
+  /// Silently saves a corrected [name] and/or [phone] to the backend profile.
+  /// Optimistically updates local state first so the UI reflects the change
+  /// immediately without waiting for the network round-trip.
+  Future<void> updateNameAndPhone({String? name, String? phone}) async {
+    if (!isAuthenticated || _user == null) return;
+    if (name == null && phone == null) return;
+
+    // Optimistic local update
+    final updates = <String, dynamic>{};
+    if (name != null) updates['name'] = name;
+    if (phone != null) updates['phone'] = phone;
+    updateUser(updates);
+
+    try {
+      await locator<AuthRepository>().updateProfile(updates);
+    } catch (e) {
+      debugPrint('[AuthProvider] updateNameAndPhone error: $e');
+      // Non-fatal — the order will still carry the confirmed values.
+    }
+  }
+
   bool hasSufficientFunds(double total) {
     return (_user?.walletBalance ?? 0) >= total;
   }

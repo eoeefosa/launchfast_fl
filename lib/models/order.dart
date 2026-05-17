@@ -123,6 +123,7 @@ class Order {
   final bool isPriority;
   final String? riderId;
   final Rider? rider;
+  final String? rejectionReason;
 
   Order({
     required this.id,
@@ -142,6 +143,7 @@ class Order {
     required this.isPriority,
     this.riderId,
     this.rider,
+    this.rejectionReason,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -211,6 +213,7 @@ class Order {
       rider: json['rider'] != null
           ? Rider.fromJson(json['rider'])
           : (json['riderId'] is Map ? Rider.fromJson(json['riderId']) : null),
+      rejectionReason: json['rejectionReason']?.toString(),
     );
   }
 
@@ -231,6 +234,7 @@ class Order {
       'stores': stores.map((s) => s.toJson()).toList(),
       'isPriority': isPriority,
       'riderId': riderId,
+      'rejectionReason': rejectionReason,
     };
   }
 
@@ -251,6 +255,7 @@ class Order {
     List<Store>? stores,
     bool? isPriority,
     String? riderId,
+    String? rejectionReason,
   }) {
     return Order(
       id: id ?? this.id,
@@ -269,6 +274,7 @@ class Order {
       stores: stores ?? this.stores,
       isPriority: isPriority ?? this.isPriority,
       riderId: riderId ?? this.riderId,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
     );
   }
 }

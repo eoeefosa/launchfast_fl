@@ -270,9 +270,9 @@ class StoreProvider extends BaseProvider {
     return await orderRepository.getStoreOrders(_activeStoreId!);
   }
 
-  Future<void> updateOrderStatus(String orderId, String status) async {
+  Future<void> updateOrderStatus(String orderId, String status, {String? rejectionReason}) async {
     if (_activeStoreId == null) return;
-    await orderRepository.updateOrderStatus(orderId, status, storeId: _activeStoreId!);
+    await orderRepository.updateOrderStatus(orderId, status, storeId: _activeStoreId!, rejectionReason: rejectionReason);
     notifyListeners();
   }
 

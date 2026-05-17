@@ -201,8 +201,7 @@ class CartProvider with ChangeNotifier {
       // Meat extras
       if (item.selectedMeats != null) {
         item.selectedMeats!.forEach((id, count) {
-          final meatItem =
-              _allMenuItems.where((m) => m.id == id).firstOrNull;
+          final meatItem = _allMenuItems.where((m) => m.id == id).firstOrNull;
           if (meatItem != null) {
             itemPrice += meatItem.price * count;
           } else {
@@ -214,8 +213,7 @@ class CartProvider with ChangeNotifier {
       // Sides extra
       if (item.selectedSides != null) {
         item.selectedSides!.forEach((id, count) {
-          final sideItem =
-              _allMenuItems.where((m) => m.id == id).firstOrNull;
+          final sideItem = _allMenuItems.where((m) => m.id == id).firstOrNull;
           if (sideItem != null) {
             itemPrice += sideItem.price * count;
           } else {
@@ -227,8 +225,7 @@ class CartProvider with ChangeNotifier {
       // Drinks extra
       if (item.selectedDrinks != null) {
         item.selectedDrinks!.forEach((id, count) {
-          final drinkItem =
-              _allMenuItems.where((m) => m.id == id).firstOrNull;
+          final drinkItem = _allMenuItems.where((m) => m.id == id).firstOrNull;
           if (drinkItem != null) {
             itemPrice += drinkItem.price * count;
           }
@@ -238,8 +235,9 @@ class CartProvider with ChangeNotifier {
       // Addons extras
       if (item.selectedAddons != null) {
         item.selectedAddons!.forEach((addonId, count) {
-          final addonItem =
-              _allMenuItems.where((m) => m.id == addonId).firstOrNull;
+          final addonItem = _allMenuItems
+              .where((m) => m.id == addonId)
+              .firstOrNull;
           if (addonItem != null) {
             itemPrice += addonItem.price * count;
           }
@@ -256,7 +254,9 @@ class CartProvider with ChangeNotifier {
     final freeEligibleSoups =
         _items
             .where((i) => i.menuItem.isFreeWithSwallow)
-            .expand<double>((i) => List<double>.filled(i.quantity, i.menuItem.price))
+            .expand<double>(
+              (i) => List<double>.filled(i.quantity, i.menuItem.price),
+            )
             .toList()
           ..sort((a, b) => b.compareTo(a));
 
@@ -281,12 +281,28 @@ class CartProvider with ChangeNotifier {
 
   double get serviceFees {
     if (subTotal == 0) return 0;
+
     final storeCount = _items.map((i) => i.menuItem.storeId).toSet().length;
-    if (subTotal < 2000) return 150.0 * storeCount;
-    if (subTotal <= 5000) return 250.0 * storeCount;
-    if (subTotal <= 7000) return 350.0 * storeCount;
-    if (subTotal <= 10000) return 400.0 * storeCount;
-    return 450.0 * storeCount;
+
+    double baseFee;
+
+    if (subTotal < 2000) {
+      baseFee = 150;
+    } else if (subTotal <= 5000) {
+      baseFee = 250;
+    } else if (subTotal <= 7000) {
+      baseFee = 350;
+    } else if (subTotal <= 10000) {
+      baseFee = 400;
+    } else {
+      baseFee = 450;
+    }
+
+    final percentageFee = subTotal * 0.025;
+
+    final totalFee = (baseFee * storeCount) + percentageFee;
+
+    return totalFee.clamp(0, 1500);
   }
 
   double get cartTotal => subTotal + deliveryFees + serviceFees;

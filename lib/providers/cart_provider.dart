@@ -227,6 +227,25 @@ class CartProvider with ChangeNotifier {
     }
   }
 
+  void updateQuantityById(String cartItemId, int newQuantity) {
+    final index = _items.indexWhere((i) => i.id == cartItemId);
+    if (index != -1) {
+      if (newQuantity <= 0) {
+        _items.removeAt(index);
+      } else {
+        _items[index].quantity = newQuantity;
+      }
+      _saveCart();
+      notifyListeners();
+    }
+  }
+
+  void removeItemById(String cartItemId) {
+    _items.removeWhere((i) => i.id == cartItemId);
+    _saveCart();
+    notifyListeners();
+  }
+
   void clearCart() {
     _items = [];
     _editingOrderId = null;

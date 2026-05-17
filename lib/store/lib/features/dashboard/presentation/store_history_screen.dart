@@ -125,11 +125,11 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
     }
   }
 
-  Future<void> _updateStatus(String orderId, OrderStatus newStatus) async {
+  Future<void> _updateStatus(String orderId, OrderStatus newStatus, {String? rejectionReason}) async {
     try {
       await context
           .read<StoreProvider>()
-          .updateOrderStatus(orderId, newStatus.backendName);
+          .updateOrderStatus(orderId, newStatus.backendName, rejectionReason: rejectionReason);
       await _loadOrders();
       _showSnackBar('Order updated to ${newStatus.displayLabel}');
     } catch (e, stack) {

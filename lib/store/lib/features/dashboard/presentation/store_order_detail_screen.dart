@@ -54,10 +54,10 @@ class _StoreOrderDetailScreenState extends State<StoreOrderDetailScreen> {
     }
   }
 
-  Future<void> _updateStatus(String orderId, OrderStatus status) async {
+  Future<void> _updateStatus(String orderId, OrderStatus status, {String? rejectionReason}) async {
     try {
       final provider = context.read<StoreProvider>();
-      await provider.updateOrderStatus(orderId, status.backendName);
+      await provider.updateOrderStatus(orderId, status.backendName, rejectionReason: rejectionReason);
       final updated = await provider.fetchStoreOrders();
       if (!mounted) return;
       final match = updated.where((o) => o.id == orderId).toList();

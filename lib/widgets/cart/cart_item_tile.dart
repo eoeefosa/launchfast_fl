@@ -43,25 +43,42 @@ class CartItemTile extends StatelessWidget {
         item.menuItem.requiresSoupSelection;
     final lacksSoup = isSwallow && (item.selectedSoup == null || item.selectedSoup!['id'] == null);
 
-    return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: !isReady || lacksSoup 
-                ? Border.all(color: Colors.red.withValues(alpha: 0.5), width: 2) 
-                : null,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: IntrinsicHeight(
+    return Dismissible(
+      key: Key('dismiss_${item.id}'),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) {
+        cart.removeItemById(item.id);
+        HapticFeedback.mediumImpact();
+      },
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.red.shade400,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: const Icon(CupertinoIcons.delete, color: Colors.white, size: 28),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: !isReady || lacksSoup 
+              ? Border.all(color: Colors.red.withValues(alpha: 0.5), width: 2) 
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: IntrinsicHeight(
               child: Row(
                 children: [
                   // Image Section
@@ -213,8 +230,8 @@ class CartItemTile extends StatelessWidget {
                             icon: isIOS ? CupertinoIcons.minus : Icons.remove,
                             onPressed: () {
                               HapticFeedback.lightImpact();
-                              cart.updateQuantity(
-                                item.menuItem.id,
+                              cart.updateQuantityById(
+                                item.id,
                                 item.quantity - 1,
                               );
                             },
@@ -240,8 +257,8 @@ class CartItemTile extends StatelessWidget {
                             icon: isIOS ? CupertinoIcons.plus : Icons.add,
                             onPressed: isReady ? () {
                               HapticFeedback.lightImpact();
-                              cart.updateQuantity(
-                                item.menuItem.id,
+                              cart.updateQuantityById(
+                                item.id,
                                 item.quantity + 1,
                               );
                             } : null,
@@ -254,10 +271,11 @@ class CartItemTile extends StatelessWidget {
               ),
             ),
           ),
-        )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideX(begin: 0.2, curve: Curves.easeOutCubic);
+        ),
+      )
+      .animate()
+      .fadeIn(duration: 400.ms)
+      .slideX(begin: 0.2, curve: Curves.easeOutCubic);
   }
 }
 

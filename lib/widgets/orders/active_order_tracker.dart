@@ -157,6 +157,9 @@ class ActiveOrderTracker extends StatelessWidget {
       case OrderStatus.delivered:
         return isPickup ? 'Hope you enjoyed your meal!' : 'Enjoy your delicious meal!';
       case OrderStatus.cancelled:
+        if (order.rejectionReason != null && order.rejectionReason!.isNotEmpty) {
+          return 'This order was cancelled. Reason: ${order.rejectionReason}';
+        }
         return 'This order was cancelled. Please contact support for details.';
     }
   }

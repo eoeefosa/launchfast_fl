@@ -11,10 +11,9 @@ import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
 import 'widgets/bottom_bar.dart';
 import 'widgets/checkout_dialogs.dart';
-import 'widgets/checkout_guest_widgets.dart';
 import 'widgets/checkout_scroll_body.dart';
+import 'widgets/contact_confirm_sheet.dart';
 import 'widgets/insufficient_funds_dialog.dart';
-import 'widgets/phone_confirm_sheet.dart';
 import 'widgets/success_view.dart';
 import '../../widgets/home/location_selector.dart';
 
@@ -171,34 +170,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  /// Prompts the guest to enter/confirm their contact details before ordering.
-  /// Returns `true` if the user saved valid information, `false` if cancelled.
-  Future<bool> _showGuestContactDialog(AuthProvider auth) async {
-    final nameController = TextEditingController(text: auth.guestName ?? '');
-    final phoneController = TextEditingController(text: auth.guestPhone ?? '');
-
-    final saved = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => GuestContactDialog(
-        nameController: nameController,
-        phoneController: phoneController,
-      ),
-    );
-
-    if (saved != true) return false;
-
-    auth.setGuestInfo(
-      name: nameController.text.trim(),
-      phone: phoneController.text.trim(),
-    );
-    // Mirror into the inline form controllers so they stay in sync.
-    _guestNameController.text = nameController.text.trim();
-    _guestPhoneController.text = phoneController.text.trim();
-    setState(() => _isGuestCheckout = false);
-    return true;
-  }
-
   void _showInsufficientFundsDialog(double balance, double total) {
     if (!mounted) return;
     HapticFeedback.mediumImpact();
@@ -238,50 +209,71 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    // 2. Ensure guest has contact details.
-    if (!auth.isAuthenticated) {
-      final hasContact =
-          (auth.guestName?.isNotEmpty ?? false) &&
-          (auth.guestPhone?.isNotEmpty ?? false);
-      if (!hasContact) {
-        final saved = await _showGuestContactDialog(auth);
-        if (!saved) return;
-      }
-    }
-
-    // 3. Ensure a delivery address is set.
+    // 2. Ensure a delivery address is set.
     if (!mounted) return;
     if (auth.currentAddress?.trim().isEmpty ?? true) {
       LocationSelector.show(context);
       return;
     }
 
-    // 4. Confirm / update the phone number.
-    final rawPhone = auth.isAuthenticated
+    // 3. Determine current name & phone (works for all user types).
+    final currentName = auth.isAuthenticated
+        ? (auth.user?.name ?? auth.guestName ?? '')
+        : (auth.guestName ?? '');
+    final currentPhone = auth.isAuthenticated
         ? (auth.user?.phone ?? auth.guestPhone ?? '')
         : (auth.guestPhone ?? '');
 
-    final confirmedPhone = await PhoneConfirmSheet.show(
-      context,
-      currentPhone: rawPhone.trim().isEmpty ? null : rawPhone.trim(),
-    );
-    if (!mounted || confirmedPhone == null) return;
+    final hasName = currentName.trim().length >= 2;
+    final hasPhone = currentPhone.trim().length >= 7;
+    final needsName = !hasName;
+    final needsPhone = !hasPhone;
 
-    // 5. Re-check wallet balance at submission time.
+    // 4. Always show the contact confirmation sheet — either to confirm existing
+    //    details or collect missing ones. For Google users, name pre-fills from
+    //    their profile so they can confirm or correct it.
+    if (!mounted) return;
+    final contact = await ContactConfirmSheet.show(
+      context,
+      currentName: currentName.trim().isEmpty ? null : currentName.trim(),
+      currentPhone: currentPhone.trim().isEmpty ? null : currentPhone.trim(),
+      needsName: needsName,
+      needsPhone: needsPhone,
+    );
+    if (!mounted || contact == null) return;
+
+    // 5. Persist the confirmed name and phone back to the user's profile so
+    //    future orders pre-fill correctly.
+    if (auth.isAuthenticated) {
+      final nameChanged = contact.name != (auth.user?.name ?? '');
+      final phoneChanged = contact.phone != (auth.user?.phone ?? '');
+      if (nameChanged || phoneChanged) {
+        // Fire-and-forget: update is best-effort; failure doesn't block the order.
+        auth.updateNameAndPhone(
+          name: nameChanged ? contact.name : null,
+          phone: phoneChanged ? contact.phone : null,
+        );
+      }
+    } else {
+      auth.setGuestInfo(name: contact.name, phone: contact.phone);
+    }
+
+    // 6. Re-check wallet balance at submission time.
     if (_paymentMethod == CheckoutPaymentMethod.wallet &&
         !auth.hasSufficientFunds(total)) {
       _showInsufficientFundsDialog(auth.user?.walletBalance ?? 0, total);
       return;
     }
 
-    // 6. Submit.
+    // 7. Submit.
     try {
       HapticFeedback.mediumImpact();
 
       final orderPayload = _buildOrderPayload(
         cart: cart,
         auth: auth,
-        confirmedPhone: confirmedPhone,
+        confirmedName: contact.name,
+        confirmedPhone: contact.phone,
       );
 
       final Order? order = await orderProvider.placeOrder(orderPayload);
@@ -359,13 +351,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Map<String, dynamic> _buildOrderPayload({
     required CartProvider cart,
     required AuthProvider auth,
+    required String confirmedName,
     required String confirmedPhone,
   }) {
     final storeIds =
         cart.items.map((i) => i.menuItem.storeId).toSet().toList();
-    final name = auth.isAuthenticated
-        ? (auth.user?.name ?? '')
-        : (auth.guestName ?? '');
     final email = auth.isAuthenticated
         ? (auth.user?.email ?? 'user@campuschow.com')
         : 'guest@campuschow.com';
@@ -392,7 +382,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           _paymentMethod == CheckoutPaymentMethod.wallet ? 'Wallet' : 'Paystack',
       'userId': auth.user?.id,
       'customerDetails': {
-        'name': name,
+        'name': confirmedName,
         'phone': confirmedPhone,
         'email': email,
         'address': auth.currentAddress ?? '',

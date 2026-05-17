@@ -7,10 +7,48 @@ import 'package:campuschow/models/order.dart' show OrderStatus, OrderStatusExten
 export 'package:campuschow/models/order.dart' show OrderStatus, OrderStatusExtension;
 export 'cart_item.dart';
 
+/// Customer contact details embedded in every order.
+class CustomerDetails {
+  final String name;
+  final String phone;
+  final String email;
+  final String address;
+
+  const CustomerDetails({
+    required this.name,
+    required this.phone,
+    required this.email,
+    required this.address,
+  });
+
+  factory CustomerDetails.fromJson(Map<String, dynamic> json) {
+    return CustomerDetails(
+      name: json['name']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'phone': phone,
+        'email': email,
+        'address': address,
+      };
+
+  /// A non-empty name if available, else null.
+  String? get displayName => name.trim().isNotEmpty ? name.trim() : null;
+
+  /// A non-empty phone if available, else null.
+  String? get displayPhone => phone.trim().isNotEmpty ? phone.trim() : null;
+}
+
 class Order {
   final String id;
   final String? userId;
   final UserProfile? user;
+  final CustomerDetails? customerDetails;
   final List<CartItem> items;
   final double subtotal;
   final double serviceFee;
@@ -29,6 +67,7 @@ class Order {
     required this.id,
     this.userId,
     this.user,
+    this.customerDetails,
     required this.items,
     required this.subtotal,
     required this.serviceFee,
@@ -43,6 +82,16 @@ class Order {
     required this.isPriority,
     this.riderId,
   });
+
+  /// The best available customer name: confirmed order details → user profile → fallback.
+  String get resolvedCustomerName =>
+      customerDetails?.displayName ??
+      user?.name ??
+      'Unknown Customer';
+
+  /// The best available phone: confirmed order details → user profile → null.
+  String? get resolvedCustomerPhone =>
+      customerDetails?.displayPhone ?? user?.phone;
 
   factory Order.fromJson(Map<String, dynamic> json) {
     try {
@@ -76,6 +125,9 @@ class Order {
             : (json['userId'] is Map
                   ? UserProfile.fromJson(json['userId'])
                   : null),
+        customerDetails: json['customerDetails'] is Map<String, dynamic>
+            ? CustomerDetails.fromJson(json['customerDetails'] as Map<String, dynamic>)
+            : null,
         items:
             (json['items'] as List?)
                 ?.map((i) {
@@ -142,6 +194,7 @@ class Order {
     return {
       'id': id,
       'userId': userId,
+      'customerDetails': customerDetails?.toJson(),
       'items': items.map((i) => i.toJson()).toList(),
       'subtotal': subtotal,
       'serviceFee': serviceFee,
@@ -162,6 +215,7 @@ class Order {
     String? id,
     String? userId,
     UserProfile? user,
+    CustomerDetails? customerDetails,
     List<CartItem>? items,
     double? subtotal,
     double? serviceFee,
@@ -180,6 +234,7 @@ class Order {
       id: id ?? this.id,
       userId: userId ?? this.userId,
       user: user ?? this.user,
+      customerDetails: customerDetails ?? this.customerDetails,
       items: items ?? this.items,
       subtotal: subtotal ?? this.subtotal,
       serviceFee: serviceFee ?? this.serviceFee,

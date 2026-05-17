@@ -36,10 +36,10 @@ class _StoreTopSellingScreenState extends State<StoreTopSellingScreen> {
     }).toList();
   }
 
-  Future<void> _updateStatus(String orderId, OrderStatus newStatus) async {
+  Future<void> _updateStatus(String orderId, OrderStatus newStatus, {String? rejectionReason}) async {
     try {
       final storeProvider = context.read<StoreProvider>();
-      await storeProvider.updateOrderStatus(orderId, newStatus.backendName);
+      await storeProvider.updateOrderStatus(orderId, newStatus.backendName, rejectionReason: rejectionReason);
       
       if (!mounted) return;
       
@@ -197,9 +197,9 @@ class _StoreTopSellingScreenState extends State<StoreTopSellingScreen> {
                                                     muted: muted,
                                                     surface: surface,
                                                     border: border,
-                                                    onUpdateStatus: (id, status) async {
+                                                    onUpdateStatus: (id, status, {String? rejectionReason}) async {
                                                       Navigator.pop(ctx);
-                                                      await _updateStatus(id, status);
+                                                      await _updateStatus(id, status, rejectionReason: rejectionReason);
                                                     },
                                                   ),
                                                 ],

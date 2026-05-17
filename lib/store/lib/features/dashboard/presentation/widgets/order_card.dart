@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
-import 'package:campuschow/store/lib/features/auth/data/user_profile.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 
 @immutable
@@ -31,86 +30,89 @@ class OrderCard extends StatelessWidget {
   final Color muted;
   final Color surface;
   final Color border;
-  final Future<void> Function(String orderId, OrderStatus status) onUpdateStatus;
+  final Future<void> Function(String orderId, OrderStatus status)
+  onUpdateStatus;
 
   Color get _statusColor => switch (order.status) {
-        OrderStatus.pending => const Color(0xFFF59E0B),
-        OrderStatus.accepted => const Color(0xFF6366F1),
-        OrderStatus.preparing => const Color(0xFF06B6D4),
-        OrderStatus.readyForPickup || OrderStatus.pickingUp => const Color(0xFF8B5CF6),
-        OrderStatus.onTheWay || OrderStatus.outForDelivery => AppColors.primary,
-        OrderStatus.delivered => Colors.green,
-        OrderStatus.cancelled => Colors.red,
-        _ => AppColors.lightMuted,
-      };
+    OrderStatus.pending => const Color(0xFFF59E0B),
+    OrderStatus.accepted => const Color(0xFF6366F1),
+    OrderStatus.preparing => const Color(0xFF06B6D4),
+    OrderStatus.readyForPickup ||
+    OrderStatus.pickingUp => const Color(0xFF8B5CF6),
+    OrderStatus.onTheWay || OrderStatus.outForDelivery => AppColors.primary,
+    OrderStatus.delivered => Colors.green,
+    OrderStatus.cancelled => Colors.red,
+    _ => AppColors.lightMuted,
+  };
 
   List<ActionConfig> get _actions {
-    final isPickup = order.deliveryType.toLowerCase() == 'pickup' || 
-                    order.deliveryType.toLowerCase() == 'store_pickup';
-                    
+    final isPickup =
+        order.deliveryType.toLowerCase() == 'pickup' ||
+        order.deliveryType.toLowerCase() == 'store_pickup';
+
     return switch (order.status) {
-        OrderStatus.pending => [
-            const ActionConfig(
-              'Accept',
-              OrderStatus.accepted,
-              Colors.green,
-              Icons.check_circle_outline,
-            ),
-            const ActionConfig(
-              'Reject',
-              OrderStatus.cancelled,
-              Colors.red,
-              Icons.cancel_outlined,
-            ),
-          ],
-        OrderStatus.accepted => [
-            const ActionConfig(
-              'Start Preparing',
-              OrderStatus.preparing,
-              Color(0xFF06B6D4),
-              Icons.soup_kitchen_outlined,
-            ),
-          ],
-        OrderStatus.preparing => [
-            ActionConfig(
-              isPickup ? 'Ready for Pickup' : 'Ready for Delivery',
-              OrderStatus.readyForPickup,
-              const Color(0xFF8B5CF6),
-              Icons.done_all,
-            ),
-            if (!isPickup)
-              const ActionConfig(
-                'On the Way',
-                OrderStatus.onTheWay,
-                AppColors.primary,
-                Icons.directions_bike_rounded,
-              ),
-          ],
-        OrderStatus.readyForPickup => [
-            const ActionConfig(
-              'On the Way',
-              OrderStatus.onTheWay,
-              AppColors.primary,
-              Icons.directions_bike_rounded,
-            ),
-            if (isPickup)
-              const ActionConfig(
-                'Mark Picked Up',
-                OrderStatus.delivered,
-                Colors.green,
-                Icons.check_circle_rounded,
-              ),
-          ],
-        OrderStatus.onTheWay || OrderStatus.outForDelivery => [
-            ActionConfig(
-              isPickup ? 'Mark Picked Up' : 'Mark Arrived',
-              OrderStatus.delivered,
-              Colors.green,
-              isPickup ? Icons.check_circle_rounded : Icons.home_work_rounded,
-            ),
-          ],
-        _ => const [],
-      };
+      OrderStatus.pending => [
+        const ActionConfig(
+          'Accept',
+          OrderStatus.accepted,
+          Colors.green,
+          Icons.check_circle_outline,
+        ),
+        const ActionConfig(
+          'Reject',
+          OrderStatus.cancelled,
+          Colors.red,
+          Icons.cancel_outlined,
+        ),
+      ],
+      OrderStatus.accepted => [
+        const ActionConfig(
+          'Start Preparing',
+          OrderStatus.preparing,
+          Color(0xFF06B6D4),
+          Icons.soup_kitchen_outlined,
+        ),
+      ],
+      OrderStatus.preparing => [
+        ActionConfig(
+          isPickup ? 'Ready for Pickup' : 'Ready for Delivery',
+          OrderStatus.readyForPickup,
+          const Color(0xFF8B5CF6),
+          Icons.done_all,
+        ),
+        if (!isPickup)
+          const ActionConfig(
+            'On the Way',
+            OrderStatus.onTheWay,
+            AppColors.primary,
+            Icons.directions_bike_rounded,
+          ),
+      ],
+      OrderStatus.readyForPickup => [
+        const ActionConfig(
+          'On the Way',
+          OrderStatus.onTheWay,
+          AppColors.primary,
+          Icons.directions_bike_rounded,
+        ),
+        if (isPickup)
+          const ActionConfig(
+            'Mark Picked Up',
+            OrderStatus.delivered,
+            Colors.green,
+            Icons.check_circle_rounded,
+          ),
+      ],
+      OrderStatus.onTheWay || OrderStatus.outForDelivery => [
+        ActionConfig(
+          isPickup ? 'Mark Picked Up' : 'Mark Arrived',
+          OrderStatus.delivered,
+          Colors.green,
+          isPickup ? Icons.check_circle_rounded : Icons.home_work_rounded,
+        ),
+      ],
+      _ => const [],
+    };
   }
 
   Widget _buildElapsedBadge(String isoDate) {
@@ -118,12 +120,12 @@ class OrderCard extends StatelessWidget {
     try {
       final dt = DateTime.parse(isoDate).toLocal();
       final elapsed = DateTime.now().difference(dt).inMinutes;
-      
+
       final Color bgColor;
       final Color textColor;
       final String label;
       final IconData icon;
-      
+
       if (elapsed < 3) {
         bgColor = Colors.green.withValues(alpha: 0.12);
         textColor = Colors.green.shade700;
@@ -140,7 +142,7 @@ class OrderCard extends StatelessWidget {
         label = '${elapsed}m - UNATTENDED!';
         icon = Icons.warning_amber_rounded;
       }
-      
+
       return DecoratedBox(
         decoration: BoxDecoration(
           color: bgColor,
@@ -176,8 +178,9 @@ class OrderCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.darkBackground : AppColors.lightBackground;
     final shortId = _shortId(order.id).toUpperCase();
-    final isPickup = order.deliveryType.toLowerCase() == 'pickup' || 
-                    order.deliveryType.toLowerCase() == 'store_pickup';
+    final isPickup =
+        order.deliveryType.toLowerCase() == 'pickup' ||
+        order.deliveryType.toLowerCase() == 'store_pickup';
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -210,23 +213,28 @@ class OrderCard extends StatelessWidget {
               children: [
                 DecoratedBox(
                   decoration: BoxDecoration(
-                    color: isPickup 
-                        ? Colors.teal.withValues(alpha: 0.12) 
+                    color: isPickup
+                        ? Colors.teal.withValues(alpha: 0.12)
                         : Colors.blue.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isPickup 
-                          ? Colors.teal.withValues(alpha: 0.3) 
+                      color: isPickup
+                          ? Colors.teal.withValues(alpha: 0.3)
                           : Colors.blue.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          isPickup ? Icons.shopping_bag_outlined : Icons.delivery_dining_rounded,
+                          isPickup
+                              ? Icons.shopping_bag_outlined
+                              : Icons.delivery_dining_rounded,
                           size: 14,
                           color: isPickup ? Colors.teal : Colors.blue,
                         ),
@@ -243,10 +251,10 @@ class OrderCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (!isPickup && 
-                    (order.status == OrderStatus.pending || 
-                     order.status == OrderStatus.accepted || 
-                     order.status == OrderStatus.preparing)) ...[
+                if (!isPickup &&
+                    (order.status == OrderStatus.pending ||
+                        order.status == OrderStatus.accepted ||
+                        order.status == OrderStatus.preparing)) ...[
                   const SizedBox(width: 8),
                   _buildElapsedBadge(order.date),
                 ],
@@ -255,12 +263,17 @@ class OrderCard extends StatelessWidget {
             const SizedBox(height: 12),
             Divider(color: border, height: 1),
             const SizedBox(height: 12),
-            if (order.user != null) ...[
-              _CustomerRow(user: order.user!, textColor: textColor, muted: muted),
-              const SizedBox(height: 8),
-              Divider(color: border, height: 1),
-              const SizedBox(height: 12),
-            ],
+            _CustomerRow(
+              name: order.resolvedCustomerName,
+              phone: order.resolvedCustomerPhone,
+              address: order.customerDetails?.address,
+              textColor: textColor,
+              muted: muted,
+            ),
+            const SizedBox(height: 8),
+            Divider(color: border, height: 1),
+            const SizedBox(height: 12),
+
             _ItemsSection(
               items: order.items,
               bg: bg,
@@ -280,7 +293,13 @@ class OrderCard extends StatelessWidget {
                 spacing: 10,
                 runSpacing: 8,
                 children: _actions
-                    .map((a) => _ActionButton(config: a, order: order, onTap: onUpdateStatus))
+                    .map(
+                      (a) => _ActionButton(
+                        config: a,
+                        order: order,
+                        onTap: onUpdateStatus,
+                      ),
+                    )
                     .toList(),
               ),
             ],
@@ -389,27 +408,44 @@ class _CardHeader extends StatelessWidget {
 
 class _CustomerRow extends StatelessWidget {
   const _CustomerRow({
-    required this.user,
+    required this.name,
+    this.phone,
+    this.address,
     required this.textColor,
     required this.muted,
   });
 
-  final UserProfile user;
+  final String name;
+  final String? phone;
+  final String? address;
   final Color textColor;
   final Color muted;
 
   @override
   Widget build(BuildContext context) {
-    final hasPhone = user.phone != null && user.phone!.isNotEmpty;
+    final hasPhone = phone != null && phone!.isNotEmpty;
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.person_rounded,
+            color: AppColors.primary,
+            size: 18,
+          ),
+        ),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                user.name,
+                name,
                 style: TextStyle(
                   color: textColor,
                   fontWeight: FontWeight.bold,
@@ -417,17 +453,26 @@ class _CustomerRow extends StatelessWidget {
                 ),
               ),
               if (hasPhone)
+                Text(phone!, style: TextStyle(color: muted, fontSize: 13)),
+              if (address != null && address!.trim().isNotEmpty)
                 Text(
-                  user.phone!,
-                  style: TextStyle(color: muted, fontSize: 13),
+                  address!,
+                  style: TextStyle(
+                    color: muted,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
             ],
           ),
         ),
         if (hasPhone)
           IconButton(
-            icon: const Icon(Icons.phone, color: AppColors.primary),
-            onPressed: () => _call(user.phone!),
+            tooltip: 'Call customer',
+            icon: const Icon(Icons.phone_rounded, color: AppColors.primary),
+            onPressed: () => _call(phone!),
           ),
       ],
     );
@@ -524,18 +569,22 @@ class _ItemRow extends StatelessWidget {
               const SizedBox(height: 4),
               if (item.selectedSides?.isNotEmpty ?? false)
                 for (final e in item.selectedSides!.entries)
-                  if (e.value > 0) _Modifier('Side: ${e.key} (x${e.value})', muted),
+                  if (e.value > 0)
+                    _Modifier('Side: ${e.key} (x${e.value})', muted),
               if (item.selectedDrinks?.isNotEmpty ?? false)
                 for (final e in item.selectedDrinks!.entries)
-                  if (e.value > 0) _Modifier('Drink: ${e.key} (x${e.value})', muted),
+                  if (e.value > 0)
+                    _Modifier('Drink: ${e.key} (x${e.value})', muted),
               if (item.extras?.isNotEmpty ?? false)
                 _Modifier('Extras: ${item.extras!.join(", ")}', muted),
               if (item.selectedMeats?.isNotEmpty ?? false)
                 for (final e in item.selectedMeats!.entries)
-                  if (e.value > 0) _Modifier('Meat: ${e.key} (x${e.value})', muted),
+                  if (e.value > 0)
+                    _Modifier('Meat: ${e.key} (x${e.value})', muted),
               if (item.selectedAddons?.isNotEmpty ?? false)
                 for (final e in item.selectedAddons!.entries)
-                  if (e.value > 0) _Modifier('Addon: ${e.key} (x${e.value})', muted),
+                  if (e.value > 0)
+                    _Modifier('Addon: ${e.key} (x${e.value})', muted),
             ],
           ),
         ),
