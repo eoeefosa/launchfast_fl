@@ -26,6 +26,18 @@ class _TopUpSheetState extends State<TopUpSheet> {
   late final TextEditingController _amountCtrl;
   bool _isLoading = false;
 
+  double? get _parsedAmount => double.tryParse(_amountCtrl.text.trim());
+  bool get _hasValidAmount => (_parsedAmount ?? 0) > 0;
+
+  double get _feeAmount {
+    if (_parsedAmount == null) return 0;
+    double fee = _parsedAmount! * 0.025;
+    if (fee > 2000) fee = 2000;
+    return fee;
+  }
+
+  double get _totalCharge => (_parsedAmount ?? 0) + _feeAmount;
+
   @override
   void initState() {
     super.initState();
@@ -129,8 +141,52 @@ class _TopUpSheetState extends State<TopUpSheet> {
             ),
             const SizedBox(height: 12),
             const _SecurityBadge(),
+            if (_hasValidAmount) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Amount to Deposit', style: TextStyle(fontSize: 12, color: scheme.onSurface.withValues(alpha: 0.7))),
+                        Text('₦${_parsedAmount?.toStringAsFixed(2)}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onSurface)),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Processing Fee (2.5%)', style: TextStyle(fontSize: 12, color: scheme.onSurface.withValues(alpha: 0.7))),
+                        Text('₦${_feeAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onSurface)),
+                      ],
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 6),
+                      child: Divider(),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Total Charge', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: scheme.onSurface)),
+                        Text('₦${_totalCharge.toStringAsFixed(2)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: scheme.primary)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
-            _DepositButton(isLoading: _isLoading, onPressed: _deposit),
+            _DepositButton(
+              isLoading: _isLoading, 
+              onPressed: _deposit,
+              label: _hasValidAmount ? 'Pay ₦${_totalCharge.toStringAsFixed(0)}' : 'Deposit via Paystack',
+            ),
           ],
         ),
       ),
@@ -324,8 +380,9 @@ class _SecurityBadge extends StatelessWidget {
 class _DepositButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onPressed;
+  final String label;
 
-  const _DepositButton({required this.isLoading, required this.onPressed});
+  const _DepositButton({required this.isLoading, required this.onPressed, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -351,9 +408,9 @@ class _DepositButton extends StatelessWidget {
                   color: Colors.white,
                 ),
               )
-            : const Text(
-                'Deposit via Paystack',
-                style: TextStyle(
+            : Text(
+                label,
+                style: const TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 15,
                   letterSpacing: 0.2,
