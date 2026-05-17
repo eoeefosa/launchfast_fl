@@ -1,37 +1,59 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+
 import 'package:campuschow/models/order.dart';
-import 'package:campuschow/providers/cart_provider.dart';
-import 'package:campuschow/constants/app_colors.dart';
-import 'package:campuschow/widgets/orders/active_order_tracker.dart';
-
 import 'package:campuschow/repositories/order_repository.dart';
+import 'package:campuschow/widgets/orders/active_order_tracker.dart';
+import 'package:campuschow/widgets/orders/order_receipt.dart';
+import 'components/order_details_app_bar.dart';
+import 'components/order_details_error.dart';
 
+// ---------------------------------------------------------------------------
+// OrderDetailsScreen
+// ---------------------------------------------------------------------------
+
+/// Displays the full receipt and live tracking for a single [Order].
+///
+/// Accepts either a fully-loaded [order] object or an [orderId] string.
+/// When only [orderId] is supplied the screen fetches the order on mount.
 class OrderDetailsScreen extends StatefulWidget {
+  const OrderDetailsScreen({
+    super.key,
+    this.order,
+    this.orderId,
+  }) : assert(
+          order != null || orderId != null,
+          'Provide at least one of order or orderId.',
+        );
+
   final Order? order;
   final String? orderId;
-
-  const OrderDetailsScreen({super.key, this.order, this.orderId});
 
   @override
   State<OrderDetailsScreen> createState() => _OrderDetailsScreenState();
 }
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
+  // ── State ──────────────────────────────────────────────────────────────────
+
   Order? _order;
   bool _isLoading = false;
   String? _error;
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
     if (widget.order != null) {
+      // Order already loaded — no network call needed.
       _order = widget.order;
-    } else if (widget.orderId != null) {
+    } else {
+      // orderId is guaranteed non-null by the assert above.
       _fetchOrder();
     }
   }
+
+  // ── Data fetching ──────────────────────────────────────────────────────────
 
   Future<void> _fetchOrder() async {
     setState(() {
@@ -41,284 +63,77 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
     try {
       final order = await OrderRepository().getOrderById(widget.orderId!);
+      if (!mounted) return;
       setState(() {
         _order = order;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (_) {
+      if (!mounted) return;
       setState(() {
-        _error = 'Failed to load order details';
+        _error = 'Failed to load order details.';
         _isLoading = false;
       });
     }
   }
 
+  // ── Derived state ──────────────────────────────────────────────────────────
+
+  /// An order is "active" when it has not yet reached a terminal status.
+  bool get _isActive =>
+      _order != null &&
+      _order!.status != OrderStatus.delivered &&
+      _order!.status != OrderStatus.cancelled;
+
+  // ── Build ──────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
+    // Loading state
     if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Order Details')),
-        body: const Center(child: CircularProgressIndicator()),
+      return const Scaffold(
+        appBar: OrderDetailsAppBar(),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
+    // Error / not-found state
     if (_error != null || _order == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Order Details')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(_error ?? 'Order not found'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _fetchOrder,
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+        appBar: const OrderDetailsAppBar(),
+        body: OrderDetailsError(
+          message: _error ?? 'Order not found.',
+          onRetry: _fetchOrder,
         ),
       );
     }
 
-    final order = _order!;
-    final isActive = order.status != OrderStatus.delivered && 
-                     order.status != OrderStatus.cancelled;
-
+    // Loaded state
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: const Text('Order Details'),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-      ),
+      appBar: const OrderDetailsAppBar(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        // ClampingScrollPhysics matches Android's native feel and, crucially,
+        // does not let the scroll view compress itself — content always gets
+        // its full intrinsic height, so nothing is clipped at the bottom.
+        physics: const ClampingScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          24,
+          20,
+          // Add the bottom safe-area inset (notch / gesture bar) so the last
+          // widget is never hidden behind the system UI.
+          24 + MediaQuery.paddingOf(context).bottom,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (isActive) ...[
-              ActiveOrderTracker(order: order),
+            if (_isActive) ...[
+              ActiveOrderTracker(order: _order!),
               const SizedBox(height: 32),
             ],
-            
-            // Receipt Section
-            Text(
-              'Receipt',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
-              ),
-              child: Column(
-                children: [
-                  ...order.items.map((i) => _DetailItem(item: i)),
-                  const SizedBox(height: 16),
-                  Divider(color: AppColors.lightBorder.withValues(alpha: 0.5)),
-                  const SizedBox(height: 16),
-                  
-                  // Totals
-                  _SummaryRow(label: 'Subtotal', value: order.subtotal),
-                  if (order.serviceFee > 0)
-                    _SummaryRow(label: 'Service Fee', value: order.serviceFee),
-                  if (order.deliveryFee > 0)
-                    _SummaryRow(label: 'Delivery Fee', value: order.deliveryFee),
-                  if (order.walletDeduction > 0)
-                    _SummaryRow(
-                      label: 'Wallet Applied', 
-                      value: -order.walletDeduction, 
-                      isHighlight: true
-                    ),
-                  
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Total',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      Text(
-                        '₦${order.total.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  if (order.status == OrderStatus.queued)
-                    _EditOrderButton(order: order),
-                ],
-              ),
-            ),
+            OrderReceipt(order: _order!),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  final String label;
-  final double value;
-  final bool isHighlight;
-
-  const _SummaryRow({
-    required this.label, 
-    required this.value, 
-    this.isHighlight = false
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
-          Text(
-            value < 0 ? '-₦${value.abs().toStringAsFixed(0)}' : '₦${value.toStringAsFixed(0)}',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: isHighlight ? Colors.green : Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailItem extends StatelessWidget {
-  final CartItem item;
-
-  const _DetailItem({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final addons = <String>[];
-    if (item.selectedMeats != null) {
-      item.selectedMeats!.forEach((k, v) {
-        if (v > 0) addons.add('${v}x $k Meat');
-      });
-    }
-    if (item.selectedSides != null) {
-      item.selectedSides!.forEach((k, v) {
-        if (v > 0) addons.add('${v}x $k Side');
-      });
-    }
-    if (item.selectedDrinks != null) {
-      item.selectedDrinks!.forEach((k, v) {
-        if (v > 0) addons.add('${v}x $k Drink');
-      });
-    }
-    if (item.selectedAddons != null) {
-      item.selectedAddons!.forEach((k, v) {
-        if (v > 0) addons.add('${v}x $k');
-      });
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '${item.quantity}x',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: AppColors.primary,
-                fontSize: 12,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.menuItem.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                  ),
-                ),
-                if (addons.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      addons.join(' • '),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.lightMuted,
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EditOrderButton extends StatelessWidget {
-  final Order order;
-
-  const _EditOrderButton({required this.order});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          context.read<CartProvider>().loadOrder(order, isEditing: true);
-          context.push('/cart');
-        },
-        icon: const Icon(Icons.edit_outlined, size: 18),
-        label: const Text('Edit Selections'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.onSurface,
-          foregroundColor: Theme.of(context).colorScheme.surface,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
         ),
       ),
     );

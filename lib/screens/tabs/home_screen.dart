@@ -1,18 +1,43 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/store_provider.dart';
-import '../../providers/cart_provider.dart';
-import '../../providers/auth_provider.dart';
+
 import '../../models/menu_item.dart';
-import '../../widgets/home/home_header.dart';
-import '../../widgets/home/store_section.dart';
-import '../../widgets/home/menu_grouped_list.dart';
-import '../../widgets/home/category_selector.dart';
-import '../../widgets/home/cart_bar.dart';
-import '../../widgets/home/item_options_sheet.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/cart_provider.dart';
+import '../../providers/store_provider.dart';
 import '../../services/ably_service.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import '../../widgets/home/cart_bar.dart';
+import '../../widgets/home/category_selector.dart';
+import '../../widgets/home/home_header.dart';
+import '../../widgets/home/item_options_sheet.dart';
+import '../../widgets/home/store_section.dart';
+import '../../widgets/home/home_skeleton.dart';
+import '../../widgets/home/category_header_delegate.dart';
+import '../../widgets/home/fade_slide_in.dart';
+import '../../widgets/home/animated_menu_list.dart';
+import 'components/home_empty_body.dart';
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/// Canonical display order for menu categories.
+/// "Soup" is intentionally absent — it is only shown as an add-on inside
+/// swallow items, never as a standalone orderable category.
+const List<String> _kCategoryOrder = [
+  'Rice & Pasta',
+  'Swallow & Soup',
+  'Drinks',
+  'Side',
+  'Protein',
+  'Snacks & Pastries',
+  'Others',
+];
+
+// ---------------------------------------------------------------------------
+// HomeScreen
+// ---------------------------------------------------------------------------
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,135 +47,161 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // ── State ──────────────────────────────────────────────────────────────────
+
   String _activeStoreId = '';
   String _selectedCategory = 'All';
 
+  // Typed as the exact function signature expected by AblyService so the
+  // listener reference is stable across add/remove calls.
   late final void Function(String) _roleListener;
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
-    _initializeData();
-    _setupAblyListeners();
+    _initActiveStore();
+    _setupAblyRoleListener();
   }
 
-  void _initializeData() {
-    final storeProvider = context.read<StoreProvider>();
-    if (storeProvider.stores.isNotEmpty) {
-      _activeStoreId = storeProvider.stores.first.id;
-    }
-  }
-
-  void _setupAblyListeners() {
-    final auth = context.read<AuthProvider>();
-    final userId = auth.user?.id;
-    if (userId != null) {
-      // Ably connection is managed by AuthProvider — we only add listeners here.
-      _roleListener = (String newRole) {
-        if (mounted) context.read<AuthProvider>().updateRole(newRole);
-      };
-      ablyService.addRoleListener(_roleListener);
-    } else {
-      _roleListener = (_) {};
-    }
-  }
   @override
   void dispose() {
     ablyService.removeRoleListener(_roleListener);
     super.dispose();
   }
 
+  // ── Initialisation helpers ─────────────────────────────────────────────────
+
+  /// Pre-selects the first available store so the UI is never blank on launch.
+  void _initActiveStore() {
+    final stores = context.read<StoreProvider>().stores;
+    if (stores.isNotEmpty) {
+      _activeStoreId = stores.first.id;
+    }
+  }
+
+  /// Registers a real-time role-change listener via Ably.
+  /// Falls back to a no-op when the user is not authenticated.
+  void _setupAblyRoleListener() {
+    final userId = context.read<AuthProvider>().user?.id;
+
+    if (userId != null) {
+      _roleListener = (String newRole) {
+        if (mounted) context.read<AuthProvider>().updateRole(newRole);
+      };
+      ablyService.addRoleListener(_roleListener);
+    } else {
+      // No-op placeholder keeps the field non-null so dispose() is always safe.
+      _roleListener = (_) {};
+    }
+  }
+
+  // ── Callbacks ──────────────────────────────────────────────────────────────
+
   void _onStoreSelected(String storeId) {
     setState(() {
       _activeStoreId = storeId;
-      _selectedCategory = 'All';
+      _selectedCategory = 'All'; // reset filter on store change
     });
   }
 
+  // ── Data derivation ────────────────────────────────────────────────────────
+
+  /// Returns menu items visible for [storeId] under [category], excluding
+  /// standalone soup items (which only appear as swallow add-ons).
+  List<MenuItem> _filteredItems(
+    StoreProvider provider,
+    String storeId,
+    String category,
+  ) {
+    return provider.menuItems.where((item) {
+      final matchesStore = item.storeId == storeId;
+      final matchesCategory = category == 'All' || item.category == category;
+      final isNotSoup = item.type != 'soup';
+      return matchesStore && matchesCategory && isNotSoup;
+    }).toList();
+  }
+
+  /// Builds a sorted, grouped map of category → items.
+  ///
+  /// Categories present in [_kCategoryOrder] appear first; unknown categories
+  /// are appended alphabetically.
+  Map<String, List<MenuItem>> _groupedItems(
+    List<MenuItem> filtered,
+    String storeId,
+    StoreProvider provider,
+  ) {
+    // Derive the ordered category list from actual data, not a hard-coded set.
+    final present =
+        provider.menuItems
+            .where((item) => item.storeId == storeId && item.type != 'soup')
+            .map((item) => item.category)
+            .whereType<String>()
+            .toSet()
+            .toList()
+          ..sort((a, b) {
+            final indexA = _kCategoryOrder.indexOf(a);
+            final indexB = _kCategoryOrder.indexOf(b);
+            if (indexA == -1 && indexB == -1) return a.compareTo(b);
+            if (indexA == -1) return 1;
+            if (indexB == -1) return -1;
+            return indexA.compareTo(indexB);
+          });
+
+    return {
+      for (final cat in present)
+        if (filtered.where((i) => i.category == cat).isNotEmpty)
+          cat: filtered.where((i) => i.category == cat).toList(),
+    };
+  }
+
+  // ── Build ──────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    // final authProvider = context.watch<AuthProvider>();
-    // final user = authProvider.user;
-
     final storeProvider = context.watch<StoreProvider>();
-    
-    // Auto-select first store if none selected and stores are available
+
+    // Auto-select the first store when stores load after mount (e.g. after
+    // a refresh) and nothing is selected yet.
     if (_activeStoreId.isEmpty && storeProvider.stores.isNotEmpty) {
+      // Direct assignment — no setState needed here because this is inside
+      // build() and the frame is not yet committed.
       _activeStoreId = storeProvider.stores.first.id;
     }
 
+    // ── Loading skeleton ───────────────────────────────────────────────────
     if (storeProvider.isLoading && storeProvider.stores.isEmpty) {
       return const HomeSkeleton();
     }
 
+    // ── Empty / error state ────────────────────────────────────────────────
     if (storeProvider.stores.isEmpty) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(storeProvider.error ?? 'No stores available'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => storeProvider.refreshData(),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+      return HomeEmptyBody(
+        message: storeProvider.error,
+        onRetry: storeProvider.refreshData,
       );
     }
 
+    // ── Loaded state ───────────────────────────────────────────────────────
+    // firstWhere is safe: stores is non-empty and _activeStoreId is always
+    // set to a valid id above.
     final activeStore = storeProvider.stores.firstWhere(
       (s) => s.id == _activeStoreId,
-      orElse: () => storeProvider.stores.isNotEmpty
-          ? storeProvider.stores.first
-          : throw Exception('No stores available'),
+      orElse: () => storeProvider.stores.first,
     );
 
-    final filteredItems = storeProvider.menuItems.where((item) {
-      final matchesStore = item.storeId == _activeStoreId;
-      final matchesCategory =
-          _selectedCategory == 'All' || item.category == _selectedCategory;
-      // Soup is the ONLY type that is never shown standalone —
-      // it only appears as an add-on inside swallow items.
-      // Protein, Side, Drink, Snack, and main items are all orderable.
-      final isNotSoup = item.type != 'soup';
-      return matchesStore && matchesCategory && isNotSoup;
-    }).toList();
+    final filtered = _filteredItems(
+      storeProvider,
+      _activeStoreId,
+      _selectedCategory,
+    );
+    final grouped = _groupedItems(filtered, _activeStoreId, storeProvider);
 
-    final groupedItems = <String, List<MenuItem>>{};
-    // Canonical display order — Soup is excluded entirely from top-level
-    const predefinedOrder = [
-      'Rice & Pasta',
-      'Swallow & Soup',
-      'Drinks',
-      'Side',
-      'Protein',
-      'Snacks & Pastries',
-      'Others',
-    ];
-    final categories = storeProvider.menuItems
-        .where((item) =>
-            item.storeId == _activeStoreId && item.type != 'soup')
-        .map((item) => item.category)
-        .whereType<String>()
-        .toSet()
-        .toList()
-      ..sort((a, b) {
-        final indexA = predefinedOrder.indexOf(a);
-        final indexB = predefinedOrder.indexOf(b);
-        if (indexA == -1 && indexB == -1) return a.compareTo(b);
-        if (indexA == -1) return 1;
-        if (indexB == -1) return -1;
-        return indexA.compareTo(indexB);
-      });
-    for (var cat in categories) {
-      final items = filteredItems.where((i) => i.category == cat).toList();
-      if (items.isNotEmpty) groupedItems[cat] = items;
-    }
+    // Sorted category list for the selector — derived from grouped keys so it
+    // exactly mirrors what is visible in the list.
+    final categories = ['All', ...grouped.keys];
 
-    final accentColor = activeStore.accentColor;
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Scaffold(
@@ -162,12 +213,17 @@ class _HomeScreenState extends State<HomeScreen> {
             CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
+                // Pull-to-refresh (iOS only — Android uses RefreshIndicator
+                // which should wrap the CustomScrollView at a higher level).
                 if (isIOS)
                   CupertinoSliverRefreshControl(
-                    onRefresh: () => storeProvider.refreshData(),
+                    onRefresh: storeProvider.refreshData,
                   ),
-                SliverToBoxAdapter(child: const HomeHeader()),
-                // "Restaurants" header
+
+                // Home header (greeting, location, etc.)
+                const SliverToBoxAdapter(child: HomeHeader()),
+
+                // "Restaurants" label
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -178,69 +234,65 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Restaurants',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
                 ),
-                // StoreSection with fade + slide animation
+
+                // Store selector row — fade + slide in on first render.
                 SliverToBoxAdapter(
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0, end: 1),
-                    duration: const Duration(milliseconds: 500),
-                    builder: (context, value, child) {
-                      return Opacity(
-                        opacity: value,
-                        child: Transform.translate(
-                          offset: Offset(0, 20 * (1 - value)),
-                          child: child,
-                        ),
-                      );
-                    },
+                  child: FadeSlideIn(
                     child: StoreSection(
                       stores: storeProvider.stores,
                       activeStoreId: _activeStoreId,
                       onStoreSelected: _onStoreSelected,
-                      accentColor: accentColor,
+                      accentColor: activeStore.accentColor,
                     ),
                   ),
                 ),
-                // Sticky category selector
+
+                // Sticky category selector.
                 SliverPersistentHeader(
+                  // Give it a unique key per store so it rebuilds when the
+                  // store changes and the category list may differ.
+                  key: ValueKey(_activeStoreId),
                   pinned: true,
-                  delegate: _CategoryHeaderDelegate(
-                    child: Container(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: CategorySelector(
-                        selectedCategory: _selectedCategory,
-                        categories: categories,
-                        onCategorySelected: (cat) =>
-                            setState(() => _selectedCategory = cat),
-                      ),
+                  delegate: CategoryHeaderDelegate(
+                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    child: CategorySelector(
+                      selectedCategory: _selectedCategory,
+                      categories: categories,
+                      onCategorySelected: (cat) =>
+                          setState(() => _selectedCategory = cat),
                     ),
                   ),
                 ),
+
+                // Menu items — fade in on category / store switch.
                 SliverPadding(
                   padding: const EdgeInsets.only(top: 8, bottom: 120),
-                  sliver: _AnimatedMenuList(
-                    groupedItems: groupedItems,
-                    accentColor: accentColor,
+                  sliver: AnimatedMenuList(
+                    // key forces a fresh animation when the store changes.
+                    key: ValueKey(_activeStoreId),
+                    groupedItems: grouped,
+                    accentColor: activeStore.accentColor,
                     onAdd: (item) => _handleAddItem(context, item),
-                    emptyMessage: filteredItems.isEmpty
+                    emptyMessage: filtered.isEmpty
                         ? 'No items found in this category.'
                         : storeProvider.error,
                   ),
                 ),
               ],
             ),
+
+            // Floating cart bar pinned above the bottom safe area.
             Positioned(
               bottom: 10,
               left: 0,
               right: 0,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: CartBar(accent: accentColor),
+                child: CartBar(accent: activeStore.accentColor),
               ),
             ),
           ],
@@ -249,111 +301,109 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _handleAddItem(BuildContext context, MenuItem item) async {
-    final cartProvider = context.read<CartProvider>();
-    final storeProvider = context.read<StoreProvider>();
-    final store = storeProvider.stores.firstWhere((s) => s.id == item.storeId);
+  // ── Add-item flow ──────────────────────────────────────────────────────────
 
-    // Always open the options sheet for orderable meal bases so users
-    // can pair their food. Simple snacks with no compatible add-ons skip it.
-    final hasCompatibleItems = (item.compatibleWith?.isNotEmpty ?? false) ||
+  /// Opens the options sheet for items that need configuration, or adds
+  /// directly to the cart for simple items.
+  Future<void> _handleAddItem(BuildContext context, MenuItem item) async {
+    final cartProvider = context.read<CartProvider>();
+    final store = context.read<StoreProvider>().stores.firstWhere(
+      (s) => s.id == item.storeId,
+    );
+
+    final needsSheet =
+        item.type == 'main' ||
+        item.type == 'swallow' ||
+        (item.compatibleWith?.isNotEmpty ?? false) ||
         (item.addonIds?.isNotEmpty ?? false) ||
         item.sizes.isNotEmpty;
-    final needsSheet = item.type == 'main' ||
-        item.type == 'swallow' ||
-        hasCompatibleItems;
 
     if (needsSheet) {
       final result = await showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (context) => ItemOptionsSheet(
-          item: item,
-          accentColor: store.accentColor,
-        ),
+        builder: (_) =>
+            ItemOptionsSheet(item: item, accentColor: store.accentColor),
       );
 
+      if (!context.mounted) return;
+
       if (result == 'CLEAR_REQUIRED') {
-        if (context.mounted) _showClearCartDialog(context, item);
+        _showClearCartDialog(context, item);
       } else if (result == 'SUCCESS') {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${item.name} added to cart'),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 1),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          );
-        }
+        _showAddedSnackBar(context, item.name);
       }
     } else {
       final success = cartProvider.addToCart(item: item, quantity: 1);
+      if (!context.mounted) return;
       if (success) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${item.name} added to cart'),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 1),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          );
-        }
+        _showAddedSnackBar(context, item.name);
+      } else {
+        _showClearCartDialog(context, item);
       }
-      if (!success) _showClearCartDialog(context, item);
     }
   }
 
-  void _showClearCartDialog(BuildContext context, MenuItem item) {
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+  // ── Dialog / snackbar helpers ──────────────────────────────────────────────
 
-    if (isIOS) {
-      showCupertinoDialog(
+  void _showAddedSnackBar(BuildContext context, String itemName) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$itemName added to cart'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  /// Prompts the user to clear their cart before adding an item from a
+  /// different store. Adapts to the platform's native dialog style.
+  void _showClearCartDialog(BuildContext context, MenuItem item) {
+    void clearAndAdd() {
+      context.read<CartProvider>().forceClearAndAdd(item: item, quantity: 1);
+      Navigator.of(context).pop();
+    }
+
+    const title = 'Start new order?';
+    const body =
+        'Your cart contains items from another store. Clear cart and add this item?';
+
+    if (Theme.of(context).platform == TargetPlatform.iOS) {
+      showCupertinoDialog<void>(
         context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: const Text('Start new order?'),
-          content: const Text(
-            'Your cart contains items from another store. Clear cart and add this item?',
-          ),
+        builder: (dialogContext) => CupertinoAlertDialog(
+          title: const Text(title),
+          content: const Text(body),
           actions: [
             CupertinoDialogAction(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel'),
             ),
             CupertinoDialogAction(
               isDestructiveAction: true,
-              onPressed: () {
-                context.read<CartProvider>().forceClearAndAdd(
-                  item: item,
-                  quantity: 1,
-                );
-                Navigator.pop(context);
-              },
+              onPressed: clearAndAdd,
               child: const Text('Clear & Add'),
             ),
           ],
         ),
       );
     } else {
-      showDialog(
+      showDialog<void>(
         context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: Colors.white,
+        builder: (dialogContext) => AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
           title: const Text(
-            'Start new order?',
+            title,
             style: TextStyle(fontWeight: FontWeight.w900),
           ),
-          content: const Text(
-            'Your cart contains items from another store. Clear cart and add this item?',
-          ),
+          content: const Text(body),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
@@ -364,205 +414,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: () {
-                context.read<CartProvider>().forceClearAndAdd(
-                  item: item,
-                  quantity: 1,
-                );
-                Navigator.pop(context);
-              },
+              onPressed: clearAndAdd,
               child: const Text('Clear & Add'),
             ),
           ],
         ),
       );
     }
-  }
-}
-
-class _AnimatedMenuList extends StatefulWidget {
-  final Map<String, List<MenuItem>> groupedItems;
-  final Color accentColor;
-  final void Function(MenuItem) onAdd;
-  final String? emptyMessage;
-
-  const _AnimatedMenuList({
-    required this.groupedItems,
-    required this.accentColor,
-    required this.onAdd,
-    this.emptyMessage,
-  });
-
-  @override
-  State<_AnimatedMenuList> createState() => _AnimatedMenuListState();
-}
-
-class _AnimatedMenuListState extends State<_AnimatedMenuList>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _opacity;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    )..forward();
-
-    _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // SliverFadeTransition is sliver-aware — it wraps a sliver child correctly,
-    // unlike Opacity/Transform which expect RenderBox children.
-    return SliverFadeTransition(
-      opacity: _opacity,
-      sliver: MenuGroupedList(
-        groupedItems: widget.groupedItems,
-        accentColor: widget.accentColor,
-        onAdd: widget.onAdd,
-        emptyMessage: widget.emptyMessage,
-      ),
-    );
-  }
-}
-
-// ── Sticky category header delegate ──────────────────────────────────────────
-class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-
-  _CategoryHeaderDelegate({required this.child});
-
-  @override
-  double get minExtent => 76;
-
-  @override
-  double get maxExtent => 76;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return SizedBox.expand(child: child);
-  }
-
-  @override
-  bool shouldRebuild(covariant _CategoryHeaderDelegate oldDelegate) {
-    return child != oldDelegate.child;
-  }
-}
-
-class HomeSkeleton extends StatelessWidget {
-  const HomeSkeleton({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.grey[850]! : Colors.grey[300]!;
-    
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header skeleton
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
-                  children: [
-                    Container(width: 50, height: 50, decoration: BoxDecoration(color: baseColor, shape: BoxShape.circle)),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(width: 100, height: 14, decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(bottom: 8)),
-                        Container(width: 150, height: 20, decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(4))),
-                      ],
-                    ),
-                    const Spacer(),
-                    Container(width: 40, height: 40, decoration: BoxDecoration(color: baseColor, shape: BoxShape.circle)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              // "Restaurants" title
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Container(width: 120, height: 24, decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(4))),
-              ),
-              const SizedBox(height: 16),
-              
-              // Stores skeleton
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: List.generate(3, (index) => 
-                    Container(
-                      width: 240, 
-                      height: 140, 
-                      margin: const EdgeInsets.only(right: 16), 
-                      decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(24))
-                    )
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Categories skeleton
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: List.generate(5, (index) => 
-                    Container(
-                      width: 80, height: 40, 
-                      margin: const EdgeInsets.only(right: 12), 
-                      decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(20))
-                    )
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Menu items skeleton
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(width: 100, height: 20, decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(bottom: 16)),
-                    ...List.generate(3, (index) => 
-                      Container(
-                        width: double.infinity, height: 110, 
-                        margin: const EdgeInsets.only(bottom: 16), 
-                        decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(20))
-                      )
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ).animate(onPlay: (controller) => controller.repeat())
-           .shimmer(duration: 1200.ms, color: isDark ? Colors.white10 : Colors.white54)
-           .animate()
-           .fade(duration: 300.ms),
-        ),
-      ),
-    );
   }
 }

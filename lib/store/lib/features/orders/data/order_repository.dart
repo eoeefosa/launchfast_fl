@@ -52,8 +52,8 @@ class OrderRepository {
   Future<Order> updateOrderStatus(String id, String status, {String? storeId}) async {
     final response = await apiService.dio.patch('/orders/$id/status', data: {
       'status': status,
-      if (storeId != null) 'storeId': storeId,
-      if (storeId != null) 'restaurantId': storeId,
+      'storeId': ?storeId,
+      'restaurantId': ?storeId,
     });
     return Order.fromJson(response.data);
   }
