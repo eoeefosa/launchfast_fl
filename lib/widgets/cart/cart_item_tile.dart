@@ -38,12 +38,19 @@ class CartItemTile extends StatelessWidget {
         .firstWhere((m) => m.id == item.menuItem.id, orElse: () => item.menuItem)
         .isReady;
 
+    final isSwallow = item.menuItem.type == 'swallow' ||
+        item.menuItem.category == 'Swallow' ||
+        item.menuItem.requiresSoupSelection;
+    final lacksSoup = isSwallow && (item.selectedSoup == null || item.selectedSoup!['id'] == null);
+
     return Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
-            border: !isReady ? Border.all(color: Colors.red.withValues(alpha: 0.5), width: 2) : null,
+            border: !isReady || lacksSoup 
+                ? Border.all(color: Colors.red.withValues(alpha: 0.5), width: 2) 
+                : null,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),
@@ -114,7 +121,31 @@ class CartItemTile extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                               ),
                             )
-                          else if (customizationSummary.isNotEmpty) ...[
+                          else if (lacksSoup) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Soup required',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ] else if (customizationSummary.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text(
                               customizationSummary,

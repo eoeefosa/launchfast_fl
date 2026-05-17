@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
@@ -42,12 +44,18 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
   bool _isLoading = true;
   bool _hasNewOrder = false;
   String _searchQuery = '';
+  String _deliveryTypeFilter = 'all'; // 'all', 'delivery', 'pickup'
 
   // ── Controllers ────────────────────────────────────────────────────────────
   late final TabController _tabController;
   late final TextEditingController _searchController;
   late final AnimationController _badgePulse;
   late final Animation<double> _badgeScale;
+
+  // ── Unattended Notification Reminders ──────────────────────────────────────
+  DateTime? _lastNotificationTime;
+  Timer? _unattendedTimer;
+  AudioPlayer? _reminderAudioPlayer;
 
   // ── Derived ────────────────────────────────────────────────────────────────
   OrderStatus? get _activeFilter => _kFilters[_tabController.index];
@@ -65,6 +73,12 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     final filter = _activeFilter;
     if (filter != null) {
       list = list.where((o) => o.status == filter).toList();
+    }
+
+    if (_deliveryTypeFilter == 'pickup') {
+      list = list.where((o) => _isPickupDeliveryType(o.deliveryType)).toList();
+    } else if (_deliveryTypeFilter == 'delivery') {
+      list = list.where((o) => !_isPickupDeliveryType(o.deliveryType)).toList();
     }
 
     if (_searchQuery.isNotEmpty) {
@@ -100,12 +114,16 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       CurvedAnimation(parent: _badgePulse, curve: Curves.easeInOut),
     );
 
+    _initAudioPlayer();
     _loadOrders();
     _subscribeAbly();
+    _startUnattendedTimer();
   }
 
   @override
   void dispose() {
+    _unattendedTimer?.cancel();
+    _reminderAudioPlayer?.dispose();
     _tabController
       ..removeListener(_onTabChanged)
       ..dispose();
@@ -129,7 +147,11 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     try {
       final orders = await context.read<StoreProvider>().fetchStoreOrders();
       orders.sort((a, b) => b.date.compareTo(a.date));
-      if (mounted) setState(() => _orders = orders);
+      if (mounted) {
+        setState(() => _orders = orders);
+        // Run initial unattended reminder check
+        _checkUnattendedOrdersAndNotify();
+      }
     } catch (e, stack) {
       debugPrint('[StoreOrdersScreen] _loadOrders: $e\n$stack');
       _showSnackBar('Failed to load orders', isError: true);
@@ -158,6 +180,116 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       _loadOrders();
       if (mounted) setState(() => _hasNewOrder = true);
     });
+  }
+
+  // ── Unattended Notification Reminders ──────────────────────────────────────
+
+  void _initAudioPlayer() {
+    try {
+      _reminderAudioPlayer = AudioPlayer();
+    } catch (e) {
+      debugPrint('Failed to initialize reminder audio player: $e');
+    }
+  }
+
+  void _startUnattendedTimer() {
+    _unattendedTimer?.cancel();
+    _unattendedTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
+      _checkUnattendedOrdersAndNotify();
+    });
+  }
+
+  void _checkUnattendedOrdersAndNotify() {
+    if (!mounted || _orders.isEmpty) return;
+
+    final now = DateTime.now();
+    bool hasUnattended = false;
+    int maxElapsed = 0;
+
+    for (final order in _orders) {
+      final isPickup = _isPickupDeliveryType(order.deliveryType);
+      if (isPickup) continue;
+
+      final isActive = order.status == OrderStatus.pending ||
+                       order.status == OrderStatus.accepted ||
+                       order.status == OrderStatus.preparing;
+      if (!isActive) continue;
+
+      if (order.date.isNotEmpty) {
+        try {
+          final dt = DateTime.parse(order.date).toLocal();
+          final elapsed = now.difference(dt).inMinutes;
+          if (elapsed >= 5) {
+            hasUnattended = true;
+            if (elapsed > maxElapsed) {
+              maxElapsed = elapsed;
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
+    if (hasUnattended) {
+      if (_lastNotificationTime == null || 
+          now.difference(_lastNotificationTime!).inMinutes >= 5) {
+        _lastNotificationTime = now;
+        _playReminderSound();
+        _showUnattendedAlert(maxElapsed);
+      }
+    }
+  }
+
+  void _playReminderSound() {
+    try {
+      _reminderAudioPlayer?.play(AssetSource('sounds/order_sound.mp3'));
+    } catch (e) {
+      debugPrint('Failed to play reminder sound: $e');
+    }
+  }
+
+  void _showUnattendedAlert(int minutes) {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 28)
+                .animate(onPlay: (controller) => controller.repeat())
+                .shake(delay: 500.ms, duration: 1000.ms),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'UNATTENDED DELIVERY ORDERS',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                  ),
+                  Text(
+                    'An order has been waiting for $minutes mins! Please attend to it.',
+                    style: const TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red.shade800,
+        duration: const Duration(seconds: 8),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        action: SnackBarAction(
+          label: 'DISMISS',
+          textColor: Colors.white,
+          onPressed: () {
+            _reminderAudioPlayer?.stop();
+          },
+        ),
+      ),
+    );
   }
 
   // ── Pickup scanner ─────────────────────────────────────────────────────────
@@ -238,6 +370,44 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     );
   }
 
+  Widget _buildTypeChip(String type, String label, Color surfaceColor, Color borderColor, bool isDark) {
+    final isSelected = _deliveryTypeFilter == type;
+    final primary = AppColors.primary;
+    
+    return GestureDetector(
+      onTap: () => setState(() => _deliveryTypeFilter = type),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? primary.withValues(alpha: 0.15) 
+              : surfaceColor,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: isSelected ? primary : borderColor,
+            width: isSelected ? 1.5 : 1.0,
+          ),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: primary.withValues(alpha: 0.25),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            )
+          ] : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? primary : (isDark ? Colors.white70 : Colors.black87),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
@@ -303,6 +473,23 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
               setState(() => _searchQuery = '');
             },
           ),
+          // ── Beautiful Type Separation Filters ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: [
+                  _buildTypeChip('all', '🍱 All Orders', surface, border, isDark),
+                  const SizedBox(width: 10),
+                  _buildTypeChip('delivery', '🛵 Delivery', surface, border, isDark),
+                  const SizedBox(width: 10),
+                  _buildTypeChip('pickup', '🛍️ Pickup', surface, border, isDark),
+                ],
+              ),
+            ),
+          ),
           Expanded(
             child: _isLoading
                 ? const Center(
@@ -314,7 +501,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
                     child: _filtered.isEmpty
                         ? OrderEmptyState(muted: muted)
                         : ListView.builder(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                             itemCount: _filtered.length,
                             itemBuilder: (_, i) => OrderCard(
                               order: _filtered[i],

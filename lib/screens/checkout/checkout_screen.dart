@@ -206,6 +206,168 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  Future<bool> _showGuestContactDialog(AuthProvider auth) async {
+    final nameController = TextEditingController(text: auth.guestName ?? '');
+    final phoneController = TextEditingController(text: auth.guestPhone ?? '');
+    final formKey = GlobalKey<FormState>();
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        final primary = Theme.of(context).colorScheme.primary;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final dialogBg = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+        final textColor = isDark ? Colors.white : Colors.black;
+        final subtitleColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+
+        return AlertDialog(
+          backgroundColor: dialogBg,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          icon: Icon(
+            Icons.contact_phone_outlined,
+            color: primary,
+            size: 42,
+          ),
+          title: Text(
+            'Contact Information',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: textColor,
+            ),
+          ),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Please enter your details to receive delivery and order updates.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: subtitleColor),
+                ),
+                const SizedBox(height: 18),
+                TextFormField(
+                  controller: nameController,
+                  textCapitalization: TextCapitalization.words,
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'Full name',
+                    labelStyle: TextStyle(color: subtitleColor),
+                    prefixIcon: Icon(Icons.person_outline_rounded, color: subtitleColor),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Name is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'Phone number',
+                    labelStyle: TextStyle(color: subtitleColor),
+                    prefixIcon: Icon(Icons.phone_outlined, color: subtitleColor),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Phone is required';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      side: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.black87,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () {
+                      if (formKey.currentState!.validate()) {
+                        Navigator.pop(context, true);
+                      }
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: primary,
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text(
+                      'Save',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      auth.setGuestInfo(
+        name: nameController.text.trim(),
+        phone: phoneController.text.trim(),
+      );
+      _guestNameController.text = nameController.text.trim();
+      _guestPhoneController.text = phoneController.text.trim();
+      setState(() => _isGuestCheckout = false);
+      return true;
+    }
+    return false;
+  }
+
   void _showInsufficientFundsDialog(double balance, double total) {
     if (!mounted) return;
     HapticFeedback.mediumImpact();
@@ -230,13 +392,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     required OrderProvider orderProvider,
     required AuthProvider auth,
   }) async {
+    final hasSwallowWithoutSoup = cart.items.any((item) =>
+        (item.menuItem.type == 'swallow' || item.menuItem.category == 'Swallow' || item.menuItem.requiresSoupSelection) &&
+        (item.selectedSoup == null || item.selectedSoup!['id'] == null)
+    );
+
+    if (hasSwallowWithoutSoup) {
+      _showErrorDialog('A soup selection is required for your Swallow items before ordering.');
+      return;
+    }
+
     if (!auth.isAuthenticated) {
       final nameOk = auth.guestName?.isNotEmpty ?? false;
       final phoneOk = auth.guestPhone?.isNotEmpty ?? false;
       if (!nameOk || !phoneOk) {
-        setState(() => _isGuestCheckout = true);
-        _showErrorDialog('Please provide your contact information.');
-        return;
+        final dialogSaved = await _showGuestContactDialog(auth);
+        if (!dialogSaved) return;
       }
     }
 

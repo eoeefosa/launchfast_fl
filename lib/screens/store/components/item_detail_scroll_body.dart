@@ -167,7 +167,7 @@ class ItemDetailScrollBody extends StatelessWidget {
                             .toList(),
                       ),
                     ],
-                    const SizedBox(height: 140),
+                    const SizedBox(height: 200),
                   ],
                 ),
               ),

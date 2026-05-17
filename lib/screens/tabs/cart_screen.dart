@@ -4,6 +4,7 @@ import 'package:campuschow/providers/store_provider.dart';
 import 'dart:io';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../providers/cart_provider.dart';
 import '../../widgets/cart/cart_item_tile.dart';
@@ -46,6 +47,38 @@ class CartScreen extends StatelessWidget {
               bottomNavigationBar: CheckoutBar(
                 total: cart.cartTotal,
                 enabled: !hasUnavailableItems,
+                onPressed: () {
+                  final hasSwallowWithoutSoup = cart.items.any((item) =>
+                      (item.menuItem.type == 'swallow' || item.menuItem.category == 'Swallow' || item.menuItem.requiresSoupSelection) &&
+                      (item.selectedSoup == null || item.selectedSoup!['id'] == null)
+                  );
+                  
+                  if (hasSwallowWithoutSoup) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded, color: Colors.white),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'A soup selection is required for your swallow items before checking out.',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                    return;
+                  }
+                  
+                  context.push('/checkout');
+                },
               ),
             ),
     );

@@ -78,6 +78,13 @@ class OrderCard extends StatelessWidget {
               const Color(0xFF8B5CF6),
               Icons.done_all,
             ),
+            if (!isPickup)
+              const ActionConfig(
+                'On the Way',
+                OrderStatus.onTheWay,
+                AppColors.primary,
+                Icons.directions_bike_rounded,
+              ),
           ],
         OrderStatus.readyForPickup => [
             const ActionConfig(
@@ -106,11 +113,71 @@ class OrderCard extends StatelessWidget {
       };
   }
 
+  Widget _buildElapsedBadge(String isoDate) {
+    if (isoDate.isEmpty) return const SizedBox.shrink();
+    try {
+      final dt = DateTime.parse(isoDate).toLocal();
+      final elapsed = DateTime.now().difference(dt).inMinutes;
+      
+      final Color bgColor;
+      final Color textColor;
+      final String label;
+      final IconData icon;
+      
+      if (elapsed < 3) {
+        bgColor = Colors.green.withValues(alpha: 0.12);
+        textColor = Colors.green.shade700;
+        label = 'Just now (${elapsed}m ago)';
+        icon = Icons.timer_outlined;
+      } else if (elapsed < 5) {
+        bgColor = Colors.orange.withValues(alpha: 0.12);
+        textColor = Colors.orange.shade700;
+        label = '${elapsed}m elapsed';
+        icon = Icons.hourglass_empty_rounded;
+      } else {
+        bgColor = Colors.red.withValues(alpha: 0.12);
+        textColor = Colors.red.shade700;
+        label = '${elapsed}m - UNATTENDED!';
+        icon = Icons.warning_amber_rounded;
+      }
+      
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: textColor.withValues(alpha: 0.3)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: textColor),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.darkBackground : AppColors.lightBackground;
     final shortId = _shortId(order.id).toUpperCase();
+    final isPickup = order.deliveryType.toLowerCase() == 'pickup' || 
+                    order.deliveryType.toLowerCase() == 'store_pickup';
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -137,6 +204,53 @@ class OrderCard extends StatelessWidget {
               statusLabel: order.status.displayLabel,
               textColor: textColor,
               muted: muted,
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: isPickup 
+                        ? Colors.teal.withValues(alpha: 0.12) 
+                        : Colors.blue.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isPickup 
+                          ? Colors.teal.withValues(alpha: 0.3) 
+                          : Colors.blue.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isPickup ? Icons.shopping_bag_outlined : Icons.delivery_dining_rounded,
+                          size: 14,
+                          color: isPickup ? Colors.teal : Colors.blue,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isPickup ? 'Pickup' : 'Delivery',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isPickup ? Colors.teal : Colors.blue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (!isPickup && 
+                    (order.status == OrderStatus.pending || 
+                     order.status == OrderStatus.accepted || 
+                     order.status == OrderStatus.preparing)) ...[
+                  const SizedBox(width: 8),
+                  _buildElapsedBadge(order.date),
+                ],
+              ],
             ),
             const SizedBox(height: 12),
             Divider(color: border, height: 1),

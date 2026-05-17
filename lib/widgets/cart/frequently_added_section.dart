@@ -5,6 +5,7 @@ import '../../providers/store_provider.dart';
 import '../../models/menu_item.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../home/item_options_sheet.dart';
 
 class FrequentlyAddedSection extends StatelessWidget {
   final String storeId;
@@ -58,7 +59,52 @@ class FrequentlyAddedSection extends StatelessWidget {
               return _SuggestionCard(
                 item: item,
                 accentColor: accentColor,
-                onAdd: () => cartProvider.addToCart(item: item, quantity: 1),
+                onTap: () async {
+                  final hasCompatibleItems = (item.compatibleWith?.isNotEmpty ?? false) ||
+                      (item.addonIds?.isNotEmpty ?? false) ||
+                      item.sizes.isNotEmpty;
+                  final needsSheet = item.type == 'main' ||
+                      item.type == 'swallow' ||
+                      hasCompatibleItems;
+
+                  if (needsSheet) {
+                    final result = await showModalBottomSheet<String>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => ItemOptionsSheet(
+                        item: item,
+                        accentColor: accentColor,
+                      ),
+                    );
+                    if (result == 'SUCCESS') {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${item.name} added to cart'),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                      }
+                    }
+                  } else {
+                    final success = cartProvider.addToCart(item: item, quantity: 1);
+                    if (success) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${item.name} added to cart'),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                      }
+                    }
+                  }
+                },
               );
             },
           ),
@@ -71,12 +117,12 @@ class FrequentlyAddedSection extends StatelessWidget {
 class _SuggestionCard extends StatelessWidget {
   final MenuItem item;
   final Color accentColor;
-  final VoidCallback onAdd;
+  final VoidCallback onTap;
 
   const _SuggestionCard({
     required this.item,
     required this.accentColor,
-    required this.onAdd,
+    required this.onTap,
   });
 
   @override
@@ -97,63 +143,67 @@ class _SuggestionCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              child: CachedNetworkImage(
-                imageUrl: item.image,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  child: CachedNetworkImage(
+                    imageUrl: item.image,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '₦${item.price.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: accentColor,
+                      item.name,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    GestureDetector(
-                      onTap: onAdd,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: accentColor.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '₦${item.price.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: accentColor,
+                          ),
                         ),
-                        child: Icon(Icons.add, size: 16, color: accentColor),
-                      ),
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: accentColor.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.add, size: 16, color: accentColor),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

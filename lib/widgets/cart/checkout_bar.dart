@@ -7,9 +7,15 @@ import '../../constants/app_colors.dart';
 
 class CheckoutBar extends StatelessWidget {
   final double total;
+  final VoidCallback? onPressed;
   final bool enabled;
 
-  const CheckoutBar({super.key, required this.total, this.enabled = true});
+  const CheckoutBar({
+    super.key,
+    required this.total,
+    this.onPressed,
+    this.enabled = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +66,7 @@ class CheckoutBar extends StatelessWidget {
               const SizedBox(width: 20),
               Expanded(
                 child: _CheckoutButton(
-                  onPressed: enabled ? () => context.push('/checkout') : null,
+                  onPressed: enabled ? (onPressed ?? () => context.push('/checkout')) : null,
                   isIOS: isIOS,
                   enabled: enabled,
                 ),

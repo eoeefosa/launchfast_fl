@@ -81,14 +81,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
 
     // Staggered entrance
     _heroController.forward();
-    Future.delayed(
-      const Duration(milliseconds: 180),
-      _contentController.forward,
-    );
-    Future.delayed(
-      const Duration(milliseconds: 320),
-      _footerController.forward,
-    );
+    Future.delayed(const Duration(milliseconds: 180), () {
+      if (mounted) _contentController.forward();
+    });
+    Future.delayed(const Duration(milliseconds: 320), () {
+      if (mounted) _footerController.forward();
+    });
   }
 
   @override
