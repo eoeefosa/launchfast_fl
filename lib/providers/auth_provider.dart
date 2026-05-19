@@ -508,16 +508,16 @@ class AuthProvider extends ChangeNotifier {
         idToken: googleAuth.idToken,
       );
       
+      // Sign into Firebase so we get a Firebase ID token
       final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      final idToken = await userCredential.user!.getIdToken();
+      final firebaseIdToken = await userCredential.user!.getIdToken();
 
-      if (idToken == null) {
-        throw Exception('Failed to get ID token from Firebase');
+      if (firebaseIdToken == null) {
+        throw Exception('Failed to get Firebase ID token');
       }
 
-      // IMPORTANT: Send the Google ID Token, NOT the Firebase ID Token.
-      // The backend uses google-auth-library which expects a token from accounts.google.com.
-      final data = await locator<AuthRepository>().loginWithGoogle(googleAuth.idToken!);
+      // Send the Firebase ID token — the backend verifies it with Firebase Admin SDK.
+      final data = await locator<AuthRepository>().loginWithGoogle(firebaseIdToken);
       
       await _persistAuthResponse(data);
       unawaited(_initializeAbly());
@@ -529,6 +529,7 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
+
 
   Future<void> applyForStore(Map<String, dynamic> data) async {
     _setLoading(true);
