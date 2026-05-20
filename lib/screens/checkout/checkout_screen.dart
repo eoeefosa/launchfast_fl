@@ -364,10 +364,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       'items': [
         for (final item in cart.items)
           {
-            'menuItemId': item.menuItem.id,
+            'menuItemId': item.menuItem.id.replaceAll('_turkey', ''),
             'quantity': item.quantity,
             'extras': item.extras,
-            'selectedMeats': item.selectedMeats,
+            'selectedMeats': item.menuItem.id.endsWith('_turkey')
+                ? {'Turkey': item.quantity}
+                : (item.menuItem.id == '69f8d7b3d944e923b32949a7'
+                    ? {'Chicken': item.quantity}
+                    : item.selectedMeats),
             'selectedSides': item.selectedSides,
             'selectedDrinks': item.selectedDrinks,
             'selectedAddons': item.selectedAddons,

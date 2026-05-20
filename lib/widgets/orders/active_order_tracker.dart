@@ -117,6 +117,8 @@ class ActiveOrderTracker extends StatelessWidget {
       case OrderStatus.queued:
       case OrderStatus.pending:
         return 'Order Placed';
+      case OrderStatus.priceAdjusted:
+        return 'Price Adjustment';
       case OrderStatus.accepted:
         return 'Order Accepted';
       case OrderStatus.preparing:
@@ -141,6 +143,8 @@ class ActiveOrderTracker extends StatelessWidget {
       case OrderStatus.queued:
       case OrderStatus.pending:
         return 'We are confirming your order with the store.';
+      case OrderStatus.priceAdjusted:
+        return 'The store has updated the prices for this order. Please accept the new price to proceed.';
       case OrderStatus.accepted:
         return 'The store has accepted your order and will start soon.';
       case OrderStatus.preparing:

@@ -28,7 +28,7 @@ class OrderSummarySection extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${item.quantity}x ${item.menuItem.name}',
+                    '${item.menuItem.name} (${item.quantity} ${item.quantity == 1 ? 'portion' : 'portions'})',
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ),

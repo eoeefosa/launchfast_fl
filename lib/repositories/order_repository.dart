@@ -108,4 +108,17 @@ class OrderRepository {
     }
     return response.data as Map<String, dynamic>;
   }
+
+  Future<Order> respondToPriceAdjustment(String orderId, String action) async {
+    final response = await apiService.dio.post(
+      '/orders/$orderId/price-response',
+      data: {'action': action},
+    );
+    if (response.data is! Map) {
+      throw FormatException(
+        'Expected Map from /orders/$orderId/price-response, got ${response.data.runtimeType}',
+      );
+    }
+    return Order.fromJson(response.data);
+  }
 }

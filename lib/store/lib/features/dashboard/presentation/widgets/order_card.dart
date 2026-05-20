@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import 'package:collection/collection.dart';
 
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
+import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 
 @immutable
 class ActionConfig {
@@ -42,6 +45,7 @@ class OrderCard extends StatelessWidget {
     OrderStatus.onTheWay || OrderStatus.outForDelivery => AppColors.primary,
     OrderStatus.delivered => Colors.green,
     OrderStatus.cancelled => Colors.red,
+    OrderStatus.priceAdjusted => const Color(0xFFF59E0B),
     _ => AppColors.lightMuted,
   };
 
@@ -59,7 +63,27 @@ class OrderCard extends StatelessWidget {
           Icons.check_circle_outline,
         ),
         const ActionConfig(
+          'Adjust Price',
+          OrderStatus.priceAdjusted,
+          Colors.orange,
+          Icons.price_change_outlined,
+        ),
+        const ActionConfig(
           'Reject',
+          OrderStatus.cancelled,
+          Colors.red,
+          Icons.cancel_outlined,
+        ),
+      ],
+      OrderStatus.priceAdjusted => [
+        const ActionConfig(
+          'Adjust Price Again',
+          OrderStatus.priceAdjusted,
+          Colors.orange,
+          Icons.price_change_outlined,
+        ),
+        const ActionConfig(
+          'Cancel Order',
           OrderStatus.cancelled,
           Colors.red,
           Icons.cancel_outlined,
@@ -520,6 +544,18 @@ class _ItemsSection extends StatelessWidget {
   }
 }
 
+class _OrderDetailRow {
+  final String leftText;
+  final String rightText;
+  final bool isModifier;
+
+  _OrderDetailRow({
+    required this.leftText,
+    required this.rightText,
+    this.isModifier = false,
+  });
+}
+
 class _ItemRow extends StatelessWidget {
   const _ItemRow({
     required this.item,
@@ -531,98 +567,228 @@ class _ItemRow extends StatelessWidget {
   final Color textColor;
   final Color muted;
 
+
+
+  double _getModifierUnitPrice({
+    required String type,
+    required String key,
+    required Map<String, double> meatPrices,
+    required double saladPrice,
+    required List<dynamic> allMenuItems,
+  }) {
+    final item = allMenuItems.firstWhereOrNull((dynamic m) => m.id == key || m.name == key);
+    if (item != null) return (item.price as num).toDouble();
+    switch (type) {
+      case 'meat':
+        return meatPrices[key] ?? 0.0;
+      case 'side':
+        return saladPrice;
+      default:
+        return 0.0;
+    }
+  }
+
+  List<_OrderDetailRow> _buildRows(BuildContext context) {
+    final rows = <_OrderDetailRow>[];
+
+    final storeProvider = context.read<StoreProvider>();
+    final allMenuItems = storeProvider.menuItems;
+    final meatPrices = storeProvider.meatPrices;
+    final saladPrice = storeProvider.saladPrice;
+
+    // Resolve name
+    String displayName = item.menuItem.name;
+    if (displayName.toUpperCase() == 'CHICKEN & TURKEY' || (displayName.toLowerCase().contains('chicken') && displayName.toLowerCase().contains('turkey'))) {
+      final hasTurkey = item.selectedMeats?.keys.any((k) => k.toLowerCase().contains('turkey')) ?? false;
+      displayName = hasTurkey ? 'TURKEY' : 'CHICKEN';
+    }
+
+    // Is it a main item (Rice & Pasta, Swallow & Soup, Swallow, etc.)?
+    final cat = item.menuItem.category.toLowerCase();
+    final type = item.menuItem.type?.toLowerCase() ?? '';
+    final isMain = type == 'main' || type == 'swallow' || cat.contains('rice') || cat.contains('pasta') || cat.contains('spaghetti') || cat.contains('swallow');
+
+    double basePrice = item.menuItem.price;
+    if (item.selectedSizeId != null) {
+      final size = item.menuItem.sizes?.firstWhereOrNull((s) => s.id == item.selectedSizeId);
+      if (size != null) {
+        basePrice = size.price;
+      }
+    }
+
+    if (isMain) {
+      rows.add(_OrderDetailRow(
+        leftText: '$displayName  ${item.quantity} ${item.quantity == 1 ? 'portion' : 'portions'} × ₦${basePrice.toStringAsFixed(0)}',
+        rightText: '₦${(basePrice * item.quantity).toStringAsFixed(0)}',
+      ));
+    } else {
+      rows.add(_OrderDetailRow(
+        leftText: '$displayName ×${item.quantity}',
+        rightText: '₦${(basePrice * item.quantity).toStringAsFixed(0)}',
+      ));
+    }
+
+    // Now, build modifiers.
+    final hasMeatsDetails = item.selectedMeatsDetails != null && item.selectedMeatsDetails!.isNotEmpty;
+    final hasMeatsMap = item.selectedMeats?.entries.any((e) => e.value > 0) ?? false;
+
+    void addMeat(String name, double price, int qty) {
+      final unitPrice = price > 0 ? price : _getModifierUnitPrice(type: 'meat', key: name, meatPrices: meatPrices, saladPrice: saladPrice, allMenuItems: allMenuItems);
+      rows.add(_OrderDetailRow(
+        leftText: '$name ×$qty',
+        rightText: '₦${(unitPrice * qty).toStringAsFixed(0)}',
+        isModifier: true,
+      ));
+    }
+
+    if (hasMeatsDetails) {
+      for (final dynamic element in item.selectedMeatsDetails!) {
+        if (element is Map) {
+          final name = element['name']?.toString() ?? 'Option';
+          final price = (element['price'] as num?)?.toDouble() ?? 0.0;
+          final qty = (element['quantity'] as num?)?.toInt() ?? 1;
+          addMeat(name, price, qty);
+        }
+      }
+    } else if (hasMeatsMap) {
+      item.selectedMeats?.forEach((name, count) {
+        if (count > 0) {
+          addMeat(name, 0.0, count);
+        }
+      });
+    } else if (isMain) {
+      // If meat was not ordered, then it should just say chicken (default)
+      rows.add(_OrderDetailRow(
+        leftText: 'Chicken ×${item.quantity}',
+        rightText: '₦0',
+        isModifier: true,
+      ));
+    }
+
+    // Add other modifiers (Sides, Drinks, Addons, Soups)
+    void addModifier(String type, String name, double price, int qty) {
+      final unitPrice = price > 0 ? price : _getModifierUnitPrice(type: type, key: name, meatPrices: meatPrices, saladPrice: saladPrice, allMenuItems: allMenuItems);
+      rows.add(_OrderDetailRow(
+        leftText: '$name ×$qty',
+        rightText: '₦${(unitPrice * qty).toStringAsFixed(0)}',
+        isModifier: true,
+      ));
+    }
+
+    if (item.selectedSidesDetails != null && item.selectedSidesDetails!.isNotEmpty) {
+      for (final dynamic element in item.selectedSidesDetails!) {
+        if (element is Map) {
+          final name = element['name']?.toString() ?? 'Option';
+          final price = (element['price'] as num?)?.toDouble() ?? 0.0;
+          final qty = (element['quantity'] as num?)?.toInt() ?? 1;
+          addModifier('side', name, price, qty);
+        }
+      }
+    } else {
+      item.selectedSides?.forEach((name, count) {
+        if (count > 0) addModifier('side', '$name Side', 0.0, count);
+      });
+    }
+
+    if (item.selectedDrinksDetails != null && item.selectedDrinksDetails!.isNotEmpty) {
+      for (final dynamic element in item.selectedDrinksDetails!) {
+        if (element is Map) {
+          final name = element['name']?.toString() ?? 'Option';
+          final price = (element['price'] as num?)?.toDouble() ?? 0.0;
+          final qty = (element['quantity'] as num?)?.toInt() ?? 1;
+          addModifier('drink', name, price, qty);
+        }
+      }
+    } else {
+      item.selectedDrinks?.forEach((name, count) {
+        if (count > 0) addModifier('drink', '$name Drink', 0.0, count);
+      });
+    }
+
+    if (item.selectedAddonsDetails != null && item.selectedAddonsDetails!.isNotEmpty) {
+      for (final dynamic element in item.selectedAddonsDetails!) {
+        if (element is Map) {
+          final name = element['name']?.toString() ?? 'Option';
+          final price = (element['price'] as num?)?.toDouble() ?? 0.0;
+          final qty = (element['quantity'] as num?)?.toInt() ?? 1;
+          addModifier('addon', name, price, qty);
+        }
+      }
+    } else {
+      item.selectedAddons?.forEach((name, count) {
+        if (count > 0) addModifier('addon', name, 0.0, count);
+      });
+    }
+
+    if (item.selectedSoup != null) {
+      final name = item.selectedSoup!['name']?.toString() ?? 'Soup';
+      final price = (item.selectedSoup!['price'] as num?)?.toDouble() ?? 0.0;
+      rows.add(_OrderDetailRow(
+        leftText: '$name ×${item.quantity}',
+        rightText: '₦${(price * item.quantity).toStringAsFixed(0)}',
+        isModifier: true,
+      ));
+    }
+
+    return rows;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final rows = _buildRows(context);
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(6),
-            child: Text(
-              '${item.quantity}x',
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
+      children: rows.map((row) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                item.menuItem.name,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (row.isModifier) ...[
+                      Text(
+                        '↳ ',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: muted.withValues(alpha: 0.5),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                    Expanded(
+                      child: Text(
+                        row.leftText,
+                        style: TextStyle(
+                          fontWeight: row.isModifier ? FontWeight.w500 : FontWeight.w800,
+                          fontSize: row.isModifier ? 13 : 15,
+                          color: row.isModifier ? muted : textColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 4),
-              if (item.selectedSides?.isNotEmpty ?? false)
-                for (final e in item.selectedSides!.entries)
-                  if (e.value > 0)
-                    _Modifier('Side: ${e.key} (x${e.value})', muted),
-              if (item.selectedDrinks?.isNotEmpty ?? false)
-                for (final e in item.selectedDrinks!.entries)
-                  if (e.value > 0)
-                    _Modifier('Drink: ${e.key} (x${e.value})', muted),
-              if (item.extras?.isNotEmpty ?? false)
-                _Modifier('Extras: ${item.extras!.join(", ")}', muted),
-              if (item.selectedMeats?.isNotEmpty ?? false)
-                for (final e in item.selectedMeats!.entries)
-                  if (e.value > 0)
-                    _Modifier('Meat: ${e.key} (x${e.value})', muted),
-              if (item.selectedAddons?.isNotEmpty ?? false)
-                for (final e in item.selectedAddons!.entries)
-                  if (e.value > 0)
-                    _Modifier('Addon: ${e.key} (x${e.value})', muted),
+              const SizedBox(width: 16),
+              Text(
+                row.rightText,
+                style: TextStyle(
+                  fontWeight: row.isModifier ? FontWeight.w500 : FontWeight.w800,
+                  fontSize: row.isModifier ? 13 : 15,
+                  color: row.isModifier ? muted : textColor,
+                ),
+              ),
             ],
           ),
-        ),
-        Text(
-          '₦${(item.menuItem.price * item.quantity).toStringAsFixed(0)}',
-          style: TextStyle(
-            color: textColor,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
+        );
+      }).toList(),
     );
   }
 }
 
-class _Modifier extends StatelessWidget {
-  const _Modifier(this.text, this.muted);
-
-  final String text;
-  final Color muted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('↳ ', style: TextStyle(color: Colors.grey, fontSize: 12)),
-          Expanded(
-            child: Text(text, style: TextStyle(color: muted, fontSize: 13)),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _FinancialSummary extends StatelessWidget {
   const _FinancialSummary({
@@ -761,10 +927,189 @@ class _ActionButton extends StatelessWidget {
   final Order order;
   final Future<void> Function(String, OrderStatus) onTap;
 
+  Future<void> _showRejectionDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Reject Order'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Please provide a reason for rejecting this order so the customer is notified.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: 'e.g., Spaghetti is out of stock',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: const Text('Reject Order', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final reason = controller.text.trim();
+      final messenger = ScaffoldMessenger.of(context);
+      if (reason.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Please enter a rejection reason.')),
+        );
+        return;
+      }
+      try {
+        final storeProvider = context.read<StoreProvider>();
+        await storeProvider.updateOrderStatus(
+          order.id,
+          OrderStatus.cancelled.backendName,
+          rejectionReason: reason,
+        );
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Order rejected successfully.')),
+        );
+        onTap(order.id, OrderStatus.cancelled);
+      } catch (e) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Error rejecting order: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _showPriceAdjustmentDialog(BuildContext context) async {
+    final provider = context.read<StoreProvider>();
+    final controllers = <String, TextEditingController>{};
+    for (final item in order.items) {
+      controllers[item.id] = TextEditingController(text: item.menuItem.price.toStringAsFixed(0));
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Adjust Order Prices'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              const Text(
+                'Update the base price of any food item below. The customer will be notified to pay the balance or cancel.',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              ...order.items.map((item) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.menuItem.name,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'Current: ₦${item.menuItem.price.toStringAsFixed(0)} per portion',
+                              style: const TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 100,
+                        child: TextField(
+                          controller: controllers[item.id],
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            prefixText: '₦',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          ),
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: const Text('Submit Adjustment', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final updatedItems = <Map<String, dynamic>>[];
+      final messenger = ScaffoldMessenger.of(context);
+      for (final item in order.items) {
+        final newPrice = double.tryParse(controllers[item.id]?.text ?? '');
+        if (newPrice == null || newPrice <= 0) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Please enter valid positive numbers for all prices.')),
+          );
+          return;
+        }
+        updatedItems.add({
+          'itemId': item.id,
+          'newPrice': newPrice,
+        });
+      }
+
+      try {
+        await provider.adjustOrderPrice(order.id, updatedItems);
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Prices adjusted successfully. Customer notified.')),
+        );
+        onTap(order.id, OrderStatus.priceAdjusted);
+      } catch (e) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Error adjusting prices: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
-      onPressed: () => onTap(order.id, config.status),
+      onPressed: () async {
+        if (config.status == OrderStatus.cancelled) {
+          await _showRejectionDialog(context);
+        } else if (config.status == OrderStatus.priceAdjusted) {
+          await _showPriceAdjustmentDialog(context);
+        } else {
+          await onTap(order.id, config.status);
+        }
+      },
       icon: Icon(config.icon, size: 16),
       label: Text(config.label, style: const TextStyle(fontSize: 13)),
       style: ElevatedButton.styleFrom(

@@ -100,6 +100,7 @@ class CartProvider with ChangeNotifier {
     } else {
       _items.add(
         CartItem(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
           menuItem: item,
           quantity: quantity,
           extras: extras,
@@ -126,6 +127,7 @@ class CartProvider with ChangeNotifier {
   }) {
     _items = [
       CartItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         menuItem: item,
         quantity: quantity,
         extras: extras,
@@ -173,6 +175,7 @@ class CartProvider with ChangeNotifier {
     _items = order.items
         .map(
           (i) => CartItem(
+            id: i.id,
             menuItem: i.menuItem,
             quantity: i.quantity,
             extras: i.extras,

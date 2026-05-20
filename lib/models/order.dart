@@ -19,6 +19,7 @@ enum OrderStatus {
   cancelled,
   outForDelivery,
   queued,
+  priceAdjusted,
 }
 
 extension OrderStatusExtension on OrderStatus {
@@ -44,6 +45,8 @@ extension OrderStatusExtension on OrderStatus {
         return 'Cancelled';
       case OrderStatus.queued:
         return 'Queued';
+      case OrderStatus.priceAdjusted:
+        return 'Price Adjusted';
     }
   }
 
@@ -69,6 +72,8 @@ extension OrderStatusExtension on OrderStatus {
         return 'CANCELLED';
       case OrderStatus.queued:
         return 'QUEUED';
+      case OrderStatus.priceAdjusted:
+        return 'PRICE_ADJUSTED';
     }
   }
 
@@ -99,6 +104,8 @@ extension OrderStatusExtension on OrderStatus {
         return OrderStatus.cancelled;
       case 'QUEUED':
         return OrderStatus.queued;
+      case 'PRICE_ADJUSTED':
+        return OrderStatus.priceAdjusted;
       default:
         return OrderStatus.pending;
     }
@@ -124,6 +131,7 @@ class Order {
   final String? riderId;
   final Rider? rider;
   final String? rejectionReason;
+  final double? originalTotal;
 
   Order({
     required this.id,
@@ -144,6 +152,7 @@ class Order {
     this.riderId,
     this.rider,
     this.rejectionReason,
+    this.originalTotal,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -214,6 +223,7 @@ class Order {
           ? Rider.fromJson(json['rider'])
           : (json['riderId'] is Map ? Rider.fromJson(json['riderId']) : null),
       rejectionReason: json['rejectionReason']?.toString(),
+      originalTotal: (json['originalTotal'] as num?)?.toDouble(),
     );
   }
 
@@ -235,6 +245,7 @@ class Order {
       'isPriority': isPriority,
       'riderId': riderId,
       'rejectionReason': rejectionReason,
+      'originalTotal': originalTotal,
     };
   }
 
@@ -256,6 +267,7 @@ class Order {
     bool? isPriority,
     String? riderId,
     String? rejectionReason,
+    double? originalTotal,
   }) {
     return Order(
       id: id ?? this.id,
@@ -275,6 +287,7 @@ class Order {
       isPriority: isPriority ?? this.isPriority,
       riderId: riderId ?? this.riderId,
       rejectionReason: rejectionReason ?? this.rejectionReason,
+      originalTotal: originalTotal ?? this.originalTotal,
     );
   }
 }

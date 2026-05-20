@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:collection/collection.dart';
+import 'package:campuschow/providers/store_provider.dart';
+import 'package:campuschow/models/menu_item.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:campuschow/constants/app_colors.dart';
@@ -141,92 +144,244 @@ class OrderTotalRow extends StatelessWidget {
 }
 
 /// One cart-item row in the receipt: quantity badge, name, and selected addons.
+class OrderDetailRow {
+  final String leftText;
+  final String rightText;
+  final bool isModifier;
+
+  OrderDetailRow({
+    required this.leftText,
+    required this.rightText,
+    this.isModifier = false,
+  });
+}
+
 class OrderDetailItem extends StatelessWidget {
   const OrderDetailItem({super.key, required this.item});
 
   final CartItem item;
 
-  /// Builds a flat list of human-readable addon strings from the item's
-  /// selection maps (meats, sides, drinks, generic addons).
-  List<String> _buildAddonLabels() {
-    final labels = <String>[];
 
-    void addFromMap(Map<String, int>? map, String suffix) {
-      map?.forEach((name, count) {
-        if (count > 0) labels.add('${count}x $name$suffix');
+
+  double _getModifierUnitPrice({
+    required String type,
+    required String key,
+    required Map<String, double> meatPrices,
+    required double saladPrice,
+    required List<MenuItem> allMenuItems,
+  }) {
+    final item = allMenuItems.firstWhereOrNull((m) => m.id == key || m.name == key);
+    if (item != null) return item.price;
+    switch (type) {
+      case 'meat':
+        return meatPrices[key] ?? 0.0;
+      case 'side':
+        return saladPrice;
+      default:
+        return 0.0;
+    }
+  }
+
+  List<OrderDetailRow> _buildRows(BuildContext context) {
+    final rows = <OrderDetailRow>[];
+
+    final storeProvider = context.read<StoreProvider>();
+    final allMenuItems = storeProvider.menuItems;
+    final meatPrices = storeProvider.meatPrices;
+    final saladPrice = storeProvider.saladPrice;
+
+    // Resolve name
+    String displayName = item.menuItem.name;
+    if (displayName.toUpperCase() == 'CHICKEN & TURKEY' || (displayName.toLowerCase().contains('chicken') && displayName.toLowerCase().contains('turkey'))) {
+      final hasTurkey = item.selectedMeats?.keys.any((k) => k.toLowerCase().contains('turkey')) ?? false;
+      displayName = hasTurkey ? 'TURKEY' : 'CHICKEN';
+    }
+
+    // Is it a main item (Rice & Pasta, Swallow & Soup, Swallow, etc.)?
+    final cat = item.menuItem.category.toLowerCase();
+    final type = item.menuItem.type?.toLowerCase() ?? '';
+    final isMain = type == 'main' || type == 'swallow' || cat.contains('rice') || cat.contains('pasta') || cat.contains('spaghetti') || cat.contains('swallow');
+
+    double basePrice = item.menuItem.price;
+    if (item.selectedSizeId != null) {
+      final size = item.menuItem.sizes.firstWhereOrNull((s) => s.id == item.selectedSizeId);
+      if (size != null) {
+        basePrice = size.price;
+      }
+    }
+
+    if (isMain) {
+      rows.add(OrderDetailRow(
+        leftText: '$displayName  ${item.quantity} ${item.quantity == 1 ? 'portion' : 'portions'} × ₦${basePrice.toStringAsFixed(0)}',
+        rightText: '₦${(basePrice * item.quantity).toStringAsFixed(0)}',
+      ));
+    } else {
+      rows.add(OrderDetailRow(
+        leftText: '$displayName ×${item.quantity}',
+        rightText: '₦${(basePrice * item.quantity).toStringAsFixed(0)}',
+      ));
+    }
+
+    // Now, build modifiers.
+    final hasMeatsDetails = item.selectedMeatsDetails != null && item.selectedMeatsDetails!.isNotEmpty;
+    final hasMeatsMap = item.selectedMeats?.entries.any((e) => e.value > 0) ?? false;
+
+    void addMeat(String name, double price, int qty) {
+      final unitPrice = price > 0 ? price : _getModifierUnitPrice(type: 'meat', key: name, meatPrices: meatPrices, saladPrice: saladPrice, allMenuItems: allMenuItems);
+      rows.add(OrderDetailRow(
+        leftText: '$name ×$qty',
+        rightText: '₦${(unitPrice * qty).toStringAsFixed(0)}',
+        isModifier: true,
+      ));
+    }
+
+    if (hasMeatsDetails) {
+      for (final dynamic element in item.selectedMeatsDetails!) {
+        if (element is Map) {
+          final name = element['name']?.toString() ?? 'Option';
+          final price = (element['price'] as num?)?.toDouble() ?? 0.0;
+          final qty = (element['quantity'] as num?)?.toInt() ?? 1;
+          addMeat(name, price, qty);
+        }
+      }
+    } else if (hasMeatsMap) {
+      item.selectedMeats?.forEach((name, count) {
+        if (count > 0) {
+          addMeat(name, 0.0, count);
+        }
+      });
+    } else if (isMain) {
+      // If meat was not ordered, then it should just say chicken (default)
+      rows.add(OrderDetailRow(
+        leftText: 'Chicken ×${item.quantity}',
+        rightText: '₦0',
+        isModifier: true,
+      ));
+    }
+
+    // Add other modifiers (Sides, Drinks, Addons, Soups)
+    void addModifier(String type, String name, double price, int qty) {
+      final unitPrice = price > 0 ? price : _getModifierUnitPrice(type: type, key: name, meatPrices: meatPrices, saladPrice: saladPrice, allMenuItems: allMenuItems);
+      rows.add(OrderDetailRow(
+        leftText: '$name ×$qty',
+        rightText: '₦${(unitPrice * qty).toStringAsFixed(0)}',
+        isModifier: true,
+      ));
+    }
+
+    if (item.selectedSidesDetails != null && item.selectedSidesDetails!.isNotEmpty) {
+      for (final dynamic element in item.selectedSidesDetails!) {
+        if (element is Map) {
+          final name = element['name']?.toString() ?? 'Option';
+          final price = (element['price'] as num?)?.toDouble() ?? 0.0;
+          final qty = (element['quantity'] as num?)?.toInt() ?? 1;
+          addModifier('side', name, price, qty);
+        }
+      }
+    } else {
+      item.selectedSides?.forEach((name, count) {
+        if (count > 0) addModifier('side', '$name Side', 0.0, count);
       });
     }
 
-    addFromMap(item.selectedMeats, ' Meat');
-    addFromMap(item.selectedSides, ' Side');
-    addFromMap(item.selectedDrinks, ' Drink');
-    // Generic addons have no suffix.
-    item.selectedAddons?.forEach((name, count) {
-      if (count > 0) labels.add('${count}x $name');
-    });
+    if (item.selectedDrinksDetails != null && item.selectedDrinksDetails!.isNotEmpty) {
+      for (final dynamic element in item.selectedDrinksDetails!) {
+        if (element is Map) {
+          final name = element['name']?.toString() ?? 'Option';
+          final price = (element['price'] as num?)?.toDouble() ?? 0.0;
+          final qty = (element['quantity'] as num?)?.toInt() ?? 1;
+          addModifier('drink', name, price, qty);
+        }
+      }
+    } else {
+      item.selectedDrinks?.forEach((name, count) {
+        if (count > 0) addModifier('drink', '$name Drink', 0.0, count);
+      });
+    }
 
-    return labels;
+    if (item.selectedAddonsDetails != null && item.selectedAddonsDetails!.isNotEmpty) {
+      for (final dynamic element in item.selectedAddonsDetails!) {
+        if (element is Map) {
+          final name = element['name']?.toString() ?? 'Option';
+          final price = (element['price'] as num?)?.toDouble() ?? 0.0;
+          final qty = (element['quantity'] as num?)?.toInt() ?? 1;
+          addModifier('addon', name, price, qty);
+        }
+      }
+    } else {
+      item.selectedAddons?.forEach((name, count) {
+        if (count > 0) addModifier('addon', name, 0.0, count);
+      });
+    }
+
+    if (item.selectedSoup != null) {
+      final name = item.selectedSoup!['name']?.toString() ?? 'Soup';
+      final price = (item.selectedSoup!['price'] as num?)?.toDouble() ?? 0.0;
+      rows.add(OrderDetailRow(
+        leftText: '$name ×${item.quantity}',
+        rightText: '₦${(price * item.quantity).toStringAsFixed(0)}',
+        isModifier: true,
+      ));
+    }
+
+    return rows;
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final addons = _buildAddonLabels();
+    final rows = _buildRows(context);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Quantity badge
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Text(
-                '${item.quantity}x',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primary,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-
-          // Name + addons
-          Expanded(
-            child: Column(
+        children: rows.map((row) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.menuItem.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (row.isModifier) ...[
+                        Text(
+                          '↳ ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                      Expanded(
+                        child: Text(
+                          row.leftText,
+                          style: TextStyle(
+                            fontWeight: row.isModifier ? FontWeight.w500 : FontWeight.w800,
+                            fontSize: row.isModifier ? 13 : 15,
+                            color: row.isModifier ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                if (addons.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      addons.join(' • '),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
-                      ),
-                    ),
+                const SizedBox(width: 16),
+                Text(
+                  row.rightText,
+                  style: TextStyle(
+                    fontWeight: row.isModifier ? FontWeight.w500 : FontWeight.w800,
+                    fontSize: row.isModifier ? 13 : 15,
+                    color: row.isModifier ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
                   ),
+                ),
               ],
             ),
-          ),
-        ],
+          );
+        }).toList(),
       ),
     );
   }

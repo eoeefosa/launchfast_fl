@@ -45,6 +45,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
   bool _hasNewOrder = false;
   String _searchQuery = '';
   String _deliveryTypeFilter = 'all'; // 'all', 'delivery', 'pickup'
+  bool _isSelectionMode = false;
+  final Set<String> _selectedOrderIds = {};
+  final Set<String> _dismissedUnattendedOrderIds = {};
 
   // ── Controllers ────────────────────────────────────────────────────────────
   late final TabController _tabController;
@@ -143,12 +146,49 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
 
   // ── Data ───────────────────────────────────────────────────────────────────
 
+  Future<void> _rejectPastOrders(List<Order> orders) async {
+    final today = DateTime.now();
+    final pastUnattended = orders.where((o) {
+      if (o.date.isEmpty) return false;
+      try {
+        final od = DateTime.parse(o.date).toLocal();
+        final isPreviousDay = od.year < today.year ||
+            (od.year == today.year && od.month < today.month) ||
+            (od.year == today.year && od.month == today.month && od.day < today.day);
+        
+        final isUnattended = o.status == OrderStatus.pending ||
+            o.status == OrderStatus.accepted ||
+            o.status == OrderStatus.preparing;
+
+        return isPreviousDay && isUnattended;
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+
+    if (pastUnattended.isEmpty) return;
+
+    for (final o in pastUnattended) {
+      try {
+        await context.read<StoreProvider>().updateOrderStatus(
+          o.id,
+          OrderStatus.cancelled.backendName,
+        );
+      } catch (e) {
+        debugPrint('Failed to auto-reject past order ${o.id}: $e');
+      }
+    }
+  }
+
   Future<void> _loadOrders() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
 
+    final storeProvider = context.read<StoreProvider>();
     try {
-      final orders = await context.read<StoreProvider>().fetchStoreOrders();
+      var orders = await storeProvider.fetchStoreOrders();
+      await _rejectPastOrders(orders);
+      orders = await storeProvider.fetchStoreOrders();
       orders.sort((a, b) => b.date.compareTo(a.date));
       if (mounted) {
         setState(() => _orders = orders);
@@ -174,6 +214,60 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     } catch (e, stack) {
       debugPrint('[StoreOrdersScreen] _updateStatus: $e\n$stack');
       _showSnackBar('Failed to update order', isError: true);
+    }
+  }
+
+  Future<void> _bulkRejectOrders() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirm Bulk Reject'),
+        content: Text('Are you sure you want to reject ${_selectedOrderIds.length} orders? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Reject'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+
+    int successCount = 0;
+    int failCount = 0;
+
+    for (final orderId in _selectedOrderIds) {
+      try {
+        await context.read<StoreProvider>().updateOrderStatus(
+          orderId,
+          OrderStatus.cancelled.backendName,
+        );
+        successCount++;
+      } catch (e) {
+        failCount++;
+        debugPrint('Failed to bulk reject order $orderId: $e');
+      }
+    }
+
+    setState(() {
+      _isSelectionMode = false;
+      _selectedOrderIds.clear();
+    });
+
+    await _loadOrders();
+
+    if (failCount > 0) {
+      _showSnackBar('Bulk reject completed: $successCount succeeded, $failCount failed', isWarning: true);
+    } else {
+      _showSnackBar('Successfully rejected $successCount orders');
     }
   }
 
@@ -207,8 +301,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     if (!mounted || _orders.isEmpty) return;
 
     final now = DateTime.now();
-    bool hasUnattended = false;
-    int maxElapsed = 0;
+    final unattendedOrders = <Order>[];
 
     for (final order in _orders) {
       final isPickup = _isPickupDeliveryType(order.deliveryType);
@@ -220,26 +313,25 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
           order.status == OrderStatus.preparing;
       if (!isActive) continue;
 
+      if (_dismissedUnattendedOrderIds.contains(order.id)) continue;
+
       if (order.date.isNotEmpty) {
         try {
           final dt = DateTime.parse(order.date).toLocal();
           final elapsed = now.difference(dt).inMinutes;
           if (elapsed >= 5) {
-            hasUnattended = true;
-            if (elapsed > maxElapsed) {
-              maxElapsed = elapsed;
-            }
+            unattendedOrders.add(order);
           }
         } catch (_) {}
       }
     }
 
-    if (hasUnattended) {
+    if (unattendedOrders.isNotEmpty) {
       if (_lastNotificationTime == null ||
           now.difference(_lastNotificationTime!).inMinutes >= 5) {
         _lastNotificationTime = now;
         _playReminderSound();
-        _showUnattendedAlert(maxElapsed);
+        _showUnattendedAlert(unattendedOrders);
       }
     }
   }
@@ -252,8 +344,10 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     }
   }
 
-  void _showUnattendedAlert(int minutes) {
+  void _showUnattendedAlert(List<Order> unattendedOrders) {
     if (!mounted) return;
+
+    final shortIds = unattendedOrders.map((o) => '#${_shortId(o.id).toUpperCase()}').join(', ');
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -281,7 +375,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
                     ),
                   ),
                   Text(
-                    'An order has been waiting for $minutes mins! Please attend to it.',
+                    'Orders: $shortIds are unattended. Please attend to them.',
                     style: const TextStyle(fontSize: 12, color: Colors.white70),
                   ),
                 ],
@@ -290,15 +384,20 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
           ],
         ),
         backgroundColor: Colors.red.shade800,
-        duration: const Duration(seconds: 8),
+        duration: const Duration(seconds: 12),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         action: SnackBarAction(
-          label: 'DISMISS',
+          label: 'DISMISS ALL',
           textColor: Colors.white,
           onPressed: () {
             _reminderAudioPlayer?.stop();
+            setState(() {
+              for (final o in unattendedOrders) {
+                _dismissedUnattendedOrderIds.add(o.id);
+              }
+            });
           },
         ),
       ),
@@ -451,6 +550,21 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
         ),
         actions: [
           IconButton(
+            tooltip: _isSelectionMode ? 'Exit Selection' : 'Select Orders',
+            icon: Icon(
+              _isSelectionMode ? Icons.close : Icons.checklist_rounded,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                _isSelectionMode = !_isSelectionMode;
+                if (!_isSelectionMode) {
+                  _selectedOrderIds.clear();
+                }
+              });
+            },
+          ),
+          IconButton(
             tooltip: 'Verify Pickup',
             icon: const Icon(
               Icons.qr_code_scanner_rounded,
@@ -545,19 +659,114 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
                         : ListView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                             itemCount: _filtered.length,
-                            itemBuilder: (_, i) => OrderCard(
-                              order: _filtered[i],
-                              textColor: textColor,
-                              muted: muted,
-                              surface: surface,
-                              border: border,
-                              onUpdateStatus: _updateStatus,
-                            ),
+                            itemBuilder: (_, i) {
+                              final order = _filtered[i];
+                              final isSelected = _selectedOrderIds.contains(order.id);
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  children: [
+                                    if (_isSelectionMode) ...[
+                                      Checkbox(
+                                        value: isSelected,
+                                        activeColor: AppColors.primary,
+                                        onChanged: (val) {
+                                          setState(() {
+                                            if (val == true) {
+                                              _selectedOrderIds.add(order.id);
+                                            } else {
+                                              _selectedOrderIds.remove(order.id);
+                                            }
+                                          });
+                                        },
+                                      ),
+                                      const SizedBox(width: 4),
+                                    ],
+                                    Expanded(
+                                      child: OrderCard(
+                                        order: order,
+                                        textColor: textColor,
+                                        muted: muted,
+                                        surface: surface,
+                                        border: border,
+                                        onUpdateStatus: _updateStatus,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
                   ),
           ),
         ],
       ),
+      bottomNavigationBar: _isSelectionMode
+          ? SafeArea(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: surface,
+                  border: Border(top: BorderSide(color: border)),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      '${_selectedOrderIds.length} Selected',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          if (_selectedOrderIds.length == _filtered.length) {
+                            _selectedOrderIds.clear();
+                          } else {
+                            _selectedOrderIds.addAll(_filtered.map((o) => o.id));
+                          }
+                        });
+                      },
+                      child: Text(
+                        _selectedOrderIds.length == _filtered.length
+                            ? 'Deselect All'
+                            : 'Select All',
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade700,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: _selectedOrderIds.isEmpty ? null : _bulkRejectOrders,
+                      icon: const Icon(Icons.cancel_outlined, size: 18),
+                      label: const Text(
+                        'Reject Selected',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
 }

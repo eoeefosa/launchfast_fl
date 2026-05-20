@@ -36,6 +36,11 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="high_importance_channel" />
 
+        <!-- Default notification icon to prevent crashes on Android 13+ -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+
         <!-- Flutter embedding -->
         <meta-data
             android:name="flutterEmbedding"

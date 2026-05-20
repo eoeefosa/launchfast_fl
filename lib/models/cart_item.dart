@@ -10,10 +10,16 @@ class CartItem {
   final Map<String, int>? selectedSides;
   final Map<String, int>? selectedDrinks;
   final Map<String, int>? selectedAddons;
+  final List<dynamic>? selectedMeatsDetails;
+  final List<dynamic>? selectedSidesDetails;
+  final List<dynamic>? selectedDrinksDetails;
+  final List<dynamic>? selectedAddonsDetails;
   final String? selectedSizeId;
 
   /// The soup chosen when this is a swallow item (id, name, effective price).
   final Map<String, dynamic>? selectedSoup;
+
+  final double? lineTotal;
 
   CartItem({
     String? id,
@@ -24,11 +30,40 @@ class CartItem {
     this.selectedSides,
     this.selectedDrinks,
     this.selectedAddons,
+    this.selectedMeatsDetails,
+    this.selectedSidesDetails,
+    this.selectedDrinksDetails,
+    this.selectedAddonsDetails,
     this.selectedSizeId,
     this.selectedSoup,
+    this.lineTotal,
   }) : id =
            id ??
            '${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(10000)}';
+
+  double get effectiveLineTotal {
+    if (lineTotal != null) return lineTotal!;
+    double optionsCost = 0.0;
+    void sumOptions(List<dynamic>? details) {
+      if (details == null) return;
+      for (final dynamic element in details) {
+        if (element is Map) {
+          final price = (element['price'] as num?)?.toDouble() ?? 0.0;
+          final quantity = (element['quantity'] as num?)?.toInt() ?? 1;
+          optionsCost += price * quantity;
+        }
+      }
+    }
+    sumOptions(selectedMeatsDetails);
+    sumOptions(selectedSidesDetails);
+    sumOptions(selectedDrinksDetails);
+    sumOptions(selectedAddonsDetails);
+    double soupPrice = 0.0;
+    if (selectedSoup != null) {
+      soupPrice = (selectedSoup!['price'] as num?)?.toDouble() ?? 0.0;
+    }
+    return (menuItem.price + optionsCost + soupPrice) * quantity;
+  }
 
   // ── Structural equality ─────────────────────────────────────────────────────
   static bool _mapsEqual(Map<String, int>? a, Map<String, int>? b) {
@@ -160,10 +195,15 @@ class CartItem {
       selectedAddons: addonsData != null
           ? Map<String, int>.from(addonsData)
           : null,
+      selectedMeatsDetails: json['selectedMeatsDetails'],
+      selectedSidesDetails: json['selectedSidesDetails'],
+      selectedDrinksDetails: json['selectedDrinksDetails'],
+      selectedAddonsDetails: json['selectedAddonsDetails'],
       selectedSizeId: json['selectedSizeId'],
       selectedSoup: json['selectedSoup'] != null
           ? Map<String, dynamic>.from(json['selectedSoup'] as Map)
           : null,
+      lineTotal: (json['lineTotal'] as num?)?.toDouble(),
     );
   }
 
@@ -177,8 +217,13 @@ class CartItem {
       'selectedSides': selectedSides,
       'selectedDrinks': selectedDrinks,
       'selectedAddons': selectedAddons,
+      'selectedMeatsDetails': selectedMeatsDetails,
+      'selectedSidesDetails': selectedSidesDetails,
+      'selectedDrinksDetails': selectedDrinksDetails,
+      'selectedAddonsDetails': selectedAddonsDetails,
       'selectedSizeId': selectedSizeId,
       if (selectedSoup != null) 'selectedSoup': selectedSoup,
+      'lineTotal': lineTotal,
     };
   }
 }

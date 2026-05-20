@@ -19,6 +19,7 @@ class StatusIcon extends StatelessWidget {
     }
     if (status == OrderStatus.delivered) icon = Icons.check_circle_rounded;
     if (status == OrderStatus.cancelled) icon = Icons.cancel_rounded;
+    if (status == OrderStatus.priceAdjusted) icon = Icons.price_change_rounded;
 
     return Container(
           width: 80,

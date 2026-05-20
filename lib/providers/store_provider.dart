@@ -58,15 +58,20 @@ class StoreProvider with ChangeNotifier {
     ablyService.addMenuListener((storeId, menuItemId, isReady) {
       if (menuItemId != null && isReady != null) {
         // Specific item update
-        final index = _menuItems.indexWhere((m) => m.id == menuItemId);
-        if (index != -1) {
-          final oldReady = _menuItems[index].isReady;
-          _menuItems[index] = _menuItems[index].copyWith(isReady: isReady);
-          notifyListeners();
-
-          if (oldReady && !isReady) {
-            _alertController.add('ITEM_UNAVAILABLE:$menuItemId');
+        // We update both the main item and its turkey split version if needed
+        bool updatedAny = false;
+        for (int i = 0; i < _menuItems.length; i++) {
+          if (_menuItems[i].id == menuItemId || _menuItems[i].id == '${menuItemId}_turkey') {
+            final oldReady = _menuItems[i].isReady;
+            _menuItems[i] = _menuItems[i].copyWith(isReady: isReady);
+            updatedAny = true;
+            if (oldReady && !isReady) {
+              _alertController.add('ITEM_UNAVAILABLE:${_menuItems[i].id}');
+            }
           }
+        }
+        if (updatedAny) {
+          notifyListeners();
         }
       } else {
         // Structural change - reload
@@ -92,7 +97,20 @@ class StoreProvider with ChangeNotifier {
       final fetchedSettings = await locator<MenuRepository>().getSettings();
 
       _stores = fetchedStores;
-      _menuItems = fetchedMenu;
+
+      final List<MenuItem> processedMenu = [];
+      for (final item in fetchedMenu) {
+        if (item.name.toUpperCase() == 'CHICKEN & TURKEY') {
+          processedMenu.add(item.copyWith(name: 'CHICKEN'));
+          processedMenu.add(item.copyWith(
+            id: '${item.id}_turkey',
+            name: 'TURKEY',
+          ));
+        } else {
+          processedMenu.add(item);
+        }
+      }
+      _menuItems = processedMenu;
 
       // Update platform settings
       if (fetchedSettings['meatPrices'] != null) {

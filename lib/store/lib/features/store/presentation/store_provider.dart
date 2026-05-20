@@ -87,15 +87,19 @@ class StoreProvider extends BaseProvider {
 
     ablyService.addMenuListener((storeId, menuItemId, isReady) {
       if (menuItemId != null && isReady != null) {
-        final index = _menuItems.indexWhere((m) => m.id == menuItemId);
-        if (index != -1) {
-          final oldReady = _menuItems[index].isReady;
-          _menuItems[index] = _menuItems[index].copyWith(isReady: isReady);
-          notifyListeners();
-
-          if (oldReady && !isReady) {
-            _alertController.add('ITEM_UNAVAILABLE:$menuItemId');
+        bool updatedAny = false;
+        for (int i = 0; i < _menuItems.length; i++) {
+          if (_menuItems[i].id == menuItemId || _menuItems[i].id == '${menuItemId}_turkey') {
+            final oldReady = _menuItems[i].isReady;
+            _menuItems[i] = _menuItems[i].copyWith(isReady: isReady);
+            updatedAny = true;
+            if (oldReady && !isReady) {
+              _alertController.add('ITEM_UNAVAILABLE:${_menuItems[i].id}');
+            }
           }
+        }
+        if (updatedAny) {
+          notifyListeners();
         }
       } else {
         // structural change
@@ -112,7 +116,16 @@ class StoreProvider extends BaseProvider {
 
   void updateData(List<Store> stores, List<MenuItem> items) {
     _stores = stores;
-    _menuItems = items;
+    final List<MenuItem> processed = [];
+    for (final item in items) {
+      if (item.name.toUpperCase() == 'CHICKEN & TURKEY') {
+        processed.add(item.copyWith(name: 'CHICKEN'));
+        processed.add(item.copyWith(id: '${item.id}_turkey', name: 'TURKEY'));
+      } else {
+        processed.add(item);
+      }
+    }
+    _menuItems = processed;
     _updateCache();
     notifyListeners();
   }
@@ -126,7 +139,16 @@ class StoreProvider extends BaseProvider {
         final menuResult = await menuRepository.getMenuItems(storeId);
         menuResult.fold(
           (items) {
-            _menuItems = items;
+            final List<MenuItem> processed = [];
+            for (final item in items) {
+              if (item.name.toUpperCase() == 'CHICKEN & TURKEY') {
+                processed.add(item.copyWith(name: 'CHICKEN'));
+                processed.add(item.copyWith(id: '${item.id}_turkey', name: 'TURKEY'));
+              } else {
+                processed.add(item);
+              }
+            }
+            _menuItems = processed;
             debugPrint('[StoreProvider] Fetched ${items.length} menu items');
           },
           (failure) => setFailure(failure),
@@ -273,6 +295,12 @@ class StoreProvider extends BaseProvider {
   Future<void> updateOrderStatus(String orderId, String status, {String? rejectionReason}) async {
     if (_activeStoreId == null) return;
     await orderRepository.updateOrderStatus(orderId, status, storeId: _activeStoreId!, rejectionReason: rejectionReason);
+    notifyListeners();
+  }
+
+  Future<void> adjustOrderPrice(String orderId, List<Map<String, dynamic>> items) async {
+    if (_activeStoreId == null) return;
+    await orderRepository.adjustOrderPrice(orderId, items, storeId: _activeStoreId!);
     notifyListeners();
   }
 

@@ -1,11 +1,13 @@
 class ItemOption {
+  final String id;
   final String name;
   final double price;
 
-  ItemOption({required this.name, required this.price});
+  ItemOption({required this.id, required this.name, required this.price});
 
   factory ItemOption.fromJson(Map<String, dynamic> json) {
     return ItemOption(
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       name: json['name'] ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
     );
@@ -13,6 +15,7 @@ class ItemOption {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'price': price,
     };

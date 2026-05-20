@@ -89,12 +89,16 @@ Future<void> _onBackgroundMessage(RemoteMessage message) async {
 
   final orderId = message.data['orderId'] ?? message.data['id'];
 
-  await NotificationService.showStaticNotification(
-    id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    title: title,
-    body: body,
-    payload: orderId?.toString(),
-  );
+  try {
+    await NotificationService.showStaticNotification(
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title: title,
+      body: body,
+      payload: orderId?.toString(),
+    );
+  } catch (e, stack) {
+    debugPrint('[FCM-BG] Error showing static notification: $e\n$stack');
+  }
 }
 
 /// Maps raw FCM data to a human-readable (title, body) pair.

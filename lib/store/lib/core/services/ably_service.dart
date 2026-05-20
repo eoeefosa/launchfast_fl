@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:ably_flutter/ably_flutter.dart' as ably;
@@ -22,6 +23,8 @@ import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 ///   can be cancelled independently without a full [disconnect].
 /// - Uses [debugPrint] so logs are silenced in release builds automatically.
 class AblyService {
+  bool get _isTesting => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
   // FIX: No public constructor — use the singleton accessor below.
   // This prevents two parts of the app from creating separate Ably connections.
   AblyService._();
@@ -72,6 +75,10 @@ class AblyService {
   }
 
   Future<void> initAbly(String userId) async {
+    if (_isTesting) {
+      debugPrint('[AblyService] Skipping initAbly in test environment');
+      return;
+    }
     debugPrint('--- [AblyService] Initializing for user: $userId ---');
     if (_isConnecting) {
       debugPrint('[AblyService] Already connecting, skipping...');
