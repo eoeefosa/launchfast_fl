@@ -305,7 +305,18 @@ class CampusChowApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         // Customer providers
         ChangeNotifierProvider(create: (_) => StoreProvider()),
-        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProxyProvider<StoreProvider, CartProvider>(
+          create: (_) => CartProvider(),
+          update: (_, storeProvider, cartProvider) {
+            cartProvider!.updatePricing(
+              meatPrices: storeProvider.meatPrices,
+              saladPrice: storeProvider.saladPrice,
+              allMenuItems: storeProvider.menuItems,
+              allStores: storeProvider.stores,
+            );
+            return cartProvider;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => RiderJobProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),

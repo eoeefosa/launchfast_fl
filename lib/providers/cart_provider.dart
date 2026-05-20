@@ -97,8 +97,8 @@ class CartProvider with ChangeNotifier {
 
   Future<void> _loadCart() async {
     final prefs = await SharedPreferences.getInstance();
-    final cartStr = prefs.getString('launch-fast-cart');
-    _editingOrderId = prefs.getString('launch-fast-editing-order-id');
+    final cartStr = prefs.getString('campuschow-cart');
+    _editingOrderId = prefs.getString('campuschow-editing-order-id');
     if (cartStr != null) {
       try {
         final List<dynamic> cartList = jsonDecode(cartStr);

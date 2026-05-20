@@ -57,8 +57,12 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
     final availableAddons = widget.item.addonIds != null
         ? widget.item.addonIds!
               .map(
-                (id) => storeProvider.menuItems.firstWhere((m) => m.id == id),
+                (id) => storeProvider.menuItems.cast<MenuItem?>().firstWhere(
+                      (m) => m?.id == id,
+                      orElse: () => null,
+                    ),
               )
+              .whereType<MenuItem>()
               .toList()
         : <MenuItem>[];
 
@@ -337,15 +341,18 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
     // Build the selectedSoup payload if a soup was chosen
     Map<String, dynamic>? soupPayload;
     if (_selectedSoupId != null) {
-      final soup = storeProvider.menuItems.firstWhere(
-        (m) => m.id == _selectedSoupId,
+      final soup = storeProvider.menuItems.cast<MenuItem?>().firstWhere(
+        (m) => m?.id == _selectedSoupId,
+        orElse: () => null,
       );
-      soupPayload = {
-        'id': soup.id,
-        'name': soup.name,
-        // If isFreeWithSwallow the customer pays ₦0 for the soup
-        'price': soup.isFreeWithSwallow ? 0.0 : soup.price,
-      };
+      if (soup != null) {
+        soupPayload = {
+          'id': soup.id,
+          'name': soup.name,
+          // If isFreeWithSwallow the customer pays ₦0 for the soup
+          'price': soup.isFreeWithSwallow ? 0.0 : soup.price,
+        };
+      }
     }
 
     final success = cartProvider.addToCart(
