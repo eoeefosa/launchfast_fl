@@ -6,6 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
+import 'package:campuschow/store/lib/core/widgets/shimmer_placeholder.dart';
 import 'package:campuschow/store/lib/features/auth/presentation/auth_provider.dart';
 import 'package:campuschow/store/lib/core/services/ably_service.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
@@ -267,7 +268,7 @@ class _StoreMainNavState extends State<StoreMainNav>
     }
     _pendingOrderTimers.clear();
     _pendingOrderIds.clear();
-    
+
     if (_ablyInitialized) {
       ablyService.removeOrderListener(_onAblyOrderUpdate);
     }
@@ -291,10 +292,11 @@ class _StoreMainNavState extends State<StoreMainNav>
 
           // 1. Show spinner while provider is doing its initial work
           if (storeProvider.isLoading && ownedStore == null) {
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
+            return Scaffold(
+              backgroundColor: isDark
+                  ? AppColors.darkBackground
+                  : AppColors.lightBackground,
+              body: const _StoreOwnerLoadingSkeleton(),
             );
           }
 
@@ -307,9 +309,11 @@ class _StoreMainNavState extends State<StoreMainNav>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.storefront_outlined, 
-                        size: 80, 
-                        color: Colors.orange.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.storefront_outlined,
+                        size: 80,
+                        color: Colors.orange.withValues(alpha: 0.5),
+                      ),
                       const SizedBox(height: 24),
                       const Text(
                         'No Store Linked',
@@ -333,15 +337,23 @@ class _StoreMainNavState extends State<StoreMainNav>
                             backgroundColor: Colors.orange,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('Refresh Profile', style: TextStyle(fontSize: 16)),
+                          child: const Text(
+                            'Refresh Profile',
+                            style: TextStyle(fontSize: 16),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
                       TextButton(
                         onPressed: () => auth.logout(),
-                        child: const Text('Sign Out', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                        child: const Text(
+                          'Sign Out',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
                       ),
                     ],
                   ),
@@ -490,6 +502,146 @@ class _StoreMainNavState extends State<StoreMainNav>
               }),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StoreOwnerLoadingSkeleton extends StatelessWidget {
+  const _StoreOwnerLoadingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppColors.darkSurface : Colors.white;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ShimmerPlaceholder(width: 180, height: 28, borderRadius: 8),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: border),
+              ),
+              child: const Row(
+                children: [
+                  ShimmerPlaceholder(width: 50, height: 50, borderRadius: 25),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShimmerPlaceholder(
+                          width: 140,
+                          height: 16,
+                          borderRadius: 6,
+                        ),
+                        SizedBox(height: 8),
+                        ShimmerPlaceholder(
+                          width: 120,
+                          height: 12,
+                          borderRadius: 6,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            const ShimmerPlaceholder(width: 160, height: 22, borderRadius: 8),
+            const SizedBox(height: 16),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 1.4,
+              children: List.generate(
+                4,
+                (_) => Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: border),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShimmerPlaceholder(
+                        width: 20,
+                        height: 20,
+                        borderRadius: 10,
+                      ),
+                      Spacer(),
+                      ShimmerPlaceholder(
+                        width: 70,
+                        height: 22,
+                        borderRadius: 8,
+                      ),
+                      SizedBox(height: 8),
+                      ShimmerPlaceholder(
+                        width: 90,
+                        height: 12,
+                        borderRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            const ShimmerPlaceholder(width: 140, height: 22, borderRadius: 8),
+            const SizedBox(height: 12),
+            ...List.generate(
+              3,
+              (_) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: border),
+                ),
+                child: const Row(
+                  children: [
+                    ShimmerPlaceholder(width: 40, height: 40, borderRadius: 12),
+                    SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ShimmerPlaceholder(
+                            width: 120,
+                            height: 14,
+                            borderRadius: 4,
+                          ),
+                          SizedBox(height: 8),
+                          ShimmerPlaceholder(
+                            width: 90,
+                            height: 12,
+                            borderRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    ShimmerPlaceholder(width: 72, height: 24, borderRadius: 8),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

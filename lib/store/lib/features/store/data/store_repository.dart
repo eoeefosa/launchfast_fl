@@ -1,6 +1,7 @@
 import 'package:campuschow/store/lib/core/network/api_client.dart';
 import 'package:campuschow/store/lib/features/dashboard/data/staff_member_model.dart';
 import 'package:campuschow/store/lib/features/store/data/store_model.dart';
+import 'package:dio/dio.dart';
 
 class StoreRepository {
   Future<List<Store>> getStores() async {
@@ -22,7 +23,10 @@ class StoreRepository {
   Future<Store?> getOwnerStore(String userId) async {
     try {
       // Let the backend filter — don't download the whole table
-      final response = await apiService.dio.get('/stores', queryParameters: {'ownerId': userId});
+      final response = await apiService.dio.get(
+        '/stores',
+        queryParameters: {'ownerId': userId},
+      );
       final stores = (response.data as List)
           .map((s) => Store.fromJson(s as Map<String, dynamic>))
           .toList();
@@ -42,8 +46,20 @@ class StoreRepository {
   }
 
   Future<Store> updateStore(String storeId, Map<String, dynamic> data) async {
-    final response = await apiService.dio.put('/stores/$storeId', data: data);
-    return Store.fromJson(response.data);
+    try {
+      final response = await apiService.dio.patch(
+        '/stores/$storeId',
+        data: data,
+      );
+      return Store.fromJson(response.data);
+    } on DioException catch (error) {
+      if (error.response?.statusCode != 405) {
+        rethrow;
+      }
+
+      final response = await apiService.dio.put('/stores/$storeId', data: data);
+      return Store.fromJson(response.data);
+    }
   }
 
   Future<List<StaffMember>> getStaff(String storeId) async {

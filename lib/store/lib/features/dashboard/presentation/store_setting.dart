@@ -60,9 +60,11 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
 
       if (!mounted) return;
       _storeId = store.id;
+      _nameCtrl.text = store.name;
+      _taglineCtrl.text = store.tagline;
       _deliveryTimeCtrl.text = store.deliveryTime;
-      _deliveryFeeCtrl.text = store.deliveryFee.toString();
-      _priorityFeeCtrl.text = store.priorityFee.toString();
+      _deliveryFeeCtrl.text = store.deliveryFee.toInt().toString();
+      _priorityFeeCtrl.text = store.priorityFee.toInt().toString();
 
       // Load sound preference
       final prefs = await SharedPreferences.getInstance();
@@ -82,21 +84,27 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
       final storeProvider = context.read<StoreProvider>();
       await storeProvider.updateStore(_storeId!, {
         'name': _nameCtrl.text.trim(),
-        'tagline': _taglineCtrl.text.trim(),
+        'description': _taglineCtrl.text.trim(),
         'deliveryTime': _deliveryTimeCtrl.text.trim(),
-        'deliveryFee': double.tryParse(_deliveryFeeCtrl.text.trim()) ?? 0,
-        'priorityFee': double.tryParse(_priorityFeeCtrl.text.trim()) ?? 1000,
+        'deliveryFee':
+            double.tryParse(_deliveryFeeCtrl.text.trim())?.toInt() ?? 0,
+        'priorityFee':
+            double.tryParse(_priorityFeeCtrl.text.trim())?.toInt() ?? 1000,
       });
-      if (mounted) _showSnackBar('Store updated successfully', success: true);
+      if (mounted) {
+        _showSnackBar('Store updated successfully', success: true);
+      }
     } catch (e) {
       debugPrint('[StoreSettings] _saveStore error: $e');
-      if (mounted) _showSnackBar('Failed to save store settings', success: false);
+      if (mounted) {
+        _showSnackBar('Failed to save store settings', success: false);
+      }
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
-
-
 
   Future<void> _removeStaff(String workerId) async {
     if (_storeId == null) return;
@@ -703,7 +711,11 @@ class _NotificationSettingsCard extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.notifications_active_outlined, color: AppColors.primary, size: 20),
+            child: const Icon(
+              Icons.notifications_active_outlined,
+              color: AppColors.primary,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -907,7 +919,10 @@ class _StaffInviteQRDialog extends StatelessWidget {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Done')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Done'),
+        ),
       ],
     );
   }
