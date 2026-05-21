@@ -134,6 +134,8 @@ class ActiveOrderTracker extends StatelessWidget {
         return isPickup ? 'Picked Up' : 'Arrived';
       case OrderStatus.cancelled:
         return 'Cancelled';
+      case OrderStatus.pendingPayment:
+        return 'Pending Payment';
     }
   }
 
@@ -165,6 +167,8 @@ class ActiveOrderTracker extends StatelessWidget {
           return 'This order was cancelled. Reason: ${order.rejectionReason}';
         }
         return 'This order was cancelled. Please contact support for details.';
+      case OrderStatus.pendingPayment:
+        return 'Please complete the payment to place your order.';
     }
   }
 

@@ -18,6 +18,7 @@ class MockOrderRepository implements OrderRepository {
   Order? getOrderByIdResult;
   Map<String, dynamic> initializePaymentResult = {};
   Order? respondToPriceAdjustmentResult;
+  Order? payWithWalletResult;
 
   Map<String, dynamic>? lastPlaceOrderData;
   String? lastUpdateOrderStatusId;
@@ -29,6 +30,7 @@ class MockOrderRepository implements OrderRepository {
   String? lastInitializePaymentEmail;
   String? lastPriceAdjustmentOrderId;
   String? lastPriceAdjustmentAction;
+  String? lastPayWithWalletOrderId;
 
   @override
   Future<List<Order>> getOrders() async => getOrdersResult;
@@ -85,6 +87,13 @@ class MockOrderRepository implements OrderRepository {
     lastPriceAdjustmentAction = action;
     if (respondToPriceAdjustmentResult == null) throw Exception('No mock response configured');
     return respondToPriceAdjustmentResult!;
+  }
+
+  @override
+  Future<Order> payWithWallet(String orderId) async {
+    lastPayWithWalletOrderId = orderId;
+    if (payWithWalletResult == null) throw Exception('No mock response configured');
+    return payWithWalletResult!;
   }
 }
 

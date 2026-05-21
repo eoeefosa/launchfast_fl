@@ -64,7 +64,8 @@ class OrdersScreen extends StatelessWidget {
     return orders.firstWhere(
       (o) =>
           o.status != OrderStatus.delivered &&
-          o.status != OrderStatus.cancelled,
+          o.status != OrderStatus.cancelled &&
+          o.status != OrderStatus.pendingPayment,
       orElse: () => Order(
         id: 'EMPTY',
         items: [],
@@ -86,7 +87,8 @@ class OrdersScreen extends StatelessWidget {
   static bool _isActive(Order order) =>
       order.id.isNotEmpty &&
       order.status != OrderStatus.cancelled &&
-      order.status != OrderStatus.delivered;
+      order.status != OrderStatus.delivered &&
+      order.status != OrderStatus.pendingPayment;
 }
 
 // ─── App Bar ──────────────────────────────────────────────────────────────

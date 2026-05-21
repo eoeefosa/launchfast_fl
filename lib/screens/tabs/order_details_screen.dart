@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
 
 import 'package:campuschow/models/order.dart';
 import 'package:campuschow/repositories/order_repository.dart';
 import 'package:campuschow/widgets/orders/active_order_tracker.dart';
 import 'package:campuschow/widgets/orders/order_receipt.dart';
+import 'package:campuschow/providers/order_provider.dart';
+import 'package:campuschow/providers/auth_provider.dart';
+import 'package:campuschow/screens/checkout/widgets/payment_sheet.dart';
 import 'components/order_details_app_bar.dart';
 import 'components/order_details_error.dart';
 
@@ -108,6 +114,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       );
     }
 
+    final isPendingPayment = _order!.status == OrderStatus.pendingPayment;
+
     // Loaded state
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -123,7 +131,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           20,
           // Add the bottom safe-area inset (notch / gesture bar) so the last
           // widget is never hidden behind the system UI.
-          24 + MediaQuery.paddingOf(context).bottom,
+          24 + (isPendingPayment ? 0 : MediaQuery.paddingOf(context).bottom),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,6 +149,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: isPendingPayment
+          ? _PendingPaymentBottomBar(
+              order: _order!,
+              onPaid: () {
+                _fetchOrder();
+                context.read<OrderProvider>().refreshOrders();
+              },
+              onCancelled: () {
+                _fetchOrder();
+                context.read<OrderProvider>().refreshOrders();
+              },
+            )
+          : null,
     );
   }
 }
@@ -307,6 +328,266 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _PendingPaymentBottomBar extends StatefulWidget {
+  final Order order;
+  final VoidCallback onPaid;
+  final VoidCallback onCancelled;
+
+  const _PendingPaymentBottomBar({
+    required this.order,
+    required this.onPaid,
+    required this.onCancelled,
+  });
+
+  @override
+  State<_PendingPaymentBottomBar> createState() => _PendingPaymentBottomBarState();
+}
+
+class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
+  bool _isLoading = false;
+
+  Future<void> _payWithWallet() async {
+    setState(() => _isLoading = true);
+    try {
+      HapticFeedback.mediumImpact();
+      await OrderRepository().payWithWallet(widget.order.id);
+      
+      // Update local wallet balance
+      if (mounted) {
+        final auth = context.read<AuthProvider>();
+        await auth.refreshUser();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order paid successfully via wallet!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        widget.onPaid();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pay: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _payWithPaystack() async {
+    setState(() => _isLoading = true);
+    try {
+      HapticFeedback.mediumImpact();
+      final auth = context.read<AuthProvider>();
+      final email = auth.isAuthenticated
+          ? (auth.user?.email ?? 'user@campuschow.com')
+          : 'guest@campuschow.com';
+
+      final paymentData = await OrderRepository().initializePayment(
+        widget.order.id,
+        'Card',
+        email: email,
+      );
+
+      final authorizationUrl =
+          (paymentData['data'] as Map<String, dynamic>?)?['authorization_url']
+              as String?;
+
+      if (authorizationUrl == null) {
+        throw Exception('Payment initialization failed.');
+      }
+
+      final uri = Uri.parse(authorizationUrl);
+      if (!await canLaunchUrl(uri)) {
+        throw Exception('Could not open payment page.');
+      }
+
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      
+      // Since it launches externally, we tell the user to complete payment
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Opening Paystack payment page...'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showPaymentSelection() {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isAuthenticated) {
+      // Guest checkout -> directly paystack
+      _payWithPaystack();
+      return;
+    }
+
+    final balance = auth.user?.walletBalance ?? 0.0;
+    final total = widget.order.total;
+    final isInsufficient = balance < total;
+
+    PaymentSheet.show(
+      context: context,
+      current: 'Paystack',
+      balance: balance,
+      total: total,
+      isInsufficient: isInsufficient,
+      onSelected: (method) {
+        if (method == 'Wallet') {
+          _payWithWallet();
+        } else {
+          _payWithPaystack();
+        }
+      },
+      onInsufficientFunds: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Insufficient wallet funds. Please use Paystack.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _cancelOrder() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Order?'),
+        content: const Text('Are you sure you want to cancel this unpaid order? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No, Keep It'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+    try {
+      HapticFeedback.mediumImpact();
+      await OrderRepository().updateOrder(widget.order.id, {'status': 'cancelled'});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order cancelled successfully.'),
+          ),
+        );
+        widget.onCancelled();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel order: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).primaryColor;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + bottomInset),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: _isLoading
+          ? const SizedBox(
+              height: 48,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cancelOrder,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade700,
+                      side: BorderSide(color: Colors.red.shade200),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Cancel Order',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _showPaymentSelection,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Pay Now',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }

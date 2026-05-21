@@ -251,5 +251,23 @@ void main() {
       final order = await repository.respondToPriceAdjustment('ord_123', 'ACCEPT');
       expect(order.status, equals(OrderStatus.accepted));
     });
+
+    test('payWithWallet makes post request and returns updated order', () async {
+      mockAdapter.handler = (options) async {
+        expect(options.path, equals('/orders/ord_123/pay'));
+        expect(options.method, equals('POST'));
+        final paidJson = Map<String, dynamic>.from(mockOrderJson)..['status'] = 'PLACED';
+        return ResponseBody.fromString(
+          jsonEncode({'order': paidJson}),
+          200,
+          headers: {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+          },
+        );
+      };
+
+      final order = await repository.payWithWallet('ord_123');
+      expect(order.status, equals(OrderStatus.pending));
+    });
   });
 }

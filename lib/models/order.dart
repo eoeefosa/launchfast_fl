@@ -20,6 +20,7 @@ enum OrderStatus {
   outForDelivery,
   queued,
   priceAdjusted,
+  pendingPayment,
 }
 
 extension OrderStatusExtension on OrderStatus {
@@ -47,6 +48,8 @@ extension OrderStatusExtension on OrderStatus {
         return 'Queued';
       case OrderStatus.priceAdjusted:
         return 'Price Adjusted';
+      case OrderStatus.pendingPayment:
+        return 'Pending Payment';
     }
   }
 
@@ -74,6 +77,8 @@ extension OrderStatusExtension on OrderStatus {
         return 'QUEUED';
       case OrderStatus.priceAdjusted:
         return 'PRICE_ADJUSTED';
+      case OrderStatus.pendingPayment:
+        return 'PENDING_PAYMENT';
     }
   }
 
@@ -106,6 +111,8 @@ extension OrderStatusExtension on OrderStatus {
         return OrderStatus.queued;
       case 'PRICE_ADJUSTED':
         return OrderStatus.priceAdjusted;
+      case 'PENDING_PAYMENT':
+        return OrderStatus.pendingPayment;
       default:
         return OrderStatus.pending;
     }

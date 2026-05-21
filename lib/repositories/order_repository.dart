@@ -109,6 +109,16 @@ class OrderRepository {
     return response.data as Map<String, dynamic>;
   }
 
+  Future<Order> payWithWallet(String orderId) async {
+    final response = await apiService.dio.post('/orders/$orderId/pay');
+    if (response.data is! Map) {
+      throw FormatException(
+        'Expected Map from /orders/$orderId/pay, got ${response.data.runtimeType}',
+      );
+    }
+    return Order.fromJson(response.data['order'] ?? response.data);
+  }
+
   Future<Order> respondToPriceAdjustment(String orderId, String action) async {
     final response = await apiService.dio.post(
       '/orders/$orderId/price-response',
