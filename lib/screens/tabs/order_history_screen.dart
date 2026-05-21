@@ -11,7 +11,8 @@ class OrderHistoryScreen extends StatefulWidget {
   State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();
 }
 
-class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTickerProviderStateMixin {
+class _OrderHistoryScreenState extends State<OrderHistoryScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -28,20 +29,22 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final orderProvider = context.watch<OrderProvider>();
+    final orders = context.select<OrderProvider, List<Order>>(
+      (provider) => provider.orders,
+    );
     final scheme = Theme.of(context).colorScheme;
 
     // Filter past orders (anything not from today)
     final now = DateTime.now();
-    final pastOrders = orderProvider.orders.where((o) {
+    final pastOrders = orders.where((o) {
       try {
         final orderDate = DateTime.parse(o.date);
         return !(orderDate.year == now.year &&
-                 orderDate.month == now.month &&
-                 orderDate.day == now.day);
+            orderDate.month == now.month &&
+            orderDate.day == now.day);
       } catch (_) {
-        return true; // If parsing fails, treat as past? or today? 
-                    // Usually safer to show in history if unsure.
+        return true; // If parsing fails, treat as past? or today?
+        // Usually safer to show in history if unsure.
       }
     }).toList();
 
@@ -60,7 +63,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTick
           indicatorColor: scheme.primary,
           labelColor: scheme.primary,
           unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.5),
-          labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 14,
+          ),
           indicatorWeight: 3,
           tabs: const [
             Tab(text: 'ALL PAST'),
@@ -72,7 +78,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTick
         controller: _tabController,
         children: [
           _AllPastOrders(orders: pastOrders),
-          _TopOrders(orders: orderProvider.orders),
+          _TopOrders(orders: orders),
         ],
       ),
     );
@@ -110,9 +116,10 @@ class _TopOrders extends StatelessWidget {
 
     for (var order in orders) {
       // Create a key based on item IDs and quantities
-      final itemKeys = order.items.map((i) => '${i.id}:${i.quantity}').toList()..sort();
+      final itemKeys = order.items.map((i) => '${i.id}:${i.quantity}').toList()
+        ..sort();
       final key = itemKeys.join('|');
-      
+
       if (groupedOrders.containsKey(key)) {
         groupedOrders[key]!.add(order);
       } else {
@@ -122,7 +129,9 @@ class _TopOrders extends StatelessWidget {
 
     // Sort groups by frequency (descending)
     final sortedKeys = groupedOrders.keys.toList()
-      ..sort((a, b) => groupedOrders[b]!.length.compareTo(groupedOrders[a]!.length));
+      ..sort(
+        (a, b) => groupedOrders[b]!.length.compareTo(groupedOrders[a]!.length),
+      );
 
     // Get the latest order from each group to display
     final topOrders = sortedKeys.map((k) => groupedOrders[k]!.first).toList();
@@ -133,7 +142,7 @@ class _TopOrders extends StatelessWidget {
       itemBuilder: (context, index) {
         final order = topOrders[index];
         final frequency = groupedOrders[sortedKeys[index]]!.length;
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -141,9 +150,14 @@ class _TopOrders extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 12, bottom: 8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -175,7 +189,9 @@ class _EmptyHistory extends StatelessWidget {
           Icon(
             Icons.history_toggle_off_rounded,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.2),
           ),
           const SizedBox(height: 16),
           Text(
@@ -183,7 +199,9 @@ class _EmptyHistory extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],

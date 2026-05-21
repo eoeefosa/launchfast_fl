@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:campuschow/providers/theme_provider.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/dashboard/data/staff_member_model.dart';
 import 'package:campuschow/store/lib/features/auth/presentation/auth_provider.dart';
@@ -26,6 +27,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   // ─── State ────────────────────────────────────────────────────────────────
   String? _storeId;
   bool _isLoading = true;
+  bool _isRefreshing = false;
   bool _isSaving = false;
   bool _isSoundEnabled = true;
 
@@ -51,11 +53,22 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
 
   // ─── Data ─────────────────────────────────────────────────────────────────
 
-  Future<void> _loadStore() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadStore({
+    bool showLoading = true,
+    bool reloadRemote = false,
+  }) async {
+    if (showLoading) {
+      setState(() => _isLoading = true);
+    } else {
+      setState(() => _isRefreshing = true);
+    }
+
     try {
       final storeProvider = context.read<StoreProvider>();
-      final store = storeProvider.activeStore;
+      final currentStoreId = _storeId ?? storeProvider.activeStoreId;
+      final store = reloadRemote && currentStoreId != null
+          ? await storeProvider.reloadStore(currentStoreId)
+          : storeProvider.activeStore;
       if (store == null) return;
 
       if (!mounted) return;
@@ -73,7 +86,19 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
       debugPrint('[StoreSettings] _loadStore error: $e');
       _showSnackBar('Failed to load store settings', success: false);
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshStore() async {
+    await _loadStore(showLoading: false, reloadRemote: true);
+    if (_storeId != null && mounted) {
+      await context.read<StaffProvider>().fetchStaff(_storeId!);
     }
   }
 
@@ -158,37 +183,60 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
     final theme = _SettingsTheme.of(context);
     final user = context.watch<AuthProvider>().user;
     final staffProvider = context.watch<StaffProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
 
     return Scaffold(
       backgroundColor: theme.bg,
       appBar: _SettingsAppBar(
         isLoading: _isLoading,
+        isRefreshing: _isRefreshing,
         isSaving: _isSaving,
         onSave: _saveStore,
+        onRefresh: _refreshStore,
       ),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.primary),
             )
-          : _SettingsBody(
-              theme: theme,
-              user: user,
-              nameCtrl: _nameCtrl,
-              taglineCtrl: _taglineCtrl,
-              deliveryTimeCtrl: _deliveryTimeCtrl,
-              deliveryFeeCtrl: _deliveryFeeCtrl,
-              priorityFeeCtrl: _priorityFeeCtrl,
-              workers: staffProvider.staff,
-              isLoadingStaff: staffProvider.isLoading,
-              onAddStaff: _showAddStaffDialog,
-              onRemoveStaff: _removeStaff,
-              isSoundEnabled: _isSoundEnabled,
-              onSoundToggle: (val) async {
-                setState(() => _isSoundEnabled = val);
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setBool('order_notifications_sound', val);
-              },
-              onLogout: _showLogoutDialog,
+          : RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: _refreshStore,
+              child: Stack(
+                children: [
+                  _SettingsBody(
+                    theme: theme,
+                    user: user,
+                    nameCtrl: _nameCtrl,
+                    taglineCtrl: _taglineCtrl,
+                    deliveryTimeCtrl: _deliveryTimeCtrl,
+                    deliveryFeeCtrl: _deliveryFeeCtrl,
+                    priorityFeeCtrl: _priorityFeeCtrl,
+                    workers: staffProvider.staff,
+                    isLoadingStaff: staffProvider.isLoading,
+                    onAddStaff: _showAddStaffDialog,
+                    onRemoveStaff: _removeStaff,
+                    themeMode: themeProvider.themeMode,
+                    onThemeChanged: themeProvider.setTheme,
+                    isSoundEnabled: _isSoundEnabled,
+                    onSoundToggle: (val) async {
+                      setState(() => _isSoundEnabled = val);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('order_notifications_sound', val);
+                    },
+                    onLogout: _showLogoutDialog,
+                  ),
+                  if (_isRefreshing)
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LinearProgressIndicator(
+                        color: AppColors.primary,
+                        minHeight: 2,
+                      ),
+                    ),
+                ],
+              ),
             ),
     );
   }
@@ -228,13 +276,17 @@ class _SettingsTheme {
 class _SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
   const _SettingsAppBar({
     required this.isLoading,
+    required this.isRefreshing,
     required this.isSaving,
     required this.onSave,
+    required this.onRefresh,
   });
 
   final bool isLoading;
+  final bool isRefreshing;
   final bool isSaving;
   final VoidCallback onSave;
+  final Future<void> Function() onRefresh;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -252,6 +304,20 @@ class _SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
+        if (!isLoading)
+          IconButton(
+            onPressed: isRefreshing || isSaving ? null : onRefresh,
+            icon: isRefreshing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.refresh, color: Colors.white),
+          ),
         if (!isLoading) _SaveButton(isSaving: isSaving, onSave: onSave),
         const SizedBox(width: 8),
       ],
@@ -305,6 +371,8 @@ class _SettingsBody extends StatelessWidget {
     required this.isLoadingStaff,
     required this.onAddStaff,
     required this.onRemoveStaff,
+    required this.themeMode,
+    required this.onThemeChanged,
     required this.isSoundEnabled,
     required this.onSoundToggle,
     required this.onLogout,
@@ -321,6 +389,8 @@ class _SettingsBody extends StatelessWidget {
   final bool isLoadingStaff;
   final VoidCallback onAddStaff;
   final ValueChanged<String> onRemoveStaff;
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeChanged;
   final bool isSoundEnabled;
   final ValueChanged<bool> onSoundToggle;
   final VoidCallback onLogout;
@@ -355,6 +425,14 @@ class _SettingsBody extends StatelessWidget {
             onRemove: onRemoveStaff,
           ),
           const SizedBox(height: 24),
+          _SectionLabel('Appearance', theme.textColor),
+          const SizedBox(height: 12),
+          _ThemeSettingsCard(
+            theme: theme,
+            themeMode: themeMode,
+            onChanged: onThemeChanged,
+          ),
+          const SizedBox(height: 24),
           _SectionLabel('Notifications', theme.textColor),
           const SizedBox(height: 12),
           _NotificationSettingsCard(
@@ -385,6 +463,159 @@ class _SettingsBody extends StatelessWidget {
           ),
           const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+}
+
+class _ThemeSettingsCard extends StatelessWidget {
+  const _ThemeSettingsCard({
+    required this.theme,
+    required this.themeMode,
+    required this.onChanged,
+  });
+
+  final _SettingsTheme theme;
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onChanged;
+
+  bool get _isLight => themeMode == ThemeMode.light;
+  bool get _isDark => themeMode == ThemeMode.dark;
+  bool get _isSystem => themeMode == ThemeMode.system;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsSectionCard(
+      theme: theme,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.palette_outlined,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Theme Mode',
+                      style: TextStyle(
+                        color: theme.textColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      _isDark
+                          ? 'Dark mode enabled'
+                          : _isLight
+                          ? 'Light mode enabled'
+                          : 'Follow system setting',
+                      style: TextStyle(color: theme.muted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            decoration: BoxDecoration(
+              color: theme.bg,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: [
+                _ThemeModeButton(
+                  label: 'Light',
+                  icon: Icons.light_mode_rounded,
+                  selected: _isLight,
+                  onTap: () => onChanged(ThemeMode.light),
+                ),
+                _ThemeModeButton(
+                  label: 'System',
+                  icon: Icons.brightness_auto_rounded,
+                  selected: _isSystem,
+                  onTap: () => onChanged(ThemeMode.system),
+                ),
+                _ThemeModeButton(
+                  label: 'Dark',
+                  icon: Icons.dark_mode_rounded,
+                  selected: _isDark,
+                  onTap: () => onChanged(ThemeMode.dark),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeModeButton extends StatelessWidget {
+  const _ThemeModeButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: selected
+                    ? Colors.white
+                    : Theme.of(context).colorScheme.onSurface,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

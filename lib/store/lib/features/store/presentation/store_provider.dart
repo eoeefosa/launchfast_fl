@@ -250,6 +250,30 @@ class StoreProvider extends BaseProvider {
     setActiveStore(storeId);
   }
 
+  Future<Store?> reloadStore(String storeId) async {
+    try {
+      final updatedStore = await storeRepository.getStore(storeId);
+      if (updatedStore == null) return null;
+
+      final index = _stores.indexWhere((store) => store.id == storeId);
+      if (index != -1) {
+        _stores[index] = updatedStore;
+      } else {
+        _stores.add(updatedStore);
+      }
+
+      if (_activeStoreId == storeId) {
+        _activeStore = updatedStore;
+      }
+
+      notifyListeners();
+      return updatedStore;
+    } catch (e) {
+      setFailure(ServerFailure(e.toString()));
+      rethrow;
+    }
+  }
+
   Future<void> updateStore(String storeId, Map<String, dynamic> data) async {
     setLoading(true);
     try {
