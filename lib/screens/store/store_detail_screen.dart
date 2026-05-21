@@ -11,6 +11,8 @@ import 'components/store_detail_closed_widgets.dart';
 import 'components/store_detail_header.dart';
 import 'components/store_detail_menu.dart';
 
+import 'package:campuschow/widgets/responsive_layout.dart';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,6 +30,7 @@ const _kCategories = <String>[
 // ─────────────────────────────────────────────────────────────────────────────
 // StoreDetailScreen
 // ─────────────────────────────────────────────────────────────────────────────
+
 
 class StoreDetailScreen extends StatefulWidget {
   const StoreDetailScreen({super.key, required this.id});
@@ -110,48 +113,50 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              StoreAppBar(store: store, scheme: scheme, isDark: isDark),
-              SliverToBoxAdapter(
-                child: StoreHeader(store: store, scheme: scheme),
-              ),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: CategoryHeaderDelegate(
-                  categories: groupedItems.keys.toList(),
-                  onCategoryTap: _scrollToCategory,
+    return ResponsiveLayout(
+      child: Scaffold(
+        backgroundColor: scheme.surface,
+        body: Stack(
+          children: [
+            CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                StoreAppBar(store: store, scheme: scheme, isDark: isDark),
+                SliverToBoxAdapter(
+                  child: StoreHeader(store: store, scheme: scheme),
                 ),
-              ),
-              SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final category = groupedItems.keys.elementAt(index);
-                  final catItems = groupedItems[category]!;
-                  return CategorySection(
-                    category: category,
-                    items: catItems,
-                    categoryKey: _categoryKeys[index],
-                    cartProvider: cartProvider,
-                    accentColor: store.accentColor,
-                    storeIsOpen: store.isOpen,
-                    scheme: scheme,
-                  );
-                }, childCount: groupedItems.length),
-              ),
-              // Spacer at the bottom so content is not obscured by the banner.
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: SizedBox(height: 100),
-              ),
-            ],
-          ),
-          if (!store.isOpen) const StoreClosedBanner(),
-        ],
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: CategoryHeaderDelegate(
+                    categories: groupedItems.keys.toList(),
+                    onCategoryTap: _scrollToCategory,
+                  ),
+                ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final category = groupedItems.keys.elementAt(index);
+                    final catItems = groupedItems[category]!;
+                    return CategorySection(
+                      category: category,
+                      items: catItems,
+                      categoryKey: _categoryKeys[index],
+                      cartProvider: cartProvider,
+                      accentColor: store.accentColor,
+                      storeIsOpen: store.isOpen,
+                      scheme: scheme,
+                    );
+                  }, childCount: groupedItems.length),
+                ),
+                // Spacer at the bottom so content is not obscured by the banner.
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: SizedBox(height: 100),
+                ),
+              ],
+            ),
+            if (!store.isOpen) const StoreClosedBanner(),
+          ],
+        ),
       ),
     );
   }

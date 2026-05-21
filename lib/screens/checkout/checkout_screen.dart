@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../widgets/responsive_layout.dart';
 
 import '../../models/order.dart';
 import '../../providers/auth_provider.dart';
@@ -92,20 +93,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isWalletInsufficient(AuthProvider auth, double total) =>
       _paymentMethod == CheckoutPaymentMethod.wallet &&
       !auth.hasSufficientFunds(total);
-
   // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    if (_isSuccess) return const SuccessView();
+    if (_isSuccess) return const ResponsiveLayout(child: SuccessView());
 
     final cart = context.watch<CartProvider>();
     final orderProvider = context.watch<OrderProvider>();
     final auth = context.watch<AuthProvider>();
     final total = cart.totalFor(_deliveryType);
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+    return ResponsiveLayout(
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
         children: [
           CheckoutScrollBody(
@@ -146,7 +147,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   // ── Guest form submit ──────────────────────────────────────────────────────

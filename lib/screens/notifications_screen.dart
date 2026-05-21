@@ -7,6 +7,8 @@ import '../widgets/notifications/empty_notifications.dart';
 import '../widgets/notifications/notifications_app_bar.dart';
 import '../widgets/notifications/notifications_list.dart';
 
+import 'package:campuschow/widgets/responsive_layout.dart';
+
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -28,26 +30,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Selector<NotificationProvider, List<NotificationItem>>(
       selector: (context, provider) => provider.notifications,
       builder: (context, notifications, _) {
-        return Scaffold(
-          appBar: NotificationsAppBar(
-            hasNotifications: notifications.isNotEmpty,
-            onClearAll: () => _showClearConfirmation(
-              context,
-              context.read<NotificationProvider>(),
+        return ResponsiveLayout(
+          child: Scaffold(
+            appBar: NotificationsAppBar(
+              hasNotifications: notifications.isNotEmpty,
+              onClearAll: () => _showClearConfirmation(
+                context,
+                context.read<NotificationProvider>(),
+              ),
             ),
-          ),
-          body: RefreshIndicator(
-            onRefresh: () => context.read<NotificationProvider>().refresh(),
-            child: notifications.isEmpty
-                ? ListView(
-                    children: [
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.7,
-                        child: const EmptyNotifications(),
-                      ),
-                    ],
-                  )
-                : NotificationsList(notifications: notifications),
+            body: RefreshIndicator(
+              onRefresh: () => context.read<NotificationProvider>().refresh(),
+              child: notifications.isEmpty
+                  ? ListView(
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.7,
+                          child: const EmptyNotifications(),
+                        ),
+                      ],
+                    )
+                  : NotificationsList(notifications: notifications),
+            ),
           ),
         );
       },

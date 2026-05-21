@@ -40,6 +40,13 @@ class AuthRepository {
     return response.data;
   }
 
+  Future<Map<String, dynamic>> loginWithApple(String token) async {
+    final response = await apiService.dio.post('/auth/apple/oauth', data: {
+      'token': token,
+    });
+    return response.data;
+  }
+
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> updates) async {
     final response = await apiService.dio.patch('/auth/profile', data: updates);
     return response.data;

@@ -7,6 +7,8 @@ import '../../providers/store_provider.dart';
 import '../../models/menu_item.dart';
 import '../widgets/common/universal_image.dart';
 
+import 'package:campuschow/widgets/responsive_layout.dart';
+
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -65,73 +67,75 @@ class _SearchScreenState extends State<SearchScreen> {
             return matchesQuery && isNotStandaloneOption;
           }).toList();
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
+    return ResponsiveLayout(
+      child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        leadingWidth: 40,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: IconButton(
-            icon: Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: Theme.of(context).colorScheme.onSurface,
-              size: 20,
-            ),
-            onPressed: () => context.pop(),
-          ),
-        ),
-        title: Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color: Theme.of(
-              context,
-            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: TextField(
-            controller: _controller,
-            autofocus: true,
-            onChanged: (val) => setState(() => _query = val),
-            onSubmitted: _saveHistory,
-            decoration: InputDecoration(
-              hintText: 'Search for food...',
-              hintStyle: TextStyle(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: .4),
-                fontSize: 14,
-              ),
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.5),
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          elevation: 0,
+          leadingWidth: 40,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: IconButton(
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Theme.of(context).colorScheme.onSurface,
                 size: 20,
               ),
-              suffixIcon: _query.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(
-                        Icons.close_rounded,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.5),
-                        size: 18,
-                      ),
-                      onPressed: () {
-                        _controller.clear();
-                        setState(() => _query = '');
-                      },
-                    )
-                  : null,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              onPressed: () => context.pop(),
+            ),
+          ),
+          title: Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: TextField(
+              controller: _controller,
+              autofocus: true,
+              onChanged: (val) => setState(() => _query = val),
+              onSubmitted: _saveHistory,
+              decoration: InputDecoration(
+                hintText: 'Search for food...',
+                hintStyle: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: .4),
+                  fontSize: 14,
+                ),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
+                  size: 20,
+                ),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                          size: 18,
+                        ),
+                        onPressed: () {
+                          _controller.clear();
+                          setState(() => _query = '');
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              ),
             ),
           ),
         ),
+        body: _query.isEmpty ? _buildHistory() : _buildResults(results),
       ),
-      body: _query.isEmpty ? _buildHistory() : _buildResults(results),
     );
   }
 

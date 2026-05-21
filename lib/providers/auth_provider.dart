@@ -12,6 +12,7 @@ import '../models/user.dart';
 import '../repositories/auth_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AuthProvider extends ChangeNotifier {
 
@@ -524,6 +525,43 @@ class AuthProvider extends ChangeNotifier {
       unawaited(syncFCMToken());
     } catch (e) {
       debugPrint('[AuthProvider] signInWithGoogle error: $e');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> signInWithApple() async {
+    _setLoading(true);
+    try {
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      final OAuthCredential credential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: null,
+      );
+
+      // Sign into Firebase so we get a Firebase ID token
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final firebaseIdToken = await userCredential.user!.getIdToken();
+
+      if (firebaseIdToken == null) {
+        throw Exception('Failed to get Firebase ID token');
+      }
+
+      // Send the Firebase ID token — the backend verifies it with Firebase Admin SDK.
+      final data = await locator<AuthRepository>().loginWithApple(firebaseIdToken);
+      
+      await _persistAuthResponse(data);
+      unawaited(_initializeAbly());
+      unawaited(syncFCMToken());
+    } catch (e) {
+      debugPrint('[AuthProvider] signInWithApple error: $e');
       rethrow;
     } finally {
       _setLoading(false);

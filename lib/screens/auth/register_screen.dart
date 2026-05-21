@@ -10,6 +10,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../services/api_service.dart';
 
+import 'package:campuschow/widgets/responsive_layout.dart';
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -89,8 +91,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
     final primaryColor = Theme.of(context).colorScheme.primary;
 
-    return Scaffold(
-      body: SafeArea(
+    return ResponsiveLayout(
+      child: Scaffold(
+        body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
           child: Form(
@@ -171,6 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../services/api_service.dart';
+import '../../widgets/responsive_layout.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,6 +50,10 @@ class _LoginScreenState extends State<LoginScreen> {
     await _authenticate(() => context.read<AuthProvider>().signInWithGoogle());
   }
 
+  Future<void> _submitAppleLogin() async {
+    await _authenticate(() => context.read<AuthProvider>().signInWithApple());
+  }
+
   Future<void> _authenticate(Future<void> Function() action) async {
     final messenger = ScaffoldMessenger.of(context);
     final orderProvider = context.read<OrderProvider>();
@@ -80,123 +85,133 @@ class _LoginScreenState extends State<LoginScreen> {
     final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
     final primaryColor = Theme.of(context).colorScheme.primary;
 
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const BackButton(),
-                const SizedBox(height: 32),
-
-                /// Header
-                const Text(
-                  'Welcome Back',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Sign in to continue ordering delicious campus food.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                    height: 1.5,
+    return ResponsiveLayout(
+      child: Scaffold(
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const BackButton(),
+                  const SizedBox(height: 32),
+  
+                  /// Header
+                  const Text(
+                    'Welcome Back',
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
-                ),
-
-                const SizedBox(height: 40),
-
-                /// Email
-                AppTextField(
-                  controller: _emailController,
-                  hint: 'Email',
-                  icon: Icons.mail_outline,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: Validators.email,
-                ),
-
-                const SizedBox(height: 20),
-
-                /// Password
-                AppTextField(
-                  controller: _passwordController,
-                  hint: 'Password',
-                  icon: Icons.lock_outline,
-                  obscureText: !_showPassword,
-                  validator: Validators.password,
-                  suffixIcon: PasswordToggleIcon(
-                    isVisible: _showPassword,
-                    onToggle: _togglePasswordVisibility,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                /// Forgot password
-                const ForgotPasswordButton(),
-
-                const SizedBox(height: 20),
-
-                /// Login button
-                CustomButton(
-                  label: 'Sign In',
-                  isLoading: isLoading,
-                  onPressed: _submitEmailLogin,
-                  primaryColor: primaryColor,
-                ),
-
-                const SizedBox(height: 24),
-
-                /// Divider
-                Row(
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        color: Theme.of(
-                          context,
-                        ).dividerColor.withValues(alpha: 0.5),
-                      ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sign in to continue ordering delicious campus food.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
+                      height: 1.5,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'OR',
-                        style: TextStyle(
+                  ),
+  
+                  const SizedBox(height: 40),
+  
+                  /// Email
+                  AppTextField(
+                    controller: _emailController,
+                    hint: 'Email',
+                    icon: Icons.mail_outline,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: Validators.email,
+                  ),
+  
+                  const SizedBox(height: 20),
+  
+                  /// Password
+                  AppTextField(
+                    controller: _passwordController,
+                    hint: 'Password',
+                    icon: Icons.lock_outline,
+                    obscureText: !_showPassword,
+                    validator: Validators.password,
+                    suffixIcon: PasswordToggleIcon(
+                      isVisible: _showPassword,
+                      onToggle: _togglePasswordVisibility,
+                    ),
+                  ),
+  
+                  const SizedBox(height: 12),
+  
+                  /// Forgot password
+                  const ForgotPasswordButton(),
+  
+                  const SizedBox(height: 20),
+  
+                  /// Login button
+                  CustomButton(
+                    label: 'Sign In',
+                    isLoading: isLoading,
+                    onPressed: _submitEmailLogin,
+                    primaryColor: primaryColor,
+                  ),
+  
+                  const SizedBox(height: 24),
+  
+                  /// Divider
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.4),
-                          fontSize: 14,
+                          ).dividerColor.withValues(alpha: 0.5),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: Divider(
-                        color: Theme.of(
-                          context,
-                        ).dividerColor.withValues(alpha: 0.5),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'OR',
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.4),
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
+                      Expanded(
+                        child: Divider(
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+  
+                  const SizedBox(height: 24),
+  
+                  /// Google login
+                  GoogleSignInButton(
+                    isLoading: isLoading,
+                    onPressed: _submitGoogleLogin,
+                  ),
+  
+                  if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+                    const SizedBox(height: 12),
+                    AppleSignInButton(
+                      isLoading: isLoading,
+                      onPressed: _submitAppleLogin,
                     ),
                   ],
-                ),
-
-                const SizedBox(height: 24),
-
-                /// Google login
-                GoogleSignInButton(
-                  isLoading: isLoading,
-                  onPressed: _submitGoogleLogin,
-                ),
-
-                const SizedBox(height: 40),
-
-                /// Signup prompt
-                const AuthPrompt(isLogin: true),
-              ],
+  
+                  const SizedBox(height: 40),
+  
+                  /// Signup prompt
+                  const AuthPrompt(isLogin: true),
+                ],
+              ),
             ),
           ),
         ),

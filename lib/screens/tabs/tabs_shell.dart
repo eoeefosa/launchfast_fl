@@ -7,6 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
+import '../../widgets/responsive_layout.dart';
 
 class TabsShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -46,12 +47,14 @@ class TabsShell extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final activeColor = scheme.primary;
 
-    return Scaffold(
-      extendBody: true,
-      body: navigationShell,
-      bottomNavigationBar: isIOS
-          ? _buildIOSBar(context, navigationShell, items, activeColor)
-          : _buildAndroidBar(context, navigationShell, items, activeColor),
+    return ResponsiveLayout(
+      child: Scaffold(
+        extendBody: true,
+        body: navigationShell,
+        bottomNavigationBar: isIOS
+            ? _buildIOSBar(context, navigationShell, items, activeColor)
+            : _buildAndroidBar(context, navigationShell, items, activeColor),
+      ),
     );
   }
 

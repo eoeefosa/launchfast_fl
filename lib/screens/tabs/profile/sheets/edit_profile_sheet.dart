@@ -2,12 +2,19 @@ import 'package:flutter/material.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../auth/widgets/custom_button.dart';
 import '../../../../widgets/home/location_selector.dart';
-import '../widgets/bottom_sheet_scaffold.dart';
 
 class EditProfileSheet extends StatefulWidget {
   const EditProfileSheet({super.key, required this.auth});
 
   final AuthProvider auth;
+
+  static Future<void> show(BuildContext context, AuthProvider auth) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => EditProfileSheet(auth: auth),
+    );
+  }
 
   @override
   State<EditProfileSheet> createState() => _EditProfileSheetState();
@@ -48,39 +55,86 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return BottomSheetScaffold(
-      title: 'Edit Profile',
-      child: Column(
-        children: [
-          _buildTextField(
-            controller: _nameCtrl,
-            label: 'Full Name',
-            icon: Icons.person_rounded,
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      backgroundColor: scheme.surface,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header ─────────────────────────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Edit Profile',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: scheme.onSurface,
+                        ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: scheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: scheme.onSurface.withValues(alpha: 0.06),
+                      padding: const EdgeInsets.all(6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // ── Fields ─────────────────────────────────────────────────
+              _buildTextField(
+                controller: _nameCtrl,
+                label: 'Full Name',
+                icon: Icons.person_rounded,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _emailCtrl,
+                label: 'Email Address',
+                icon: Icons.email_rounded,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _phoneCtrl,
+                label: 'Phone Number',
+                icon: Icons.phone_rounded,
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 20),
+
+              // ── Location ───────────────────────────────────────────────
+              const LocationSelector(),
+              const SizedBox(height: 24),
+
+              // ── Save button ────────────────────────────────────────────
+              CustomButton(
+                isLoading: widget.auth.isLoading,
+                label: 'Save Changes',
+                primaryColor: scheme.primary,
+                onPressed: widget.auth.isLoading ? null : _save,
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-          _buildTextField(
-            controller: _emailCtrl,
-            label: 'Email Address',
-            icon: Icons.email_rounded,
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 20),
-          _buildTextField(
-            controller: _phoneCtrl,
-            label: 'Phone Number',
-            icon: Icons.phone_rounded,
-            keyboardType: TextInputType.phone,
-          ),
-          const SizedBox(height: 24),
-          const LocationSelector(),
-          const SizedBox(height: 40),
-          CustomButton(
-            isLoading: widget.auth.isLoading,
-            label: 'Save Changes',
-            primaryColor: scheme.primary,
-            onPressed: widget.auth.isLoading ? null : _save,
-          ),
-        ],
+        ),
       ),
     );
   }

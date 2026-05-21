@@ -5,6 +5,8 @@ import 'package:campuschow/constants/app_colors.dart';
 import 'widgets/apptextfield.dart';
 import 'widgets/constants.dart';
 
+import 'package:campuschow/widgets/responsive_layout.dart';
+
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -48,19 +50,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: _emailSent
-              ? _SuccessView(email: _emailCtrl.text.trim())
-              : _FormView(
-                  formKey: _formKey,
-                  emailCtrl: _emailCtrl,
-                  isLoading: _isLoading,
-                  primaryColor: primaryColor,
-                  onSubmit: _submit,
-                ),
+    return ResponsiveLayout(
+      child: Scaffold(
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            child: _emailSent
+                ? _SuccessView(email: _emailCtrl.text.trim())
+                : _FormView(
+                    formKey: _formKey,
+                    emailCtrl: _emailCtrl,
+                    isLoading: _isLoading,
+                    primaryColor: primaryColor,
+                    onSubmit: _submit,
+                  ),
+          ),
         ),
       ),
     );

@@ -14,6 +14,8 @@ import 'components/item_detail_footer.dart';
 import 'components/item_detail_dialogs.dart';
 import 'components/item_detail_placeholders.dart';
 
+import 'package:campuschow/widgets/responsive_layout.dart';
+
 class ItemDetailScreen extends StatefulWidget {
   final String id;
 
@@ -163,67 +165,69 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       saladPrice: storeProvider.saladPrice,
     );
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
-      child: Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        body: Stack(
-          children: [
-            ItemDetailScrollBody(
-              heroController: _heroController,
-              heroScale: _heroScale,
-              contentFade: _contentFade,
-              contentSlide: _contentSlide,
-              item: item,
-              store: store,
-              accentColor: store.accentColor,
-              availableSoups: components.soups,
-              availableAddons: components.addons,
-              availableProteins: components.proteins,
-              availableSides: components.sides,
-              availableDrinks: components.drinks,
-              selectedMeats: _selectedMeats,
-              selectedAddons: _selectedAddons,
-              selectedSides: _selectedSides,
-              selectedDrinks: _selectedDrinks,
-              selectedSoupId: _selectedSoupId,
-              isDark: isDark,
-              onMeatChanged: (id, count) => setState(() => _selectedMeats[id] = count),
-              onAddonChanged: (id, count) => setState(() => _selectedAddons[id] = count),
-              onSideChanged: (id, count) => setState(() => _selectedSides[id] = count),
-              onDrinkChanged: (id, count) => setState(() => _selectedDrinks[id] = count),
-              onSoupSelected: (id) => setState(() => _selectedSoupId = id),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: SlideTransition(
-                position: _footerSlide,
-                child: ItemDetailFooter(
-                  item: item,
-                  quantity: _quantity,
-                  totalPrice: totalPrice,
-                  accentColor: store.accentColor,
-                  isDark: isDark,
-                  selectedSoupId: _selectedSoupId,
-                  selectedMeats: _selectedMeats,
-                  selectedSides: _selectedSides,
-                  selectedDrinks: _selectedDrinks,
-                  selectedAddons: _selectedAddons,
-                  availableSoups: components.soups,
-                  cartProvider: cartProvider,
-                  onQuantityChanged: (q) => setState(() => _quantity = q),
-                  onAddToCart: () => _handleAddToCart(
-                    context,
-                    cartProvider,
-                    item,
-                    storeProvider,
+    return ResponsiveLayout(
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        child: Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          body: Stack(
+            children: [
+              ItemDetailScrollBody(
+                heroController: _heroController,
+                heroScale: _heroScale,
+                contentFade: _contentFade,
+                contentSlide: _contentSlide,
+                item: item,
+                store: store,
+                accentColor: store.accentColor,
+                availableSoups: components.soups,
+                availableAddons: components.addons,
+                availableProteins: components.proteins,
+                availableSides: components.sides,
+                availableDrinks: components.drinks,
+                selectedMeats: _selectedMeats,
+                selectedAddons: _selectedAddons,
+                selectedSides: _selectedSides,
+                selectedDrinks: _selectedDrinks,
+                selectedSoupId: _selectedSoupId,
+                isDark: isDark,
+                onMeatChanged: (id, count) => setState(() => _selectedMeats[id] = count),
+                onAddonChanged: (id, count) => setState(() => _selectedAddons[id] = count),
+                onSideChanged: (id, count) => setState(() => _selectedSides[id] = count),
+                onDrinkChanged: (id, count) => setState(() => _selectedDrinks[id] = count),
+                onSoupSelected: (id) => setState(() => _selectedSoupId = id),
+              ),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: SlideTransition(
+                  position: _footerSlide,
+                  child: ItemDetailFooter(
+                    item: item,
+                    quantity: _quantity,
+                    totalPrice: totalPrice,
+                    accentColor: store.accentColor,
+                    isDark: isDark,
+                    selectedSoupId: _selectedSoupId,
+                    selectedMeats: _selectedMeats,
+                    selectedSides: _selectedSides,
+                    selectedDrinks: _selectedDrinks,
+                    selectedAddons: _selectedAddons,
+                    availableSoups: components.soups,
+                    cartProvider: cartProvider,
+                    onQuantityChanged: (q) => setState(() => _quantity = q),
+                    onAddToCart: () => _handleAddToCart(
+                      context,
+                      cartProvider,
+                      item,
+                      storeProvider,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
