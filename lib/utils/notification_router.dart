@@ -10,9 +10,13 @@ class NotificationRouter {
   static void handleNotificationTap(BuildContext context, NotificationItem item) {
     final metadata = item.metadata;
     final type = (metadata?['type']?.toString() ?? item.type.name).toLowerCase();
-    final orderId = metadata?['orderId']?.toString() ?? 
+    String? rawId = metadata?['orderId']?.toString() ?? 
                     metadata?['order_id']?.toString() ?? 
                     metadata?['id']?.toString();
+    if (rawId != null && rawId.startsWith('order_')) {
+      rawId = rawId.replaceFirst('order_', '');
+    }
+    final orderId = rawId;
 
     debugPrint('[NotificationRouter] Handling tap: type=$type, orderId=$orderId');
 
@@ -49,7 +53,7 @@ class NotificationRouter {
           break;
 
         default:
-          context.push('/order-details/$orderId');
+          context.push('/orders/$orderId');
       }
       return;
     }
@@ -72,7 +76,7 @@ class NotificationRouter {
         );
         break;
       default:
-        context.push('/order-details/$orderId');
+        context.push('/orders/$orderId');
     }
   }
 }

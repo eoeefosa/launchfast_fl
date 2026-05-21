@@ -39,7 +39,7 @@
         <!-- Default notification icon to prevent crashes on Android 13+ -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@mipmap/ic_launcher" />
+            android:resource="@drawable/ic_notification" />
 
         <!-- Flutter embedding -->
         <meta-data

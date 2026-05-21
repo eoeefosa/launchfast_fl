@@ -42,25 +42,28 @@ class StoreAppBar extends StatelessWidget {
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 16),
-          child: CircleIconButton(
-            icon: Icons.share_rounded,
-            scheme: scheme,
-            onPressed: () async {
-              final box = context.findRenderObject() as RenderBox?;
-              final String name = store.name as String;
-              final String tagline = store.tagline as String;
-              await SharePlus.instance.share(
-                ShareParams(
-                  text:
-                      'Check out $name on CampusChow! $tagline\n\n'
-                      'Order your favorite meals now!',
-                  subject: 'Delicious food from $name',
-                  sharePositionOrigin: box != null
-                      ? box.localToGlobal(Offset.zero) & box.size
-                      : null,
-                ),
-              );
-            },
+          child: Builder(
+            builder: (buttonContext) => CircleIconButton(
+              icon: Icons.share_rounded,
+              scheme: scheme,
+              onPressed: () async {
+                final renderObject = buttonContext.findRenderObject();
+                final box = renderObject is RenderBox ? renderObject : null;
+                final String name = store.name as String;
+                final String tagline = store.tagline as String;
+                await SharePlus.instance.share(
+                  ShareParams(
+                    text:
+                        'Check out $name on CampusChow! $tagline\n\n'
+                        'Order your favorite meals now!',
+                    subject: 'Delicious food from $name',
+                    sharePositionOrigin: box != null
+                        ? box.localToGlobal(Offset.zero) & box.size
+                        : null,
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ],

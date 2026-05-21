@@ -1,4 +1,3 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -57,10 +56,6 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
   late final AnimationController _pulseCtrl;
   late final Animation<double> _pulse;
 
-  // ── Audio ──────────────────────────────────────────────────────────────────
-  // Nullable so a failed init doesn't crash the screen.
-  AudioPlayer? _audioPlayer;
-
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
@@ -75,24 +70,10 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
       CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
     );
 
-    _initAudio();
-
     // Safe to call context.read after the first frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _init();
     });
-  }
-
-  void _initAudio() {
-    try {
-      _audioPlayer = AudioPlayer();
-      _audioPlayer!.setReleaseMode(ReleaseMode.loop).catchError((Object e) {
-        debugPrint('[Dashboard] AudioPlayer.setReleaseMode failed: $e');
-      });
-    } catch (e) {
-      debugPrint('[Dashboard] AudioPlayer init failed: $e');
-      _audioPlayer = null;
-    }
   }
 
   @override
@@ -101,7 +82,6 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
     ablyService
       ..removeStoreListener(_onStoreToggle)
       ..removeOrderListener(_onNewOrder);
-    _audioPlayer?.dispose();
     super.dispose();
   }
 
@@ -194,15 +174,6 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
     setState(() => _hasNewOrder = true);
     _pulseCtrl.repeat(reverse: true);
     _refresh();
-    _playOrderSound();
-  }
-
-  void _playOrderSound() {
-    try {
-      _audioPlayer?.play(AssetSource('sounds/order_sound.mp3'));
-    } catch (e) {
-      debugPrint('[Dashboard] Audio playback failed: $e');
-    }
   }
 
   void _dismissNewOrderAlert() {
@@ -210,7 +181,6 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
     _pulseCtrl
       ..stop()
       ..reset();
-    _audioPlayer?.stop();
   }
 
   // ── Store toggle ───────────────────────────────────────────────────────────

@@ -215,7 +215,7 @@ Future<void> _initFirebase() async {
 
 Future<void> _initLocalNotifications() async {
   const initSettings = InitializationSettings(
-    android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    android: AndroidInitializationSettings('ic_notification'),
     iOS: DarwinInitializationSettings(),
   );
 
@@ -240,8 +240,13 @@ void _onNotificationTapped(NotificationResponse response) {
   final payload = response.payload;
   if (payload == null || payload.isEmpty) return;
 
+  String cleanId = payload;
+  if (cleanId.startsWith('order_')) {
+    cleanId = cleanId.replaceFirst('order_', '');
+  }
+
   // Use GoRouter's global navigation helper so we stay inside the router graph.
-  rootNavigatorKey.currentContext?.go('/order-details/$payload');
+  rootNavigatorKey.currentContext?.go('/orders/$cleanId');
 }
 
 Future<void> _initFcmPermissionsAndListeners() async {
@@ -271,8 +276,13 @@ void _navigateToOrder(RemoteMessage message) {
   final orderId = message.data['orderId'] ?? message.data['id'];
   if (orderId == null) return;
 
-  debugPrint('[FCM] Navigating to order: $orderId');
-  rootNavigatorKey.currentContext?.go('/order-details/$orderId');
+  String cleanId = orderId.toString();
+  if (cleanId.startsWith('order_')) {
+    cleanId = cleanId.replaceFirst('order_', '');
+  }
+
+  debugPrint('[FCM] Navigating to order: $cleanId');
+  rootNavigatorKey.currentContext?.go('/orders/$cleanId');
 }
 
 Future<void> _lockOrientation() async {

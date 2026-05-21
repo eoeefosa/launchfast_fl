@@ -90,7 +90,7 @@ class NotificationService {
 
   Future<void> _initLocalNotifications() async {
     const settings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      android: AndroidInitializationSettings('ic_notification'),
       iOS: DarwinInitializationSettings(
         requestAlertPermission: true,
         requestBadgePermission: true,
@@ -331,7 +331,11 @@ class NotificationService {
     }
 
     if (id != null && id.isNotEmpty) {
-      context.push('/order-details/$id');
+      String cleanId = id;
+      if (cleanId.startsWith('order_')) {
+        cleanId = cleanId.replaceFirst('order_', '');
+      }
+      context.push('/orders/$cleanId');
     }
   }
 
@@ -463,7 +467,7 @@ class NotificationService {
 
     await plugin.initialize(
       settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        android: AndroidInitializationSettings('ic_notification'),
         iOS: DarwinInitializationSettings(),
       ),
     );

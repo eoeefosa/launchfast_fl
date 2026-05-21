@@ -154,8 +154,8 @@ class _PaymentCallbackScreenState extends State<PaymentCallbackScreen> {
       // Wallet top-up: go to profile so they can see the new balance
       context.go('/profile');
     } else if (result.orderId != null) {
-      // Order payment: go to the orders list
-      context.go('/orders');
+      // Order payment: go to the specific order details page
+      context.go('/orders/${result.orderId}');
     } else {
       // Fallback
       context.go('/home');

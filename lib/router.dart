@@ -269,7 +269,17 @@ role: ${auth.user?.role}
                     path: ':id',
                     builder: (context, state) {
                       final id = state.pathParameters['id'];
-                      final order = state.extra as Order?;
+                      final extra = state.extra;
+                      Order? order;
+                      if (extra is Order) {
+                        order = extra;
+                      } else if (extra is Map<String, dynamic>) {
+                        try {
+                          order = Order.fromJson(extra);
+                        } catch (e) {
+                          debugPrint('Error parsing order from extra: $e');
+                        }
+                      }
                       return OrderDetailsScreen(order: order, orderId: id);
                     },
                   ),
@@ -351,10 +361,7 @@ role: ${auth.user?.role}
       // ───────────────────────────────────────────────────────────
       GoRoute(
         path: '/order-details/:id',
-        builder: (context, state) {
-          final id = state.pathParameters['id'];
-          return OrderDetailsScreen(orderId: id);
-        },
+        redirect: (context, state) => '/orders/${state.pathParameters['id']}',
       ),
 
       GoRoute(

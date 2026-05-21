@@ -38,6 +38,8 @@ class _StoreMainNavState extends State<StoreMainNav>
   late AnimationController _badgeCtrl;
   late Animation<double> _badgeScale;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final Set<String> _pendingOrderIds = {};
+  final Map<String, Timer> _pendingOrderTimers = {};
 
   static const List<({String label, IconData icon, IconData activeIcon})>
   _navItems = [
@@ -149,30 +151,57 @@ class _StoreMainNavState extends State<StoreMainNav>
   }
 
   void _onAblyOrderUpdate(String orderId, OrderStatus status) {
-    // When a new PENDING order arrives, bump the badge on Orders tab
-    if (status == OrderStatus.pending && mounted) {
-      setState(() => _newOrderCount++);
-      _badgeCtrl.repeat(reverse: true);
+    if (status == OrderStatus.pending) {
+      if (mounted) {
+        setState(() => _newOrderCount++);
+        _badgeCtrl.repeat(reverse: true);
 
-      // Trigger a local notification for foreground alert
-      notificationService.showNotification(
-        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        title: 'New Order Received! 🚀',
-        body: 'You have a new pending order ($orderId). Tap to view.',
-        payload: 'order_$orderId',
-        channelId: kOrderChannelId,
-      );
+        // Trigger a local notification for foreground alert
+        notificationService.showNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+          title: 'New Order Received! 🚀',
+          body: 'You have a new pending order ($orderId). Tap to view.',
+          payload: 'order_$orderId',
+          channelId: kOrderChannelId,
+        );
 
-      // Also show a persistent in-app alert dialog so the owner doesn't miss it
-      _showNewOrderAlert(orderId);
+        // Also show a persistent in-app alert dialog so the owner doesn't miss it
+        _showNewOrderAlert(orderId);
+      }
 
-      // Play the alert sound
-      _playAlertSound();
+      // Track pending orders and set reminder timer
+      if (!_pendingOrderIds.contains(orderId)) {
+        _pendingOrderIds.add(orderId);
+        _playAlertSound();
+
+        _pendingOrderTimers[orderId]?.cancel();
+        _pendingOrderTimers[orderId] = Timer.periodic(
+          const Duration(minutes: 5),
+          (timer) {
+            if (_pendingOrderIds.contains(orderId)) {
+              _playAlertSound();
+            } else {
+              timer.cancel();
+              _pendingOrderTimers.remove(orderId);
+            }
+          },
+        );
+      }
+    } else {
+      // If the order has been updated to any non-pending status, stop alert
+      _pendingOrderIds.remove(orderId);
+      _pendingOrderTimers[orderId]?.cancel();
+      _pendingOrderTimers.remove(orderId);
+
+      if (_pendingOrderIds.isEmpty) {
+        _audioPlayer.stop();
+      }
     }
   }
 
   Future<void> _playAlertSound() async {
     try {
+      await _audioPlayer.stop();
       await _audioPlayer.play(AssetSource('sounds/order_sound.mp3'));
     } catch (e) {
       debugPrint('[AudioPlayer] Error playing sound: $e');
@@ -233,6 +262,12 @@ class _StoreMainNavState extends State<StoreMainNav>
   void dispose() {
     _badgeCtrl.dispose();
     _audioPlayer.dispose();
+    for (final timer in _pendingOrderTimers.values) {
+      timer.cancel();
+    }
+    _pendingOrderTimers.clear();
+    _pendingOrderIds.clear();
+    
     if (_ablyInitialized) {
       ablyService.removeOrderListener(_onAblyOrderUpdate);
     }
