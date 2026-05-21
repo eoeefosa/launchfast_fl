@@ -100,12 +100,74 @@ class GoogleSignInButton extends StatelessWidget {
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const FaIcon(FontAwesomeIcons.google, size: 20, color: Colors.red),
+                const FaIcon(
+                  FontAwesomeIcons.google,
+                  size: 20,
+                  color: Colors.red,
+                ),
                 const SizedBox(width: 12),
                 Text(
                   'Sign in with Google',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class AppleSignInButton extends StatelessWidget {
+  const AppleSignInButton({
+    super.key,
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? Colors.white : Colors.black;
+    final foregroundColor = isDark ? Colors.black : Colors.white;
+
+    return ElevatedButton(
+      onPressed: isLoading ? null : onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: backgroundColor,
+        foregroundColor: foregroundColor,
+        disabledBackgroundColor: backgroundColor.withValues(alpha: 0.5),
+        minimumSize: const Size(double.infinity, 56),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        elevation: 0,
+      ),
+      child: isLoading
+          ? SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
+              ),
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                FaIcon(
+                  FontAwesomeIcons.apple,
+                  size: 22,
+                  color: foregroundColor,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Sign in with Apple',
+                  style: TextStyle(
+                    color: foregroundColor,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),

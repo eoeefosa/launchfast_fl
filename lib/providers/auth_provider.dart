@@ -14,18 +14,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthProvider extends ChangeNotifier {
-
-  AuthProvider({
-    FlutterSecureStorage? storage,
-    GoogleSignIn? googleSignIn,
-  })  : _storage = storage ?? const FlutterSecureStorage(),
-        _googleSignIn = googleSignIn ?? GoogleSignIn(
-          serverClientId: const String.fromEnvironment(
-            'SERVER_CLIENT_ID',
-            defaultValue: '471745302305-tts3kroutn6jofuvcldfckjk4j7et6l2.apps.googleusercontent.com',
-          ),
-        ) {
-
+  AuthProvider({FlutterSecureStorage? storage, GoogleSignIn? googleSignIn})
+    : _storage = storage ?? const FlutterSecureStorage(),
+      _googleSignIn =
+          googleSignIn ??
+          GoogleSignIn(
+            serverClientId: const String.fromEnvironment(
+              'SERVER_CLIENT_ID',
+              defaultValue:
+                  '471745302305-tts3kroutn6jofuvcldfckjk4j7et6l2.apps.googleusercontent.com',
+            ),
+          ) {
     apiService.onUnauthorized = _handleUnauthorized;
   }
 
@@ -77,23 +76,17 @@ class AuthProvider extends ChangeNotifier {
 
   bool get initialized => _initialized;
 
-  bool get isAuthenticated =>
-      _token != null && _user != null;
+  bool get isAuthenticated => _token != null && _user != null;
 
-  bool get isAdmin =>
-      _user?.role.toUpperCase() == 'ADMIN';
+  bool get isAdmin => _user?.role.toUpperCase() == 'ADMIN';
 
-  bool get isStoreOwner =>
-      _user?.role.toUpperCase() == 'STORE_OWNER';
+  bool get isStoreOwner => _user?.role.toUpperCase() == 'STORE_OWNER';
 
-  bool get isWorker =>
-      _user?.role.toUpperCase() == 'STORE_WORKER';
+  bool get isWorker => _user?.role.toUpperCase() == 'STORE_WORKER';
 
-  bool get isRider =>
-      _user?.role.toUpperCase() == 'RIDER';
+  bool get isRider => _user?.role.toUpperCase() == 'RIDER';
 
-  bool get isStoreApproved =>
-      _user?.isStoreApproved ?? false;
+  bool get isStoreApproved => _user?.isStoreApproved ?? false;
 
   List<String> get locations => _locations;
 
@@ -110,31 +103,22 @@ class AuthProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   Future<void> initialize() async {
-
     if (_initialized) return;
 
     _setLoading(true);
 
     try {
-
-      await Future.wait([
-        _restoreSession(),
-        fetchLocation(),
-      ]);
+      await Future.wait([_restoreSession(), fetchLocation()]);
 
       if (isAuthenticated) {
         await _initializeAbly();
-      unawaited(syncFCMToken());
+        unawaited(syncFCMToken());
       }
-
     } catch (e, stack) {
-
       debugPrint('[AuthProvider] initialize error');
       debugPrint(e.toString());
       debugPrint(stack.toString());
-
     } finally {
-
       _initialized = true;
 
       _setLoading(false);
@@ -146,56 +130,42 @@ class AuthProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   Future<void> _restoreSession() async {
-
     try {
-
       final values = await _storage.readAll();
 
       final token = values['launch-fast-token'];
       final userJson = values['launch-fast-user'];
 
       if (token == null || userJson == null) {
-
         await _clearSession();
 
         return;
       }
 
-      final decoded =
-          jsonDecode(userJson) as Map<String, dynamic>;
+      final decoded = jsonDecode(userJson) as Map<String, dynamic>;
 
-      final restoredUser =
-          UserProfile.fromJson(decoded);
+      final restoredUser = UserProfile.fromJson(decoded);
 
       _token = token;
       _user = restoredUser;
 
-      _adminStoreId =
-          values['launch-fast-admin'];
+      _adminStoreId = values['launch-fast-admin'];
 
-      _guestAddress =
-          values['launch-fast-guest-address'];
+      _guestAddress = values['launch-fast-guest-address'];
 
-      _guestName =
-          values['launch-fast-guest-name'];
+      _guestName = values['launch-fast-guest-name'];
 
-      _guestPhone =
-          values['launch-fast-guest-phone'];
+      _guestPhone = values['launch-fast-guest-phone'];
 
-      _selectedAddress =
-          values['launch-fast-selected-address'];
+      _selectedAddress = values['launch-fast-selected-address'];
 
       debugPrint(
         '[AuthProvider] session restored '
         'user=${_user?.id} '
         'role=${_user?.role}',
       );
-
     } catch (e) {
-
-      debugPrint(
-        '[AuthProvider] restore failed: $e',
-      );
+      debugPrint('[AuthProvider] restore failed: $e');
 
       await _clearSession();
     }
@@ -205,11 +175,7 @@ class AuthProvider extends ChangeNotifier {
   // Login
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> login(
-    String email,
-    String password,
-  ) async {
-
+  Future<void> login(String email, String password) async {
     if (_authOperationInProgress) {
       return;
     }
@@ -219,18 +185,13 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-
-      final data =
-          await locator<AuthRepository>()
-              .login(email, password);
+      final data = await locator<AuthRepository>().login(email, password);
 
       await _persistAuthResponse(data);
 
       unawaited(_initializeAbly());
       unawaited(syncFCMToken());
-
     } finally {
-
       _authOperationInProgress = false;
 
       _setLoading(false);
@@ -241,10 +202,7 @@ class AuthProvider extends ChangeNotifier {
   // Register
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> register(
-    Map<String, dynamic> payload,
-  ) async {
-
+  Future<void> register(Map<String, dynamic> payload) async {
     if (_authOperationInProgress) {
       return;
     }
@@ -254,18 +212,13 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-
-      final data =
-          await locator<AuthRepository>()
-              .register(payload);
+      final data = await locator<AuthRepository>().register(payload);
 
       await _persistAuthResponse(data);
 
       unawaited(_initializeAbly());
       unawaited(syncFCMToken());
-
     } finally {
-
       _authOperationInProgress = false;
 
       _setLoading(false);
@@ -278,10 +231,10 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> syncFCMToken() async {
     if (!isAuthenticated) return;
-    
+
     // Offload the network sync task from the critical UI rendering and socket-opening timeline.
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     try {
       final token = await notificationService.getToken();
       if (token != null) {
@@ -300,21 +253,14 @@ class AuthProvider extends ChangeNotifier {
   // Persist auth
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> _persistAuthResponse(
-    Map<String, dynamic> data,
-  ) async {
-
-    final userData =
-        data['user'] ?? data;
+  Future<void> _persistAuthResponse(Map<String, dynamic> data) async {
+    final userData = data['user'] ?? data;
 
     if (userData is! Map) {
       throw Exception('Invalid auth response');
     }
 
-    final user =
-        UserProfile.fromJson(
-          Map<String, dynamic>.from(userData),
-        );
+    final user = UserProfile.fromJson(Map<String, dynamic>.from(userData));
 
     final token = data['token'];
 
@@ -328,15 +274,9 @@ class AuthProvider extends ChangeNotifier {
 
     // Atomic storage write
     await Future.wait([
-      _storage.write(
-        key: 'launch-fast-token',
-        value: token,
-      ),
+      _storage.write(key: 'launch-fast-token', value: token),
 
-      _storage.write(
-        key: 'launch-fast-user',
-        value: jsonEncode(user.toJson()),
-      ),
+      _storage.write(key: 'launch-fast-user', value: jsonEncode(user.toJson())),
     ]);
 
     _safeNotify();
@@ -347,7 +287,6 @@ class AuthProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   Future<void> _initializeAbly() async {
-
     if (_ablyListenersAttached) {
       return;
     }
@@ -362,9 +301,7 @@ class AuthProvider extends ChangeNotifier {
 
     ablyService.addRoleListener(_handleRoleUpdate);
 
-    ablyService.addStoreApprovalListener(
-      _handleStoreApproval,
-    );
+    ablyService.addStoreApprovalListener(_handleStoreApproval);
 
     ablyService.addWalletListener(refreshUser);
 
@@ -406,7 +343,10 @@ class AuthProvider extends ChangeNotifier {
       final data = await locator<AuthRepository>().updateProfile(updates);
       final userData = data['user'] ?? data;
       _user = UserProfile.fromJson(Map<String, dynamic>.from(userData));
-      await _storage.write(key: 'launch-fast-user', value: jsonEncode(_user!.toJson()));
+      await _storage.write(
+        key: 'launch-fast-user',
+        value: jsonEncode(_user!.toJson()),
+      );
       _safeNotify();
     } catch (e) {
       debugPrint('[AuthProvider] updateProfile error: $e');
@@ -421,7 +361,10 @@ class AuthProvider extends ChangeNotifier {
       final data = await locator<AuthRepository>().getProfile();
       final userData = data['user'] ?? data;
       _user = UserProfile.fromJson(Map<String, dynamic>.from(userData));
-      await _storage.write(key: 'launch-fast-user', value: jsonEncode(_user!.toJson()));
+      await _storage.write(
+        key: 'launch-fast-user',
+        value: jsonEncode(_user!.toJson()),
+      );
       _safeNotify();
     } catch (e) {
       debugPrint('[AuthProvider] refreshUser error: $e');
@@ -452,13 +395,15 @@ class AuthProvider extends ChangeNotifier {
       }
 
       final googleAuth = await googleUser.authentication;
-      
+
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
       final idToken = await userCredential.user!.getIdToken();
 
       if (idToken == null) {
@@ -467,13 +412,44 @@ class AuthProvider extends ChangeNotifier {
 
       // IMPORTANT: Send the Google ID Token, NOT the Firebase ID Token.
       // The backend uses google-auth-library which expects a token from accounts.google.com.
-      final data = await locator<AuthRepository>().loginWithGoogle(googleAuth.idToken!);
-      
+      final data = await locator<AuthRepository>().loginWithGoogle(
+        googleAuth.idToken!,
+      );
+
       await _persistAuthResponse(data);
       unawaited(_initializeAbly());
       unawaited(syncFCMToken());
     } catch (e) {
       debugPrint('[AuthProvider] signInWithGoogle error: $e');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> signInWithApple() async {
+    _setLoading(true);
+    try {
+      final appleProvider = AppleAuthProvider()
+        ..addScope('email')
+        ..addScope('name');
+
+      final userCredential = await FirebaseAuth.instance.signInWithProvider(
+        appleProvider,
+      );
+      final idToken = await userCredential.user?.getIdToken();
+
+      if (idToken == null) {
+        throw Exception('Failed to get ID token from Apple sign in');
+      }
+
+      final data = await locator<AuthRepository>().loginWithApple(idToken);
+
+      await _persistAuthResponse(data);
+      unawaited(_initializeAbly());
+      unawaited(syncFCMToken());
+    } catch (e) {
+      debugPrint('[AuthProvider] signInWithApple error: $e');
       rethrow;
     } finally {
       _setLoading(false);
@@ -486,7 +462,10 @@ class AuthProvider extends ChangeNotifier {
       final response = await locator<AuthRepository>().applyForStore(data);
       final userData = response['user'] ?? response;
       _user = UserProfile.fromJson(Map<String, dynamic>.from(userData));
-      await _storage.write(key: 'launch-fast-user', value: jsonEncode(_user!.toJson()));
+      await _storage.write(
+        key: 'launch-fast-user',
+        value: jsonEncode(_user!.toJson()),
+      );
       _safeNotify();
     } catch (e) {
       debugPrint('[AuthProvider] applyForStore error: $e');
@@ -497,7 +476,6 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void _handleRoleUpdate(String role) {
-
     if (_disposed || _user == null) {
       return;
     }
@@ -506,13 +484,10 @@ class AuthProvider extends ChangeNotifier {
       return;
     }
 
-    updateUser({
-      'role': role,
-    });
+    updateUser({'role': role});
   }
 
   void _handleStoreApproval(String storeId) {
-
     if (_disposed || _user == null) {
       return;
     }
@@ -521,9 +496,7 @@ class AuthProvider extends ChangeNotifier {
       return;
     }
 
-    updateUser({
-      'isStoreApproved': true,
-    });
+    updateUser({'isStoreApproved': true});
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -531,22 +504,16 @@ class AuthProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   Future<void> _handleUnauthorized() async {
-
     debugPrint('[AuthProvider] unauthorized');
 
-    await logout(
-      disconnectGoogle: false,
-    );
+    await logout(disconnectGoogle: false);
   }
 
   // ─────────────────────────────────────────────────────────────
   // Logout
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> logout({
-    bool disconnectGoogle = true,
-  }) async {
-
+  Future<void> logout({bool disconnectGoogle = true}) async {
     if (_authOperationInProgress) {
       return;
     }
@@ -554,7 +521,6 @@ class AuthProvider extends ChangeNotifier {
     _authOperationInProgress = true;
 
     try {
-
       await _clearSession();
 
       ablyService.disconnect();
@@ -562,9 +528,7 @@ class AuthProvider extends ChangeNotifier {
       if (disconnectGoogle) {
         await _googleSignIn.signOut();
       }
-
     } finally {
-
       _authOperationInProgress = false;
     }
   }
@@ -574,7 +538,6 @@ class AuthProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   Future<void> _clearSession() async {
-
     _user = null;
     _token = null;
 
@@ -589,21 +552,14 @@ class AuthProvider extends ChangeNotifier {
   // Update User
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> updateUser(
-    Map<String, dynamic> updates,
-  ) async {
-
+  Future<void> updateUser(Map<String, dynamic> updates) async {
     final current = _user;
 
     if (current == null) {
       return;
     }
 
-    final updated =
-        UserProfile.fromJson({
-          ...current.toJson(),
-          ...updates,
-        });
+    final updated = UserProfile.fromJson({...current.toJson(), ...updates});
 
     _user = updated;
 
@@ -620,7 +576,6 @@ class AuthProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   void _setLoading(bool value) {
-
     if (_isLoading == value) {
       return;
     }
@@ -635,7 +590,6 @@ class AuthProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   void _safeNotify() {
-
     if (_disposed) {
       return;
     }
@@ -649,7 +603,6 @@ class AuthProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-
     _disposed = true;
 
     apiService.onUnauthorized = null;

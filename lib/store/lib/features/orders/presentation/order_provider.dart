@@ -29,9 +29,23 @@ class OrderProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final ordersStr = prefs.getString('launch-fast-orders');
     if (ordersStr != null) {
-      final List<dynamic> ordersList = jsonDecode(ordersStr);
-      _orders = ordersList.map((i) => Order.fromJson(i)).toList();
-      notifyListeners();
+      try {
+        final decoded = jsonDecode(ordersStr);
+        if (decoded is! List) {
+          throw FormatException(
+            'Expected cached orders list, got ${decoded.runtimeType}',
+          );
+        }
+
+        _orders = decoded
+            .whereType<Map>()
+            .map((i) => Order.fromJson(Map<String, dynamic>.from(i)))
+            .toList();
+        notifyListeners();
+      } catch (e) {
+        _orders = [];
+        await prefs.remove('launch-fast-orders');
+      }
     }
 
     // Initialize Ably if user is logged in

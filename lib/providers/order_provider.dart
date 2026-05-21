@@ -31,12 +31,29 @@ class OrderProvider with ChangeNotifier {
     final ordersStr = prefs.getString('launch-fast-orders');
 
     if (ordersStr != null) {
-      final List<dynamic> ordersList = jsonDecode(ordersStr);
-      _orders = ordersList.map((i) => Order.fromJson(i)).toList();
-      debugPrint(
-        '[OrderProvider] _loadLocalOrders: loaded ${_orders.length} cached order(s).',
-      );
-      notifyListeners();
+      try {
+        final decoded = jsonDecode(ordersStr);
+        if (decoded is! List) {
+          throw FormatException(
+            'Expected cached orders list, got ${decoded.runtimeType}',
+          );
+        }
+
+        _orders = decoded
+            .whereType<Map>()
+            .map((i) => Order.fromJson(Map<String, dynamic>.from(i)))
+            .toList();
+        debugPrint(
+          '[OrderProvider] _loadLocalOrders: loaded ${_orders.length} cached order(s).',
+        );
+        notifyListeners();
+      } catch (e) {
+        debugPrint(
+          '[OrderProvider] _loadLocalOrders: clearing invalid cached orders — $e',
+        );
+        _orders = [];
+        await prefs.remove('launch-fast-orders');
+      }
     } else {
       debugPrint('[OrderProvider] _loadLocalOrders: no cached orders found.');
     }
@@ -281,17 +298,13 @@ class OrderProvider with ChangeNotifier {
   }
 
   Future<void> clearOrders() async {
-    debugPrint(
-      '[OrderProvider] clearOrders: clearing all cached orders...',
-    );
+    debugPrint('[OrderProvider] clearOrders: clearing all cached orders...');
     _orders = [];
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('launch-fast-orders');
     // Note: Do not disconnect Ably here! Ably is tied to the AuthProvider
     // session and is disconnected globally during logout.
-    debugPrint(
-      '[OrderProvider] clearOrders: done — cache cleared.',
-    );
+    debugPrint('[OrderProvider] clearOrders: done — cache cleared.');
     notifyListeners();
   }
 }

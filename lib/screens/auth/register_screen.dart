@@ -92,82 +92,90 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const BackButton(),
-                const SizedBox(height: 32),
-                const Text(
-                  'Create Account',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const BackButton(),
+                    const SizedBox(height: 32),
+                    const Text(
+                      'Create Account',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Join Campus Chow — carefully crafted for your campus needs.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    AppTextField(
+                      controller: _nameController,
+                      hint: 'Full Name',
+                      icon: Icons.person_outline,
+                      validator: Validators.required('Full name'),
+                    ),
+                    const SizedBox(height: 16),
+                    AppTextField(
+                      controller: _emailController,
+                      hint: 'Email',
+                      icon: Icons.mail_outline,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: Validators.email,
+                    ),
+                    const SizedBox(height: 16),
+                    AppTextField(
+                      controller: _addressController,
+                      hint: 'Default Delivery Address',
+                      icon: Icons.location_on_outlined,
+                      validator: Validators.required('Delivery address'),
+                    ),
+                    const SizedBox(height: 16),
+                    AppTextField(
+                      controller: _phoneController,
+                      hint: 'Phone Number',
+                      icon: Icons.call_outlined,
+                      keyboardType: TextInputType.phone,
+                      validator: Validators.phone,
+                    ),
+                    const SizedBox(height: 16),
+                    AppTextField(
+                      controller: _passwordController,
+                      hint: 'Password',
+                      icon: Icons.lock_outline,
+                      obscureText: !_showPassword,
+                      validator: Validators.password,
+                      suffixIcon: PasswordToggleIcon(
+                        isVisible: _showPassword,
+                        onToggle: _togglePasswordVisibility,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    CustomButton(
+                      label: 'Sign Up',
+                      isLoading: isLoading,
+                      onPressed: _submit,
+                      primaryColor: primaryColor,
+                    ),
+                    const SizedBox(height: 32),
+                    const AuthPrompt(isLogin: false),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Join Campus Chow — carefully crafted for your campus needs.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                AppTextField(
-                  controller: _nameController,
-                  hint: 'Full Name',
-                  icon: Icons.person_outline,
-                  validator: Validators.required('Full name'),
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _emailController,
-                  hint: 'Email',
-                  icon: Icons.mail_outline,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: Validators.email,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _addressController,
-                  hint: 'Default Delivery Address',
-                  icon: Icons.location_on_outlined,
-                  validator: Validators.required('Delivery address'),
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _phoneController,
-                  hint: 'Phone Number',
-                  icon: Icons.call_outlined,
-                  keyboardType: TextInputType.phone,
-                  validator: Validators.phone,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _passwordController,
-                  hint: 'Password',
-                  icon: Icons.lock_outline,
-                  obscureText: !_showPassword,
-                  validator: Validators.password,
-                  suffixIcon: PasswordToggleIcon(
-                    isVisible: _showPassword,
-                    onToggle: _togglePasswordVisibility,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                CustomButton(
-                  label: 'Sign Up',
-                  isLoading: isLoading,
-                  onPressed: _submit,
-                  primaryColor: primaryColor,
-                ),
-                const SizedBox(height: 32),
-                const AuthPrompt(isLogin: false),
-              ],
+              ),
             ),
           ),
         ),

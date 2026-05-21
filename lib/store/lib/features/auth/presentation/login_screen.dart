@@ -48,6 +48,10 @@ class _LoginScreenState extends State<LoginScreen> {
     await _authenticate(() => context.read<AuthProvider>().signInWithGoogle());
   }
 
+  Future<void> _submitAppleLogin() async {
+    await _authenticate(() => context.read<AuthProvider>().signInWithApple());
+  }
+
   Future<void> _authenticate(Future<void> Function() action) async {
     final messenger = ScaffoldMessenger.of(context);
     final orderProvider = context.read<OrderProvider>();
@@ -91,43 +95,53 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const BackButton(),
-                const SizedBox(height: 32),
-                const _LoginHeader(),
-                const SizedBox(height: 40),
-                _EmailField(controller: _emailCtrl),
-                const SizedBox(height: 20),
-                _PasswordField(
-                  controller: _passwordCtrl,
-                  showPassword: _showPassword,
-                  onToggle: _togglePassword,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const BackButton(),
+                    const SizedBox(height: 32),
+                    const _LoginHeader(),
+                    const SizedBox(height: 40),
+                    _EmailField(controller: _emailCtrl),
+                    const SizedBox(height: 20),
+                    _PasswordField(
+                      controller: _passwordCtrl,
+                      showPassword: _showPassword,
+                      onToggle: _togglePassword,
+                    ),
+                    const SizedBox(height: 12),
+                    const ForgotPasswordButton(),
+                    const SizedBox(height: 20),
+                    CustomButton(
+                      label: 'Sign In',
+                      isLoading: isLoading,
+                      onPressed: _submitEmailLogin,
+                      primaryColor: Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(height: 24),
+                    const _OrDivider(),
+                    const SizedBox(height: 24),
+                    GoogleSignInButton(
+                      isLoading: isLoading,
+                      onPressed: _submitGoogleLogin,
+                    ),
+                    const SizedBox(height: 12),
+                    AppleSignInButton(
+                      isLoading: isLoading,
+                      onPressed: _submitAppleLogin,
+                    ),
+                    const SizedBox(height: 40),
+                    const AuthPrompt(isLogin: true),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                const ForgotPasswordButton(),
-                const SizedBox(height: 20),
-                CustomButton(
-                  label: 'Sign In',
-                  isLoading: isLoading,
-                  onPressed: _submitEmailLogin,
-                  primaryColor: Theme.of(context).primaryColor,
-                ),
-                const SizedBox(height: 24),
-                const _OrDivider(),
-                const SizedBox(height: 24),
-                GoogleSignInButton(
-                  isLoading: isLoading,
-                  onPressed: _submitGoogleLogin,
-                ),
-                const SizedBox(height: 40),
-                const AuthPrompt(isLogin: true),
-              ],
+              ),
             ),
           ),
         ),
