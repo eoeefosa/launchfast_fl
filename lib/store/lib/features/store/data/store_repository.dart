@@ -33,7 +33,7 @@ class StoreRepository {
   }
 
   Future<Store> updateStore(String storeId, Map<String, dynamic> data) async {
-    final response = await apiService.dio.put('/stores/$storeId', data: data);
+    final response = await apiService.dio.patch('/stores/$storeId', data: data);
     return Store.fromJson(response.data);
   }
 

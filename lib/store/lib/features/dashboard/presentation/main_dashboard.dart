@@ -89,7 +89,8 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
     }
   }
 
-  Future<void> _loadStats() async {
+  Future<void> _loadStats({bool showLoading = true}) async {
+    if (showLoading) setState(() => _statsLoading = true);
     try {
       final storeProvider = context.read<StoreProvider>();
       final stats = await storeProvider.fetchStoreStats();
@@ -107,14 +108,17 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
     } catch (e) {
       if (mounted) {
         setState(() => _statsLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load store statistics')),
-        );
+        if (showLoading) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to load store statistics')),
+          );
+        }
       }
     }
   }
 
-  Future<void> _loadRecentOrders() async {
+  Future<void> _loadRecentOrders({bool showLoading = true}) async {
+    if (showLoading) setState(() => _ordersLoading = true);
     try {
       final storeProvider = context.read<StoreProvider>();
       final orders = await storeProvider.fetchStoreOrders();
@@ -129,9 +133,11 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
     } catch (e) {
       if (mounted) {
         setState(() => _ordersLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load recent orders')),
-        );
+        if (showLoading) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to load recent orders')),
+          );
+        }
       }
     }
   }
@@ -153,7 +159,7 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
     if (status == OrderStatus.pending && mounted) {
       setState(() => _hasNewOrder = true);
       _pulseCtrl.repeat(reverse: true);
-      _refresh(); // Auto-refresh data to show the new order in the list
+      _refresh(showLoading: false); // Silent background auto-refresh
       
       try {
         _audioPlayer.play(AssetSource('notification.mp3'));
@@ -185,13 +191,18 @@ class _StoreDashboardHomeState extends State<StoreDashboardHome>
     }
   }
 
-  Future<void> _refresh() async {
-    setState(() {
-      _statsLoading = true;
-      _ordersLoading = true;
-    });
+  Future<void> _refresh({bool showLoading = true}) async {
+    if (showLoading) {
+      setState(() {
+        _statsLoading = true;
+        _ordersLoading = true;
+      });
+    }
     _loadStoreInfo();
-    await Future.wait([_loadStats(), _loadRecentOrders()]);
+    await Future.wait([
+      _loadStats(showLoading: showLoading),
+      _loadRecentOrders(showLoading: showLoading)
+    ]);
   }
 
   @override

@@ -58,6 +58,8 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
 
       if (!mounted) return;
       _storeId = store.id;
+      _nameCtrl.text = store.name;
+      _taglineCtrl.text = store.tagline;
       _deliveryTimeCtrl.text = store.deliveryTime;
       _deliveryFeeCtrl.text = store.deliveryFee.toString();
 
@@ -80,6 +82,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
       await storeProvider.updateStore(_storeId!, {
         'name': _nameCtrl.text.trim(),
         'tagline': _taglineCtrl.text.trim(),
+        'description': _taglineCtrl.text.trim(),
         'deliveryTime': _deliveryTimeCtrl.text.trim(),
         'deliveryFee': double.tryParse(_deliveryFeeCtrl.text.trim()) ?? 0,
       });

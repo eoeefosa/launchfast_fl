@@ -58,8 +58,8 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     _subscribeAbly();
   }
 
-  Future<void> _loadOrders() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadOrders({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
     try {
       final storeProvider = context.read<StoreProvider>();
       final orders = await storeProvider.fetchStoreOrders();
@@ -67,7 +67,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       if (mounted) setState(() => _orders = orders);
     } catch (e) {
       debugPrint('[OrderScreen] _loadOrders error: $e');
-      if (mounted) {
+      if (mounted && showLoading) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Failed to load orders'),
@@ -77,7 +77,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && showLoading) setState(() => _isLoading = false);
     }
   }
 
@@ -85,7 +85,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     // New orders from Ably are pushed on admin:orders channel
     // We listen via addOrderListener (existing infrastructure)
     ablyService.addOrderListener((orderId, status) {
-      _loadOrders();
+      _loadOrders(showLoading: false);
       if (mounted) setState(() => _hasNewOrder = true);
     });
   }
@@ -96,10 +96,18 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
   }
 
   Future<void> _updateStatus(String orderId, OrderStatus newStatus) async {
+    final originalOrders = List<Order>.from(_orders);
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    if (index != -1) {
+      setState(() {
+        _orders[index] = _orders[index].copyWith(status: newStatus);
+      });
+    }
+
     try {
       final storeProvider = context.read<StoreProvider>();
       await storeProvider.updateOrderStatus(orderId, newStatus.backendName);
-      await _loadOrders();
+      await _loadOrders(showLoading: false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -115,6 +123,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     } catch (e) {
       debugPrint('[OrderScreen] _updateStatus error: $e');
       if (mounted) {
+        setState(() {
+          _orders = originalOrders;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Failed to update order'),

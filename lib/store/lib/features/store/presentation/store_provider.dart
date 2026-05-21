@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
+
 import '../../../core/providers/base_provider.dart';
 import 'package:campuschow/store/lib/core/constants/static_data.dart';
 import '../../../core/services/ably_service.dart';
@@ -95,17 +97,14 @@ class StoreProvider extends BaseProvider {
     if (_activeStoreId != null) {
       try {
         final storeResult = await menuRepository.getStores();
-        storeResult.fold(
-          (stores) {
-            _stores = stores;
-            try {
-              _activeStore = stores.firstWhere((s) => s.id == _activeStoreId);
-            } catch (_) {
-              // keep old _activeStore if not found in list
-            }
-          },
-          (failure) => setFailure(failure),
-        );
+        storeResult.fold((stores) {
+          _stores = stores;
+          try {
+            _activeStore = stores.firstWhere((s) => s.id == _activeStoreId);
+          } catch (_) {
+            // keep old _activeStore if not found in list
+          }
+        }, (failure) => setFailure(failure));
 
         final menuResult = await menuRepository.getMenuItems(_activeStoreId!);
         menuResult.fold(
@@ -122,28 +121,22 @@ class StoreProvider extends BaseProvider {
   Future<void> addMenuItem(Map<String, dynamic> data) async {
     if (_activeStoreId == null) return;
     setLoading(true);
-    (await menuRepository.addMenuItem(_activeStoreId!, data)).fold(
-      (newItem) {
-        _menuItems.add(MenuItem.fromJson(newItem));
-        notifyListeners();
-      },
-      setFailure,
-    );
+    (await menuRepository.addMenuItem(_activeStoreId!, data)).fold((newItem) {
+      _menuItems.add(MenuItem.fromJson(newItem));
+      notifyListeners();
+    }, setFailure);
     setLoading(false);
   }
 
   Future<void> updateMenuItem(String id, Map<String, dynamic> data) async {
     setLoading(true);
-    (await menuRepository.updateMenuItem(id, data)).fold(
-      (updated) {
-        final i = _menuItems.indexWhere((m) => m.id == id);
-        if (i != -1) {
-          _menuItems[i] = MenuItem.fromJson(updated);
-          notifyListeners();
-        }
-      },
-      setFailure,
-    );
+    (await menuRepository.updateMenuItem(id, data)).fold((updated) {
+      final i = _menuItems.indexWhere((m) => m.id == id);
+      if (i != -1) {
+        _menuItems[i] = MenuItem.fromJson(updated);
+        notifyListeners();
+      }
+    }, setFailure);
     setLoading(false);
   }
 
@@ -170,17 +163,34 @@ class StoreProvider extends BaseProvider {
   }
 
   Future<void> updateStore(String storeId, Map<String, dynamic> data) async {
-    // Add logic to update a store
-    final i = _stores.indexWhere((s) => s.id == storeId);
-    if (i != -1) {
-      // Dummy update, real app would call repo
+    setLoading(true);
+    try {
+      final updatedStore = await storeRepository.updateStore(storeId, data);
+      final i = _stores.indexWhere((s) => s.id == storeId);
+      if (i != -1) {
+        _stores[i] = updatedStore;
+      }
+      if (_activeStoreId == storeId) {
+        _activeStore = updatedStore;
+      }
       notifyListeners();
+    } catch (e) {
+      debugPrint('[StoreProvider] updateStore error: $e');
+      rethrow;
+    } finally {
+      setLoading(false);
     }
   }
 
   Future<StoreStats> fetchStoreStats() async {
     if (_activeStoreId == null) {
-      return StoreStats(revenue: 0, totalOrders: 0, pendingOrders: 0, preparingOrders: 0, topSellingItems: {});
+      return StoreStats(
+        revenue: 0,
+        totalOrders: 0,
+        pendingOrders: 0,
+        preparingOrders: 0,
+        topSellingItems: {},
+      );
     }
     return await orderRepository.getStoreStats(_activeStoreId!);
   }
@@ -205,15 +215,10 @@ class StoreProvider extends BaseProvider {
 
   Future<void> deleteMenuItem(String id) async {
     setLoading(true);
-    (await menuRepository.deleteMenuItem(id)).fold(
-      (success) {
-        _menuItems.removeWhere((m) => m.id == id);
-        notifyListeners();
-      },
-      setFailure,
-    );
+    (await menuRepository.deleteMenuItem(id)).fold((success) {
+      _menuItems.removeWhere((m) => m.id == id);
+      notifyListeners();
+    }, setFailure);
     setLoading(false);
   }
 }
-
-
