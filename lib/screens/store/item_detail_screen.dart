@@ -167,7 +167,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
 
     return ResponsiveLayout(
       child: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        value: SystemUiOverlayStyle(
+          statusBarColor: null,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+          systemNavigationBarColor: null,
+          systemNavigationBarDividerColor: null,
+          systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        ),
         child: Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
           body: Stack(

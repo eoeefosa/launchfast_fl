@@ -154,6 +154,7 @@ Future<void> main() async {
     await _initLocalNotifications();
     await _initFcmPermissionsAndListeners();
     await _lockOrientation();
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
     setupLocator();
 
