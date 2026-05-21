@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../constants/app_colors.dart';
@@ -29,10 +30,10 @@ class PickupQrCard extends StatelessWidget {
     final qrBg = isDark ? const Color(0xFF1A1A2E) : Colors.white;
 
     return Container(
-      margin: const EdgeInsets.only(top: 20),
+      margin: EdgeInsets.only(top: 20.h),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(28.r),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.3),
           width: 1.5,
@@ -40,19 +41,19 @@ class PickupQrCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.15),
-            blurRadius: 40,
-            offset: const Offset(0, 10),
+            blurRadius: 40.r,
+            offset: Offset(0, 10.h),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(28.r),
         child: Column(
           children: [
             // ── Header banner ─────────────────────────────────────────────
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: EdgeInsets.symmetric(vertical: 14.h),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -63,24 +64,24 @@ class PickupQrCard extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Icon(Icons.storefront_rounded,
-                      color: Colors.white, size: 22),
-                  const SizedBox(height: 4),
-                  const Text(
+                  Icon(Icons.storefront_rounded,
+                      color: Colors.white, size: 22.r),
+                  SizedBox(height: 4.h),
+                  Text(
                     'READY FOR PICKUP',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
-                      fontSize: 13,
+                      fontSize: 13.sp,
                       letterSpacing: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2.h),
                   Text(
                     'Show this code at the counter',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 11,
+                      fontSize: 11.sp,
                     ),
                   ),
                 ],
@@ -89,15 +90,15 @@ class PickupQrCard extends StatelessWidget {
 
             // ── QR Code ───────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24.r),
               child: Column(
                 children: [
                   // QR with subtle frame
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16.r),
                     decoration: BoxDecoration(
                       color: qrBg,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20.r),
                       border: Border.all(
                         color: isDark
                             ? Colors.white.withValues(alpha: 0.08)
@@ -107,7 +108,7 @@ class PickupQrCard extends StatelessWidget {
                     child: QrImageView(
                       data: orderId,
                       version: QrVersions.auto,
-                      size: 200,
+                      size: 200.r,
                       backgroundColor: qrBg,
                       eyeStyle: QrEyeStyle(
                         eyeShape: QrEyeShape.square,
@@ -120,13 +121,13 @@ class PickupQrCard extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20.h),
 
                   // ── Short code + copy ─────────────────────────────────
                   Text(
                     'Order Code',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w600,
                       color: isDark
                           ? Colors.white.withValues(alpha: 0.4)
@@ -134,7 +135,7 @@ class PickupQrCard extends StatelessWidget {
                       letterSpacing: 1,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   GestureDetector(
                     onTap: () {
                       Clipboard.setData(ClipboardData(text: _shortCode));
@@ -143,17 +144,17 @@ class PickupQrCard extends StatelessWidget {
                           content: const Text('Order code copied!'),
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12.r)),
                           duration: const Duration(seconds: 1),
                         ),
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 20.w, vertical: 12.h),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16.r),
                         border: Border.all(
                           color: AppColors.primary.withValues(alpha: 0.2),
                         ),
@@ -164,7 +165,7 @@ class PickupQrCard extends StatelessWidget {
                           Text(
                             _shortCode,
                             style: TextStyle(
-                              fontSize: 28,
+                              fontSize: 28.sp,
                               fontWeight: FontWeight.w900,
                               color: AppColors.primary,
                               letterSpacing: 4,
@@ -173,10 +174,10 @@ class PickupQrCard extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          SizedBox(width: 10.w),
                           Icon(
                             Icons.copy_rounded,
-                            size: 16,
+                            size: 16.r,
                             color: AppColors.primary.withValues(alpha: 0.6),
                           ),
                         ],
@@ -184,28 +185,30 @@ class PickupQrCard extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
 
                   // ── Tip ───────────────────────────────────────────────
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 14.w, vertical: 10.h),
                     decoration: BoxDecoration(
                       color: Colors.green.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.check_circle_outline_rounded,
-                            size: 14, color: Colors.green),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Works offline — no internet needed at pickup',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.green.shade700,
-                            fontWeight: FontWeight.w500,
+                        Icon(Icons.check_circle_outline_rounded,
+                            size: 14.r, color: Colors.green),
+                        SizedBox(width: 6.w),
+                        Flexible(
+                          child: Text(
+                            'Works offline — no internet needed at pickup',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],

@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../services/api_service.dart';
 import '../../../auth/widgets/custom_button.dart';
-import '../widgets/bottom_sheet_scaffold.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -14,29 +13,28 @@ import '../widgets/bottom_sheet_scaffold.dart';
 const _kQuickAmounts = <int>[1000, 2000, 5000];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TopUpSheet
+// TopUpDialog
 // ─────────────────────────────────────────────────────────────────────────────
 
-class TopUpSheet extends StatefulWidget {
-  const TopUpSheet({super.key, required this.auth});
+class TopUpDialog extends StatefulWidget {
+  const TopUpDialog({super.key, required this.auth});
 
   final AuthProvider auth;
 
   /// Convenience launcher — keeps the call-site clean.
   static Future<void> show(BuildContext context, AuthProvider auth) {
-    return showModalBottomSheet<void>(
+    return showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => TopUpSheet(auth: auth),
+      barrierDismissible: true,
+      builder: (_) => TopUpDialog(auth: auth),
     );
   }
 
   @override
-  State<TopUpSheet> createState() => _TopUpSheetState();
+  State<TopUpDialog> createState() => _TopUpDialogState();
 }
 
-class _TopUpSheetState extends State<TopUpSheet> {
+class _TopUpDialogState extends State<TopUpDialog> {
   // ── Controllers ────────────────────────────────────────────────────────────
   late final TextEditingController _amountCtrl;
 
@@ -135,32 +133,77 @@ class _TopUpSheetState extends State<TopUpSheet> {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return BottomSheetScaffold(
-      title: 'Top Up Wallet',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _AmountField(controller: _amountCtrl, scheme: scheme),
-          const SizedBox(height: 20),
-          _QuickAmountRow(
-            amounts: _kQuickAmounts,
-            currentText: _amountCtrl.text,
-            scheme: scheme,
-            isDark: isDark,
-            onSelect: _selectQuickAmount,
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      backgroundColor: scheme.surface,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header ───────────────────────────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Top Up Wallet',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: scheme.onSurface,
+                        ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close_rounded, color: scheme.onSurface.withValues(alpha: 0.5)),
+                    style: IconButton.styleFrom(
+                      backgroundColor: scheme.onSurface.withValues(alpha: 0.06),
+                      padding: const EdgeInsets.all(6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // ── Amount field ─────────────────────────────────────────────
+              _AmountField(controller: _amountCtrl, scheme: scheme),
+              const SizedBox(height: 16),
+
+              // ── Quick amounts ────────────────────────────────────────────
+              _QuickAmountRow(
+                amounts: _kQuickAmounts,
+                currentText: _amountCtrl.text,
+                scheme: scheme,
+                isDark: isDark,
+                onSelect: _selectQuickAmount,
+              ),
+              const SizedBox(height: 20),
+
+              // ── Security badge ───────────────────────────────────────────
+              _SecurityBadge(scheme: scheme),
+              const SizedBox(height: 24),
+
+              // ── Pay button ───────────────────────────────────────────────
+              CustomButton(
+                isLoading: _isLoading,
+                label: _hasValidAmount
+                    ? 'Pay ₦${_parsedAmount!.toStringAsFixed(0)}'
+                    : 'Deposit Funds',
+                primaryColor: scheme.primary,
+                onPressed: _isLoading ? null : _deposit,
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          _SecurityBadge(scheme: scheme),
-          const SizedBox(height: 32),
-          CustomButton(
-            isLoading: _isLoading,
-            label: _hasValidAmount
-                ? 'Pay ₦${_parsedAmount!.toStringAsFixed(0)}'
-                : 'Deposit Funds',
-            primaryColor: scheme.primary,
-            onPressed: _isLoading ? null : _deposit,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -295,7 +338,7 @@ class _QuickAmountChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           color: selected
               ? scheme.primary.withValues(alpha: 0.1)

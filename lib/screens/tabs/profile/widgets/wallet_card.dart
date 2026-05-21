@@ -10,7 +10,7 @@ class WalletCard extends StatelessWidget {
   final AuthProvider auth;
 
   void _showTopUpModal(BuildContext context) {
-    TopUpSheet.show(context, auth);
+    TopUpDialog.show(context, auth);
   }
 
   @override
