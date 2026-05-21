@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- ───────────────── Permissions ───────────────── -->
 
@@ -127,6 +128,23 @@
                 <action android:name="io.ably.broadcast.PUSH_UPDATE_FAILED" />
             </intent-filter>
 
+        </receiver>
+
+        <!-- ───────────────── Safe Firebase Messaging Receiver ───────────────── -->
+
+        <!-- Remove the old blocking receiver -->
+        <receiver
+            android:name="io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingReceiver"
+            tools:node="remove" />
+
+        <!-- Register the new safe receiver -->
+        <receiver
+            android:name="com.campuschow.app.SafeFirebaseMessagingReceiver"
+            android:exported="true"
+            android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+            </intent-filter>
         </receiver>
 
     </application>

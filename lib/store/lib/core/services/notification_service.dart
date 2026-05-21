@@ -344,18 +344,42 @@ class NotificationService {
   Future<void> _logFcmToken() async {
     try {
       if (Platform.isIOS) {
-        final apns = await _fcm.getAPNSToken();
-        debugPrint('[FCM] APNS token: $apns');
-        if (apns == null) {
+        debugPrint('[FCM] iOS Platform detected. Requesting APNS token...');
+        
+        // Sometimes APNS registration takes a split second at startup.
+        // Let's retry a few times to get the token.
+        String? apnsToken;
+        for (int i = 0; i < 3; i++) {
+          apnsToken = await _fcm.getAPNSToken();
+          if (apnsToken != null) break;
+          debugPrint('[FCM] APNS token not ready yet. Retrying in 2 seconds (attempt ${i + 1}/3)...');
+          await Future.delayed(const Duration(seconds: 2));
+        }
+
+        debugPrint('[FCM] APNS token: $apnsToken');
+        if (apnsToken == null) {
           debugPrint(
-            '[FCM] APNS token is null — push will not work on simulators.',
+            '[FCM CRITICAL WARNING] APNS token is null! iOS push notifications will NOT work. \n'
+            'Checklist of common reasons:\n'
+            '1. Testing on a Simulator (Simulators do not support remote push notifications).\n'
+            '2. Xcode capability "Push Notifications" is missing.\n'
+            '3. Xcode capability "Background Modes" -> "Remote notifications" is unchecked.\n'
+            '4. Mismatch in Provisioning Profile (e.g. Debug build vs Production aps-environment entitlement).'
           );
+        } else {
+          debugPrint('[FCM SUCCESS] APNS token retrieved successfully: $apnsToken');
         }
       }
+      
       final token = await _fcm.getToken();
-      debugPrint('[FCM] Token: $token');
-    } catch (e) {
-      debugPrint('[FCM] Error getting token: $e');
+      debugPrint('[FCM] Registration Token (FCM): $token');
+      if (token == null) {
+        debugPrint('[FCM CRITICAL WARNING] FCM registration token is null! Cannot receive push notifications.');
+      } else {
+        debugPrint('[FCM SUCCESS] FCM registration token retrieved successfully: $token');
+      }
+    } catch (e, stack) {
+      debugPrint('[FCM ERROR] Exception during token retrieval: $e\n$stack');
     }
   }
 
