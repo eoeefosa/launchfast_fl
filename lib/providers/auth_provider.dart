@@ -279,6 +279,9 @@ class AuthProvider extends ChangeNotifier {
   Future<void> syncFCMToken() async {
     if (!isAuthenticated) return;
     
+    // Offload the network sync task from the critical UI rendering and socket-opening timeline.
+    await Future.delayed(const Duration(milliseconds: 500));
+    
     try {
       final token = await notificationService.getToken();
       if (token != null) {

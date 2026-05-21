@@ -93,5 +93,7 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<key>FirebaseAppDelegateProxyEnabled</key>
+		<true/>
 	</dict>
 </plist>

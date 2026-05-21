@@ -30,6 +30,7 @@ class AblyService {
   ably.Realtime? _realtime;
   bool _isConnecting = false;
   String? _currentUserId;
+  Future<dynamic>? _pendingAuthRequest;
 
   // FIX: The connection-state subscription is stored separately so it can be
   // cancelled cleanly before replacing _realtime on a userId switch. Previously
@@ -121,35 +122,50 @@ class AblyService {
             );
           }
 
-          try {
-            debugPrint('[AblyService] Fetching Ably token from backend...');
-            final response = await apiService.dio.get(
-              '/ably/auth',
-              options: Options(
-                sendTimeout: const Duration(seconds: 20),
-                receiveTimeout: const Duration(seconds: 20),
-              ),
-            );
-            debugPrint(
-              '[AblyService] Ably auth raw response: ${response.statusCode} ${response.data}',
-            );
+          if (_pendingAuthRequest != null) {
+            debugPrint('[AblyService] authCallback already in progress, awaiting existing request...');
+            return await _pendingAuthRequest!;
+          }
 
-            final data = response.data;
+          final fetchFuture = () async {
+            try {
+              debugPrint('[AblyService] Fetching Ably token from backend...');
+              final response = await apiService.dio.get(
+                '/ably/auth',
+                options: Options(
+                  sendTimeout: const Duration(seconds: 20),
+                  receiveTimeout: const Duration(seconds: 20),
+                ),
+              );
+              debugPrint(
+                '[AblyService] Ably auth raw response: ${response.statusCode} ${response.data}',
+              );
 
-            if (data is String) return data;
+              final data = response.data;
 
-            if (data is Map<String, dynamic>) {
-              if (data.containsKey('keyName')) {
+              if (data is String) return data;
+
+              if (data is Map<String, dynamic>) {
+                if (data.containsKey('keyName')) {
+                  return ably.TokenRequest.fromMap(data);
+                }
+                if (data.containsKey('token')) {
+                  final tokenVal = data['token'];
+                  if (tokenVal is String) return tokenVal;
+                  return ably.TokenDetails.fromMap(data);
+                }
                 return ably.TokenRequest.fromMap(data);
               }
-              if (data.containsKey('token')) {
-                final tokenVal = data['token'];
-                if (tokenVal is String) return tokenVal;
-                return ably.TokenDetails.fromMap(data);
-              }
-              return ably.TokenRequest.fromMap(data);
+              return data;
+            } finally {
+              _pendingAuthRequest = null;
             }
-            return data;
+          }();
+
+          _pendingAuthRequest = fetchFuture;
+
+          try {
+            return await fetchFuture;
           } on DioException catch (e) {
             debugPrint(
               '[AblyService] authCallback Dio error: ${e.type} — ${e.message} — status: ${e.response?.statusCode}',
@@ -703,6 +719,7 @@ class AblyService {
     _realtime?.close();
     _realtime = null;
     _currentUserId = null;
+    _pendingAuthRequest = null;
     _orderListeners.clear();
     _storeListeners.clear();
     _roleListeners.clear();
