@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
+import 'package:campuschow/store/lib/core/widgets/shimmer_placeholder.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:campuschow/store/lib/features/store/presentation/widgets/add_edit_menu_item_dialog.dart';
@@ -49,8 +50,9 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
     final storeId = storeProvider.activeStoreId;
 
     if (storeId == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      return Scaffold(
+        backgroundColor: bg,
+        body: _buildMenuSkeletonList(surface, border),
       );
     }
 
@@ -78,8 +80,12 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: () =>
-                showAddEditMenuItemDialog(context, storeProvider, storeId, null),
+            onPressed: () => showAddEditMenuItemDialog(
+              context,
+              storeProvider,
+              storeId,
+              null,
+            ),
           ),
         ],
       ),
@@ -180,9 +186,7 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
           // ── Menu Items ──
           Expanded(
             child: storeProvider.isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  )
+                ? _buildMenuSkeletonList(surface, border)
                 : filtered.isEmpty
                 ? Center(
                     child: Column(
@@ -237,6 +241,87 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
         label: const Text(
           'Add Item',
           style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuSkeletonList(Color surface, Color border) {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      itemCount: 5,
+      itemBuilder: (_, index) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: border),
+        ),
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShimmerPlaceholder(width: 70, height: 70, borderRadius: 12),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ShimmerPlaceholder(
+                          width: double.infinity,
+                          height: 16,
+                          borderRadius: 4,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      ShimmerPlaceholder(
+                        width: 72,
+                        height: 22,
+                        borderRadius: 8,
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  ShimmerPlaceholder(
+                    width: double.infinity,
+                    height: 12,
+                    borderRadius: 4,
+                  ),
+                  SizedBox(height: 6),
+                  ShimmerPlaceholder(width: 150, height: 12, borderRadius: 4),
+                  SizedBox(height: 10),
+                  Row(
+                    children: [
+                      ShimmerPlaceholder(
+                        width: 60,
+                        height: 16,
+                        borderRadius: 4,
+                      ),
+                      SizedBox(width: 8),
+                      ShimmerPlaceholder(
+                        width: 64,
+                        height: 20,
+                        borderRadius: 6,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 10),
+            Column(
+              children: [
+                ShimmerPlaceholder(width: 20, height: 20, borderRadius: 10),
+                SizedBox(height: 10),
+                ShimmerPlaceholder(width: 20, height: 20, borderRadius: 10),
+                SizedBox(height: 10),
+                ShimmerPlaceholder(width: 20, height: 20, borderRadius: 10),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -298,9 +383,7 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
       ),
     );
   }
-
-  }
-
+}
 
 // ─── Menu Item Card ───────────────────────────────────────────────────────────
 class _MenuItemCard extends StatelessWidget {

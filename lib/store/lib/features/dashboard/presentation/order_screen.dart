@@ -272,7 +272,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: 3,
-      itemBuilder: (_, __) => Container(
+      itemBuilder: (_, index) => Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -288,19 +288,35 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
               children: [
                 Row(
                   children: [
-                    const ShimmerPlaceholder(width: 40, height: 40, borderRadius: 12),
+                    const ShimmerPlaceholder(
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                    ),
                     const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const ShimmerPlaceholder(width: 100, height: 16, borderRadius: 4),
+                        const ShimmerPlaceholder(
+                          width: 100,
+                          height: 16,
+                          borderRadius: 4,
+                        ),
                         const SizedBox(height: 6),
-                        const ShimmerPlaceholder(width: 140, height: 12, borderRadius: 4),
+                        const ShimmerPlaceholder(
+                          width: 140,
+                          height: 12,
+                          borderRadius: 4,
+                        ),
                       ],
                     ),
                   ],
                 ),
-                const ShimmerPlaceholder(width: 70, height: 22, borderRadius: 10),
+                const ShimmerPlaceholder(
+                  width: 70,
+                  height: 22,
+                  borderRadius: 10,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -312,9 +328,17 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const ShimmerPlaceholder(width: 120, height: 16, borderRadius: 4),
+                    const ShimmerPlaceholder(
+                      width: 120,
+                      height: 16,
+                      borderRadius: 4,
+                    ),
                     const SizedBox(height: 6),
-                    const ShimmerPlaceholder(width: 90, height: 13, borderRadius: 4),
+                    const ShimmerPlaceholder(
+                      width: 90,
+                      height: 13,
+                      borderRadius: 4,
+                    ),
                   ],
                 ),
               ],
@@ -325,8 +349,16 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const ShimmerPlaceholder(width: 150, height: 14, borderRadius: 4),
-                const ShimmerPlaceholder(width: 60, height: 14, borderRadius: 4),
+                const ShimmerPlaceholder(
+                  width: 150,
+                  height: 14,
+                  borderRadius: 4,
+                ),
+                const ShimmerPlaceholder(
+                  width: 60,
+                  height: 14,
+                  borderRadius: 4,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -335,16 +367,32 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const ShimmerPlaceholder(width: 60, height: 13, borderRadius: 4),
-                const ShimmerPlaceholder(width: 80, height: 16, borderRadius: 4),
+                const ShimmerPlaceholder(
+                  width: 60,
+                  height: 13,
+                  borderRadius: 4,
+                ),
+                const ShimmerPlaceholder(
+                  width: 80,
+                  height: 16,
+                  borderRadius: 4,
+                ),
               ],
             ),
             const SizedBox(height: 14),
             Row(
               children: [
-                const ShimmerPlaceholder(width: 90, height: 36, borderRadius: 12),
+                const ShimmerPlaceholder(
+                  width: 90,
+                  height: 36,
+                  borderRadius: 12,
+                ),
                 const SizedBox(width: 10),
-                const ShimmerPlaceholder(width: 90, height: 36, borderRadius: 12),
+                const ShimmerPlaceholder(
+                  width: 90,
+                  height: 36,
+                  borderRadius: 12,
+                ),
               ],
             ),
           ],
@@ -361,7 +409,8 @@ class _OrderCard extends StatelessWidget {
   final Color muted;
   final Color surface;
   final Color border;
-  final Future<void> Function(String orderId, OrderStatus status) onUpdateStatus;
+  final Future<void> Function(String orderId, OrderStatus status)
+  onUpdateStatus;
 
   const _OrderCard({
     required this.order,
@@ -405,7 +454,12 @@ class _OrderCard extends StatelessWidget {
             Colors.green,
             Icons.check_circle_outline,
           ),
-          _ActionBtn('Reject', OrderStatus.cancelled, Colors.red, Icons.cancel_outlined),
+          _ActionBtn(
+            'Reject',
+            OrderStatus.cancelled,
+            Colors.red,
+            Icons.cancel_outlined,
+          ),
         ];
       case OrderStatus.accepted:
         return [
@@ -536,7 +590,8 @@ class _OrderCard extends StatelessWidget {
                             fontSize: 15,
                           ),
                         ),
-                        if (order.user!.phone != null && order.user!.phone!.isNotEmpty)
+                        if (order.user!.phone != null &&
+                            order.user!.phone!.isNotEmpty)
                           Text(
                             order.user!.phone!,
                             style: TextStyle(color: muted, fontSize: 13),
@@ -544,7 +599,8 @@ class _OrderCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (order.user!.phone != null && order.user!.phone!.isNotEmpty)
+                  if (order.user!.phone != null &&
+                      order.user!.phone!.isNotEmpty)
                     IconButton(
                       icon: const Icon(Icons.phone, color: AppColors.primary),
                       onPressed: () async {
@@ -590,13 +646,47 @@ class _OrderCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     if (item.hasSalad)
-                      Text('• Salad', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text(
+                        '• Salad',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     if (item.extras != null && item.extras!.isNotEmpty)
-                      Text('• Extras: ${item.extras!.join(", ")}', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
-                    if (item.selectedMeats != null && item.selectedMeats!.isNotEmpty)
-                      ...item.selectedMeats!.entries.map((e) => Text('• Meat: ${e.key} (x${e.value})', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600))),
-                    if (item.selectedAddons != null && item.selectedAddons!.isNotEmpty)
-                      ...item.selectedAddons!.entries.map((e) => Text('• Addon: ${e.key} (x${e.value})', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600))),
+                      Text(
+                        '• Extras: ${item.extras!.join(", ")}',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    if (item.selectedMeats != null &&
+                        item.selectedMeats!.isNotEmpty)
+                      ...item.selectedMeats!.entries.map(
+                        (e) => Text(
+                          '• Meat: ${e.key} (x${e.value})',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    if (item.selectedAddons != null &&
+                        item.selectedAddons!.isNotEmpty)
+                      ...item.selectedAddons!.entries.map(
+                        (e) => Text(
+                          '• Addon: ${e.key} (x${e.value})',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),

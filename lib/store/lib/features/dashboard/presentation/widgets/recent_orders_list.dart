@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
+import 'package:campuschow/store/lib/core/widgets/shimmer_placeholder.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 
 class DashboardRecentOrdersList extends StatelessWidget {
@@ -58,11 +59,36 @@ class DashboardRecentOrdersList extends StatelessWidget {
           3,
           (_) => Container(
             margin: const EdgeInsets.only(bottom: 10),
-            height: 72,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: surface,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: border),
+            ),
+            child: const Row(
+              children: [
+                ShimmerPlaceholder(width: 40, height: 40, borderRadius: 12),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShimmerPlaceholder(
+                        width: 104,
+                        height: 14,
+                        borderRadius: 4,
+                      ),
+                      SizedBox(height: 8),
+                      ShimmerPlaceholder(
+                        width: 150,
+                        height: 12,
+                        borderRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+                ShimmerPlaceholder(width: 76, height: 24, borderRadius: 8),
+              ],
             ),
           ),
         ),

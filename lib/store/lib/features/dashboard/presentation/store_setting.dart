@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
+import 'package:campuschow/store/lib/core/widgets/shimmer_placeholder.dart';
 import 'package:campuschow/store/lib/features/dashboard/data/staff_member_model.dart';
 import 'package:campuschow/store/lib/features/auth/presentation/auth_provider.dart';
 import 'package:campuschow/store/lib/features/dashboard/presentation/staff_provider.dart';
@@ -61,7 +63,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
       _nameCtrl.text = store.name;
       _taglineCtrl.text = store.tagline;
       _deliveryTimeCtrl.text = store.deliveryTime;
-      _deliveryFeeCtrl.text = store.deliveryFee.toString();
+      _deliveryFeeCtrl.text = store.deliveryFee.toInt().toString();
 
       // Load sound preference
       final prefs = await SharedPreferences.getInstance();
@@ -84,18 +86,19 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         'tagline': _taglineCtrl.text.trim(),
         'description': _taglineCtrl.text.trim(),
         'deliveryTime': _deliveryTimeCtrl.text.trim(),
-        'deliveryFee': double.tryParse(_deliveryFeeCtrl.text.trim()) ?? 0,
+        'deliveryFee':
+            double.tryParse(_deliveryFeeCtrl.text.trim())?.toInt() ?? 0,
       });
       if (mounted) _showSnackBar('Store updated successfully', success: true);
     } catch (e) {
       debugPrint('[StoreSettings] _saveStore error: $e');
-      if (mounted) _showSnackBar('Failed to save store settings', success: false);
+      if (mounted) {
+        _showSnackBar('Failed to save store settings', success: false);
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
-
-
 
   Future<void> _removeStaff(String workerId) async {
     if (_storeId == null) return;
@@ -158,9 +161,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         onSave: _saveStore,
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
+          ? _SettingsLoadingSkeleton(theme: theme)
           : _SettingsBody(
               theme: theme,
               user: user,
@@ -377,6 +378,183 @@ class _SettingsBody extends StatelessWidget {
   }
 }
 
+class _SettingsLoadingSkeleton extends StatelessWidget {
+  const _SettingsLoadingSkeleton({required this.theme});
+
+  final _SettingsTheme theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SettingsSectionCard(
+            theme: theme,
+            child: const Row(
+              children: [
+                ShimmerPlaceholder(width: 60, height: 60, borderRadius: 18),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShimmerPlaceholder(
+                        width: 150,
+                        height: 17,
+                        borderRadius: 4,
+                      ),
+                      SizedBox(height: 8),
+                      ShimmerPlaceholder(
+                        width: 210,
+                        height: 13,
+                        borderRadius: 4,
+                      ),
+                      SizedBox(height: 8),
+                      ShimmerPlaceholder(
+                        width: 88,
+                        height: 20,
+                        borderRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          ShimmerPlaceholder(width: 148, height: 16, borderRadius: 4),
+          const SizedBox(height: 12),
+          _SettingsSectionCard(
+            theme: theme,
+            child: const Column(
+              children: [
+                _SettingsInputSkeleton(),
+                SizedBox(height: 14),
+                _SettingsInputSkeleton(),
+                SizedBox(height: 14),
+                _SettingsInputSkeleton(),
+                SizedBox(height: 14),
+                _SettingsInputSkeleton(),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          ShimmerPlaceholder(width: 138, height: 16, borderRadius: 4),
+          const SizedBox(height: 12),
+          _SettingsSectionCard(theme: theme, child: const _StaffSkeleton()),
+          const SizedBox(height: 24),
+          ShimmerPlaceholder(width: 112, height: 16, borderRadius: 4),
+          const SizedBox(height: 12),
+          _SettingsSectionCard(
+            theme: theme,
+            child: const Row(
+              children: [
+                ShimmerPlaceholder(width: 40, height: 40, borderRadius: 12),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShimmerPlaceholder(
+                        width: 140,
+                        height: 15,
+                        borderRadius: 4,
+                      ),
+                      SizedBox(height: 8),
+                      ShimmerPlaceholder(
+                        width: 230,
+                        height: 12,
+                        borderRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+                ShimmerPlaceholder(width: 48, height: 28, borderRadius: 14),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsInputSkeleton extends StatelessWidget {
+  const _SettingsInputSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.darkBorder
+              : AppColors.lightBorder,
+        ),
+      ),
+      child: const Row(
+        children: [
+          ShimmerPlaceholder(width: 20, height: 20, borderRadius: 10),
+          SizedBox(width: 12),
+          ShimmerPlaceholder(width: 150, height: 14, borderRadius: 4),
+        ],
+      ),
+    );
+  }
+}
+
+class _StaffSkeleton extends StatelessWidget {
+  const _StaffSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        _StaffSkeletonRow(),
+        SizedBox(height: 12),
+        _StaffSkeletonRow(),
+        SizedBox(height: 12),
+        Divider(height: 16),
+        ShimmerPlaceholder(
+          width: double.infinity,
+          height: 36,
+          borderRadius: 10,
+        ),
+      ],
+    );
+  }
+}
+
+class _StaffSkeletonRow extends StatelessWidget {
+  const _StaffSkeletonRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        ShimmerPlaceholder(width: 32, height: 32, borderRadius: 16),
+        SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ShimmerPlaceholder(width: 130, height: 14, borderRadius: 4),
+              SizedBox(height: 7),
+              ShimmerPlaceholder(width: 190, height: 12, borderRadius: 4),
+            ],
+          ),
+        ),
+        ShimmerPlaceholder(width: 22, height: 22, borderRadius: 11),
+      ],
+    );
+  }
+}
+
 // ─── Profile Card ─────────────────────────────────────────────────────────
 
 class _ProfileCard extends StatelessWidget {
@@ -531,6 +709,7 @@ class _StoreFieldsCard extends StatelessWidget {
             icon: Icons.local_shipping_outlined,
             theme: theme,
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
         ],
       ),
@@ -564,8 +743,8 @@ class _StaffCard extends StatelessWidget {
         children: [
           if (isLoading)
             const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              padding: EdgeInsets.symmetric(vertical: 6),
+              child: _StaffSkeleton(),
             )
           else if (workers.isEmpty)
             Padding(
@@ -688,7 +867,11 @@ class _NotificationSettingsCard extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.notifications_active_outlined, color: AppColors.primary, size: 20),
+            child: const Icon(
+              Icons.notifications_active_outlined,
+              color: AppColors.primary,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -713,7 +896,7 @@ class _NotificationSettingsCard extends StatelessWidget {
           Switch.adaptive(
             value: isEnabled,
             onChanged: onChanged,
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
           ),
         ],
       ),
@@ -773,6 +956,7 @@ class _SettingsInputField extends StatelessWidget {
     required this.icon,
     required this.theme,
     this.keyboardType = TextInputType.text,
+    this.inputFormatters,
   });
 
   final String label;
@@ -780,6 +964,7 @@ class _SettingsInputField extends StatelessWidget {
   final IconData icon;
   final _SettingsTheme theme;
   final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) {
@@ -787,6 +972,7 @@ class _SettingsInputField extends StatelessWidget {
       controller: controller,
       style: TextStyle(color: theme.textColor),
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: theme.muted),
@@ -892,7 +1078,10 @@ class _StaffInviteQRDialog extends StatelessWidget {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Done')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Done'),
+        ),
       ],
     );
   }

@@ -6,6 +6,7 @@ import 'package:campuschow/store/lib/features/auth/presentation/auth_provider.da
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 import 'package:campuschow/store/lib/core/services/ably_service.dart';
+import 'package:campuschow/store/lib/core/widgets/shimmer_placeholder.dart';
 import 'package:intl/intl.dart';
 
 class WorkerDashboardHome extends StatefulWidget {
@@ -53,7 +54,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
     if (assignedStoreId != null) {
       storeProvider.setActiveStore(assignedStoreId);
     }
-    
+
     final store = storeProvider.activeStore;
     if (store != null && mounted) {
       setState(() {
@@ -325,7 +326,47 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
 
   Widget _buildRecentOrdersList(bool isDark, Color textColor, Color muted) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Column(
+        children: List.generate(
+          3,
+          (_) => Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+              ),
+            ),
+            child: const Row(
+              children: [
+                ShimmerPlaceholder(width: 40, height: 40, borderRadius: 12),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShimmerPlaceholder(
+                        width: 112,
+                        height: 15,
+                        borderRadius: 4,
+                      ),
+                      SizedBox(height: 8),
+                      ShimmerPlaceholder(
+                        width: 74,
+                        height: 12,
+                        borderRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+                ShimmerPlaceholder(width: 84, height: 24, borderRadius: 8),
+              ],
+            ),
+          ),
+        ),
+      );
     }
     if (_recentOrders.isEmpty) {
       return Container(
@@ -413,7 +454,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
             ],
           ),
         );
-    }).toList(),
+      }).toList(),
     );
   }
 

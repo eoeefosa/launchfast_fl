@@ -30,9 +30,10 @@ class _ShimmerPlaceholderState extends State<ShimmerPlaceholder>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-    _opacityAnimation = Tween<double>(begin: 0.35, end: 0.75).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _opacityAnimation = Tween<double>(
+      begin: 0.35,
+      end: 0.75,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     _controller.repeat(reverse: true);
   }
 

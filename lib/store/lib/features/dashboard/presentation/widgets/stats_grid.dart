@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
+import 'package:campuschow/store/lib/core/widgets/shimmer_placeholder.dart';
 
 class DashboardStatsGrid extends StatelessWidget {
   final bool isLoading;
@@ -129,6 +130,22 @@ class DashboardStatsGrid extends StatelessWidget {
         color: surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: border),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          ShimmerPlaceholder(width: 36, height: 36, borderRadius: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ShimmerPlaceholder(width: 72, height: 20, borderRadius: 5),
+              SizedBox(height: 8),
+              ShimmerPlaceholder(width: 94, height: 12, borderRadius: 4),
+            ],
+          ),
+        ],
       ),
     );
   }
