@@ -6,6 +6,7 @@ import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:campuschow/store/lib/core/services/ably_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:campuschow/store/lib/core/widgets/shimmer_placeholder.dart';
 
 class StoreOrdersScreen extends StatefulWidget {
   const StoreOrdersScreen({super.key});
@@ -85,8 +86,18 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     // New orders from Ably are pushed on admin:orders channel
     // We listen via addOrderListener (existing infrastructure)
     ablyService.addOrderListener((orderId, status) {
-      _loadOrders(showLoading: false);
-      if (mounted) setState(() => _hasNewOrder = true);
+      if (mounted) {
+        final index = _orders.indexWhere((o) => o.id == orderId);
+        if (index != -1) {
+          setState(() {
+            _orders[index] = _orders[index].copyWith(status: status);
+          });
+        } else {
+          // New order, trigger background fetch and show NEW badge
+          _loadOrders(showLoading: false);
+          setState(() => _hasNewOrder = true);
+        }
+      }
     });
   }
 
@@ -107,7 +118,6 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     try {
       final storeProvider = context.read<StoreProvider>();
       await storeProvider.updateOrderStatus(orderId, newStatus.backendName);
-      await _loadOrders(showLoading: false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -215,9 +225,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
         ),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
+          ? _buildSkeletonList(surface, border, muted)
           : RefreshIndicator(
               color: AppColors.primary,
               onRefresh: _loadOrders,
@@ -256,6 +264,91 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
             style: TextStyle(color: muted, fontSize: 15),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonList(Color surface, Color border, Color muted) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 3,
+      itemBuilder: (_, __) => Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const ShimmerPlaceholder(width: 40, height: 40, borderRadius: 12),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const ShimmerPlaceholder(width: 100, height: 16, borderRadius: 4),
+                        const SizedBox(height: 6),
+                        const ShimmerPlaceholder(width: 140, height: 12, borderRadius: 4),
+                      ],
+                    ),
+                  ],
+                ),
+                const ShimmerPlaceholder(width: 70, height: 22, borderRadius: 10),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Divider(color: border, height: 1),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const ShimmerPlaceholder(width: 120, height: 16, borderRadius: 4),
+                    const SizedBox(height: 6),
+                    const ShimmerPlaceholder(width: 90, height: 13, borderRadius: 4),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Divider(color: border, height: 1),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const ShimmerPlaceholder(width: 150, height: 14, borderRadius: 4),
+                const ShimmerPlaceholder(width: 60, height: 14, borderRadius: 4),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Divider(color: border, height: 1),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const ShimmerPlaceholder(width: 60, height: 13, borderRadius: 4),
+                const ShimmerPlaceholder(width: 80, height: 16, borderRadius: 4),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                const ShimmerPlaceholder(width: 90, height: 36, borderRadius: 12),
+                const SizedBox(width: 10),
+                const ShimmerPlaceholder(width: 90, height: 36, borderRadius: 12),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
