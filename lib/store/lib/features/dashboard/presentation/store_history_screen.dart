@@ -55,8 +55,12 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
       if (o.date.isEmpty) return false;
       try {
         final d = DateTime.parse(o.date).toLocal();
-        return !(d.year == now.year && d.month == now.month && d.day == now.day);
-      } catch (_) { return false; }
+        return !(d.year == now.year &&
+            d.month == now.month &&
+            d.day == now.day);
+      } catch (_) {
+        return false;
+      }
     }).toList();
 
     final filter = _activeFilter;
@@ -125,11 +129,17 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
     }
   }
 
-  Future<void> _updateStatus(String orderId, OrderStatus newStatus, {String? rejectionReason}) async {
+  Future<void> _updateStatus(
+    String orderId,
+    OrderStatus newStatus, {
+    String? rejectionReason,
+  }) async {
     try {
-      await context
-          .read<StoreProvider>()
-          .updateOrderStatus(orderId, newStatus.backendName, rejectionReason: rejectionReason);
+      await context.read<StoreProvider>().updateOrderStatus(
+        orderId,
+        newStatus.backendName,
+        rejectionReason: rejectionReason,
+      );
       await _loadOrders();
       _showSnackBar('Order updated to ${newStatus.displayLabel}');
     } catch (e, stack) {
@@ -160,9 +170,9 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
     if (confirmedId == null || !mounted) return;
 
     final matched = _orders.cast<Order?>().firstWhere(
-          (o) => o!.id == confirmedId,
-          orElse: () => null,
-        );
+      (o) => o!.id == confirmedId,
+      orElse: () => null,
+    );
 
     if (matched == null) return;
 
@@ -211,8 +221,8 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
     final color = isError
         ? Colors.red.shade700
         : isWarning
-            ? Colors.orange.shade700
-            : Colors.green.shade700;
+        ? Colors.orange.shade700
+        : Colors.green.shade700;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -271,7 +281,10 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
           tabs: _kFilters
               .map((f) => Tab(text: f == null ? 'All' : f.displayLabel))
               .toList(),
@@ -307,6 +320,7 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
                             itemCount: _filtered.length,
                             itemBuilder: (_, i) => OrderCard(
                               order: _filtered[i],
+                              isUpdating: false,
                               textColor: textColor,
                               muted: muted,
                               surface: surface,

@@ -41,7 +41,8 @@ class _StoreOrderDetailScreenState extends State<StoreOrderDetailScreen> {
         });
       } else {
         setState(() {
-          _error = 'Order #...${widget.orderId.substring(widget.orderId.length > 6 ? widget.orderId.length - 6 : 0)} not found.';
+          _error =
+              'Order #...${widget.orderId.substring(widget.orderId.length > 6 ? widget.orderId.length - 6 : 0)} not found.';
           _loading = false;
         });
       }
@@ -54,10 +55,18 @@ class _StoreOrderDetailScreenState extends State<StoreOrderDetailScreen> {
     }
   }
 
-  Future<void> _updateStatus(String orderId, OrderStatus status, {String? rejectionReason}) async {
+  Future<void> _updateStatus(
+    String orderId,
+    OrderStatus status, {
+    String? rejectionReason,
+  }) async {
     try {
       final provider = context.read<StoreProvider>();
-      await provider.updateOrderStatus(orderId, status.backendName, rejectionReason: rejectionReason);
+      await provider.updateOrderStatus(
+        orderId,
+        status.backendName,
+        rejectionReason: rejectionReason,
+      );
       final updated = await provider.fetchStoreOrders();
       if (!mounted) return;
       final match = updated.where((o) => o.id == orderId).toList();
@@ -142,6 +151,7 @@ class _StoreOrderDetailScreenState extends State<StoreOrderDetailScreen> {
             children: [
               OrderCard(
                 order: _order!,
+                isUpdating: false,
                 textColor: textColor,
                 muted: muted,
                 surface: surface,

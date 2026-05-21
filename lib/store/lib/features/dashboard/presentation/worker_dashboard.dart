@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
+import 'package:campuschow/store/lib/core/widgets/shimmer_placeholder.dart';
 import 'package:campuschow/store/lib/features/auth/presentation/auth_provider.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
@@ -25,6 +26,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
 
   List<Order> _recentOrders = [];
   bool _isLoading = true;
+  bool _isRefreshingRecentOrders = false;
   String? _storeId;
   String? _storeName;
   bool _isOpen = false;
@@ -53,7 +55,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
     if (assignedStoreId != null) {
       storeProvider.setActiveStore(assignedStoreId);
     }
-    
+
     final store = storeProvider.activeStore;
     if (store != null && mounted) {
       setState(() {
@@ -80,8 +82,15 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
     } catch (_) {}
   }
 
-  Future<void> _loadRecentOrders() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadRecentOrders({bool showLoading = true}) async {
+    if (!mounted) return;
+
+    if (showLoading || _recentOrders.isEmpty) {
+      setState(() => _isLoading = true);
+    } else {
+      setState(() => _isRefreshingRecentOrders = true);
+    }
+
     try {
       final storeProvider = context.read<StoreProvider>();
       final orders = await storeProvider.fetchStoreOrders();
@@ -91,17 +100,33 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
         setState(() {
           _recentOrders = orders.take(5).toList();
           _isLoading = false;
+          _isRefreshingRecentOrders = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isRefreshingRecentOrders = false;
+        });
+      }
     }
   }
 
   void _subscribeAbly() {
     ablyService.addOrderListener((orderId, status) {
       _loadStats();
-      _loadRecentOrders();
+      if (!mounted) return;
+
+      final index = _recentOrders.indexWhere((order) => order.id == orderId);
+      if (index != -1) {
+        setState(() {
+          _recentOrders[index] = _recentOrders[index].copyWith(status: status);
+        });
+        return;
+      }
+
+      _loadRecentOrders(showLoading: false);
     });
 
     ablyService.addStoreListener((storeId, isOpen) {
@@ -325,7 +350,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
 
   Widget _buildRecentOrdersList(bool isDark, Color textColor, Color muted) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildRecentOrdersSkeleton(isDark);
     }
     if (_recentOrders.isEmpty) {
       return Container(
@@ -346,7 +371,7 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
       );
     }
 
-    return Column(
+    final list = Column(
       children: _recentOrders.map((o) {
         final date = DateTime.parse(o.date);
         return Container(
@@ -413,7 +438,69 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
             ],
           ),
         );
-    }).toList(),
+      }).toList(),
+    );
+
+    if (!_isRefreshingRecentOrders) return list;
+
+    return Stack(
+      children: [
+        list,
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Container(
+              decoration: BoxDecoration(
+                color:
+                    (isDark
+                            ? AppColors.darkBackground
+                            : AppColors.lightBackground)
+                        .withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: _buildRecentOrdersSkeleton(
+                isDark,
+                itemCount: _recentOrders.length,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecentOrdersSkeleton(bool isDark, {int itemCount = 3}) {
+    final surface = isDark ? AppColors.darkSurface : Colors.white;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+
+    return Column(
+      children: List.generate(itemCount, (_) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: border),
+          ),
+          child: const Row(
+            children: [
+              ShimmerPlaceholder(width: 40, height: 40, borderRadius: 12),
+              SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ShimmerPlaceholder(width: 120, height: 14, borderRadius: 4),
+                    SizedBox(height: 8),
+                    ShimmerPlaceholder(width: 90, height: 12, borderRadius: 4),
+                  ],
+                ),
+              ),
+              ShimmerPlaceholder(width: 72, height: 24, borderRadius: 8),
+            ],
+          ),
+        );
+      }),
     );
   }
 

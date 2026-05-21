@@ -41,6 +41,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     with TickerProviderStateMixin {
   // ── State ──────────────────────────────────────────────────────────────────
   List<Order> _orders = [];
+  final Set<String> _updatingOrderIds = {};
   bool _isLoading = true;
   bool _hasNewOrder = false;
   String _searchQuery = '';
@@ -152,11 +153,15 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       if (o.date.isEmpty) return false;
       try {
         final od = DateTime.parse(o.date).toLocal();
-        final isPreviousDay = od.year < today.year ||
+        final isPreviousDay =
+            od.year < today.year ||
             (od.year == today.year && od.month < today.month) ||
-            (od.year == today.year && od.month == today.month && od.day < today.day);
-        
-        final isUnattended = o.status == OrderStatus.pending ||
+            (od.year == today.year &&
+                od.month == today.month &&
+                od.day < today.day);
+
+        final isUnattended =
+            o.status == OrderStatus.pending ||
             o.status == OrderStatus.accepted ||
             o.status == OrderStatus.preparing;
 
@@ -180,9 +185,11 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     }
   }
 
-  Future<void> _loadOrders() async {
+  Future<void> _loadOrders({bool showLoading = true}) async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+    if (showLoading) {
+      setState(() => _isLoading = true);
+    }
 
     final storeProvider = context.read<StoreProvider>();
     try {
@@ -199,21 +206,46 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       debugPrint('[StoreOrdersScreen] _loadOrders: $e\n$stack');
       _showSnackBar('Failed to load orders', isError: true);
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && showLoading) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _updateStatus(String orderId, OrderStatus newStatus) async {
+    final index = _orders.indexWhere((order) => order.id == orderId);
+    if (index == -1) return;
+
+    final previousOrder = _orders[index];
+
+    setState(() {
+      _updatingOrderIds.add(orderId);
+      _orders[index] = previousOrder.copyWith(status: newStatus);
+    });
+
     try {
       await context.read<StoreProvider>().updateOrderStatus(
         orderId,
         newStatus.backendName,
       );
-      await _loadOrders();
       _showSnackBar('Order updated to ${newStatus.displayLabel}');
     } catch (e, stack) {
+      if (mounted) {
+        setState(() {
+          final rollbackIndex = _orders.indexWhere(
+            (order) => order.id == orderId,
+          );
+          if (rollbackIndex != -1) {
+            _orders[rollbackIndex] = previousOrder;
+          }
+        });
+      }
       debugPrint('[StoreOrdersScreen] _updateStatus: $e\n$stack');
       _showSnackBar('Failed to update order', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() => _updatingOrderIds.remove(orderId));
+      }
     }
   }
 
@@ -222,7 +254,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Confirm Bulk Reject'),
-        content: Text('Are you sure you want to reject ${_selectedOrderIds.length} orders? This cannot be undone.'),
+        content: Text(
+          'Are you sure you want to reject ${_selectedOrderIds.length} orders? This cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -265,7 +299,10 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     await _loadOrders();
 
     if (failCount > 0) {
-      _showSnackBar('Bulk reject completed: $successCount succeeded, $failCount failed', isWarning: true);
+      _showSnackBar(
+        'Bulk reject completed: $successCount succeeded, $failCount failed',
+        isWarning: true,
+      );
     } else {
       _showSnackBar('Successfully rejected $successCount orders');
     }
@@ -275,8 +312,18 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
 
   void _subscribeAbly() {
     ablyService.addOrderListener((orderId, status) {
-      _loadOrders();
-      if (mounted) setState(() => _hasNewOrder = true);
+      if (!mounted) return;
+
+      final index = _orders.indexWhere((order) => order.id == orderId);
+      if (index != -1) {
+        setState(() {
+          _orders[index] = _orders[index].copyWith(status: status);
+        });
+        return;
+      }
+
+      _loadOrders(showLoading: false);
+      setState(() => _hasNewOrder = true);
     });
   }
 
@@ -347,7 +394,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
   void _showUnattendedAlert(List<Order> unattendedOrders) {
     if (!mounted) return;
 
-    final shortIds = unattendedOrders.map((o) => '#${_shortId(o.id).toUpperCase()}').join(', ');
+    final shortIds = unattendedOrders
+        .map((o) => '#${_shortId(o.id).toUpperCase()}')
+        .join(', ');
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -576,7 +625,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
             tooltip: 'Refresh',
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
-              _loadOrders();
+              _loadOrders(showLoading: false);
               setState(() => _hasNewOrder = false);
             },
           ),
@@ -653,7 +702,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
                   )
                 : RefreshIndicator(
                     color: AppColors.primary,
-                    onRefresh: _loadOrders,
+                    onRefresh: () => _loadOrders(showLoading: false),
                     child: _filtered.isEmpty
                         ? OrderEmptyState(muted: muted)
                         : ListView.builder(
@@ -661,7 +710,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
                             itemCount: _filtered.length,
                             itemBuilder: (_, i) {
                               final order = _filtered[i];
-                              final isSelected = _selectedOrderIds.contains(order.id);
+                              final isSelected = _selectedOrderIds.contains(
+                                order.id,
+                              );
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: Row(
@@ -675,7 +726,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
                                             if (val == true) {
                                               _selectedOrderIds.add(order.id);
                                             } else {
-                                              _selectedOrderIds.remove(order.id);
+                                              _selectedOrderIds.remove(
+                                                order.id,
+                                              );
                                             }
                                           });
                                         },
@@ -685,6 +738,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
                                     Expanded(
                                       child: OrderCard(
                                         order: order,
+                                        isUpdating: _updatingOrderIds.contains(
+                                          order.id,
+                                        ),
                                         textColor: textColor,
                                         muted: muted,
                                         surface: surface,
@@ -704,7 +760,10 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       bottomNavigationBar: _isSelectionMode
           ? SafeArea(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: surface,
                   border: Border(top: BorderSide(color: border)),
@@ -726,7 +785,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
                           if (_selectedOrderIds.length == _filtered.length) {
                             _selectedOrderIds.clear();
                           } else {
-                            _selectedOrderIds.addAll(_filtered.map((o) => o.id));
+                            _selectedOrderIds.addAll(
+                              _filtered.map((o) => o.id),
+                            );
                           }
                         });
                       },
@@ -747,12 +808,17 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
                         backgroundColor: Colors.red.shade700,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: _selectedOrderIds.isEmpty ? null : _bulkRejectOrders,
+                      onPressed: _selectedOrderIds.isEmpty
+                          ? null
+                          : _bulkRejectOrders,
                       icon: const Icon(Icons.cancel_outlined, size: 18),
                       label: const Text(
                         'Reject Selected',

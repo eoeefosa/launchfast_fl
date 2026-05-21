@@ -36,13 +36,21 @@ class _StoreTopSellingScreenState extends State<StoreTopSellingScreen> {
     }).toList();
   }
 
-  Future<void> _updateStatus(String orderId, OrderStatus newStatus, {String? rejectionReason}) async {
+  Future<void> _updateStatus(
+    String orderId,
+    OrderStatus newStatus, {
+    String? rejectionReason,
+  }) async {
     try {
       final storeProvider = context.read<StoreProvider>();
-      await storeProvider.updateOrderStatus(orderId, newStatus.backendName, rejectionReason: rejectionReason);
-      
+      await storeProvider.updateOrderStatus(
+        orderId,
+        newStatus.backendName,
+        rejectionReason: rejectionReason,
+      );
+
       if (!mounted) return;
-      
+
       // Fetch fresh orders
       final newOrders = await storeProvider.fetchStoreOrders();
       if (mounted) {
@@ -103,12 +111,21 @@ class _StoreTopSellingScreenState extends State<StoreTopSellingScreen> {
               border: Border.all(color: border),
             ),
             child: Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
-                tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                tilePadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 leading: CircleAvatar(
                   backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  child: const Icon(Icons.trending_up, color: AppColors.primary, size: 20),
+                  child: const Icon(
+                    Icons.trending_up,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
                 title: Text(
                   itemName,
@@ -129,7 +146,11 @@ class _StoreTopSellingScreenState extends State<StoreTopSellingScreen> {
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      bottom: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -146,11 +167,15 @@ class _StoreTopSellingScreenState extends State<StoreTopSellingScreen> {
                         ),
                         const SizedBox(height: 12),
                         if (itemOrders.isEmpty)
-                          Text('No recent buyers found.', style: TextStyle(color: muted, fontSize: 13))
+                          Text(
+                            'No recent buyers found.',
+                            style: TextStyle(color: muted, fontSize: 13),
+                          )
                         else
                           ...itemOrders.map((order) {
-                            final customerName = order.user?.name ?? 'Guest User';
-                            
+                            final customerName =
+                                order.user?.name ?? 'Guest User';
+
                             // Calculate how many of THIS item the customer bought in this order
                             int quantityInOrder = 0;
                             for (var cartItem in order.items) {
@@ -166,41 +191,68 @@ class _StoreTopSellingScreenState extends State<StoreTopSellingScreen> {
                                   isScrollControlled: true,
                                   backgroundColor: Colors.transparent,
                                   builder: (ctx) {
-                                    final isDark = Theme.of(context).brightness == Brightness.dark;
-                                    final modalBg = isDark ? AppColors.darkBackground : AppColors.lightBackground;
-                                    
+                                    final isDark =
+                                        Theme.of(context).brightness ==
+                                        Brightness.dark;
+                                    final modalBg = isDark
+                                        ? AppColors.darkBackground
+                                        : AppColors.lightBackground;
+
                                     return Container(
                                       margin: const EdgeInsets.only(top: 60),
                                       decoration: BoxDecoration(
                                         color: modalBg,
-                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(20),
+                                            ),
                                       ),
                                       child: SafeArea(
                                         child: Column(
                                           children: [
                                             Container(
-                                              margin: const EdgeInsets.symmetric(vertical: 12),
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 12,
+                                                  ),
                                               height: 4,
                                               width: 40,
                                               decoration: BoxDecoration(
-                                                color: Colors.grey.withValues(alpha: 0.3),
-                                                borderRadius: BorderRadius.circular(2),
+                                                color: Colors.grey.withValues(
+                                                  alpha: 0.3,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(2),
                                               ),
                                             ),
                                             Expanded(
                                               child: ListView(
-                                                padding: const EdgeInsets.all(16),
+                                                padding: const EdgeInsets.all(
+                                                  16,
+                                                ),
                                                 children: [
                                                   OrderCard(
                                                     order: order,
+                                                    isUpdating: false,
                                                     textColor: textColor,
                                                     muted: muted,
                                                     surface: surface,
                                                     border: border,
-                                                    onUpdateStatus: (id, status, {String? rejectionReason}) async {
-                                                      Navigator.pop(ctx);
-                                                      await _updateStatus(id, status, rejectionReason: rejectionReason);
-                                                    },
+                                                    onUpdateStatus:
+                                                        (
+                                                          id,
+                                                          status, {
+                                                          String?
+                                                          rejectionReason,
+                                                        }) async {
+                                                          Navigator.pop(ctx);
+                                                          await _updateStatus(
+                                                            id,
+                                                            status,
+                                                            rejectionReason:
+                                                                rejectionReason,
+                                                          );
+                                                        },
                                                   ),
                                                 ],
                                               ),
@@ -213,7 +265,9 @@ class _StoreTopSellingScreenState extends State<StoreTopSellingScreen> {
                                 );
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                ),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
@@ -232,7 +286,8 @@ class _StoreTopSellingScreenState extends State<StoreTopSellingScreen> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             customerName,
@@ -244,15 +299,23 @@ class _StoreTopSellingScreenState extends State<StoreTopSellingScreen> {
                                           ),
                                           Text(
                                             'Ordered $quantityInOrder',
-                                            style: TextStyle(color: muted, fontSize: 12),
+                                            style: TextStyle(
+                                              color: muted,
+                                              fontSize: 12,
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: _getStatusColor(order.status).withValues(alpha: 0.15),
+                                        color: _getStatusColor(
+                                          order.status,
+                                        ).withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
