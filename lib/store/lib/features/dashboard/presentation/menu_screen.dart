@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
+import 'package:campuschow/store/lib/core/widgets/shimmer_placeholder.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/widgets/add_edit_menu_item_dialog.dart';
@@ -15,7 +16,17 @@ class StoreMenuScreen extends StatefulWidget {
 class _StoreMenuScreenState extends State<StoreMenuScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'All';
-  final List<String> _categories = ['All', 'Rice & Pasta', 'Swallow & Soup', 'Soup', 'Drinks', 'Side', 'Protein', 'Snacks & Pastries', 'Others'];
+  final List<String> _categories = [
+    'All',
+    'Rice & Pasta',
+    'Swallow & Soup',
+    'Soup',
+    'Drinks',
+    'Side',
+    'Protein',
+    'Snacks & Pastries',
+    'Others',
+  ];
 
   @override
   void initState() {
@@ -50,7 +61,9 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
 
     if (storeId == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
@@ -78,8 +91,12 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: () =>
-                showAddEditMenuItemDialog(context, storeProvider, storeId, null),
+            onPressed: () => showAddEditMenuItemDialog(
+              context,
+              storeProvider,
+              storeId,
+              null,
+            ),
           ),
         ],
       ),
@@ -209,6 +226,9 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
                     itemCount: filtered.length,
                     itemBuilder: (_, i) => _MenuItemCard(
                       item: filtered[i],
+                      isUpdating: storeProvider.isMenuItemUpdating(
+                        filtered[i].id,
+                      ),
                       textColor: textColor,
                       muted: muted,
                       surface: surface,
@@ -298,13 +318,12 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
       ),
     );
   }
-
-  }
-
+}
 
 // ─── Menu Item Card ───────────────────────────────────────────────────────────
 class _MenuItemCard extends StatelessWidget {
   final MenuItem item;
+  final bool isUpdating;
   final Color textColor;
   final Color muted;
   final Color surface;
@@ -315,6 +334,7 @@ class _MenuItemCard extends StatelessWidget {
 
   const _MenuItemCard({
     required this.item,
+    required this.isUpdating,
     required this.textColor,
     required this.muted,
     required this.surface,
@@ -326,175 +346,284 @@ class _MenuItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image placeholder
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: 70,
-                height: 70,
-                color: AppColors.primary.withValues(alpha: 0.1),
-                child: item.image.isNotEmpty && item.image.startsWith('http')
-                    ? Image.network(
-                        item.image,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.fastfood,
-                          color: AppColors.primary,
-                        ),
-                      )
-                    : const Icon(Icons.fastfood, color: AppColors.primary),
-              ),
+    return Opacity(
+      opacity: isUpdating ? 0.72 : 1,
+      child: Stack(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: border),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            // Details
-            Expanded(
-              child: Column(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item.name,
-                          style: TextStyle(
-                            color: textColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: (item.isReady ? Colors.green : Colors.red)
-                              .withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          item.isReady ? 'Available' : 'Unavailable',
-                          style: TextStyle(
-                            color: item.isReady
-                                ? Colors.green.shade700
-                                : Colors.red.shade600,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      child:
+                          item.image.isNotEmpty && item.image.startsWith('http')
+                          ? Image.network(
+                              item.image,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => const Icon(
+                                Icons.fastfood,
+                                color: AppColors.primary,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.fastfood,
+                              color: AppColors.primary,
+                            ),
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.description,
-                    style: TextStyle(color: muted, fontSize: 12),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Text(
-                        '₦${item.price.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item.name,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    (item.isReady ? Colors.green : Colors.red)
+                                        .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                item.isReady ? 'Available' : 'Unavailable',
+                                style: TextStyle(
+                                  color: item.isReady
+                                      ? Colors.green.shade700
+                                      : Colors.red.shade600,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
+                        const SizedBox(height: 4),
+                        Text(
+                          item.description,
+                          style: TextStyle(color: muted, fontSize: 12),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          item.category,
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                      if (item.popular) ...[
-                        const SizedBox(width: 6),
-                        const Icon(
-                          Icons.star,
-                          size: 14,
-                          color: Color(0xFFF59E0B),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Text(
+                              '₦${item.price.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                item.category,
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                            if (item.popular) ...[
+                              const SizedBox(width: 6),
+                              const Icon(
+                                Icons.star,
+                                size: 14,
+                                color: Color(0xFFF59E0B),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      IconButton(
+                        onPressed: isUpdating ? null : onEdit,
+                        icon: const Icon(
+                          Icons.edit_outlined,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(height: 6),
+                      IconButton(
+                        onPressed: isUpdating ? null : onToggleReady,
+                        icon: Icon(
+                          item.isReady
+                              ? Icons.toggle_on_rounded
+                              : Icons.toggle_off_rounded,
+                          color: item.isReady ? Colors.green : Colors.grey,
+                          size: 22,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(height: 6),
+                      IconButton(
+                        onPressed: isUpdating ? null : onDelete,
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            // Actions
-            Column(
-              children: [
-                IconButton(
-                  onPressed: onEdit,
-                  icon: const Icon(
-                    Icons.edit_outlined,
-                    color: AppColors.primary,
-                    size: 20,
+          ),
+          if (isUpdating)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: surface.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(height: 6),
-                IconButton(
-                  onPressed: onToggleReady,
-                  icon: Icon(
-                    item.isReady
-                        ? Icons.toggle_on_rounded
-                        : Icons.toggle_off_rounded,
-                    color: item.isReady ? Colors.green : Colors.grey,
-                    size: 22,
+                  child: const Padding(
+                    padding: EdgeInsets.all(14),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShimmerPlaceholder(
+                          width: 70,
+                          height: 70,
+                          borderRadius: 12,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ShimmerPlaceholder(
+                                      width: double.infinity,
+                                      height: 16,
+                                      borderRadius: 4,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  ShimmerPlaceholder(
+                                    width: 72,
+                                    height: 22,
+                                    borderRadius: 8,
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 8),
+                              ShimmerPlaceholder(
+                                width: double.infinity,
+                                height: 12,
+                                borderRadius: 4,
+                              ),
+                              SizedBox(height: 6),
+                              ShimmerPlaceholder(
+                                width: 150,
+                                height: 12,
+                                borderRadius: 4,
+                              ),
+                              SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  ShimmerPlaceholder(
+                                    width: 60,
+                                    height: 16,
+                                    borderRadius: 4,
+                                  ),
+                                  SizedBox(width: 8),
+                                  ShimmerPlaceholder(
+                                    width: 64,
+                                    height: 20,
+                                    borderRadius: 6,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Column(
+                          children: [
+                            ShimmerPlaceholder(
+                              width: 20,
+                              height: 20,
+                              borderRadius: 10,
+                            ),
+                            SizedBox(height: 10),
+                            ShimmerPlaceholder(
+                              width: 20,
+                              height: 20,
+                              borderRadius: 10,
+                            ),
+                            SizedBox(height: 10),
+                            ShimmerPlaceholder(
+                              width: 20,
+                              height: 20,
+                              borderRadius: 10,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
                 ),
-                const SizedBox(height: 6),
-                IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.red,
-                    size: 20,
-                  ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
+              ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

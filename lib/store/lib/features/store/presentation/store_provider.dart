@@ -14,6 +14,7 @@ import 'package:campuschow/store/lib/features/orders/data/order_repository.dart'
 class StoreProvider extends BaseProvider {
   List<Store> _stores = [];
   List<MenuItem> _menuItems = [];
+  final Set<String> _updatingMenuItemIds = {};
   String? _activeStoreId;
   Store? _activeStore;
   Map<String, double> _meatPrices = {};
@@ -33,6 +34,7 @@ class StoreProvider extends BaseProvider {
   Store? get activeStore => _activeStore;
   Map<String, double> get meatPrices => _meatPrices;
   double get saladPrice => _saladPrice;
+  bool isMenuItemUpdating(String id) => _updatingMenuItemIds.contains(id);
 
   List<MenuItem> get meatItems => _menuItems
       .where((m) => m.storeId == _activeStoreId && m.type == 'protein')
@@ -89,7 +91,8 @@ class StoreProvider extends BaseProvider {
       if (menuItemId != null && isReady != null) {
         bool updatedAny = false;
         for (int i = 0; i < _menuItems.length; i++) {
-          if (_menuItems[i].id == menuItemId || _menuItems[i].id == '${menuItemId}_turkey') {
+          if (_menuItems[i].id == menuItemId ||
+              _menuItems[i].id == '${menuItemId}_turkey') {
             final oldReady = _menuItems[i].isReady;
             _menuItems[i] = _menuItems[i].copyWith(isReady: isReady);
             updatedAny = true;
@@ -137,40 +140,36 @@ class StoreProvider extends BaseProvider {
       try {
         // Fetch fresh menu items for the store
         final menuResult = await menuRepository.getMenuItems(storeId);
-        menuResult.fold(
-          (items) {
-            final List<MenuItem> processed = [];
-            for (final item in items) {
-              if (item.name.toUpperCase() == 'CHICKEN & TURKEY') {
-                processed.add(item.copyWith(name: 'CHICKEN'));
-                processed.add(item.copyWith(id: '${item.id}_turkey', name: 'TURKEY'));
-              } else {
-                processed.add(item);
-              }
+        menuResult.fold((items) {
+          final List<MenuItem> processed = [];
+          for (final item in items) {
+            if (item.name.toUpperCase() == 'CHICKEN & TURKEY') {
+              processed.add(item.copyWith(name: 'CHICKEN'));
+              processed.add(
+                item.copyWith(id: '${item.id}_turkey', name: 'TURKEY'),
+              );
+            } else {
+              processed.add(item);
             }
-            _menuItems = processed;
-            debugPrint('[StoreProvider] Fetched ${items.length} menu items');
-          },
-          (failure) => setFailure(failure),
-        );
+          }
+          _menuItems = processed;
+          debugPrint('[StoreProvider] Fetched ${items.length} menu items');
+        }, (failure) => setFailure(failure));
 
         // Fetch platform settings (pricing, etc.)
         final settingsResult = await menuRepository.getSettings();
-        settingsResult.fold(
-          (settings) {
-            if (settings['meatPrices'] != null) {
-              _meatPrices = Map<String, double>.from(
-                (settings['meatPrices'] as Map).map(
-                  (k, v) => MapEntry(k.toString(), (v as num).toDouble()),
-                ),
-              );
-            }
-            if (settings['saladPrice'] != null) {
-              _saladPrice = (settings['saladPrice'] as num).toDouble();
-            }
-          },
-          (failure) => debugPrint('Failed to fetch settings: $failure'),
-        );
+        settingsResult.fold((settings) {
+          if (settings['meatPrices'] != null) {
+            _meatPrices = Map<String, double>.from(
+              (settings['meatPrices'] as Map).map(
+                (k, v) => MapEntry(k.toString(), (v as num).toDouble()),
+              ),
+            );
+          }
+          if (settings['saladPrice'] != null) {
+            _saladPrice = (settings['saladPrice'] as num).toDouble();
+          }
+        }, (failure) => debugPrint('Failed to fetch settings: $failure'));
       } catch (e) {
         debugPrint('Error in refreshData: $e');
       }
@@ -181,48 +180,48 @@ class StoreProvider extends BaseProvider {
   Future<void> addMenuItem(Map<String, dynamic> data) async {
     if (_activeStoreId == null) return;
     setLoading(true);
-    (await menuRepository.addMenuItem(_activeStoreId!, data)).fold(
-      (newItem) {
-        _menuItems.add(MenuItem.fromJson(newItem));
-        notifyListeners();
-      },
-      setFailure,
-    );
+    (await menuRepository.addMenuItem(_activeStoreId!, data)).fold((newItem) {
+      _menuItems.add(MenuItem.fromJson(newItem));
+      notifyListeners();
+    }, setFailure);
     setLoading(false);
   }
 
   Future<void> updateMenuItem(String id, Map<String, dynamic> data) async {
-    setLoading(true);
-    (await menuRepository.updateMenuItem(id, data)).fold(
-      (updated) {
+    _updatingMenuItemIds.add(id);
+    notifyListeners();
+
+    try {
+      (await menuRepository.updateMenuItem(id, data)).fold((updated) {
         final i = _menuItems.indexWhere((m) => m.id == id);
         if (i != -1) {
           _menuItems[i] = MenuItem.fromJson(updated);
           notifyListeners();
         }
-      },
-      setFailure,
-    );
-    setLoading(false);
+      }, setFailure);
+    } finally {
+      _updatingMenuItemIds.remove(id);
+      notifyListeners();
+    }
   }
 
   Future<void> setOwner(String userId, {String? linkedStoreId}) async {
     setLoading(true);
-    
+
     Store? store;
-    
+
     // 1. Try fetching by the linked restaurantId/adminStore if provided
     if (linkedStoreId != null && linkedStoreId.isNotEmpty) {
       debugPrint('[StoreProvider] Fetching linked store by ID: $linkedStoreId');
       store = await storeRepository.getStore(linkedStoreId);
     }
-    
+
     // 2. Fallback to searching by ownerId if not found or no link
     if (store == null) {
       debugPrint('[StoreProvider] Searching for store by ownerId: $userId');
       store = await storeRepository.getOwnerStore(userId);
     }
-    
+
     debugPrint('''
 [StoreProvider] Setting Owner Result:
   User ID: $userId
@@ -272,7 +271,9 @@ class StoreProvider extends BaseProvider {
   }
 
   Future<StoreStats> fetchStoreStats() async {
-    debugPrint('[StoreProvider] fetchStoreStats called with _activeStoreId: $_activeStoreId');
+    debugPrint(
+      '[StoreProvider] fetchStoreStats called with _activeStoreId: $_activeStoreId',
+    );
     if (_activeStoreId == null) {
       return StoreStats(
         revenue: 0,
@@ -292,15 +293,31 @@ class StoreProvider extends BaseProvider {
     return await orderRepository.getStoreOrders(_activeStoreId!);
   }
 
-  Future<void> updateOrderStatus(String orderId, String status, {String? rejectionReason}) async {
+  Future<void> updateOrderStatus(
+    String orderId,
+    String status, {
+    String? rejectionReason,
+  }) async {
     if (_activeStoreId == null) return;
-    await orderRepository.updateOrderStatus(orderId, status, storeId: _activeStoreId!, rejectionReason: rejectionReason);
+    await orderRepository.updateOrderStatus(
+      orderId,
+      status,
+      storeId: _activeStoreId!,
+      rejectionReason: rejectionReason,
+    );
     notifyListeners();
   }
 
-  Future<void> adjustOrderPrice(String orderId, List<Map<String, dynamic>> items) async {
+  Future<void> adjustOrderPrice(
+    String orderId,
+    List<Map<String, dynamic>> items,
+  ) async {
     if (_activeStoreId == null) return;
-    await orderRepository.adjustOrderPrice(orderId, items, storeId: _activeStoreId!);
+    await orderRepository.adjustOrderPrice(
+      orderId,
+      items,
+      storeId: _activeStoreId!,
+    );
     notifyListeners();
   }
 
@@ -314,15 +331,10 @@ class StoreProvider extends BaseProvider {
 
   Future<void> deleteMenuItem(String id) async {
     setLoading(true);
-    (await menuRepository.deleteMenuItem(id)).fold(
-      (success) {
-        _menuItems.removeWhere((m) => m.id == id);
-        notifyListeners();
-      },
-      setFailure,
-    );
+    (await menuRepository.deleteMenuItem(id)).fold((success) {
+      _menuItems.removeWhere((m) => m.id == id);
+      notifyListeners();
+    }, setFailure);
     setLoading(false);
   }
 }
-
-
