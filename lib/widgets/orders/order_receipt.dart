@@ -251,12 +251,7 @@ class OrderDetailItem extends StatelessWidget {
         }
       });
     } else if (isMain) {
-      // If meat was not ordered, then it should just say chicken (default)
-      rows.add(OrderDetailRow(
-        leftText: 'Chicken ×${item.quantity}',
-        rightText: '₦0',
-        isModifier: true,
-      ));
+
     }
 
     // Add other modifiers (Sides, Drinks, Addons, Soups)

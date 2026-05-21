@@ -117,15 +117,35 @@ class NotificationProvider with ChangeNotifier {
           
           // Backend is the source of truth — replace all local data with canonical entries.
           final backendEntities = data.map((item) {
+            final backendId = item['_id']?.toString() ?? '';
+            final backendTitle = item['title'] ?? '';
+            final backendBody = item['body'] ?? '';
+            
+            // Match by exact ID or by title/body for temp notifications that haven't synced
+            final isLocallyRead = _notifications.any((n) => 
+               n.isRead && (n.id == backendId || (n.id.startsWith('temp_') && n.title == backendTitle && n.message == backendBody))
+            );
+            
+            final bool finalIsRead = (item['isRead'] == true) || isLocallyRead;
+            
+            // If it's locally read but backend thinks it's unread, push the update to backend
+            if (isLocallyRead && item['isRead'] != true && backendId.isNotEmpty) {
+               () async {
+                 try {
+                   await apiService.dio.patch('/notifications', data: {'notificationId': backendId});
+                 } catch (_) {}
+               }();
+            }
+
             final entity = NotificationEntity()
-              ..notificationId = item['_id']?.toString() ?? ''
-              ..title = item['title'] ?? ''
-              ..message = item['body'] ?? ''
+              ..notificationId = backendId
+              ..title = backendTitle
+              ..message = backendBody
               ..type = item['type'] ?? 'serverAlert'
               ..timestamp = item['createdAt'] != null 
                   ? DateTime.parse(item['createdAt']) 
                   : DateTime.now()
-              ..isRead = item['isRead'] ?? false
+              ..isRead = finalIsRead
               ..metadata = item['data'] != null ? jsonEncode(item['data']) : null;
             return entity;
           }).toList();

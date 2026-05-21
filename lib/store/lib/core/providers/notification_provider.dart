@@ -1,12 +1,13 @@
-import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:campuschow/store/lib/core/models/notification_model.dart';
+import 'package:campuschow/store/lib/core/network/api_client.dart';
 
 class NotificationProvider with ChangeNotifier {
   List<NotificationItem> _notifications = [];
   bool _isLoading = false;
+  Timer? _pendingRefreshTimer;
 
   List<NotificationItem> get notifications => _notifications;
   bool get isLoading => _isLoading;
@@ -21,7 +22,7 @@ class NotificationProvider with ChangeNotifier {
   void _initListeners() {
     notificationService.addListener((payload) {
       final notification = NotificationItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
         title: payload['title'] ?? 'New Update',
         message: payload['body'] ?? payload['message'] ?? '',
         type: _parseNotificationType(payload['type']?.toString()),
@@ -29,6 +30,14 @@ class NotificationProvider with ChangeNotifier {
         metadata: payload,
       );
       addNotification(notification);
+      _scheduleDelayedRefresh();
+    });
+  }
+
+  void _scheduleDelayedRefresh() {
+    _pendingRefreshTimer?.cancel();
+    _pendingRefreshTimer = Timer(const Duration(seconds: 3), () {
+      refresh();
     });
   }
 
@@ -36,7 +45,7 @@ class NotificationProvider with ChangeNotifier {
     if (type == null) return NotificationType.serverAlert;
     try {
       return NotificationType.values.firstWhere(
-        (t) => t.name == type,
+        (t) => t.name.toLowerCase() == type.toLowerCase(),
         orElse: () => NotificationType.serverAlert,
       );
     } catch (_) {
@@ -44,45 +53,61 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _loadNotifications() async {
+  Future<void> _loadNotifications() async => refresh();
+
+  Future<void> refresh() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? notificationsJson = prefs.getString('user_notifications');
-      if (notificationsJson != null) {
-        final List<dynamic> decodedList = jsonDecode(notificationsJson);
-        _notifications = decodedList
-            .map((item) => NotificationItem.fromMap(item))
-            .toList();
-        // Sort by newest first
-        _notifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      final response = await apiService.dio.get('/notifications');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        
+        final backendEntities = data.map((item) {
+          final backendId = item['_id']?.toString() ?? '';
+          final backendTitle = item['title'] ?? '';
+          final backendBody = item['body'] ?? '';
+
+          final isLocallyRead = _notifications.any((n) => 
+               n.isRead && (n.id == backendId || (n.id.startsWith('temp_') && n.title == backendTitle && n.message == backendBody))
+          );
+          
+          final bool finalIsRead = (item['isRead'] == true) || isLocallyRead;
+          
+          if (isLocallyRead && item['isRead'] != true && backendId.isNotEmpty) {
+             () async {
+               try {
+                 await apiService.dio.patch('/notifications', data: {'notificationId': backendId});
+               } catch (_) {}
+             }();
+          }
+
+          return NotificationItem(
+            id: backendId,
+            title: backendTitle,
+            message: backendBody,
+            type: _parseNotificationType(item['type']?.toString()),
+            timestamp: item['createdAt'] != null ? DateTime.parse(item['createdAt']) : DateTime.now(),
+            isRead: finalIsRead,
+            metadata: item['data'],
+          );
+        }).toList();
+
+        _notifications = backendEntities;
+        notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error loading notifications: $e');
+      debugPrint('Error loading store notifications from backend: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> _saveNotifications() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final String encodedList = jsonEncode(
-        _notifications.map((n) => n.toMap()).toList(),
-      );
-      await prefs.setString('user_notifications', encodedList);
-    } catch (e) {
-      debugPrint('Error saving notifications: $e');
-    }
-  }
-
   Future<void> addNotification(NotificationItem item) async {
     _notifications.insert(0, item);
     notifyListeners();
-    await _saveNotifications();
   }
 
   Future<void> markAsRead(String id) async {
@@ -90,7 +115,11 @@ class NotificationProvider with ChangeNotifier {
     if (index != -1) {
       _notifications[index] = _notifications[index].copyWith(isRead: true);
       notifyListeners();
-      await _saveNotifications();
+    }
+    try {
+      await apiService.dio.patch('/notifications', data: {'notificationId': id});
+    } catch (e) {
+      debugPrint('Backend markAsRead failed: $e');
     }
   }
 
@@ -101,18 +130,38 @@ class NotificationProvider with ChangeNotifier {
       }
     }
     notifyListeners();
-    await _saveNotifications();
+    try {
+      await apiService.dio.patch('/notifications');
+    } catch (e) {
+      debugPrint('Backend markAllAsRead failed: $e');
+    }
   }
 
   Future<void> removeNotification(String id) async {
     _notifications.removeWhere((n) => n.id == id);
     notifyListeners();
-    await _saveNotifications();
+    try {
+      if (!id.startsWith('temp_')) {
+        await apiService.dio.delete('/notifications?notificationId=$id');
+      }
+    } catch (e) {
+      debugPrint('Backend removeNotification failed: $e');
+    }
   }
 
   Future<void> clearAll() async {
     _notifications.clear();
     notifyListeners();
-    await _saveNotifications();
+    try {
+      await apiService.dio.delete('/notifications');
+    } catch (e) {
+      debugPrint('Backend clearAll failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _pendingRefreshTimer?.cancel();
+    super.dispose();
   }
 }

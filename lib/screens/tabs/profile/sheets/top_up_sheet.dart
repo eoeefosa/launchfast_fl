@@ -47,15 +47,6 @@ class _TopUpSheetState extends State<TopUpSheet> {
   double? get _parsedAmount => double.tryParse(_amountCtrl.text.trim());
   bool get _hasValidAmount => (_parsedAmount ?? 0) > 0;
 
-  double get _feeAmount {
-    if (_parsedAmount == null) return 0;
-    double fee = _parsedAmount! * 0.025;
-    if (fee > 2000) fee = 2000;
-    return fee;
-  }
-
-  double get _totalCharge => (_parsedAmount ?? 0) + _feeAmount;
-
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
@@ -80,7 +71,6 @@ class _TopUpSheetState extends State<TopUpSheet> {
 
   void _selectQuickAmount(int amount) {
     _amountCtrl.text = amount.toString();
-    // Move cursor to end.
     _amountCtrl.selection = TextSelection.collapsed(
       offset: _amountCtrl.text.length,
     );
@@ -100,10 +90,8 @@ class _TopUpSheetState extends State<TopUpSheet> {
         data: {'amount': _parsedAmount, 'source': 'mobile'},
       );
 
-      final paystackData =
-          (response.data?['data']) as Map<String, dynamic>?;
-      final authorizationUrl =
-          paystackData?['authorization_url'] as String?;
+      final paystackData = (response.data?['data']) as Map<String, dynamic>?;
+      final authorizationUrl = paystackData?['authorization_url'] as String?;
 
       if (authorizationUrl == null) {
         throw Exception('No authorization URL returned from server');
@@ -163,52 +151,12 @@ class _TopUpSheetState extends State<TopUpSheet> {
           ),
           const SizedBox(height: 24),
           _SecurityBadge(scheme: scheme),
-          
-          if (_hasValidAmount) ...[
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Amount to Deposit', style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7))),
-                      Text('₦${_parsedAmount?.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onSurface)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Processing Fee (2.5%)', style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7))),
-                      Text('₦${_feeAmount.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onSurface)),
-                    ],
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Divider(),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Total Charge', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)),
-                      Text('₦${_totalCharge.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w900, color: scheme.primary, fontSize: 18)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-          
           const SizedBox(height: 32),
           CustomButton(
             isLoading: _isLoading,
-            label: _hasValidAmount ? 'Pay ₦${_totalCharge.toStringAsFixed(0)}' : 'Deposit Funds',
+            label: _hasValidAmount
+                ? 'Pay ₦${_parsedAmount!.toStringAsFixed(0)}'
+                : 'Deposit Funds',
             primaryColor: scheme.primary,
             onPressed: _isLoading ? null : _deposit,
           ),
