@@ -9,6 +9,7 @@ import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:campuschow/store/lib/core/services/ably_service.dart';
+import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'widgets/pickup_scanner_sheet.dart';
 import 'widgets/order_card.dart';
 import 'widgets/order_screen_component.dart';
@@ -49,6 +50,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
   bool _isSelectionMode = false;
   final Set<String> _selectedOrderIds = {};
   final Set<String> _dismissedUnattendedOrderIds = {};
+  final Set<String> _knownOrderIds = {};
+  Timer? _orderPollTimer;
+  bool _hasLoadedOrders = false;
 
   // ── Controllers ────────────────────────────────────────────────────────────
   late final TabController _tabController;
@@ -124,11 +128,13 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     _initAudioPlayer();
     _loadOrders();
     _subscribeAbly();
+    _startOrderPolling();
     _startUnattendedTimer();
   }
 
   @override
   void dispose() {
+    _orderPollTimer?.cancel();
     _unattendedTimer?.cancel();
     _reminderAudioPlayer?.dispose();
     _tabController
@@ -197,6 +203,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       await _rejectPastOrders(orders);
       orders = await storeProvider.fetchStoreOrders();
       orders.sort((a, b) => b.date.compareTo(a.date));
+      _notifyForNewPendingOrders(orders);
       if (mounted) {
         setState(() => _orders = orders);
         // Run initial unattended reminder check
@@ -210,6 +217,49 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _startOrderPolling() {
+    _orderPollTimer?.cancel();
+    _orderPollTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) {
+        _loadOrders(showLoading: false);
+      }
+    });
+  }
+
+  void _notifyForNewPendingOrders(List<Order> orders) {
+    final incomingIds = orders.map((order) => order.id).toSet();
+
+    if (!_hasLoadedOrders) {
+      _knownOrderIds
+        ..clear()
+        ..addAll(incomingIds);
+      _hasLoadedOrders = true;
+      return;
+    }
+
+    for (final order in orders) {
+      if (order.status != OrderStatus.pending) continue;
+      if (_knownOrderIds.contains(order.id)) continue;
+
+      _knownOrderIds.add(order.id);
+      _playReminderSound();
+      notificationService.showNotification(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title: 'New Order Received!',
+        body: 'You have a new pending order. Tap to view.',
+        payload: 'order_${order.id}',
+        channelId: kOrderChannelId,
+      );
+      if (mounted) {
+        setState(() => _hasNewOrder = true);
+      }
+    }
+
+    _knownOrderIds
+      ..removeWhere((id) => !incomingIds.contains(id))
+      ..addAll(incomingIds);
   }
 
   Future<void> _updateStatus(String orderId, OrderStatus newStatus) async {

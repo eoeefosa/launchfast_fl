@@ -79,16 +79,21 @@ class NotificationService {
   // ── Init ───────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
+    debugPrint(
+      '[NotificationService] init() start — platform=${Platform.operatingSystem}',
+    );
     await _initLocalNotifications();
     if (Platform.isAndroid) await _requestAndroidPermission();
     await _initFcm();
     await _logFcmToken();
     await subscribeToTopic('broadcast');
+    debugPrint('[NotificationService] init() complete');
   }
 
   // ── Local notifications ────────────────────────────────────────────────────
 
   Future<void> _initLocalNotifications() async {
+    debugPrint('[NotificationService] Initializing local notifications...');
     const settings = InitializationSettings(
       android: AndroidInitializationSettings('ic_notification'),
       iOS: DarwinInitializationSettings(
@@ -102,6 +107,7 @@ class NotificationService {
       settings: settings,
       onDidReceiveNotificationResponse: _onLocalNotificationTapped,
     );
+    debugPrint('[NotificationService] Local notifications initialized');
 
     await _createAndroidChannels();
   }
@@ -152,12 +158,18 @@ class NotificationService {
 
   Future<void> _initFcm() async {
     try {
+      debugPrint('[FCM] _initFcm start');
       final settings = await _fcm.requestPermission(
         alert: true,
         badge: true,
         sound: true,
       );
-      debugPrint('[FCM] Permission: ${settings.authorizationStatus}');
+      debugPrint(
+        '[FCM] Permission settings: auth=${settings.authorizationStatus} '
+        'alert=${settings.alert} badge=${settings.badge} sound=${settings.sound} '
+        'announcement=${settings.announcement} carPlay=${settings.carPlay} '
+        'criticalAlert=${settings.criticalAlert}',
+      );
 
       // Show banners while in the foreground on iOS.
       await _fcm.setForegroundNotificationPresentationOptions(
@@ -165,24 +177,49 @@ class NotificationService {
         badge: true,
         sound: true,
       );
+      debugPrint('[FCM] Foreground presentation options enabled');
 
-      FirebaseMessaging.onMessage.listen(_onForegroundMessage);
+      final currentSettings = await _fcm.getNotificationSettings();
+      debugPrint(
+        '[FCM] Current notification settings: auth=${currentSettings.authorizationStatus} '
+        'alert=${currentSettings.alert} badge=${currentSettings.badge} '
+        'sound=${currentSettings.sound}',
+      );
+
+      FirebaseMessaging.onMessage.listen((message) {
+        debugPrint(
+          '[FCM] onMessage fired — id=${message.messageId} '
+          'from=${message.from} sentTime=${message.sentTime} '
+          'hasNotification=${message.notification != null} data=${message.data}',
+        );
+        _onForegroundMessage(message);
+      });
 
       FirebaseMessaging.onMessageOpenedApp.listen((msg) {
-        debugPrint('[FCM] App opened from background tap');
+        debugPrint(
+          '[FCM] App opened from background tap — id=${msg.messageId} data=${msg.data}',
+        );
         _onNotificationTap(msg);
       });
 
       final initial = await _fcm.getInitialMessage();
       if (initial != null) {
-        debugPrint('[FCM] App launched from notification tap');
+        debugPrint(
+          '[FCM] App launched from notification tap — id=${initial.messageId} data=${initial.data}',
+        );
         // Defer so the widget tree is mounted before we push a route.
         WidgetsBinding.instance.addPostFrameCallback(
           (_) => _onNotificationTap(initial),
         );
+      } else {
+        debugPrint('[FCM] No initial launch notification');
       }
 
-      _fcm.onTokenRefresh.listen(_onTokenRefresh);
+      _fcm.onTokenRefresh.listen((token) {
+        debugPrint('[FCM] onTokenRefresh emitted token=$token');
+        _onTokenRefresh(token);
+      });
+      debugPrint('[FCM] _initFcm complete');
     } catch (e, stack) {
       debugPrint('[FCM] _initFcm error: $e\n$stack');
     }
@@ -204,12 +241,19 @@ class NotificationService {
   // ── Foreground messages ────────────────────────────────────────────────────
 
   Future<void> _onForegroundMessage(RemoteMessage message) async {
-    debugPrint('[FCM] Foreground — id=${message.messageId}');
+    debugPrint(
+      '[FCM] Foreground handler start — id=${message.messageId} '
+      'data=${message.data} title=${message.notification?.title} '
+      'body=${message.notification?.body}',
+    );
 
     // Deduplicate.
     final id = message.messageId;
     if (id != null) {
-      if (_handledMessageIds.contains(id)) return;
+      if (_handledMessageIds.contains(id)) {
+        debugPrint('[FCM] Duplicate foreground message ignored: $id');
+        return;
+      }
       _handledMessageIds.add(id);
       if (_handledMessageIds.length > _kMaxHandledIds) {
         _handledMessageIds.clear();
@@ -223,6 +267,7 @@ class NotificationService {
       combinedData['body'] = n.body;
     }
     _notifyListeners(combinedData);
+    debugPrint('[FCM] In-app listeners notified with payload=$combinedData');
 
     // Wallet side-effect.
     _maybeNotifyWallet(message.data['type'] as String?);
@@ -235,7 +280,9 @@ class NotificationService {
         payload: (message.data['orderId'] ?? message.data['id']) as String?,
         channelId: kHighImportanceChannelId,
       );
+      debugPrint('[FCM] Foreground local notification displayed');
     } else {
+      debugPrint('[FCM] Entering data-only message handler');
       await _handleDataOnlyMessage(message);
     }
   }
@@ -260,6 +307,9 @@ class NotificationService {
     final orderId = (message.data['orderId'] ?? message.data['id']) as String?;
     final status = (message.data['status'] as String?)?.toLowerCase() ?? '';
     final amount = message.data['amount'] as String?;
+    debugPrint(
+      '[FCM] Handling data-only message — type=$type orderId=$orderId status=$status amount=$amount data=${message.data}',
+    );
 
     switch (type) {
       case 'deposit':
@@ -301,6 +351,8 @@ class NotificationService {
           payload: orderId,
         );
         break;
+      default:
+        debugPrint('[FCM] Unhandled data-only type: $type');
     }
   }
 
@@ -345,18 +397,20 @@ class NotificationService {
     try {
       if (Platform.isIOS) {
         debugPrint('[FCM] iOS Platform detected. Requesting APNS token...');
-        
+
         // Sometimes APNS registration takes a split second at startup.
         // Let's retry a few times to get the token.
         String? apnsToken;
         for (int i = 0; i < 3; i++) {
           apnsToken = await _fcm.getAPNSToken();
           if (apnsToken != null) break;
-          debugPrint('[FCM] APNS token not ready yet. Retrying in 2 seconds (attempt ${i + 1}/3)...');
+          debugPrint(
+            '[FCM] APNS token not ready yet. Retrying in 2 seconds (attempt ${i + 1}/3)...',
+          );
           await Future.delayed(const Duration(seconds: 2));
         }
 
-        debugPrint('[FCM] APNS token: $apnsToken');
+        debugPrint('[FCM] APNS token after retries: $apnsToken');
         if (apnsToken == null) {
           debugPrint(
             '[FCM CRITICAL WARNING] APNS token is null! iOS push notifications will NOT work. \n'
@@ -364,19 +418,25 @@ class NotificationService {
             '1. Testing on a Simulator (Simulators do not support remote push notifications).\n'
             '2. Xcode capability "Push Notifications" is missing.\n'
             '3. Xcode capability "Background Modes" -> "Remote notifications" is unchecked.\n'
-            '4. Mismatch in Provisioning Profile (e.g. Debug build vs Production aps-environment entitlement).'
+            '4. Mismatch in Provisioning Profile (e.g. Debug build vs Production aps-environment entitlement).',
           );
         } else {
-          debugPrint('[FCM SUCCESS] APNS token retrieved successfully: $apnsToken');
+          debugPrint(
+            '[FCM SUCCESS] APNS token retrieved successfully: $apnsToken',
+          );
         }
       }
-      
+
       final token = await _fcm.getToken();
       debugPrint('[FCM] Registration Token (FCM): $token');
       if (token == null) {
-        debugPrint('[FCM CRITICAL WARNING] FCM registration token is null! Cannot receive push notifications.');
+        debugPrint(
+          '[FCM CRITICAL WARNING] FCM registration token is null! Cannot receive push notifications.',
+        );
       } else {
-        debugPrint('[FCM SUCCESS] FCM registration token retrieved successfully: $token');
+        debugPrint(
+          '[FCM SUCCESS] FCM registration token retrieved successfully: $token',
+        );
       }
     } catch (e, stack) {
       debugPrint('[FCM ERROR] Exception during token retrieval: $e\n$stack');
@@ -440,9 +500,15 @@ class NotificationService {
     String? payload,
     String channelId = kHighImportanceChannelId,
   }) async {
+    debugPrint(
+      '[NotificationService] showNotification title=$title body=$body payload=$payload channelId=$channelId',
+    );
     final prefs = await SharedPreferences.getInstance();
     final soundEnabled = prefs.getBool(_kSoundPrefKey) ?? true;
     final soundFile = soundEnabled ? 'order_sound' : null;
+    debugPrint(
+      '[NotificationService] soundEnabled=$soundEnabled soundFile=$soundFile',
+    );
 
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -474,6 +540,7 @@ class NotificationService {
       notificationDetails: details,
       payload: payload,
     );
+    debugPrint('[NotificationService] Local notification posted successfully');
   }
 
   // ── Static notification (background isolates) ──────────────────────────────
@@ -487,12 +554,19 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
+    debugPrint(
+      '[NotificationService] showStaticNotification title=$title body=$body payload=$payload',
+    );
     final plugin = FlutterLocalNotificationsPlugin();
 
     await plugin.initialize(
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('ic_notification'),
-        iOS: DarwinInitializationSettings(),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        ),
       ),
     );
 
@@ -506,7 +580,12 @@ class NotificationService {
         playSound: true,
         enableVibration: true,
       ),
-      iOS: DarwinNotificationDetails(),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        sound: 'order_sound.mp3',
+      ),
     );
 
     // Mask to valid int32 range so Android doesn't reject the ID.

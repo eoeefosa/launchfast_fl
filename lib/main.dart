@@ -73,9 +73,7 @@ const _orderChannel = AndroidNotificationChannel(
 /// Firebase must be re-initialised here because it is a fresh isolate.
 @pragma('vm:entry-point')
 Future<void> _onBackgroundMessage(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   debugPrint('[FCM-BG] id=${message.messageId} data=${message.data}');
 
@@ -111,31 +109,31 @@ Future<void> _onBackgroundMessage(RemoteMessage message) async {
 
   return switch (type) {
     'payment_success' || 'payment_alert' => (
-        'Payment Successful',
-        'Your payment for order #$orderId was confirmed.',
-      ),
+      'Payment Successful',
+      'Your payment for order #$orderId was confirmed.',
+    ),
     'order_update' => (
-        'Order Updated',
-        status.isNotEmpty
-            ? 'Your order status is now: ${status.replaceAll('_', ' ')}'
-            : 'Your order has been updated.',
-      ),
+      'Order Updated',
+      status.isNotEmpty
+          ? 'Your order status is now: ${status.replaceAll('_', ' ')}'
+          : 'Your order has been updated.',
+    ),
     'order_processing' => (
-        'Order Processing',
-        status.isNotEmpty
-            ? 'Your order status is now: ${status.replaceAll('_', ' ')}'
-            : 'Your order is being processed.',
-      ),
+      'Order Processing',
+      status.isNotEmpty
+          ? 'Your order status is now: ${status.replaceAll('_', ' ')}'
+          : 'Your order is being processed.',
+    ),
     'deposit' => (
-        'Deposit Successful',
-        amount != null
-            ? '₦$amount has been added to your wallet.'
-            : 'Your wallet has been topped up successfully.',
-      ),
+      'Deposit Successful',
+      amount != null
+          ? '₦$amount has been added to your wallet.'
+          : 'Your wallet has been topped up successfully.',
+    ),
     'new_order' => (
-        'New Order Received!',
-        'A customer just placed a new order.',
-      ),
+      'New Order Received!',
+      'A customer just placed a new order.',
+    ),
     _ => (null, null),
   };
 }
@@ -165,8 +163,8 @@ Future<void> main() async {
       debugPrint('[Main] Guest user — initialising Ably as guest');
       // Fire-and-forget; a failed Ably init must not crash the app.
       ablyService.initAblyGuest().catchError(
-            (Object e) => debugPrint('[Main] Guest Ably init failed: $e'),
-          );
+        (Object e) => debugPrint('[Main] Guest Ably init failed: $e'),
+      );
     }
 
     await notificationService.init();
@@ -196,16 +194,13 @@ Future<void> main() async {
 // ─────────────────────────────────────────────────────────────────────────────
 
 Future<void> _initFirebase() async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Register the background handler before any other FCM call.
   FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
 
   // Crashlytics: fatal Flutter framework errors.
-  FlutterError.onError =
-      FirebaseCrashlytics.instance.recordFlutterFatalError;
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
 
   // Crashlytics: fatal async errors outside the Flutter framework.
   PlatformDispatcher.instance.onError = (error, stack) {
@@ -215,20 +210,27 @@ Future<void> _initFirebase() async {
 }
 
 Future<void> _initLocalNotifications() async {
+  debugPrint('[Main][Notifications] Initializing local notifications plugin');
   const initSettings = InitializationSettings(
     android: AndroidInitializationSettings('ic_notification'),
-    iOS: DarwinInitializationSettings(),
+    iOS: DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    ),
   );
 
   await _localNotifications.initialize(
     settings: initSettings,
     onDidReceiveNotificationResponse: _onNotificationTapped,
   );
+  debugPrint('[Main][Notifications] Local notifications initialized');
 
   // Create Android channels (no-op on iOS/other platforms).
   final androidPlugin = _localNotifications
       .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+        AndroidFlutterLocalNotificationsPlugin
+      >();
 
   await androidPlugin?.createNotificationChannel(_highImportanceChannel);
   await androidPlugin?.createNotificationChannel(_orderChannel);
@@ -251,24 +253,47 @@ void _onNotificationTapped(NotificationResponse response) {
 }
 
 Future<void> _initFcmPermissionsAndListeners() async {
-  await FirebaseMessaging.instance.requestPermission(
+  debugPrint('[Main][FCM] Requesting notification permission');
+  final permissionSettings = await FirebaseMessaging.instance.requestPermission(
     alert: true,
     badge: true,
     sound: true,
   );
+  debugPrint(
+    '[Main][FCM] Permission result: auth=${permissionSettings.authorizationStatus} '
+    'alert=${permissionSettings.alert} badge=${permissionSettings.badge} '
+    'sound=${permissionSettings.sound}',
+  );
+
+  final currentSettings = await FirebaseMessaging.instance
+      .getNotificationSettings();
+  debugPrint(
+    '[Main][FCM] Current settings after request: auth=${currentSettings.authorizationStatus} '
+    'alert=${currentSettings.alert} badge=${currentSettings.badge} '
+    'sound=${currentSettings.sound}',
+  );
 
   // App opened via notification tap while in background.
-  FirebaseMessaging.onMessageOpenedApp.listen(_navigateToOrder);
+  FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    debugPrint(
+      '[Main][FCM] onMessageOpenedApp id=${message.messageId} data=${message.data}',
+    );
+    _navigateToOrder(message);
+  });
 
   // App launched from a terminated state via notification tap.
-  final initialMessage =
-      await FirebaseMessaging.instance.getInitialMessage();
+  final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
 
   if (initialMessage != null) {
+    debugPrint(
+      '[Main][FCM] getInitialMessage id=${initialMessage.messageId} data=${initialMessage.data}',
+    );
     // Delay so the widget tree (and router) have time to mount.
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _navigateToOrder(initialMessage),
     );
+  } else {
+    debugPrint('[Main][FCM] getInitialMessage returned null');
   }
 }
 

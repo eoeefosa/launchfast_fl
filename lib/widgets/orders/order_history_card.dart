@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/order.dart';
 import '../../constants/app_colors.dart';
 
@@ -47,7 +46,9 @@ class OrderHistoryCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isPendingPayment
                           ? Colors.orange.withValues(alpha: 0.12)
-                          : scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          : scheme.surfaceContainerHighest.withValues(
+                              alpha: 0.5,
+                            ),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
@@ -96,7 +97,9 @@ class OrderHistoryCard extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 17,
-                          color: isPendingPayment ? Colors.orange.shade700 : AppColors.primary,
+                          color: isPendingPayment
+                              ? Colors.orange.shade700
+                              : AppColors.primary,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -109,14 +112,21 @@ class OrderHistoryCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline_rounded, size: 14, color: Colors.orange.shade800),
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 14,
+                        color: Colors.orange.shade800,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Payment required — tap to pay or cancel',
@@ -134,7 +144,7 @@ class OrderHistoryCard extends StatelessWidget {
           ),
         ),
       ),
-    ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.1);
+    );
   }
 }
 
@@ -150,14 +160,20 @@ class _StatusBadge extends StatelessWidget {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    Color bgColor = isDark ? Colors.orange.withValues(alpha: 0.15) : Colors.orange.shade50;
+    Color bgColor = isDark
+        ? Colors.orange.withValues(alpha: 0.15)
+        : Colors.orange.shade50;
     Color textColor = isDark ? Colors.orange.shade300 : Colors.orange.shade700;
 
     if (isDelivered) {
-      bgColor = isDark ? Colors.green.withValues(alpha: 0.15) : Colors.green.shade50;
+      bgColor = isDark
+          ? Colors.green.withValues(alpha: 0.15)
+          : Colors.green.shade50;
       textColor = isDark ? Colors.green.shade300 : Colors.green.shade700;
     } else if (isCancelled) {
-      bgColor = isDark ? Colors.red.withValues(alpha: 0.15) : Colors.red.shade50;
+      bgColor = isDark
+          ? Colors.red.withValues(alpha: 0.15)
+          : Colors.red.shade50;
       textColor = isDark ? Colors.red.shade300 : Colors.red.shade700;
     }
 
@@ -179,5 +195,3 @@ class _StatusBadge extends StatelessWidget {
     );
   }
 }
-
-
