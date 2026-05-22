@@ -22,14 +22,11 @@ import 'components/order_details_error.dart';
 /// Accepts either a fully-loaded [order] object or an [orderId] string.
 /// When only [orderId] is supplied the screen fetches the order on mount.
 class OrderDetailsScreen extends StatefulWidget {
-  const OrderDetailsScreen({
-    super.key,
-    this.order,
-    this.orderId,
-  }) : assert(
-          order != null || orderId != null,
-          'Provide at least one of order or orderId.',
-        );
+  const OrderDetailsScreen({super.key, this.order, this.orderId})
+    : assert(
+        order != null || orderId != null,
+        'Provide at least one of order or orderId.',
+      );
 
   final Order? order;
   final String? orderId;
@@ -53,6 +50,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     if (widget.order != null) {
       // Order already loaded — no network call needed.
       _order = widget.order;
+      if (widget.orderId != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _fetchOrder());
+      }
     } else {
       // orderId is guaranteed non-null by the assert above.
       _fetchOrder();
@@ -62,13 +62,22 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   // ── Data fetching ──────────────────────────────────────────────────────────
 
   Future<void> _fetchOrder() async {
+    final orderId = widget.orderId ?? _order?.id ?? widget.order?.id;
+    if (orderId == null) {
+      setState(() {
+        _error = 'Order not found.';
+        _isLoading = false;
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final order = await OrderRepository().getOrderById(widget.orderId!);
+      final order = await OrderRepository().getOrderById(orderId);
       if (!mounted) return;
       setState(() {
         _order = order;
@@ -137,10 +146,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (_order!.status == OrderStatus.priceAdjusted)
-              PriceAdjustmentPanel(
-                order: _order!,
-                onUpdated: _fetchOrder,
-              ),
+              PriceAdjustmentPanel(order: _order!, onUpdated: _fetchOrder),
             if (_isActive) ...[
               ActiveOrderTracker(order: _order!),
               const SizedBox(height: 32),
@@ -192,11 +198,14 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
     try {
       await OrderRepository().respondToPriceAdjustment(widget.order.id, action);
       if (!mounted) return;
+      context.read<OrderProvider>().refreshOrders();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(action == 'ACCEPT'
-              ? 'Price adjustment accepted. Processing order...'
-              : 'Order cancelled successfully.'),
+          content: Text(
+            action == 'ACCEPT'
+                ? 'Price adjustment accepted. Processing order...'
+                : 'Order cancelled successfully.',
+          ),
         ),
       );
       widget.onUpdated();
@@ -218,6 +227,7 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
     final original = widget.order.originalTotal ?? widget.order.total;
     final current = widget.order.total;
     final diff = current - original;
+    final isHigher = diff > 0;
 
     final primaryColor = Theme.of(context).primaryColor;
 
@@ -234,11 +244,15 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.amber.shade900, size: 28),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.amber.shade900,
+                size: 28,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Price Adjustment Required',
+                  isHigher ? 'Price Adjustment Required' : 'Price Reduced',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -249,24 +263,42 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
-            'The store owner has updated the price of items in your order. Please review the updated pricing below:',
-            style: TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
+          Text(
+            isHigher
+                ? 'The store owner has increased the order price. Pay the balance to continue, or cancel the order.'
+                : 'The store owner has reduced the order price. Accept the updated order to continue.',
+            style: const TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: Colors.black87,
+            ),
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Original Total:', style: TextStyle(color: Colors.black54)),
-              Text('₦${original.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              const Text(
+                'Original Total:',
+                style: TextStyle(color: Colors.black54),
+              ),
+              Text(
+                '₦${original.toStringAsFixed(0)}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Updated Total:', style: TextStyle(color: Colors.black54)),
-              Text('₦${current.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Updated Total:',
+                style: TextStyle(color: Colors.black54),
+              ),
+              Text(
+                '₦${current.toStringAsFixed(0)}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -275,10 +307,10 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                diff > 0 ? 'Balance to Pay:' : 'Refund Amount:',
+                isHigher ? 'Balance to Pay:' : 'Amount Reduced:',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: diff > 0 ? Colors.red.shade700 : Colors.green.shade700,
+                  color: isHigher ? Colors.red.shade700 : Colors.green.shade700,
                 ),
               ),
               Text(
@@ -286,7 +318,7 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: diff > 0 ? Colors.red.shade700 : Colors.green.shade700,
+                  color: isHigher ? Colors.red.shade700 : Colors.green.shade700,
                 ),
               ),
             ],
@@ -304,7 +336,10 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
                       foregroundColor: Colors.red.shade700,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text('Cancel Order', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Cancel Order',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -315,11 +350,13 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 0,
                     ),
                     child: Text(
-                      diff > 0 ? 'Pay Balance' : 'Accept Refund',
+                      isHigher ? 'Pay Balance' : 'Accept Order',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -344,7 +381,8 @@ class _PendingPaymentBottomBar extends StatefulWidget {
   });
 
   @override
-  State<_PendingPaymentBottomBar> createState() => _PendingPaymentBottomBarState();
+  State<_PendingPaymentBottomBar> createState() =>
+      _PendingPaymentBottomBarState();
 }
 
 class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
@@ -355,7 +393,7 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
     try {
       HapticFeedback.mediumImpact();
       await OrderRepository().payWithWallet(widget.order.id);
-      
+
       // Update local wallet balance
       if (mounted) {
         final auth = context.read<AuthProvider>();
@@ -414,22 +452,17 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
       }
 
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-      
+
       // Since it launches externally, we tell the user to complete payment
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Opening Paystack payment page...'),
-          ),
+          const SnackBar(content: Text('Opening Paystack payment page...')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -478,7 +511,9 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Order?'),
-        content: const Text('Are you sure you want to cancel this unpaid order? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to cancel this unpaid order? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -498,12 +533,12 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
     setState(() => _isLoading = true);
     try {
       HapticFeedback.mediumImpact();
-      await OrderRepository().updateOrder(widget.order.id, {'status': 'cancelled'});
+      await OrderRepository().updateOrder(widget.order.id, {
+        'status': 'cancelled',
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Order cancelled successfully.'),
-          ),
+          const SnackBar(content: Text('Order cancelled successfully.')),
         );
         widget.onCancelled();
       }

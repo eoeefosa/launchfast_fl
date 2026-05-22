@@ -387,7 +387,7 @@ class NotificationService {
       if (cleanId.startsWith('order_')) {
         cleanId = cleanId.replaceFirst('order_', '');
       }
-      context.push('/orders/$cleanId');
+      context.push('/order-details/$cleanId');
     }
   }
 

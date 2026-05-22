@@ -278,6 +278,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
         orderId,
         newStatus.backendName,
       );
+      if (newStatus == OrderStatus.priceAdjusted) {
+        await _loadOrders(showLoading: false);
+      }
       _showSnackBar('Order updated to ${newStatus.displayLabel}');
     } catch (e, stack) {
       if (mounted) {
@@ -300,28 +303,8 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
   }
 
   Future<void> _bulkRejectOrders() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Confirm Bulk Reject'),
-        content: Text(
-          'Are you sure you want to reject ${_selectedOrderIds.length} orders? This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Reject'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
+    final reason = await _selectBulkRejectionReason();
+    if (reason == null || !mounted) return;
 
     setState(() => _isLoading = true);
 
@@ -333,6 +316,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
         await context.read<StoreProvider>().updateOrderStatus(
           orderId,
           OrderStatus.cancelled.backendName,
+          rejectionReason: reason,
         );
         successCount++;
       } catch (e) {
@@ -355,6 +339,119 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       );
     } else {
       _showSnackBar('Successfully rejected $successCount orders');
+    }
+  }
+
+  Future<String?> _selectBulkRejectionReason() async {
+    final controller = TextEditingController();
+    const customReason = 'Custom';
+
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (dialogCtx) {
+          final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
+          var selectedReason = 'Out of stock';
+          String? customError;
+
+          return StatefulBuilder(
+            builder: (context, setDialogState) => AlertDialog(
+              backgroundColor: isDark ? null : Colors.white,
+              title: const Text('Reject Selected Orders'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select a reason for rejecting ${_selectedOrderIds.length} orders.',
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      selectedReason == 'Out of stock'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Out of stock'),
+                    onTap: () {
+                      setDialogState(() {
+                        selectedReason = 'Out of stock';
+                        customError = null;
+                      });
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      selectedReason == 'Not taking orders'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Not taking orders'),
+                    onTap: () {
+                      setDialogState(() {
+                        selectedReason = 'Not taking orders';
+                        customError = null;
+                      });
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      selectedReason == customReason
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Custom'),
+                    onTap: () {
+                      setDialogState(() {
+                        selectedReason = customReason;
+                      });
+                    },
+                  ),
+                  if (selectedReason == customReason) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        hintText: 'Enter rejection reason',
+                        border: const OutlineInputBorder(),
+                        errorText: customError,
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  onPressed: () {
+                    final reason = selectedReason == customReason
+                        ? controller.text.trim()
+                        : selectedReason;
+                    if (reason.isEmpty) {
+                      setDialogState(() {
+                        customError = 'Enter a rejection reason';
+                      });
+                      return;
+                    }
+                    Navigator.pop(dialogCtx, reason);
+                  },
+                  child: const Text('Reject'),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } finally {
+      controller.dispose();
     }
   }
 

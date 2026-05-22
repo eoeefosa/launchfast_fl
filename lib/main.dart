@@ -249,7 +249,7 @@ void _onNotificationTapped(NotificationResponse response) {
   }
 
   // Use GoRouter's global navigation helper so we stay inside the router graph.
-  rootNavigatorKey.currentContext?.go('/orders/$cleanId');
+  rootNavigatorKey.currentContext?.go('/order-details/$cleanId');
 }
 
 Future<void> _initFcmPermissionsAndListeners() async {
@@ -308,7 +308,7 @@ void _navigateToOrder(RemoteMessage message) {
   }
 
   debugPrint('[FCM] Navigating to order: $cleanId');
-  rootNavigatorKey.currentContext?.go('/orders/$cleanId');
+  rootNavigatorKey.currentContext?.go('/order-details/$cleanId');
 }
 
 Future<void> _lockOrientation() async {

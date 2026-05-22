@@ -7,21 +7,31 @@ import 'package:campuschow/store/lib/features/dashboard/presentation/store_order
 /// Routes notifications to the correct application flow.
 /// Handles Rider, Store, and User navigation roles.
 class NotificationRouter {
-  static void handleNotificationTap(BuildContext context, NotificationItem item) {
+  static void handleNotificationTap(
+    BuildContext context,
+    NotificationItem item,
+  ) {
     final metadata = item.metadata;
-    final type = (metadata?['type']?.toString() ?? item.type.name).toLowerCase();
-    String? rawId = metadata?['orderId']?.toString() ?? 
-                    metadata?['order_id']?.toString() ?? 
-                    metadata?['id']?.toString();
+    final type = (metadata?['type']?.toString() ?? item.type.name)
+        .toLowerCase();
+    String? rawId =
+        metadata?['orderId']?.toString() ??
+        metadata?['order_id']?.toString() ??
+        metadata?['id']?.toString();
     if (rawId != null && rawId.startsWith('order_')) {
       rawId = rawId.replaceFirst('order_', '');
     }
     final orderId = rawId;
 
-    debugPrint('[NotificationRouter] Handling tap: type=$type, orderId=$orderId');
+    debugPrint(
+      '[NotificationRouter] Handling tap: type=$type, orderId=$orderId',
+    );
 
     // 1. Handle Wallet / Deposit Workflows - Show premium detail sheet
-    if (type == 'deposit' || type == 'wallet_topup' || type == 'wallet_update' || item.type == NotificationType.walletUpdate) {
+    if (type == 'deposit' ||
+        type == 'wallet_topup' ||
+        type == 'wallet_update' ||
+        item.type == NotificationType.walletUpdate) {
       NotificationDetailSheet.show(context, item);
       return;
     }
@@ -45,6 +55,9 @@ class NotificationRouter {
           break;
 
         case 'order_processing':
+        case 'price_adjusted':
+        case 'priceadjusted':
+        case 'price_adjustment':
         case 'order_ready':
         case 'delivery_update':
         case 'order_update':
@@ -53,7 +66,7 @@ class NotificationRouter {
           break;
 
         default:
-          context.push('/orders/$orderId');
+          context.push('/order-details/$orderId');
       }
       return;
     }
@@ -76,7 +89,7 @@ class NotificationRouter {
         );
         break;
       default:
-        context.push('/orders/$orderId');
+        context.push('/order-details/$orderId');
     }
   }
 }

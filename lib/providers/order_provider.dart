@@ -83,6 +83,9 @@ class OrderProvider with ChangeNotifier {
       '[OrderProvider] Ably push received — orderId=$orderId, newStatus=${status.name}',
     );
     updateOrderStatus(orderId, status);
+    if (status == OrderStatus.priceAdjusted) {
+      refreshOrders();
+    }
   }
 
   Future<void> refreshOrders() async {
@@ -281,17 +284,13 @@ class OrderProvider with ChangeNotifier {
   }
 
   Future<void> clearOrders() async {
-    debugPrint(
-      '[OrderProvider] clearOrders: clearing all cached orders...',
-    );
+    debugPrint('[OrderProvider] clearOrders: clearing all cached orders...');
     _orders = [];
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('launch-fast-orders');
     // Note: Do not disconnect Ably here! Ably is tied to the AuthProvider
     // session and is disconnected globally during logout.
-    debugPrint(
-      '[OrderProvider] clearOrders: done — cache cleared.',
-    );
+    debugPrint('[OrderProvider] clearOrders: done — cache cleared.');
     notifyListeners();
   }
 }

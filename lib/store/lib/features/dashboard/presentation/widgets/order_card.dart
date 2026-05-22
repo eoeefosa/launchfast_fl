@@ -78,6 +78,13 @@ class OrderCard extends StatelessWidget {
         ),
       ],
       OrderStatus.priceAdjusted => [
+        if (order.originalTotal != null && order.originalTotal! >= order.total)
+          const ActionConfig(
+            'Accept',
+            OrderStatus.accepted,
+            Colors.green,
+            Icons.check_circle_outline,
+          ),
         const ActionConfig(
           'Adjust Price Again',
           OrderStatus.priceAdjusted,
@@ -85,7 +92,7 @@ class OrderCard extends StatelessWidget {
           Icons.price_change_outlined,
         ),
         const ActionConfig(
-          'Cancel Order',
+          'Reject',
           OrderStatus.cancelled,
           Colors.red,
           Icons.cancel_outlined,
@@ -997,56 +1004,127 @@ class _ActionButton extends StatelessWidget {
   final Order order;
   final Future<void> Function(String, OrderStatus) onTap;
 
-  Future<void> _showRejectionDialog(BuildContext context) async {
+  Future<String?> _selectRejectionReason(BuildContext context) async {
     final controller = TextEditingController();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Reject Order'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Please provide a reason for rejecting this order so the customer is notified.',
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                hintText: 'e.g., Spaghetti is out of stock',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(dialogCtx, true),
-            child: const Text(
-              'Reject Order',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
+    const customReason = 'Custom';
 
-    if (confirmed == true && context.mounted) {
-      final reason = controller.text.trim();
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (dialogCtx) {
+          final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
+          var selectedReason = 'Out of stock';
+          String? customError;
+
+          return StatefulBuilder(
+            builder: (context, setDialogState) => AlertDialog(
+              backgroundColor: isDark ? null : Colors.white,
+              title: const Text('Reject Order'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Select a reason so the customer is notified clearly.',
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      selectedReason == 'Out of stock'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Out of stock'),
+                    onTap: () {
+                      setDialogState(() {
+                        selectedReason = 'Out of stock';
+                        customError = null;
+                      });
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      selectedReason == 'Not taking orders'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Not taking orders'),
+                    onTap: () {
+                      setDialogState(() {
+                        selectedReason = 'Not taking orders';
+                        customError = null;
+                      });
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      selectedReason == customReason
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Custom'),
+                    onTap: () {
+                      setDialogState(() {
+                        selectedReason = customReason;
+                      });
+                    },
+                  ),
+                  if (selectedReason == customReason) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        hintText: 'Enter rejection reason',
+                        border: const OutlineInputBorder(),
+                        errorText: customError,
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () {
+                    final reason = selectedReason == customReason
+                        ? controller.text.trim()
+                        : selectedReason;
+                    if (reason.isEmpty) {
+                      setDialogState(() {
+                        customError = 'Enter a rejection reason';
+                      });
+                      return;
+                    }
+                    Navigator.pop(dialogCtx, reason);
+                  },
+                  child: const Text(
+                    'Reject Order',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } finally {
+      controller.dispose();
+    }
+  }
+
+  Future<void> _showRejectionDialog(BuildContext context) async {
+    final reason = await _selectRejectionReason(context);
+
+    if (reason != null && context.mounted) {
       final messenger = ScaffoldMessenger.of(context);
-      if (reason.isEmpty) {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Please enter a rejection reason.')),
-        );
-        return;
-      }
       try {
         final storeProvider = context.read<StoreProvider>();
         await storeProvider.updateOrderStatus(

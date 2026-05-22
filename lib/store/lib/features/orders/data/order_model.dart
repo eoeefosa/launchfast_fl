@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'cart_item.dart';
 import 'package:campuschow/store/lib/features/auth/data/user_profile.dart';
 import 'package:campuschow/store/lib/features/store/data/store_model.dart';
-import 'package:campuschow/models/order.dart' show OrderStatus, OrderStatusExtension;
-export 'package:campuschow/models/order.dart' show OrderStatus, OrderStatusExtension;
+import 'package:campuschow/models/order.dart'
+    show OrderStatus, OrderStatusExtension;
+export 'package:campuschow/models/order.dart'
+    show OrderStatus, OrderStatusExtension;
 export 'cart_item.dart';
 
 /// Customer contact details embedded in every order.
@@ -31,11 +33,11 @@ class CustomerDetails {
   }
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'phone': phone,
-        'email': email,
-        'address': address,
-      };
+    'name': name,
+    'phone': phone,
+    'email': email,
+    'address': address,
+  };
 
   /// A non-empty name if available, else null.
   String? get displayName => name.trim().isNotEmpty ? name.trim() : null;
@@ -62,6 +64,7 @@ class Order {
   final List<Store> stores;
   final bool isPriority;
   final String? riderId;
+  final double? originalTotal;
 
   Order({
     required this.id,
@@ -81,13 +84,12 @@ class Order {
     required this.stores,
     required this.isPriority,
     this.riderId,
+    this.originalTotal,
   });
 
   /// The best available customer name: confirmed order details → user profile → fallback.
   String get resolvedCustomerName =>
-      customerDetails?.displayName ??
-      user?.name ??
-      'Unknown Customer';
+      customerDetails?.displayName ?? user?.name ?? 'Unknown Customer';
 
   /// The best available phone: confirmed order details → user profile → null.
   String? get resolvedCustomerPhone =>
@@ -126,7 +128,9 @@ class Order {
                   ? UserProfile.fromJson(json['userId'])
                   : null),
         customerDetails: json['customerDetails'] is Map<String, dynamic>
-            ? CustomerDetails.fromJson(json['customerDetails'] as Map<String, dynamic>)
+            ? CustomerDetails.fromJson(
+                json['customerDetails'] as Map<String, dynamic>,
+              )
             : null,
         items:
             (json['items'] as List?)
@@ -181,6 +185,7 @@ class Order {
         riderId: json['riderId'] is Map
             ? json['riderId']['id']?.toString()
             : json['riderId']?.toString(),
+        originalTotal: (json['originalTotal'] as num?)?.toDouble(),
       );
     } catch (e, st) {
       debugPrint('CRITICAL ERROR in Order.fromJson: \$e');
@@ -208,6 +213,7 @@ class Order {
       'stores': stores,
       'isPriority': isPriority,
       'riderId': riderId,
+      'originalTotal': originalTotal,
     };
   }
 
@@ -229,6 +235,7 @@ class Order {
     List<Store>? stores,
     bool? isPriority,
     String? riderId,
+    double? originalTotal,
   }) {
     return Order(
       id: id ?? this.id,
@@ -249,6 +256,7 @@ class Order {
       stores: stores ?? this.stores,
       isPriority: isPriority ?? this.isPriority,
       riderId: riderId ?? this.riderId,
+      originalTotal: originalTotal ?? this.originalTotal,
     );
   }
 }

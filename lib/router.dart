@@ -37,10 +37,9 @@ import 'package:campuschow/store/lib/features/auth/presentation/register_screen.
     as store_register;
 
 /// Root navigator key exposed to the router and services for navigation without context.
-final GlobalKey<NavigatorState> rootNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'root');
-
-
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'root',
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Route constants
@@ -361,7 +360,10 @@ role: ${auth.user?.role}
       // ───────────────────────────────────────────────────────────
       GoRoute(
         path: '/order-details/:id',
-        redirect: (context, state) => '/orders/${state.pathParameters['id']}',
+        builder: (context, state) {
+          final id = state.pathParameters['id'];
+          return OrderDetailsScreen(orderId: id);
+        },
       ),
 
       GoRoute(
