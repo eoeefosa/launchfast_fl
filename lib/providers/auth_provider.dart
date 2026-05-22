@@ -8,11 +8,12 @@ import '../locator.dart';
 import '../services/ably_service.dart';
 import '../services/api_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 import '../models/user.dart';
 import '../repositories/auth_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AuthProvider extends ChangeNotifier {
 
@@ -65,6 +66,8 @@ class AuthProvider extends ChangeNotifier {
 
   // Prevent duplicate Ably listeners
   bool _ablyListenersAttached = false;
+  // Prevent duplicate token refresh listener
+  bool _tokenRefreshListenerAttached = false;
 
   // ─────────────────────────────────────────────────────────────
   // Getters
@@ -125,7 +128,8 @@ class AuthProvider extends ChangeNotifier {
 
       if (isAuthenticated) {
         await _initializeAbly();
-      unawaited(syncFCMToken());
+        _setupTokenRefreshListener(); // Added token refresh listener
+        unawaited(syncFCMToken());
       }
 
     } catch (e, stack) {
@@ -282,22 +286,47 @@ class AuthProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   Future<void> syncFCMToken() async {
-    if (!isAuthenticated) return;
-    
-    try {
-      final token = await notificationService.getToken();
-      if (token != null) {
-        debugPrint('[AuthProvider] Syncing FCM Token: $token');
-        await locator<AuthRepository>().updateProfile({
-          'fcmToken': token,
-          'deviceToken': token, // Some backends use deviceToken
-        });
-      }
-    } catch (e) {
-      debugPrint('[AuthProvider] FCM Token sync failed: $e');
-    }
-  }
+  if (!isAuthenticated) return;
 
+  try {
+    final token = await notificationService.getToken();
+    if (token != null) {
+      debugPrint('[AuthProvider] Syncing FCM Token: $token');
+      // Legacy profile update (kept for compatibility)
+      await locator<AuthRepository>().updateProfile({
+        'fcmToken': token,
+        'deviceToken': token, // Some backends use deviceToken
+      });
+      // Push token to dedicated save‑token route
+      await _pushFcmTokenToBackend(token);
+    }
+  } catch (e) {
+    debugPrint('[AuthProvider] FCM Token sync failed: $e');
+  }
+}
+Future<void> _pushFcmTokenToBackend(String token) async {
+  final userId = _user?.id;
+  if (userId == null) return;
+
+  const String baseUrl = 'https://your-api-domain.com'; // TODO: replace with real URL
+  final uri = Uri.parse('$baseUrl/api/users/save-token');
+
+  try {
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'userId': userId, 'fcmToken': token}),
+    );
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode == 200 && decoded['success'] == true) {
+      debugPrint('[AuthProvider] FCM token saved on server');
+    } else {
+      debugPrint('[AuthProvider] ❗️Failed to save token: ${decoded['error'] ?? 'unknown error'}');
+    }
+  } catch (e) {
+    debugPrint('[AuthProvider] ❗️Exception while saving token: $e');
+  }
+}
   // ─────────────────────────────────────────────────────────────
   // Persist auth
   // ─────────────────────────────────────────────────────────────
@@ -352,9 +381,19 @@ class AuthProvider extends ChangeNotifier {
     _safeNotify();
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Ably
-  // ─────────────────────────────────────────────────────────────
+  void _setupTokenRefreshListener() {
+    if (_tokenRefreshListenerAttached) return;
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      debugPrint('[AuthProvider] FCM token refreshed: $newToken');
+      // Update local token storage
+      _token = newToken;
+      await _storage.write(key: 'launch-fast-token', value: newToken);
+      // Sync with backend (profile update and save‑token route)
+      await syncFCMToken();
+    });
+    _tokenRefreshListenerAttached = true;
+  }
+
 
   Future<void> _initializeAbly() async {
 
