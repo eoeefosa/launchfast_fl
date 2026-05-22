@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:math';
+import 'package:crypto/crypto.dart';
 import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:campuschow/repositories/location_repository.dart';
@@ -8,7 +10,6 @@ import '../locator.dart';
 import '../services/ably_service.dart';
 import '../services/api_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user.dart';
 import '../repositories/auth_repository.dart';
@@ -309,20 +310,15 @@ Future<void> _pushFcmTokenToBackend(String token) async {
   final userId = _user?.id;
   if (userId == null) return;
 
-  const String baseUrl = 'https://your-api-domain.com'; // TODO: replace with real URL
-  final uri = Uri.parse('$baseUrl/api/users/save-token');
-
   try {
-    final response = await http.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'userId': userId, 'fcmToken': token}),
+    final response = await apiService.dio.post(
+      '/users/save-token',
+      data: {'userId': userId, 'fcmToken': token},
     );
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    if (response.statusCode == 200 && decoded['success'] == true) {
+    if (response.statusCode == 200 && response.data['success'] == true) {
       debugPrint('[AuthProvider] FCM token saved on server');
     } else {
-      debugPrint('[AuthProvider] ❗️Failed to save token: ${decoded['error'] ?? 'unknown error'}');
+      debugPrint('[AuthProvider] ❗️Failed to save token: ${response.data['error'] ?? 'unknown error'}');
     }
   } catch (e) {
     debugPrint('[AuthProvider] ❗️Exception while saving token: $e');
@@ -574,16 +570,20 @@ Future<void> _pushFcmTokenToBackend(String token) async {
   Future<void> signInWithApple() async {
     _setLoading(true);
     try {
+      final rawNonce = _generateNonce();
+      final nonce = _sha256ofString(rawNonce);
+
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        nonce: nonce,
       );
 
       final OAuthCredential credential = OAuthProvider('apple.com').credential(
         idToken: appleCredential.identityToken,
-        rawNonce: null,
+        rawNonce: rawNonce,
       );
 
       // Sign into Firebase so we get a Firebase ID token
@@ -606,6 +606,67 @@ Future<void> _pushFcmTokenToBackend(String token) async {
     } finally {
       _setLoading(false);
     }
+  }
+
+  Future<void> deleteAccount() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    _setLoading(true);
+
+    try {
+      // Re-authenticate if it's a social account to be safe
+      await _reauthenticateIfNeeded(user);
+      
+      // 1. Delete from backend (MongoDB + Firebase Auth on server)
+      await locator<AuthRepository>().deleteAccount();
+      
+      // 2. Clear local session
+      await logout();
+    } catch (e) {
+      debugPrint('[AuthProvider] deleteAccount error: $e');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> _reauthenticateIfNeeded(User user) async {
+    final providers = user.providerData.map((p) => p.providerId).toList();
+    
+    if (providers.contains('apple.com')) {
+      final rawNonce = _generateNonce();
+      final nonce = _sha256ofString(rawNonce);
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [],
+        nonce: nonce,
+      );
+      final credential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+      );
+      await user.reauthenticateWithCredential(credential);
+    } else if (providers.contains('google.com')) {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) throw Exception('Google re-authentication cancelled');
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      await user.reauthenticateWithCredential(credential);
+    }
+  }
+
+  String _generateNonce([int length = 32]) {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random.secure();
+    return List.generate(length, (_) => chars[random.nextInt(chars.length)]).join();
+  }
+
+  String _sha256ofString(String input) {
+    final bytes = utf8.encode(input);
+    return sha256.convert(bytes).toString();
   }
 
 

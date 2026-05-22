@@ -43,6 +43,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _togglePasswordVisibility() =>
       setState(() => _showPassword = !_showPassword);
 
+  Future<void> _submitGoogleLogin() async {
+    await _authenticate(() => context.read<AuthProvider>().signInWithGoogle());
+  }
+
+  Future<void> _submitAppleLogin() async {
+    await _authenticate(() => context.read<AuthProvider>().signInWithApple());
+  }
+
+  Future<void> _authenticate(Future<void> Function() action) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final orderProvider = context.read<OrderProvider>();
+
+    try {
+      await action();
+      if (!mounted) return;
+      
+      final auth = context.read<AuthProvider>();
+      if (!auth.isStoreOwner && !auth.isWorker && !auth.isAdmin) {
+        orderProvider.refreshOrders();
+      }
+
+      if (auth.isAdmin || auth.isStoreOwner) {
+        context.go('/dashboard');
+      } else if (auth.isWorker) {
+        context.go('/worker');
+      } else {
+        context.go('/home');
+      }
+      
+      debugPrint('[RegisterScreen] Auth complete. Navigating...');
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(ApiService.getErrorMessage(e))),
+      );
+    }
+  }
+
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -167,6 +204,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onPressed: _submit,
                   primaryColor: primaryColor,
                 ),
+                const SizedBox(height: 24),
+
+                /// Divider
+                Row(
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.4),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Divider(
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                /// Google login
+                GoogleSignInButton(
+                  isLoading: isLoading,
+                  onPressed: _submitGoogleLogin,
+                ),
+
+                if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+                  const SizedBox(height: 12),
+                  AppleSignInButton(
+                    isLoading: isLoading,
+                    onPressed: _submitAppleLogin,
+                  ),
+                ],
+
                 const SizedBox(height: 32),
                 const AuthPrompt(isLogin: false),
               ],

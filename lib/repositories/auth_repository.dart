@@ -34,17 +34,21 @@ class AuthRepository {
   }
 
   Future<Map<String, dynamic>> loginWithGoogle(String token) async {
-    final response = await apiService.dio.post('/auth/google/oauth', data: {
+    final response = await apiService.dio.post('/auth/google', data: {
       'token': token,
     });
     return response.data;
   }
 
   Future<Map<String, dynamic>> loginWithApple(String token) async {
-    final response = await apiService.dio.post('/auth/apple/oauth', data: {
+    final response = await apiService.dio.post('/auth/apple', data: {
       'token': token,
     });
     return response.data;
+  }
+
+  Future<void> deleteAccount() async {
+    await apiService.dio.delete('/users/me');
   }
 
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> updates) async {

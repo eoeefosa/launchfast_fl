@@ -17,6 +17,7 @@ import 'widgets/profile_header.dart';
 import 'widgets/wallet_card.dart';
 import 'widgets/settings_tile.dart';
 import 'widgets/verification_tile.dart';
+import 'widgets/delete_account_button.dart';
 
 import 'widgets/unauthenticated_view.dart';
 import 'sheets/verification_sheet.dart';
@@ -128,6 +129,8 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 32),
               LogoutButton(auth: auth),
+              const SizedBox(height: 8),
+              Center(child: DeleteAccountButton(auth: auth)),
               const SizedBox(height: 200),
             ],
           ),
