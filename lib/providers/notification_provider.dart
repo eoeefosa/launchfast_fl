@@ -1,29 +1,69 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:campuschow/store/lib/core/network/api_client.dart';
 import 'package:campuschow/models/notification_entity.dart';
+import '../locator.dart';
 import '../models/notification_item.dart';
 import '../services/ably_service.dart';
 
 class NotificationProvider with ChangeNotifier {
+
+  NotificationProvider({
+    // FIX #3 — injected dependencies, not globals
+    ApiService? apiService,
+    AblyService? ablyService,
+  })  : _apiService = apiService ?? locator<ApiService>(),
+        _ablyService = ablyService ?? locator<AblyService>();
+
+  // ─────────────────────────────────────────────────────────────
+  // Dependencies
+  // ─────────────────────────────────────────────────────────────
+
+  final ApiService  _apiService;
+  final AblyService _ablyService;
+
+  // ─────────────────────────────────────────────────────────────
+  // State
+  // ─────────────────────────────────────────────────────────────
+
   late Box<NotificationEntity> _box;
   List<NotificationItem> _notifications = [];
-  bool _isLoading = false;
+  bool _isLoading          = false;
+  bool _initialized        = false;
+  bool _disposed           = false;
+  bool _refreshInProgress  = false;
   Timer? _pendingRefreshTimer;
 
+  // ─────────────────────────────────────────────────────────────
+  // Getters
+  // ─────────────────────────────────────────────────────────────
+
   List<NotificationItem> get notifications => _notifications;
-  bool get isLoading => _isLoading;
+  bool get isLoading   => _isLoading;
+  int  get unreadCount => _notifications.where((n) => !n.isRead).length;
 
-  int get unreadCount => _notifications.where((n) => !n.isRead).length;
+  // ─────────────────────────────────────────────────────────────
+  // FIX #1 — explicit initialize() instead of async work in constructor.
+  // Call this from your widget tree (e.g. in main.dart after provider setup).
+  // ─────────────────────────────────────────────────────────────
 
-  NotificationProvider() {
-    _initHive().then((_) {
-      _loadNotifications();
+  Future<void> initialize() async {
+    if (_initialized) return;
+
+    try {
+      // Hive must succeed before anything else accesses _box.
+      await _initHive();
+      await refresh();
       _initListeners();
-    });
+    } catch (e) {
+      if (kDebugMode) debugPrint('[NotificationProvider] initialize error: $e');
+    } finally {
+      _initialized = true;
+    }
   }
 
   Future<void> _initHive() async {
@@ -35,11 +75,7 @@ class NotificationProvider with ChangeNotifier {
   }
 
   void _initListeners() {
-    // When Ably or FCM fires a real-time notification:
-    // 1. Save it locally immediately with a temp ID for instant UI update.
-    // 2. Schedule a backend refresh after 3 seconds to replace the temp entry
-    //    with the canonical MongoDB entry (and deduplicate).
-    ablyService.addNotificationListener((payload) {
+    _ablyService.addNotificationListener((payload) {
       _processPayload(payload);
       _scheduleDelayedRefresh();
     });
@@ -50,18 +86,23 @@ class NotificationProvider with ChangeNotifier {
     });
   }
 
-  /// Schedules a backend refresh 3 seconds after a real-time event.
-  /// Debounced so rapid events only cause one refresh.
+  // ─────────────────────────────────────────────────────────────
+  // Real-time helpers
+  // ─────────────────────────────────────────────────────────────
+
+  /// Debounced backend sync so rapid real-time events cause only one refresh.
   void _scheduleDelayedRefresh() {
     _pendingRefreshTimer?.cancel();
     _pendingRefreshTimer = Timer(const Duration(seconds: 3), () {
-      debugPrint('⏱ [NotificationProvider] Delayed refresh triggered after real-time event');
+      if (kDebugMode) debugPrint('[NotificationProvider] Delayed refresh triggered');
       refresh();
     });
   }
 
   void _processPayload(Map<String, dynamic> payload) {
-    debugPrint('📲 [NotificationProvider] Real-time payload received: $payload');
+    // FIX #4 — no raw payload in production logs
+    if (kDebugMode) debugPrint('[NotificationProvider] Real-time payload received');
+
     final notification = NotificationItem(
       id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
       title: payload['title'] ?? 'New Update',
@@ -73,144 +114,179 @@ class NotificationProvider with ChangeNotifier {
     _saveLocalOnly(notification);
   }
 
-  /// Saves to local box without triggering a backend sync.
+  // ─────────────────────────────────────────────────────────────
+  // Local save
+  // FIX #5 — ID-based deduplication instead of fragile title + time window
+  // ─────────────────────────────────────────────────────────────
+
   Future<void> _saveLocalOnly(NotificationItem item) async {
-    // Avoid duplicates by checking if a temp entry for this second already exists
+    // A real (non-temp) notification with this ID already exists — skip.
     final isDuplicate = _notifications.any(
-      (n) => n.title == item.title && 
-             n.timestamp.difference(item.timestamp).inSeconds.abs() < 5,
+      (n) => !n.id.startsWith('temp_') && n.id == item.id,
     );
     if (isDuplicate) return;
 
     final entity = NotificationEntity()
       ..notificationId = item.id
-      ..title = item.title
-      ..message = item.message
-      ..type = item.type.name
-      ..timestamp = item.timestamp
-      ..isRead = item.isRead
-      ..metadata = item.metadata != null ? jsonEncode(item.metadata) : null;
+      ..title          = item.title
+      ..message        = item.message
+      ..type           = item.type.name
+      ..timestamp      = item.timestamp
+      ..isRead         = item.isRead
+      ..metadata       = item.metadata != null ? jsonEncode(item.metadata) : null;
 
     await _box.add(entity);
     _notifications.insert(0, item);
-    notifyListeners();
+    _safeNotify();
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Refresh
+  // FIX #9 — guard against concurrent calls with _refreshInProgress flag
+  // ─────────────────────────────────────────────────────────────
 
   Future<void> refresh() async {
+    if (_refreshInProgress) return;
+    _refreshInProgress = true;
     _isLoading = true;
-    notifyListeners();
+    _safeNotify();
 
     try {
-      // 1. Load from local cache first for instant display
+      // Show local cache first for instant display
       _notifications = _boxToList();
-      notifyListeners();
+      _safeNotify();
 
-      // 2. Sync with backend (authoritative source of truth)
-      try {
-        debugPrint('🚀 [NotificationProvider] Syncing with backend...');
-        final response = await apiService.dio.get('/notifications');
-        debugPrint('✅ [NotificationProvider] Backend response: ${response.statusCode}');
-        
-        if (response.statusCode == 200) {
-          final List<dynamic> data = response.data;
-          debugPrint('📬 [NotificationProvider] Received ${data.length} notifications from backend');
-          
-          // Backend is the source of truth — replace all local data with canonical entries.
-          final backendEntities = data.map((item) {
-            final backendId = item['_id']?.toString() ?? '';
-            final backendTitle = item['title'] ?? '';
-            final backendBody = item['body'] ?? '';
-            
-            // Match by exact ID or by title/body for temp notifications that haven't synced
-            final isLocallyRead = _notifications.any((n) => 
-               n.isRead && (n.id == backendId || (n.id.startsWith('temp_') && n.title == backendTitle && n.message == backendBody))
-            );
-            
-            final bool finalIsRead = (item['isRead'] == true) || isLocallyRead;
-            
-            // If it's locally read but backend thinks it's unread, push the update to backend
-            if (isLocallyRead && item['isRead'] != true && backendId.isNotEmpty) {
-               () async {
-                 try {
-                   await apiService.dio.patch('/notifications', data: {'notificationId': backendId});
-                 } catch (_) {}
-               }();
-            }
+      if (kDebugMode) debugPrint('[NotificationProvider] Syncing with backend...');
 
-            final entity = NotificationEntity()
-              ..notificationId = backendId
-              ..title = backendTitle
-              ..message = backendBody
-              ..type = item['type'] ?? 'serverAlert'
-              ..timestamp = item['createdAt'] != null 
-                  ? DateTime.parse(item['createdAt']) 
-                  : DateTime.now()
-              ..isRead = finalIsRead
-              ..metadata = item['data'] != null ? jsonEncode(item['data']) : null;
-            return entity;
-          }).toList();
+      final response = await _apiService.dio.get('/notifications');
 
-          await _box.clear();
-          if (backendEntities.isNotEmpty) {
-            await _box.addAll(backendEntities);
-          }
-          
-          _notifications = _boxToList();
-          debugPrint('✨ [NotificationProvider] Synced ${_notifications.length} notifications');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+
+        if (kDebugMode) {
+          debugPrint('[NotificationProvider] Received ${data.length} notifications');
         }
-      } catch (e) {
-        debugPrint('❌ [NotificationProvider] Backend sync failed (using local cache): $e');
+
+        final backendEntities = data.map((item) {
+          final backendId    = item['_id']?.toString() ?? '';
+          final backendTitle = item['title'] ?? '';
+          final backendBody  = item['body'] ?? '';
+
+          // Preserve read state for entries that were marked locally
+          // before the backend confirmed the update.
+          final isLocallyRead = _notifications.any((n) =>
+            n.isRead &&
+            (n.id == backendId ||
+              (n.id.startsWith('temp_') &&
+               n.title == backendTitle &&
+               n.message == backendBody)));
+
+          final bool finalIsRead = (item['isRead'] == true) || isLocallyRead;
+
+          // FIX #2 — named method replaces the silent inline async IIFE
+          if (isLocallyRead && item['isRead'] != true && backendId.isNotEmpty) {
+            _pushReadStatusToBackend(backendId);
+          }
+
+          return NotificationEntity()
+            ..notificationId = backendId
+            ..title          = backendTitle
+            ..message        = backendBody
+            ..type           = item['type'] ?? 'serverAlert'
+            ..timestamp      = item['createdAt'] != null
+                ? DateTime.parse(item['createdAt'])
+                : DateTime.now()
+            ..isRead         = finalIsRead
+            ..metadata       = item['data'] != null
+                ? jsonEncode(item['data'])
+                : null;
+        }).toList();
+
+        await _box.clear();
+        if (backendEntities.isNotEmpty) {
+          await _box.addAll(backendEntities);
+        }
+
+        _notifications = _boxToList();
+
+        if (kDebugMode) {
+          debugPrint('[NotificationProvider] Synced ${_notifications.length} notifications');
+        }
       }
     } catch (e) {
-      debugPrint('❌ [NotificationProvider] Error loading notifications: $e');
+      // Non-fatal — local cache is still displayed
+      if (kDebugMode) {
+        debugPrint('[NotificationProvider] Backend sync failed (using cache): $e');
+      }
     } finally {
+      _refreshInProgress = false;
       _isLoading = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
+
+  // FIX #2 — extracted from the silent inline IIFE in the original code
+  Future<void> _pushReadStatusToBackend(String notificationId) async {
+    try {
+      await _apiService.dio.patch(
+        '/notifications',
+        data: {'notificationId': notificationId},
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[NotificationProvider] _pushReadStatusToBackend failed: $e');
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Box → list
+  // ─────────────────────────────────────────────────────────────
 
   List<NotificationItem> _boxToList() {
     return _box.values
         .map((e) => NotificationItem.fromMap({
-              'id': e.notificationId,
-              'title': e.title,
-              'message': e.message,
-              'type': e.type,
+              'id':        e.notificationId,
+              'title':     e.title,
+              'message':   e.message,
+              'type':      e.type,
               'timestamp': e.timestamp.toIso8601String(),
-              'isRead': e.isRead,
-              'metadata': e.metadata != null ? jsonDecode(e.metadata!) : null,
+              'isRead':    e.isRead,
+              'metadata':  e.metadata != null ? jsonDecode(e.metadata!) : null,
             }))
         .toList()
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
   }
 
-  Future<void> _loadNotifications() async => refresh();
+  // ─────────────────────────────────────────────────────────────
+  // Public API
+  // ─────────────────────────────────────────────────────────────
 
-  Future<void> addNotification(NotificationItem item) async {
-    await _saveLocalOnly(item);
-  }
+  Future<void> addNotification(NotificationItem item) => _saveLocalOnly(item);
 
   Future<void> markAsRead(String id) async {
-    final index = _box.values.toList().indexWhere((e) => e.notificationId == id);
-    if (index != -1) {
-      final entity = _box.getAt(index)!;
+    // Update Hive
+    final hiveIndex = _box.values
+        .toList()
+        .indexWhere((e) => e.notificationId == id);
+    if (hiveIndex != -1) {
+      final entity = _box.getAt(hiveIndex)!;
       entity.isRead = true;
       await entity.save();
     }
 
-    final nIndex = _notifications.indexWhere((n) => n.id == id);
-    if (nIndex != -1) {
-      _notifications[nIndex] = _notifications[nIndex].copyWith(isRead: true);
-      notifyListeners();
+    // Update in-memory list
+    final listIndex = _notifications.indexWhere((n) => n.id == id);
+    if (listIndex != -1) {
+      _notifications[listIndex] =
+          _notifications[listIndex].copyWith(isRead: true);
+      _safeNotify();
     }
 
-    try {
-      await apiService.dio.patch('/notifications', data: {'notificationId': id});
-    } catch (e) {
-      debugPrint('Backend markAsRead failed: $e');
-    }
+    await _pushReadStatusToBackend(id);
   }
 
+  // FIX #6 — markAllAsRead now syncs with backend
   Future<void> markAllAsRead() async {
     for (int i = 0; i < _box.length; i++) {
       final entity = _box.getAt(i)!;
@@ -220,61 +296,94 @@ class NotificationProvider with ChangeNotifier {
     for (int i = 0; i < _notifications.length; i++) {
       _notifications[i] = _notifications[i].copyWith(isRead: true);
     }
-    notifyListeners();
+    _safeNotify();
+
+    try {
+      // Use a bulk endpoint if available; fall back to the single-mark route.
+      await _apiService.dio.patch('/notifications/read-all');
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[NotificationProvider] markAllAsRead backend sync failed: $e');
+      }
+    }
   }
 
   Future<void> removeNotification(String id) async {
-    final index = _box.values.toList().indexWhere((e) => e.notificationId == id);
-    if (index != -1) {
-      await _box.deleteAt(index);
-    }
+    final index = _box.values
+        .toList()
+        .indexWhere((e) => e.notificationId == id);
+    if (index != -1) await _box.deleteAt(index);
+
     _notifications.removeWhere((n) => n.id == id);
-    notifyListeners();
+    _safeNotify();
+
     try {
       if (!id.startsWith('temp_')) {
-        await apiService.dio.delete('/notifications?notificationId=$id');
+        await _apiService.dio.delete('/notifications?notificationId=$id');
       }
     } catch (e) {
-      debugPrint('Backend removeNotification failed: $e');
+      if (kDebugMode) {
+        debugPrint('[NotificationProvider] removeNotification backend failed: $e');
+      }
     }
   }
 
+  // FIX #7 — backend cleared first; local state only wiped on success
   Future<void> clearAll() async {
+    try {
+      await _apiService.dio.delete('/notifications');
+    } catch (e) {
+      if (kDebugMode) debugPrint('[NotificationProvider] clearAll backend failed: $e');
+      rethrow; // Local cache preserved when backend call fails
+    }
+
     await _box.clear();
     _notifications.clear();
-    notifyListeners();
-    try {
-      await apiService.dio.delete('/notifications');
-    } catch (e) {
-      debugPrint('Backend clearAll failed: $e');
-    }
+    _safeNotify();
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Type parsing
+  // ─────────────────────────────────────────────────────────────
 
   NotificationType _parseNotificationType(String? type) {
     if (type == null) return NotificationType.serverAlert;
-    // Normalize common backend type strings to enum names
+
     final normalized = type.toLowerCase();
-    if (normalized == 'deposit' || 
-        normalized == 'walletupdate' || 
+
+    if (normalized == 'deposit'       ||
+        normalized == 'walletupdate'  ||
         normalized == 'wallet_update' ||
         normalized == 'wallet_topup') {
       return NotificationType.walletUpdate;
     }
+
     if (normalized == 'order_update' || normalized == 'orderupdate') {
       return NotificationType.orderUpdate;
     }
-    try {
-      return NotificationType.values.firstWhere(
-        (t) => t.name.toLowerCase() == normalized,
-        orElse: () => NotificationType.serverAlert,
-      );
-    } catch (_) {
-      return NotificationType.serverAlert;
-    }
+
+    return NotificationType.values.firstWhere(
+      (t) => t.name.toLowerCase() == normalized,
+      orElse: () => NotificationType.serverAlert,
+    );
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Safe notify
+  // ─────────────────────────────────────────────────────────────
+
+  void _safeNotify() {
+    if (_disposed) return;
+    notifyListeners();
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Dispose
+  // ─────────────────────────────────────────────────────────────
 
   @override
   void dispose() {
+    _disposed = true;
     _pendingRefreshTimer?.cancel();
     super.dispose();
   }

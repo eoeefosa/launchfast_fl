@@ -1,125 +1,164 @@
 import 'dart:convert';
-
-import '../locator.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../locator.dart';
 import '../models/order.dart';
 import '../repositories/order_repository.dart';
 import '../services/ably_service.dart';
 import '../services/api_service.dart';
 
 class OrderProvider with ChangeNotifier {
-  List<Order> _orders = [];
-  bool _isLoading = false;
-  String? _error;
 
-  List<Order> get orders => _orders;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  OrderProvider({
+    // FIX #13 — injected, not global
+    AblyService? ablyService,
+    FlutterSecureStorage? storage,
+  })  : _ablyService = ablyService ?? locator<AblyService>(),
+        _storage = storage ?? const FlutterSecureStorage();
 
-  OrderProvider() {
-    debugPrint('[OrderProvider] Initialized — loading local orders...');
-    _loadLocalOrders();
+  // ─────────────────────────────────────────────────────────────
+  // Dependencies
+  // ─────────────────────────────────────────────────────────────
+
+  final AblyService         _ablyService;
+  // FIX #11 — FlutterSecureStorage instead of SharedPreferences
+  // so order data (addresses, totals) is encrypted at rest.
+  final FlutterSecureStorage _storage;
+
+  // ─────────────────────────────────────────────────────────────
+  // Storage keys
+  // ─────────────────────────────────────────────────────────────
+
+  static const _kOrders = 'launch-fast-orders';
+
+  // ─────────────────────────────────────────────────────────────
+  // State
+  // ─────────────────────────────────────────────────────────────
+
+  List<Order> _orders  = [];
+  bool        _isLoading = false;
+  bool        _disposed  = false;
+  String?     _error;
+
+  // FIX #16 — track subscribed order IDs to prevent duplicate Ably listeners
+  final Set<String> _subscribedOrderIds = {};
+
+  // ─────────────────────────────────────────────────────────────
+  // Getters
+  // ─────────────────────────────────────────────────────────────
+
+  List<Order> get orders    => _orders;
+  bool        get isLoading => _isLoading;
+  String?     get error     => _error;
+
+  // ─────────────────────────────────────────────────────────────
+  // FIX #10 — userId is passed in from AuthProvider, not read from
+  // secure storage here. Call initialize() from AuthProvider after
+  // login or session restore:
+  //
+  //   orderProvider.initialize(authProvider.user?.id);
+  // ─────────────────────────────────────────────────────────────
+
+  Future<void> initialize(String? userId) async {
+    await _loadLocalOrders();
+
+    if (userId != null) {
+      if (kDebugMode) debugPrint('[OrderProvider] Subscribing to real-time updates');
+      _ablyService.subscribeToUserOrders(userId, _onOrderUpdate);
+    } else {
+      // Guest session — subscribe to each individually tracked order
+      if (kDebugMode) debugPrint('[OrderProvider] Guest session — initialising Ably');
+      try {
+        await _ablyService.initAblyGuest();
+        for (final order in _orders) {
+          _subscribeToOrder(order.id);
+        }
+      } catch (e) {
+        if (kDebugMode) debugPrint('[OrderProvider] Guest Ably init failed: $e');
+      }
+    }
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Local persistence — encrypted via FlutterSecureStorage
+  // ─────────────────────────────────────────────────────────────
 
   Future<void> _loadLocalOrders() async {
-    debugPrint(
-      '[OrderProvider] _loadLocalOrders: reading from SharedPreferences...',
-    );
-    final prefs = await SharedPreferences.getInstance();
-    final ordersStr = prefs.getString('launch-fast-orders');
-
-    if (ordersStr != null) {
-      final List<dynamic> ordersList = jsonDecode(ordersStr);
-      _orders = ordersList.map((i) => Order.fromJson(i)).toList();
-      debugPrint(
-        '[OrderProvider] _loadLocalOrders: loaded ${_orders.length} cached order(s).',
-      );
-      notifyListeners();
-    } else {
-      debugPrint('[OrderProvider] _loadLocalOrders: no cached orders found.');
-    }
-
-    const storage = FlutterSecureStorage();
-    final userStr = await storage.read(key: 'launch-fast-user');
-
-    if (userStr != null) {
-      debugPrint(
-        '[OrderProvider] _loadLocalOrders: user session found, attempting Ably subscription...',
-      );
-      try {
-        final userData = jsonDecode(userStr);
-        final userId = userData['id'] as String?;
-
-        if (userId != null) {
-          debugPrint(
-            '[OrderProvider] _loadLocalOrders: subscribing to real-time updates for userId=$userId',
-          );
-          ablyService.subscribeToUserOrders(userId, _onOrderUpdate);
+    try {
+      final ordersStr = await _storage.read(key: _kOrders);
+      if (ordersStr != null) {
+        final List<dynamic> list = jsonDecode(ordersStr);
+        _orders = list.map((i) => Order.fromJson(i)).toList();
+        if (kDebugMode) {
+          debugPrint('[OrderProvider] Loaded ${_orders.length} cached order(s)');
         }
-      } catch (e) {
-        debugPrint(
-          '[OrderProvider] _loadLocalOrders: error parsing user data or subscribing to Ably — $e',
-        );
+        notifyListeners();
       }
-    } else {
-      debugPrint(
-        '[OrderProvider] _loadLocalOrders: no user session found — attempting guest Ably subscription.',
-      );
-      try {
-        await ablyService.initAblyGuest();
-        for (final order in _orders) {
-          ablyService.subscribeToSingleOrder(order.id, _onOrderUpdate);
-        }
-      } catch (e) {
-        debugPrint('[OrderProvider] Guest Ably init failed: $e');
-      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('[OrderProvider] _loadLocalOrders error: $e');
     }
   }
 
-  void _onOrderUpdate(String orderId, OrderStatus status) {
-    debugPrint(
-      '[OrderProvider] Ably push received — orderId=$orderId, newStatus=${status.name}',
+  Future<void> _persistOrders() async {
+    await _storage.write(
+      key: _kOrders,
+      value: jsonEncode(_orders.map((o) => o.toJson()).toList()),
     );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // FIX #16 — guarded subscribe prevents duplicate Ably listeners
+  // ─────────────────────────────────────────────────────────────
+
+  void _subscribeToOrder(String orderId) {
+    if (_subscribedOrderIds.contains(orderId)) return;
+    _ablyService.subscribeToSingleOrder(orderId, _onOrderUpdate);
+    _subscribedOrderIds.add(orderId);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Real-time handler
+  // ─────────────────────────────────────────────────────────────
+
+  void _onOrderUpdate(String orderId, OrderStatus status) {
+    if (kDebugMode) {
+      debugPrint('[OrderProvider] Ably update — orderId=$orderId, status=${status.name}');
+    }
     updateOrderStatus(orderId, status);
     if (status == OrderStatus.priceAdjusted) {
       refreshOrders();
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Refresh
+  // ─────────────────────────────────────────────────────────────
+
   Future<void> refreshOrders() async {
-    debugPrint('[OrderProvider] refreshOrders: fetching from remote...');
+    if (kDebugMode) debugPrint('[OrderProvider] refreshOrders: fetching from remote...');
     _isLoading = true;
     notifyListeners();
 
     try {
-      final fetchedOrders = await locator<OrderRepository>().getMyOrders();
-      _orders = fetchedOrders;
-      _error = null;
-      debugPrint(
-        '[OrderProvider] refreshOrders: fetched ${_orders.length} order(s) successfully.',
-      );
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        'launch-fast-orders',
-        jsonEncode(_orders.map((o) => o.toJson()).toList()),
-      );
-      debugPrint(
-        '[OrderProvider] refreshOrders: orders persisted to SharedPreferences.',
-      );
+      _orders = await locator<OrderRepository>().getMyOrders();
+      _error  = null;
+      await _persistOrders();
+      if (kDebugMode) debugPrint('[OrderProvider] Fetched ${_orders.length} order(s)');
     } catch (e) {
       _error = ApiService.getErrorMessage(e);
-      debugPrint('[OrderProvider] refreshOrders: ERROR — $e');
+      if (kDebugMode) debugPrint('[OrderProvider] refreshOrders error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<Order?> placeOrder(Map<String, dynamic> orderData) async {
-    debugPrint('[OrderProvider] placeOrder: initiating — payload=$orderData');
+  // ─────────────────────────────────────────────────────────────
+  // Place order
+  // ─────────────────────────────────────────────────────────────
+
+  Future<Order> placeOrder(Map<String, dynamic> orderData) async {
     _isLoading = true;
     notifyListeners();
 
@@ -127,25 +166,16 @@ class OrderProvider with ChangeNotifier {
       final newOrder = await locator<OrderRepository>().placeOrder(orderData);
       _orders.insert(0, newOrder);
       _error = null;
-      debugPrint(
-        '[OrderProvider] placeOrder: success — orderId=${newOrder.id}, total=${newOrder.total}',
-      );
 
-      // Subscribe to updates for this new order (especially for guests)
-      ablyService.subscribeToSingleOrder(newOrder.id, _onOrderUpdate);
+      // FIX #16 — guarded subscribe; won't duplicate if already tracked
+      _subscribeToOrder(newOrder.id);
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        'launch-fast-orders',
-        jsonEncode(_orders.map((o) => o.toJson()).toList()),
-      );
-      debugPrint(
-        '[OrderProvider] placeOrder: updated cache with ${_orders.length} order(s).',
-      );
+      await _persistOrders();
+      if (kDebugMode) debugPrint('[OrderProvider] Order placed — id=${newOrder.id}');
       return newOrder;
     } catch (e) {
       _error = ApiService.getErrorMessage(e);
-      debugPrint('[OrderProvider] placeOrder: ERROR — $e');
+      if (kDebugMode) debugPrint('[OrderProvider] placeOrder error: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -153,14 +183,15 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Payment
+  // ─────────────────────────────────────────────────────────────
+
   Future<Map<String, dynamic>> initializePayment(
     String orderId,
     String method, {
     String? email,
   }) async {
-    debugPrint(
-      '[OrderProvider] initializePayment: initiating — orderId=$orderId, method=$method, email=$email',
-    );
     _isLoading = true;
     notifyListeners();
 
@@ -171,11 +202,11 @@ class OrderProvider with ChangeNotifier {
         email: email,
       );
       _error = null;
-      debugPrint('[OrderProvider] initializePayment: success — $response');
+      if (kDebugMode) debugPrint('[OrderProvider] Payment initialised for orderId=$orderId');
       return response;
     } catch (e) {
       _error = ApiService.getErrorMessage(e);
-      debugPrint('[OrderProvider] initializePayment: ERROR — $e');
+      if (kDebugMode) debugPrint('[OrderProvider] initializePayment error: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -183,40 +214,33 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  Future<Order?> updateOrder(String id, Map<String, dynamic> orderData) async {
-    debugPrint('[OrderProvider] updateOrder: orderId=$id — payload=$orderData');
+  // ─────────────────────────────────────────────────────────────
+  // Update order
+  // FIX #15 — return type changed from Future<Order?> to Future<Order>
+  //           since every code path either returns an Order or throws.
+  // ─────────────────────────────────────────────────────────────
+
+  Future<Order> updateOrder(String id, Map<String, dynamic> orderData) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final updatedOrder = await locator<OrderRepository>().updateOrder(
-        id,
-        orderData,
-      );
-      final index = _orders.indexWhere((o) => o.id == id);
+      final updatedOrder =
+          await locator<OrderRepository>().updateOrder(id, orderData);
 
+      final index = _orders.indexWhere((o) => o.id == id);
       if (index != -1) {
         _orders[index] = updatedOrder;
-        debugPrint(
-          '[OrderProvider] updateOrder: order at index=$index replaced successfully.',
-        );
       } else {
-        debugPrint(
-          '[OrderProvider] updateOrder: WARNING — orderId=$id not found in local list; skipping local update.',
-        );
+        if (kDebugMode) debugPrint('[OrderProvider] updateOrder: orderId=$id not found locally');
       }
 
       _error = null;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        'launch-fast-orders',
-        jsonEncode(_orders.map((o) => o.toJson()).toList()),
-      );
-      debugPrint('[OrderProvider] updateOrder: cache updated.');
+      await _persistOrders();
       return updatedOrder;
     } catch (e) {
       _error = ApiService.getErrorMessage(e);
-      debugPrint('[OrderProvider] updateOrder: ERROR — $e');
+      if (kDebugMode) debugPrint('[OrderProvider] updateOrder error: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -224,73 +248,60 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  void updateOrderStatus(String orderId, OrderStatus status) {
-    debugPrint(
-      '[OrderProvider] updateOrderStatus: orderId=$orderId → status=${status.name}',
-    );
-    final index = _orders.indexWhere((o) => o.id == orderId);
+  // ─────────────────────────────────────────────────────────────
+  // Local status updates
+  // ─────────────────────────────────────────────────────────────
 
+  void updateOrderStatus(String orderId, OrderStatus status) {
+    final index = _orders.indexWhere((o) => o.id == orderId);
     if (index != -1) {
       _orders[index] = _orders[index].copyWith(status: status);
-      debugPrint(
-        '[OrderProvider] updateOrderStatus: local order updated at index=$index.',
-      );
       notifyListeners();
     } else {
-      debugPrint(
-        '[OrderProvider] updateOrderStatus: WARNING — orderId=$orderId not found in local list.',
-      );
+      if (kDebugMode) {
+        debugPrint('[OrderProvider] updateOrderStatus: orderId=$orderId not found');
+      }
     }
   }
 
+  // FIX #12 — removed the dead firstWhere call whose result was never
+  // assigned or used. The copyWith below was always the real update.
   void assignRiderToOrder(String orderId, String riderId) {
-    debugPrint(
-      '[OrderProvider] assignRiderToOrder: orderId=$orderId, riderId=$riderId',
-    );
     final index = _orders.indexWhere((o) => o.id == orderId);
-
     if (index != -1) {
-      _orders.firstWhere(
-        (o) => o.id == orderId,
-        orElse: () => Order(
-          id: 'EMPTY',
-          items: [],
-          subtotal: 0,
-          serviceFee: 0,
-          deliveryFee: 0,
-          platformDeliveryProfit: 0,
-          walletDeduction: 0,
-          total: 0,
-          deliveryType: 'pickup',
-          status: OrderStatus.cancelled,
-          date: '',
-          stores: [],
-          isPriority: false,
-        ),
-      );
       _orders[index] = _orders[index].copyWith(
-        status: OrderStatus.outForDelivery,
+        status:  OrderStatus.outForDelivery,
         riderId: riderId,
       );
-      debugPrint(
-        '[OrderProvider] assignRiderToOrder: rider assigned, status set to outForDelivery.',
-      );
       notifyListeners();
     } else {
-      debugPrint(
-        '[OrderProvider] assignRiderToOrder: WARNING — orderId=$orderId not found in local list.',
-      );
+      if (kDebugMode) {
+        debugPrint('[OrderProvider] assignRiderToOrder: orderId=$orderId not found');
+      }
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Clear
+  // ─────────────────────────────────────────────────────────────
+
   Future<void> clearOrders() async {
-    debugPrint('[OrderProvider] clearOrders: clearing all cached orders...');
-    _orders = [];
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('launch-fast-orders');
-    // Note: Do not disconnect Ably here! Ably is tied to the AuthProvider
-    // session and is disconnected globally during logout.
-    debugPrint('[OrderProvider] clearOrders: done — cache cleared.');
+    _orders.clear();
+    _subscribedOrderIds.clear();
+    await _storage.delete(key: _kOrders);
+    if (kDebugMode) debugPrint('[OrderProvider] Orders cleared');
+    // Note: Ably is disconnected globally by AuthProvider on logout —
+    // do not call ablyService.disconnect() here.
     notifyListeners();
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Dispose
+  // ─────────────────────────────────────────────────────────────
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

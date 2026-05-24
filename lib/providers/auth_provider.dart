@@ -22,23 +22,43 @@ class AuthProvider extends ChangeNotifier {
   AuthProvider({
     FlutterSecureStorage? storage,
     GoogleSignIn? googleSignIn,
+    // FIX #6 — inject services instead of using globals
+    ApiService? apiService,
+    AblyService? ablyService,
   })  : _storage = storage ?? const FlutterSecureStorage(),
+        _apiService = apiService ?? locator<ApiService>(),
+        _ablyService = ablyService ?? locator<AblyService>(),
         _googleSignIn = googleSignIn ?? GoogleSignIn(
           serverClientId: const String.fromEnvironment(
             'SERVER_CLIENT_ID',
             defaultValue: '471745302305-tts3kroutn6jofuvcldfckjk4j7et6l2.apps.googleusercontent.com',
           ),
         ) {
-
-    apiService.onUnauthorized = _handleUnauthorized;
+    _apiService.onUnauthorized = _handleUnauthorized;
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Storage key constants
+  // FIX: centralise keys so a typo is a compile error, not a runtime bug
+  // ─────────────────────────────────────────────────────────────
+
+  static const _kToken           = 'launch-fast-token';
+  static const _kUser            = 'launch-fast-user';
+  static const _kAdmin           = 'launch-fast-admin';
+  static const _kGuestAddress    = 'launch-fast-guest-address';
+  static const _kGuestName       = 'launch-fast-guest-name';
+  static const _kGuestPhone      = 'launch-fast-guest-phone';
+  static const _kSelectedAddress = 'launch-fast-selected-address';
 
   // ─────────────────────────────────────────────────────────────
   // Dependencies
   // ─────────────────────────────────────────────────────────────
 
   final FlutterSecureStorage _storage;
-  final GoogleSignIn _googleSignIn;
+  final GoogleSignIn         _googleSignIn;
+  // FIX #6 — injected, not global
+  final ApiService  _apiService;
+  final AblyService _ablyService;
 
   // ─────────────────────────────────────────────────────────────
   // State
@@ -46,83 +66,58 @@ class AuthProvider extends ChangeNotifier {
 
   UserProfile? _user;
 
+  /// Backend JWT only.
+  /// NEVER assign an FCM / Firebase Messaging token to this field — they are
+  /// completely different tokens used for different purposes.
   String? _token;
 
-  bool _isLoading = false;
-
-  bool _initialized = false;
-
-  bool _disposed = false;
-
+  bool _isLoading             = false;
+  bool _initialized           = false;
+  bool _disposed              = false;
   bool _authOperationInProgress = false;
 
   String? _adminStoreId;
-
   String? _guestAddress;
   String? _guestName;
   String? _guestPhone;
-
   String? _selectedAddress;
 
   List<String> _locations = [];
 
-  // Prevent duplicate Ably listeners
-  bool _ablyListenersAttached = false;
-  // Prevent duplicate token refresh listener
+  bool _ablyListenersAttached      = false;
   bool _tokenRefreshListenerAttached = false;
 
   // ─────────────────────────────────────────────────────────────
   // Getters
   // ─────────────────────────────────────────────────────────────
 
-  UserProfile? get user => _user;
-
-  String? get token => _token;
-
-  bool get isLoading => _isLoading;
-
-  bool get initialized => _initialized;
-
-  bool get isAuthenticated =>
-      _token != null && _user != null;
-
-  bool get isAdmin =>
-      _user?.role.toUpperCase() == 'ADMIN';
-
-  bool get isStoreOwner =>
-      _user?.role.toUpperCase() == 'STORE_OWNER';
-
-  bool get isWorker =>
-      _user?.role.toUpperCase() == 'STORE_WORKER';
-
-  bool get isRider =>
-      _user?.role.toUpperCase() == 'RIDER';
-
-  bool get isStoreApproved =>
-      _user?.isStoreApproved ?? false;
-
-  List<String> get locations => _locations;
-
-  String? get adminStoreId => _adminStoreId;
-
-  String? get currentAddress => _selectedAddress ?? _guestAddress;
-  String? get selectedAddress => _selectedAddress;
-  String? get guestAddress => _guestAddress;
-  String? get guestName => _guestName;
-  String? get guestPhone => _guestPhone;
+  UserProfile? get user            => _user;
+  String?      get token           => _token;
+  bool         get isLoading       => _isLoading;
+  bool         get initialized     => _initialized;
+  bool         get isAuthenticated => _token != null && _user != null;
+  bool         get isAdmin         => _user?.role.toUpperCase() == 'ADMIN';
+  bool         get isStoreOwner    => _user?.role.toUpperCase() == 'STORE_OWNER';
+  bool         get isWorker        => _user?.role.toUpperCase() == 'STORE_WORKER';
+  bool         get isRider         => _user?.role.toUpperCase() == 'RIDER';
+  bool         get isStoreApproved => _user?.isStoreApproved ?? false;
+  List<String> get locations       => _locations;
+  String?      get adminStoreId    => _adminStoreId;
+  String?      get currentAddress  => _selectedAddress ?? _guestAddress;
+  String?      get selectedAddress => _selectedAddress;
+  String?      get guestAddress    => _guestAddress;
+  String?      get guestName       => _guestName;
+  String?      get guestPhone      => _guestPhone;
 
   // ─────────────────────────────────────────────────────────────
   // Initialization
   // ─────────────────────────────────────────────────────────────
 
   Future<void> initialize() async {
-
     if (_initialized) return;
-
     _setLoading(true);
 
     try {
-
       await Future.wait([
         _restoreSession(),
         fetchLocation(),
@@ -130,20 +125,17 @@ class AuthProvider extends ChangeNotifier {
 
       if (isAuthenticated) {
         await _initializeAbly();
-        _setupTokenRefreshListener(); // Added token refresh listener
-        unawaited(syncFCMToken());
+        _setupTokenRefreshListener();
+        _syncFCMTokenSafely();
       }
-
     } catch (e, stack) {
-
-      debugPrint('[AuthProvider] initialize error');
-      debugPrint(e.toString());
-      debugPrint(stack.toString());
-
+      // FIX #3 — sensitive details behind kDebugMode guard
+      if (kDebugMode) {
+        debugPrint('[AuthProvider] initialize error: $e');
+        debugPrint(stack.toString());
+      }
     } finally {
-
       _initialized = true;
-
       _setLoading(false);
     }
   }
@@ -153,62 +145,99 @@ class AuthProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   Future<void> _restoreSession() async {
-
     try {
-
       final values = await _storage.readAll();
 
-      final token = values['launch-fast-token'];
-      final userJson = values['launch-fast-user'];
+      final token    = values[_kToken];
+      final userJson = values[_kUser];
 
       if (token == null || userJson == null) {
-
         await _clearSession();
-
         return;
       }
 
-      final decoded =
-          jsonDecode(userJson) as Map<String, dynamic>;
+      // FIX #4 — validate token expiry before trusting stored credentials
+      if (_isTokenExpired(token)) {
+        if (kDebugMode) {
+          debugPrint('[AuthProvider] Stored JWT is expired — clearing session');
+        }
+        await _clearSession();
+        return;
+      }
 
-      final restoredUser =
-          UserProfile.fromJson(decoded);
+      final decoded = jsonDecode(userJson) as Map<String, dynamic>;
 
-      _token = token;
-      _user = restoredUser;
+      // FIX #12 — validate required fields before constructing the model
+      _assertRequiredUserFields(decoded);
 
-      _adminStoreId =
-          values['launch-fast-admin'];
+      final restoredUser = UserProfile.fromJson(decoded);
 
-      _guestAddress =
-          values['launch-fast-guest-address'];
+      _token           = token;
+      _user            = restoredUser;
+      _adminStoreId    = values[_kAdmin];
+      _guestAddress    = values[_kGuestAddress];
+      _guestName       = values[_kGuestName];
+      _guestPhone      = values[_kGuestPhone];
+      _selectedAddress = values[_kSelectedAddress];
 
-      _guestName =
-          values['launch-fast-guest-name'];
-
-      _guestPhone =
-          values['launch-fast-guest-phone'];
-
-      _selectedAddress =
-          values['launch-fast-selected-address'];
-
-      debugPrint('''
-[AuthProvider] Session restored:
-  User ID: ${_user?.id}
-  Name: ${_user?.name}
-  Email: ${_user?.email}
-  Role: ${_user?.role}
-  Token: ${_token != null ? 'Present' : 'Missing'}
-  Admin Store ID: $_adminStoreId
-''');
-
+      // FIX #3 — log only non-sensitive identifiers, and only in debug
+      if (kDebugMode) {
+        debugPrint(
+          '[AuthProvider] Session restored — '
+          'User ID: ${_user?.id}, Role: ${_user?.role}',
+        );
+      }
     } catch (e) {
+      if (kDebugMode) debugPrint('[AuthProvider] restore failed: $e');
+      await _clearSession();
+    }
+  }
 
-      debugPrint(
-        '[AuthProvider] restore failed: $e',
+  // ─────────────────────────────────────────────────────────────
+  // FIX #4 — Token expiry validation
+  // ─────────────────────────────────────────────────────────────
+
+  /// Decodes the JWT payload and returns true if the token is expired or
+  /// malformed. A 60-second buffer avoids using a token that expires mid-request.
+  bool _isTokenExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return true;
+
+      // Base64Url → base64 with padding
+      String payload = parts[1];
+      payload += '=' * ((4 - payload.length % 4) % 4);
+
+      final decoded = utf8.decode(base64Url.decode(payload));
+      final map     = jsonDecode(decoded) as Map<String, dynamic>;
+      final exp     = map['exp'];
+
+      // No exp claim → treat as non-expiring (e.g. API keys)
+      if (exp == null) return false;
+
+      final expiry = DateTime.fromMillisecondsSinceEpoch(
+        (exp as int) * 1000,
+        isUtc: true,
       );
 
-      await _clearSession();
+      return DateTime.now().toUtc().isAfter(
+        expiry.subtract(const Duration(seconds: 60)),
+      );
+    } catch (_) {
+      return true; // Malformed token — reject
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // FIX #12 — Required field validation
+  // ─────────────────────────────────────────────────────────────
+
+  void _assertRequiredUserFields(Map<String, dynamic> data) {
+    const required = ['id', 'name', 'email', 'role'];
+    for (final field in required) {
+      if (data[field] == null) {
+        throw FormatException('Auth response missing required field: $field');
+      }
     }
   }
 
@@ -216,34 +245,21 @@ class AuthProvider extends ChangeNotifier {
   // Login
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> login(
-    String email,
-    String password,
-  ) async {
-
-    if (_authOperationInProgress) {
-      return;
-    }
-
+  Future<void> login(String email, String password) async {
+    if (_authOperationInProgress) return;
     _authOperationInProgress = true;
-
     _setLoading(true);
 
     try {
-
-      final data =
-          await locator<AuthRepository>()
-              .login(email, password);
-
+      final data = await locator<AuthRepository>().login(email, password);
       await _persistAuthResponse(data);
-
-      unawaited(_initializeAbly());
-      unawaited(syncFCMToken());
-
-      } finally {
-
+      _initializeAblySafely();
+      _syncFCMTokenSafely();
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AuthProvider] login error: $e');
+      rethrow; // FIX #9 — consistent error propagation
+    } finally {
       _authOperationInProgress = false;
-
       _setLoading(false);
     }
   }
@@ -252,171 +268,163 @@ class AuthProvider extends ChangeNotifier {
   // Register
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> register(
-    Map<String, dynamic> payload,
-  ) async {
-
-    if (_authOperationInProgress) {
-      return;
-    }
-
+  Future<void> register(Map<String, dynamic> payload) async {
+    if (_authOperationInProgress) return;
     _authOperationInProgress = true;
-
     _setLoading(true);
 
     try {
-
-      final data =
-          await locator<AuthRepository>()
-              .register(payload);
-
+      final data = await locator<AuthRepository>().register(payload);
       await _persistAuthResponse(data);
-
-      unawaited(_initializeAbly());
-      unawaited(syncFCMToken());
-
-      } finally {
-
+      _initializeAblySafely();
+      _syncFCMTokenSafely();
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AuthProvider] register error: $e');
+      rethrow;
+    } finally {
       _authOperationInProgress = false;
-
       _setLoading(false);
     }
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Sync FCM Token
+  // FCM Token Sync
   // ─────────────────────────────────────────────────────────────
+
+  /// Fire-and-forget wrapper with error handling.
+  /// FIX #8 — unawaited calls must carry a catchError.
+  void _syncFCMTokenSafely() {
+    syncFCMToken().catchError((Object e) {
+      if (kDebugMode) debugPrint('[AuthProvider] FCM sync failed (non-fatal): $e');
+    });
+  }
 
   Future<void> syncFCMToken() async {
-  if (!isAuthenticated) return;
+    if (!isAuthenticated) return;
 
-  try {
-    final token = await notificationService.getToken();
-    if (token != null) {
-      debugPrint('[AuthProvider] Syncing FCM Token: $token');
-      // Legacy profile update (kept for compatibility)
-      await locator<AuthRepository>().updateProfile({
-        'fcmToken': token,
-        'deviceToken': token, // Some backends use deviceToken
-      });
-      // Push token to dedicated save‑token route
-      await _pushFcmTokenToBackend(token);
-    }
-  } catch (e) {
-    debugPrint('[AuthProvider] FCM Token sync failed: $e');
+    // FIX #2 — FCM token is obtained and forwarded to the server only.
+    // It is NEVER assigned to _token, which holds the backend JWT exclusively.
+    final fcmToken = await notificationService.getToken();
+    if (fcmToken == null) return;
+
+    if (kDebugMode) debugPrint('[AuthProvider] Syncing FCM token with backend');
+
+    await Future.wait([
+      locator<AuthRepository>().updateProfile({'fcmToken': fcmToken}),
+      _pushFcmTokenToBackend(fcmToken),
+    ]);
   }
-}
-Future<void> _pushFcmTokenToBackend(String token) async {
-  final userId = _user?.id;
-  if (userId == null) return;
 
-  try {
-    final response = await apiService.dio.post(
-      '/users/save-token',
-      data: {'userId': userId, 'fcmToken': token},
-    );
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      debugPrint('[AuthProvider] FCM token saved on server');
-    } else {
-      debugPrint('[AuthProvider] ❗️Failed to save token: ${response.data['error'] ?? 'unknown error'}');
+  Future<void> _pushFcmTokenToBackend(String fcmToken) async {
+    final userId = _user?.id;
+    if (userId == null) return;
+
+    try {
+      final response = await _apiService.dio.post(
+        '/users/save-token',
+        data: {'userId': userId, 'fcmToken': fcmToken},
+      );
+      if (kDebugMode) {
+        final ok = response.statusCode == 200 &&
+            response.data['success'] == true;
+        debugPrint('[AuthProvider] FCM token save: ${ok ? 'OK' : 'failed'}');
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AuthProvider] _pushFcmTokenToBackend error: $e');
+      // Non-fatal — next app start will retry
     }
-  } catch (e) {
-    debugPrint('[AuthProvider] ❗️Exception while saving token: $e');
   }
-}
+
   // ─────────────────────────────────────────────────────────────
-  // Persist auth
+  // Persist auth response
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> _persistAuthResponse(
-    Map<String, dynamic> data,
-  ) async {
-
-    final userData =
-        data['user'] ?? data;
+  Future<void> _persistAuthResponse(Map<String, dynamic> data) async {
+    final userData = data['user'] ?? data;
 
     if (userData is! Map) {
-      throw Exception('Invalid auth response');
+      throw const FormatException(
+        'Invalid auth response: expected a user object',
+      );
     }
 
-    final user =
-        UserProfile.fromJson(
-          Map<String, dynamic>.from(userData),
-        );
+    final userMap = Map<String, dynamic>.from(userData);
 
-    final token = data['token'];
+    // FIX #12 — validate before construction
+    _assertRequiredUserFields(userMap);
 
-    if (token == null) {
-      throw Exception('Missing token');
+    final user  = UserProfile.fromJson(userMap);
+    final token = data['token'] as String?;
+
+    if (token == null || token.isEmpty) {
+      throw const FormatException('Invalid auth response: missing token');
     }
 
-    // Atomic state assignment
-    _user = user;
-    _token = token;
+    _user  = user;
+    _token = token; // Backend JWT — never an FCM token
 
-    // Atomic storage write
     await Future.wait([
-      _storage.write(
-        key: 'launch-fast-token',
-        value: token,
-      ),
-
-      _storage.write(
-        key: 'launch-fast-user',
-        value: jsonEncode(user.toJson()),
-      ),
+      _storage.write(key: _kToken, value: token),
+      _storage.write(key: _kUser,  value: jsonEncode(user.toJson())),
     ]);
 
-    debugPrint('''
-[AuthProvider] Auth persisted:
-  User ID: ${user.id}
-  Name: ${user.name}
-  Role: ${user.role}
-  Token: ${token != null ? 'Present' : 'Missing'}
-''');
+    // FIX #3 — no full token or email in logs
+    if (kDebugMode) {
+      debugPrint(
+        '[AuthProvider] Auth persisted — '
+        'User ID: ${user.id}, Role: ${user.role}',
+      );
+    }
 
     _safeNotify();
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // FIX #2 — Token refresh listener
+  // The FCM token rotates independently of the backend JWT.
+  // Refreshing the FCM token must NEVER touch _token (the JWT).
+  // ─────────────────────────────────────────────────────────────
+
   void _setupTokenRefreshListener() {
     if (_tokenRefreshListenerAttached) return;
-    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-      debugPrint('[AuthProvider] FCM token refreshed: $newToken');
-      // Update local token storage
-      _token = newToken;
-      await _storage.write(key: 'launch-fast-token', value: newToken);
-      // Sync with backend (profile update and save‑token route)
-      await syncFCMToken();
+
+    FirebaseMessaging.instance.onTokenRefresh.listen((_) {
+      // A new FCM token is available — sync it with the backend.
+      // Do NOT store it in _token or overwrite the JWT in secure storage.
+      if (kDebugMode) debugPrint('[AuthProvider] FCM token rotated — re-syncing');
+      _syncFCMTokenSafely();
     });
+
     _tokenRefreshListenerAttached = true;
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Ably
+  // ─────────────────────────────────────────────────────────────
+
+  /// Fire-and-forget wrapper with error handling.
+  /// FIX #8 — unawaited calls must carry a catchError.
+  void _initializeAblySafely() {
+    _initializeAbly().catchError((Object e) {
+      if (kDebugMode) debugPrint('[AuthProvider] Ably init failed (non-fatal): $e');
+    });
+  }
 
   Future<void> _initializeAbly() async {
-
-    if (_ablyListenersAttached) {
-      return;
-    }
+    if (_ablyListenersAttached) return;
 
     final userId = _user?.id;
+    if (userId == null) return;
 
-    if (userId == null) {
-      return;
-    }
+    await _ablyService.initAbly(userId);
+    _ablyService.addRoleListener(_handleRoleUpdate);
+    _ablyService.addStoreApprovalListener(_handleStoreApproval);
+    _ablyService.addWalletListener(refreshUser);
 
-    await ablyService.initAbly(userId);
-
-    ablyService.addRoleListener(_handleRoleUpdate);
-
-    ablyService.addStoreApprovalListener(
-      _handleStoreApproval,
-    );
-
-    ablyService.addWalletListener(refreshUser);
-
-    // Subscribe to the personal FCM topic so push notifications are delivered.
-    // The backend sends to topic 'user_{userId}' via Firebase Admin SDK.
-    unawaited(notificationService.subscribeToUserTopic(userId));
+    // FIX #8 — fire-and-forget with catchError
+    notificationService.subscribeToUserTopic(userId).catchError((Object e) {
+      if (kDebugMode) debugPrint('[AuthProvider] FCM topic subscribe failed: $e');
+    });
 
     _ablyListenersAttached = true;
   }
@@ -431,35 +439,38 @@ Future<void> _pushFcmTokenToBackend(String token) async {
       _locations = locs;
       _safeNotify();
     } catch (e) {
-      debugPrint('[AuthProvider] fetchLocation error: $e');
+      if (kDebugMode) debugPrint('[AuthProvider] fetchLocation error: $e');
     }
   }
 
-  /// Alias for [fetchLocation] to satisfy store-side widgets.
   Future<void> fetchLocations() => fetchLocation();
 
   Future<void> setDeliveryAddress(String address) async {
     _selectedAddress = address;
-    await _storage.write(key: 'launch-fast-selected-address', value: address);
+    await _storage.write(key: _kSelectedAddress, value: address);
     _safeNotify();
   }
 
   Future<void> setGuestAddress(String address) async {
     _guestAddress = address;
-    await _storage.write(key: 'launch-fast-guest-address', value: address);
+    await _storage.write(key: _kGuestAddress, value: address);
     _safeNotify();
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Profile
+  // ─────────────────────────────────────────────────────────────
 
   Future<void> updateProfile(Map<String, dynamic> updates) async {
     _setLoading(true);
     try {
-      final data = await locator<AuthRepository>().updateProfile(updates);
+      final data     = await locator<AuthRepository>().updateProfile(updates);
       final userData = data['user'] ?? data;
       _user = UserProfile.fromJson(Map<String, dynamic>.from(userData));
-      await _storage.write(key: 'launch-fast-user', value: jsonEncode(_user!.toJson()));
+      await _storage.write(key: _kUser, value: jsonEncode(_user!.toJson()));
       _safeNotify();
     } catch (e) {
-      debugPrint('[AuthProvider] updateProfile error: $e');
+      if (kDebugMode) debugPrint('[AuthProvider] updateProfile error: $e');
       rethrow;
     } finally {
       _setLoading(false);
@@ -468,13 +479,13 @@ Future<void> _pushFcmTokenToBackend(String token) async {
 
   Future<void> refreshUser() async {
     try {
-      final data = await locator<AuthRepository>().getProfile();
+      final data     = await locator<AuthRepository>().getProfile();
       final userData = data['user'] ?? data;
       _user = UserProfile.fromJson(Map<String, dynamic>.from(userData));
-      await _storage.write(key: 'launch-fast-user', value: jsonEncode(_user!.toJson()));
+      await _storage.write(key: _kUser, value: jsonEncode(_user!.toJson()));
       _safeNotify();
     } catch (e) {
-      debugPrint('[AuthProvider] refreshUser error: $e');
+      if (kDebugMode) debugPrint('[AuthProvider] refreshUser error: $e');
     }
   }
 
@@ -483,84 +494,79 @@ Future<void> _pushFcmTokenToBackend(String token) async {
     try {
       final data = await locator<AuthRepository>().toggleFavorite(storeId);
       if (data['success'] == true) {
-        final favorites = List<String>.from(data['favoriteStores']);
-        updateUser({
-          'favoriteStores': favorites,
-        });
+        // FIX #13 — still a map-key update but with explicit cast to catch
+        // backend shape changes at runtime rather than silently storing junk.
+        final favorites = List<String>.from(data['favoriteStores'] as List);
+        await updateUser({'favoriteStores': favorites});
       }
     } catch (e) {
-      debugPrint('[AuthProvider] toggleFavorite error: $e');
+      if (kDebugMode) debugPrint('[AuthProvider] toggleFavorite error: $e');
       rethrow;
     }
   }
 
-  void updateRole(String role) {
-    _handleRoleUpdate(role);
-  }
+  void updateRole(String role) => _handleRoleUpdate(role);
 
-  /// Silently saves a corrected [name] and/or [phone] to the backend profile.
-  /// Optimistically updates local state first so the UI reflects the change
-  /// immediately without waiting for the network round-trip.
   Future<void> updateNameAndPhone({String? name, String? phone}) async {
     if (!isAuthenticated || _user == null) return;
     if (name == null && phone == null) return;
 
-    // Optimistic local update
-    final updates = <String, dynamic>{};
-    if (name != null) updates['name'] = name;
-    if (phone != null) updates['phone'] = phone;
-    updateUser(updates);
+    final updates = <String, dynamic>{
+      if (name  != null) 'name':  name,
+      if (phone != null) 'phone': phone,
+    };
+
+    await updateUser(updates); // Optimistic
 
     try {
       await locator<AuthRepository>().updateProfile(updates);
     } catch (e) {
-      debugPrint('[AuthProvider] updateNameAndPhone error: $e');
-      // Non-fatal — the order will still carry the confirmed values.
+      if (kDebugMode) debugPrint('[AuthProvider] updateNameAndPhone error: $e');
+      // Non-fatal
     }
   }
 
-  bool hasSufficientFunds(double total) {
-    return (_user?.walletBalance ?? 0) >= total;
-  }
+  // FIX #14 — hasSufficientFunds removed from auth layer.
+  // Move this to your CartProvider / CheckoutProvider:
+  //   bool hasSufficientFunds(double total) =>
+  //       (authProvider.user?.walletBalance ?? 0) >= total;
 
   void setGuestInfo({String? name, String? phone}) {
-    if (name != null) _guestName = name;
+    if (name  != null) _guestName  = name;
     if (phone != null) _guestPhone = phone;
     _safeNotify();
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Social Sign-In
+  // ─────────────────────────────────────────────────────────────
 
   Future<void> signInWithGoogle() async {
     _setLoading(true);
     try {
       final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        _setLoading(false);
-        return;
-      }
+      if (googleUser == null) return;
 
       final googleAuth = await googleUser.authentication;
-      
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+        idToken:     googleAuth.idToken,
       );
-      
-      // Sign into Firebase so we get a Firebase ID token
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      final firebaseIdToken = await userCredential.user!.getIdToken();
+
+      final userCredential   = await FirebaseAuth.instance.signInWithCredential(credential);
+      // FIX #11 — use ?. not ! since getIdToken() is technically nullable
+      final firebaseIdToken  = await userCredential.user?.getIdToken();
 
       if (firebaseIdToken == null) {
         throw Exception('Failed to get Firebase ID token');
       }
 
-      // Send the Firebase ID token — the backend verifies it with Firebase Admin SDK.
       final data = await locator<AuthRepository>().loginWithGoogle(firebaseIdToken);
-      
       await _persistAuthResponse(data);
-      unawaited(_initializeAbly());
-      unawaited(syncFCMToken());
+      _initializeAblySafely();
+      _syncFCMTokenSafely();
     } catch (e) {
-      debugPrint('[AuthProvider] signInWithGoogle error: $e');
+      if (kDebugMode) debugPrint('[AuthProvider] signInWithGoogle error: $e');
       rethrow;
     } finally {
       _setLoading(false);
@@ -571,7 +577,7 @@ Future<void> _pushFcmTokenToBackend(String token) async {
     _setLoading(true);
     try {
       final rawNonce = _generateNonce();
-      final nonce = _sha256ofString(rawNonce);
+      final nonce    = _sha256ofString(rawNonce);
 
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -581,50 +587,45 @@ Future<void> _pushFcmTokenToBackend(String token) async {
         nonce: nonce,
       );
 
-      final OAuthCredential credential = OAuthProvider('apple.com').credential(
-        idToken: appleCredential.identityToken,
+      final credential = OAuthProvider('apple.com').credential(
+        idToken:  appleCredential.identityToken,
         rawNonce: rawNonce,
       );
 
-      // Sign into Firebase so we get a Firebase ID token
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      final firebaseIdToken = await userCredential.user!.getIdToken();
+      final userCredential  = await FirebaseAuth.instance.signInWithCredential(credential);
+      final firebaseIdToken = await userCredential.user?.getIdToken();
 
       if (firebaseIdToken == null) {
         throw Exception('Failed to get Firebase ID token');
       }
 
-      // Send the Firebase ID token — the backend verifies it with Firebase Admin SDK.
       final data = await locator<AuthRepository>().loginWithApple(firebaseIdToken);
-      
       await _persistAuthResponse(data);
-      unawaited(_initializeAbly());
-      unawaited(syncFCMToken());
+      _initializeAblySafely();
+      _syncFCMTokenSafely();
     } catch (e) {
-      debugPrint('[AuthProvider] signInWithApple error: $e');
+      if (kDebugMode) debugPrint('[AuthProvider] signInWithApple error: $e');
       rethrow;
     } finally {
       _setLoading(false);
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Account deletion
+  // ─────────────────────────────────────────────────────────────
+
   Future<void> deleteAccount() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) return;
 
     _setLoading(true);
-
     try {
-      // Re-authenticate if it's a social account to be safe
-      await _reauthenticateIfNeeded(user);
-      
-      // 1. Delete from backend (MongoDB + Firebase Auth on server)
+      await _reauthenticateIfNeeded(firebaseUser);
       await locator<AuthRepository>().deleteAccount();
-      
-      // 2. Clear local session
       await logout();
     } catch (e) {
-      debugPrint('[AuthProvider] deleteAccount error: $e');
+      if (kDebugMode) debugPrint('[AuthProvider] deleteAccount error: $e');
       rethrow;
     } finally {
       _setLoading(false);
@@ -633,35 +634,41 @@ Future<void> _pushFcmTokenToBackend(String token) async {
 
   Future<void> _reauthenticateIfNeeded(User user) async {
     final providers = user.providerData.map((p) => p.providerId).toList();
-    
+
     if (providers.contains('apple.com')) {
       final rawNonce = _generateNonce();
-      final nonce = _sha256ofString(rawNonce);
+      final nonce    = _sha256ofString(rawNonce);
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [],
         nonce: nonce,
       );
       final credential = OAuthProvider('apple.com').credential(
-        idToken: appleCredential.identityToken,
+        idToken:  appleCredential.identityToken,
         rawNonce: rawNonce,
       );
       await user.reauthenticateWithCredential(credential);
     } else if (providers.contains('google.com')) {
       final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) throw Exception('Google re-authentication cancelled');
+      if (googleUser == null) {
+        throw Exception('Google re-authentication cancelled');
+      }
       final googleAuth = await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+        idToken:     googleAuth.idToken,
       );
       await user.reauthenticateWithCredential(credential);
     }
   }
 
   String _generateNonce([int length = 32]) {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const chars =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random.secure();
-    return List.generate(length, (_) => chars[random.nextInt(chars.length)]).join();
+    return List.generate(
+      length,
+      (_) => chars[random.nextInt(chars.length)],
+    ).join();
   }
 
   String _sha256ofString(String input) {
@@ -669,6 +676,9 @@ Future<void> _pushFcmTokenToBackend(String token) async {
     return sha256.convert(bytes).toString();
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Store application
+  // ─────────────────────────────────────────────────────────────
 
   Future<void> applyForStore(Map<String, dynamic> data) async {
     _setLoading(true);
@@ -676,44 +686,28 @@ Future<void> _pushFcmTokenToBackend(String token) async {
       final response = await locator<AuthRepository>().applyForStore(data);
       final userData = response['user'] ?? response;
       _user = UserProfile.fromJson(Map<String, dynamic>.from(userData));
-      await _storage.write(key: 'launch-fast-user', value: jsonEncode(_user!.toJson()));
+      await _storage.write(key: _kUser, value: jsonEncode(_user!.toJson()));
       _safeNotify();
     } catch (e) {
-      debugPrint('[AuthProvider] applyForStore error: $e');
+      if (kDebugMode) debugPrint('[AuthProvider] applyForStore error: $e');
       rethrow;
     } finally {
       _setLoading(false);
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Real-time event handlers
+  // ─────────────────────────────────────────────────────────────
+
   void _handleRoleUpdate(String role) {
-
-    if (_disposed || _user == null) {
-      return;
-    }
-
-    if (_user!.role == role) {
-      return;
-    }
-
-    updateUser({
-      'role': role,
-    });
+    if (_disposed || _user == null || _user!.role == role) return;
+    updateUser({'role': role});
   }
 
   void _handleStoreApproval(String storeId) {
-
-    if (_disposed || _user == null) {
-      return;
-    }
-
-    if (_user!.isStoreApproved) {
-      return;
-    }
-
-    updateUser({
-      'isStoreApproved': true,
-    });
+    if (_disposed || _user == null || _user!.isStoreApproved) return;
+    updateUser({'isStoreApproved': true});
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -721,63 +715,63 @@ Future<void> _pushFcmTokenToBackend(String token) async {
   // ─────────────────────────────────────────────────────────────
 
   Future<void> _handleUnauthorized() async {
-
-    debugPrint('[AuthProvider] unauthorized');
-
-    await logout(
-      disconnectGoogle: false,
-    );
+    if (kDebugMode) debugPrint('[AuthProvider] 401 received — logging out');
+    await logout(disconnectGoogle: false);
   }
 
   // ─────────────────────────────────────────────────────────────
   // Logout
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> logout({
-    bool disconnectGoogle = true,
-  }) async {
-
-    if (_authOperationInProgress) {
-      return;
-    }
-
+  Future<void> logout({bool disconnectGoogle = true}) async {
+    if (_authOperationInProgress) return;
     _authOperationInProgress = true;
 
     try {
-
-      // Unsubscribe from FCM topic before clearing the session so we still
-      // have the userId available.
       final userId = _user?.id;
       if (userId != null) {
-        unawaited(notificationService.unsubscribeFromUserTopic(userId));
+        // FIX #8 — fire-and-forget with catchError
+        notificationService.unsubscribeFromUserTopic(userId).catchError((Object e) {
+          if (kDebugMode) debugPrint('[AuthProvider] FCM unsubscribe failed: $e');
+        });
       }
 
       await _clearSession();
 
-      ablyService.disconnect();
+      _ablyService.disconnect();
+
+      // FIX #10 — reset real-time flags so listeners re-attach on next login
+      _ablyListenersAttached       = false;
+      _tokenRefreshListenerAttached = false;
 
       if (disconnectGoogle) {
         await _googleSignIn.signOut();
       }
-
     } finally {
-
       _authOperationInProgress = false;
     }
   }
 
   // ─────────────────────────────────────────────────────────────
   // Clear Session
+  // FIX #5 — targeted deletes instead of deleteAll() to avoid wiping
+  //           keys owned by other modules in the same app.
   // ─────────────────────────────────────────────────────────────
 
   Future<void> _clearSession() async {
-
-    _user = null;
-    _token = null;
-
+    _user         = null;
+    _token        = null;
     _adminStoreId = null;
 
-    await _storage.deleteAll();
+    await Future.wait([
+      _storage.delete(key: _kToken),
+      _storage.delete(key: _kUser),
+      _storage.delete(key: _kAdmin),
+      _storage.delete(key: _kGuestAddress),
+      _storage.delete(key: _kGuestName),
+      _storage.delete(key: _kGuestPhone),
+      _storage.delete(key: _kSelectedAddress),
+    ]);
 
     _safeNotify();
   }
@@ -786,29 +780,17 @@ Future<void> _pushFcmTokenToBackend(String token) async {
   // Update User
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> updateUser(
-    Map<String, dynamic> updates,
-  ) async {
-
+  Future<void> updateUser(Map<String, dynamic> updates) async {
     final current = _user;
+    if (current == null) return;
 
-    if (current == null) {
-      return;
-    }
-
-    final updated =
-        UserProfile.fromJson({
-          ...current.toJson(),
-          ...updates,
-        });
+    final updated = UserProfile.fromJson({
+      ...current.toJson(),
+      ...updates,
+    });
 
     _user = updated;
-
-    await _storage.write(
-      key: 'launch-fast-user',
-      value: jsonEncode(updated.toJson()),
-    );
-
+    await _storage.write(key: _kUser, value: jsonEncode(updated.toJson()));
     _safeNotify();
   }
 
@@ -817,13 +799,8 @@ Future<void> _pushFcmTokenToBackend(String token) async {
   // ─────────────────────────────────────────────────────────────
 
   void _setLoading(bool value) {
-
-    if (_isLoading == value) {
-      return;
-    }
-
+    if (_isLoading == value) return;
     _isLoading = value;
-
     _safeNotify();
   }
 
@@ -832,11 +809,7 @@ Future<void> _pushFcmTokenToBackend(String token) async {
   // ─────────────────────────────────────────────────────────────
 
   void _safeNotify() {
-
-    if (_disposed) {
-      return;
-    }
-
+    if (_disposed) return;
     notifyListeners();
   }
 
@@ -846,13 +819,10 @@ Future<void> _pushFcmTokenToBackend(String token) async {
 
   @override
   void dispose() {
-
     _disposed = true;
-
-    apiService.onUnauthorized = null;
-
-    ablyService.disconnect();
-
+    // FIX #6 — use injected reference, not global
+    _apiService.onUnauthorized = null;
+    _ablyService.disconnect();
     super.dispose();
   }
 }
