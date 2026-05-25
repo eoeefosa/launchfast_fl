@@ -1,26 +1,20 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/services.dart';
 
-import 'package:campuschow/models/order.dart';
-import 'package:campuschow/repositories/order_repository.dart';
-import 'package:campuschow/widgets/orders/active_order_tracker.dart';
-import 'package:campuschow/widgets/orders/order_receipt.dart';
-import 'package:campuschow/providers/order_provider.dart';
-import 'package:campuschow/providers/auth_provider.dart';
-import 'package:campuschow/screens/checkout/widgets/payment_sheet.dart';
+import '../../models/order.dart';
+import '../../repositories/order_repository.dart';
+import '../../widgets/orders/active_order_tracker.dart';
+import '../../widgets/orders/order_receipt.dart';
+import '../../providers/order_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../screens/checkout/widgets/payment_sheet.dart';
 import 'components/order_details_app_bar.dart';
 import 'components/order_details_error.dart';
 
-// ---------------------------------------------------------------------------
-// OrderDetailsScreen
-// ---------------------------------------------------------------------------
-
-/// Displays the full receipt and live tracking for a single [Order].
-///
-/// Accepts either a fully-loaded [order] object or an [orderId] string.
-/// When only [orderId] is supplied the screen fetches the order on mount.
 class OrderDetailsScreen extends StatefulWidget {
   const OrderDetailsScreen({super.key, this.order, this.orderId})
     : assert(
@@ -36,30 +30,22 @@ class OrderDetailsScreen extends StatefulWidget {
 }
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
-  // ── State ──────────────────────────────────────────────────────────────────
-
   Order? _order;
   bool _isLoading = false;
   String? _error;
-
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
     if (widget.order != null) {
-      // Order already loaded — no network call needed.
       _order = widget.order;
       if (widget.orderId != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _fetchOrder());
       }
     } else {
-      // orderId is guaranteed non-null by the assert above.
       _fetchOrder();
     }
   }
-
-  // ── Data fetching ──────────────────────────────────────────────────────────
 
   Future<void> _fetchOrder() async {
     final orderId = widget.orderId ?? _order?.id ?? widget.order?.id;
@@ -92,29 +78,37 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     }
   }
 
-  // ── Derived state ──────────────────────────────────────────────────────────
-
-  /// An order is "active" when it has not yet reached a terminal status.
   bool get _isActive =>
       _order != null &&
       _order!.status != OrderStatus.delivered &&
       _order!.status != OrderStatus.cancelled;
 
-  // ── Build ──────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark
+        ? AppColors.darkScaffold
+        : AppColors.lightScaffold;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+
     // Loading state
     if (_isLoading) {
-      return const Scaffold(
-        appBar: OrderDetailsAppBar(),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: scaffoldBg,
+        appBar: const OrderDetailsAppBar(),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
     // Error / not-found state
     if (_error != null || _order == null) {
       return Scaffold(
+        backgroundColor: scaffoldBg,
         appBar: const OrderDetailsAppBar(),
         body: OrderDetailsError(
           message: _error ?? 'Order not found.',
@@ -125,22 +119,16 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
     final isPendingPayment = _order!.status == OrderStatus.pendingPayment;
 
-    // Loaded state
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: scaffoldBg,
       appBar: const OrderDetailsAppBar(),
       body: SingleChildScrollView(
-        // ClampingScrollPhysics matches Android's native feel and, crucially,
-        // does not let the scroll view compress itself — content always gets
-        // its full intrinsic height, so nothing is clipped at the bottom.
         physics: const ClampingScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
-          20,
-          24,
-          20,
-          // Add the bottom safe-area inset (notch / gesture bar) so the last
-          // widget is never hidden behind the system UI.
-          24 + (isPendingPayment ? 0 : MediaQuery.paddingOf(context).bottom),
+          20.w,
+          24.h,
+          20.w,
+          24.h + (isPendingPayment ? 0 : MediaQuery.paddingOf(context).bottom),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,7 +137,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               PriceAdjustmentPanel(order: _order!, onUpdated: _fetchOrder),
             if (_isActive) ...[
               ActiveOrderTracker(order: _order!),
-              const SizedBox(height: 32),
+              SizedBox(height: 32.h),
             ],
             OrderReceipt(order: _order!),
           ],
@@ -224,20 +212,32 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = AppColors.primary;
     final original = widget.order.originalTotal ?? widget.order.total;
     final current = widget.order.total;
     final diff = current - original;
     final isHigher = diff > 0;
 
-    final primaryColor = Theme.of(context).primaryColor;
+    // Amber-based warning colors adapted for light/dark
+    final warningBg = isDark
+        ? const Color(0x1AFFCA28) // amber with 10% alpha
+        : const Color(0x26FFCA28); // amber with 15% alpha
+    final warningBorder = const Color(0xFFFFCA28); // Amber 700
+    final warningText = isDark
+        ? const Color(0xFFFFD54F)
+        : const Color(0xFF8D6E00);
+    final warningIconColor = isDark
+        ? const Color(0xFFFFD54F)
+        : const Color(0xFF8D6E00);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.only(bottom: 24.h),
+      padding: EdgeInsets.all(20.r),
       decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.15),
-        border: Border.all(color: Colors.amber.shade700, width: 1.5),
-        borderRadius: BorderRadius.circular(24),
+        color: warningBg,
+        border: Border.all(color: warningBorder, width: 1.5),
+        borderRadius: BorderRadius.circular(24.r),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,63 +246,80 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
             children: [
               Icon(
                 Icons.warning_amber_rounded,
-                color: Colors.amber.shade900,
-                size: 28,
+                color: warningIconColor,
+                size: 28.sp,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.w),
               Expanded(
                 child: Text(
                   isHigher ? 'Price Adjustment Required' : 'Price Reduced',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
-                    color: Colors.amber.shade900,
+                    color: warningText,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           Text(
             isHigher
                 ? 'The store owner has increased the order price. Pay the balance to continue, or cancel the order.'
                 : 'The store owner has reduced the order price. Accept the updated order to continue.',
-            style: const TextStyle(
-              fontSize: 13,
+            style: TextStyle(
+              fontSize: 13.sp,
               height: 1.4,
-              color: Colors.black87,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightText,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Original Total:',
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightMuted,
+                ),
               ),
               Text(
                 '₦${original.toStringAsFixed(0)}',
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.darkText : AppColors.lightText,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Updated Total:',
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightMuted,
+                ),
               ),
               Text(
                 '₦${current.toStringAsFixed(0)}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.darkText : AppColors.lightText,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          const Divider(height: 16),
+          SizedBox(height: 8.h),
+          Divider(
+            height: 16.h,
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -310,22 +327,22 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
                 isHigher ? 'Balance to Pay:' : 'Amount Reduced:',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: isHigher ? Colors.red.shade700 : Colors.green.shade700,
+                  color: isHigher ? Colors.red.shade400 : Colors.green.shade400,
                 ),
               ),
               Text(
                 '₦${diff.abs().toStringAsFixed(0)}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: isHigher ? Colors.red.shade700 : Colors.green.shade700,
+                  fontSize: 16.sp,
+                  color: isHigher ? Colors.red.shade400 : Colors.green.shade400,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.h),
           if (_submitting)
-            const Center(child: CircularProgressIndicator())
+            Center(child: CircularProgressIndicator(color: AppColors.primary))
           else
             Row(
               children: [
@@ -333,8 +350,8 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
                   child: TextButton(
                     onPressed: () => _respond('REJECT'),
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.red.shade700,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      foregroundColor: Colors.red.shade400,
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
                     ),
                     child: const Text(
                       'Cancel Order',
@@ -342,22 +359,25 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => _respond('ACCEPT'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                       elevation: 0,
                     ),
                     child: Text(
                       isHigher ? 'Pay Balance' : 'Accept Order',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15.sp,
+                      ),
                     ),
                   ),
                 ),
@@ -394,7 +414,6 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
       HapticFeedback.mediumImpact();
       await OrderRepository().payWithWallet(widget.order.id);
 
-      // Update local wallet balance
       if (mounted) {
         final auth = context.read<AuthProvider>();
         await auth.refreshUser();
@@ -453,7 +472,6 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
 
       await launchUrl(uri, mode: LaunchMode.externalApplication);
 
-      // Since it launches externally, we tell the user to complete payment
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Opening Paystack payment page...')),
@@ -473,7 +491,6 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
   void _showPaymentSelection() {
     final auth = context.read<AuthProvider>();
     if (!auth.isAuthenticated) {
-      // Guest checkout -> directly paystack
       _payWithPaystack();
       return;
     }
@@ -507,17 +524,32 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
   }
 
   Future<void> _cancelOrder() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? AppColors.darkSurface : AppColors.lightBackground;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancel Order?'),
-        content: const Text(
+        backgroundColor: dialogBg,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        title: Text(
+          'Cancel Order?',
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
           'Are you sure you want to cancel this unpaid order? This action cannot be undone.',
+          style: TextStyle(color: mutedColor),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('No, Keep It'),
+            child: Text('No, Keep It', style: TextStyle(color: mutedColor)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -558,30 +590,37 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = AppColors.primary;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + bottomInset),
+      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 16.h + bottomInset),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: surfaceColor,
         border: Border(
-          top: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
-          ),
+          top: BorderSide(color: borderColor.withValues(alpha: 0.5)),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
         ],
       ),
       child: _isLoading
-          ? const SizedBox(
-              height: 48,
-              child: Center(child: CircularProgressIndicator()),
+          ? SizedBox(
+              height: 48.h,
+              child: Center(
+                child: CircularProgressIndicator(color: primaryColor),
+              ),
             )
           : Row(
               children: [
@@ -589,11 +628,11 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
                   child: OutlinedButton(
                     onPressed: _cancelOrder,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.red.shade400,
                       side: BorderSide(color: Colors.red.shade200),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
                     child: const Text(
@@ -602,16 +641,16 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.w),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _showPaymentSelection,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                       elevation: 0,
                     ),

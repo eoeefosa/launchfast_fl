@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:campuschow/widgets/common/universal_image.dart';
 
 class ItemHeroImage extends StatelessWidget {
   final String imageUrl;
@@ -21,16 +21,16 @@ class ItemHeroImage extends StatelessWidget {
         children: [
           ScaleTransition(
             scale: heroScale,
-            child: CachedNetworkImage(
+            child: UniversalImage(
               imageUrl: imageUrl,
               fit: BoxFit.cover,
-              placeholder: (_, _) => Container(
+              placeholder: Container(
                 color: Colors.grey.withValues(alpha: 0.15),
                 child: const Center(
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               ),
-              errorWidget: (_, _, _) => Container(
+              errorWidget: Container(
                 color: Colors.grey.withValues(alpha: 0.15),
                 child: const Icon(Icons.broken_image_outlined, size: 48),
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
+import 'package:campuschow/widgets/common/universal_image.dart';
 
 class ItemHeroImage extends StatelessWidget {
   final String imageUrl;
@@ -21,33 +22,25 @@ class ItemHeroImage extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.primary.withValues(alpha: 0.1),
           ),
-          child: imageUrl.isNotEmpty
-              ? (heroScale != null
-                  ? ScaleTransition(
-                      scale: heroScale!,
-                      child: Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Icon(
-                          Icons.fastfood,
-                          size: 64,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    )
-                  : Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.fastfood,
-                        size: 64,
-                        color: AppColors.primary,
-                      ),
-                    ))
-              : const Center(
-                  child: Icon(
+          child: heroScale != null
+              ? ScaleTransition(
+                  scale: heroScale!,
+                  child: UniversalImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                    errorWidget: const Icon(
+                      Icons.fastfood,
+                      size: 64,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                )
+              : UniversalImage(
+                  imageUrl: imageUrl,
+                  fit: BoxFit.cover,
+                  errorWidget: const Icon(
                     Icons.fastfood,
-                    size: 80,
+                    size: 64,
                     color: AppColors.primary,
                   ),
                 ),

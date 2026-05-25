@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:campuschow/store/lib/features/orders/presentation/cart_provider.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
 import 'package:campuschow/store/lib/features/store/data/store_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
+import 'package:campuschow/widgets/common/universal_image.dart';
 
 class StoreDetailScreen extends StatelessWidget {
   final String id;
@@ -346,7 +346,7 @@ class StoreDetailScreen extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: CachedNetworkImage(
+                  child: UniversalImage(
                     imageUrl: item.image,
                     width: 110,
                     height: 110,

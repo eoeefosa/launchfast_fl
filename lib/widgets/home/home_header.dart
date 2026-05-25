@@ -1,8 +1,11 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
-import 'package:go_router/go_router.dart';
 import 'location_selector.dart';
 
 class HomeHeader extends StatelessWidget {
@@ -12,17 +15,26 @@ class HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.user;
-    final primaryColor = Theme.of(context).primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // ── AppColors for light/dark ────────────────────────────────────────
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final primaryColor = isDark ? AppColors.darkPrimary : AppColors.primary;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
+        color: surfaceColor,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(36.r)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
@@ -30,6 +42,7 @@ class HomeHeader extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // ── Greeting & name row ──────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -40,38 +53,44 @@ class HomeHeader extends StatelessWidget {
                     Text(
                       _getGreeting(),
                       style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.4),
+                        fontSize: 11.sp,
+                        color: mutedColor.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2.h),
                     Text(
                       (user?.name != null && user!.name.isNotEmpty)
                           ? '${user.name} 👋'
                           : 'Guest User',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 22,
+                      style: TextStyle(
+                        fontSize: 22.sp,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.8,
+                        color: textColor,
                       ),
                     ),
                   ],
                 ),
               ),
-              _HeaderActions(user: user, primaryColor: primaryColor),
+              _HeaderActions(
+                user: user,
+                primaryColor: primaryColor,
+                isDark: isDark,
+                surfaceColor: surfaceColor,
+                mutedColor: mutedColor,
+              ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.h),
+          // ── Location + Search ────────────────────────────────────────
           Row(
             children: [
-              const Expanded(child: LocationSelector()),
-              const SizedBox(width: 12),
+              Expanded(child: LocationSelector()),
+              SizedBox(width: 12.w),
               Semantics(
                 label: 'Search for food',
                 button: true,
@@ -80,25 +99,27 @@ class HomeHeader extends StatelessWidget {
                   child: Tooltip(
                     message: 'Search',
                     child: Container(
-                      width: 48,
-                      height: 48,
+                      width: 48.w,
+                      height: 48.h,
                       decoration: BoxDecoration(
-                        color: isDark 
-                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
-                            : Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: isDark ? [] : [
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
+                        color: isDark
+                            ? primaryColor.withValues(alpha: 0.15)
+                            : primaryColor,
+                        borderRadius: BorderRadius.circular(16.r),
+                        boxShadow: isDark
+                            ? []
+                            : [
+                                BoxShadow(
+                                  color: primaryColor.withValues(alpha: 0.3),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
                       ),
                       child: Icon(
                         Icons.search_rounded,
-                        color: isDark ? Theme.of(context).colorScheme.primary : Colors.white,
-                        size: 22,
+                        color: isDark ? primaryColor : Colors.white,
+                        size: 22.sp,
                       ),
                     ),
                   ),
@@ -119,19 +140,30 @@ class HomeHeader extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Header actions – notification bell + profile avatar
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _HeaderActions extends StatelessWidget {
   final dynamic user;
   final Color primaryColor;
+  final bool isDark;
+  final Color surfaceColor;
+  final Color mutedColor;
 
-  const _HeaderActions({required this.user, required this.primaryColor});
+  const _HeaderActions({
+    required this.user,
+    required this.primaryColor,
+    required this.isDark,
+    required this.surfaceColor,
+    required this.mutedColor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Row(
       children: [
+        // Notification icon with badge
         Semantics(
           label: 'Notifications',
           button: true,
@@ -143,22 +175,26 @@ class _HeaderActions extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: 48.w,
+                    height: 48.h,
                     decoration: BoxDecoration(
-                      color: scheme.onSurface.withValues(alpha: 0.05),
+                      color: isDark
+                          ? AppColors.darkSurface2.withValues(alpha: 0.5)
+                          : AppColors.lightSurface.withValues(alpha: 0.6),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Theme.of(
-                          context,
-                        ).dividerColor.withValues(alpha: 0.1),
+                        color: isDark
+                            ? AppColors.darkBorder.withValues(alpha: 0.3)
+                            : AppColors.lightBorder.withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),
                     child: Icon(
                       Icons.notifications_none_rounded,
-                      size: 26,
-                      color: scheme.onSurface,
+                      size: 26.sp,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightText,
                     ),
                   ),
                   Consumer<NotificationProvider>(
@@ -167,24 +203,24 @@ class _HeaderActions extends StatelessWidget {
                         return const SizedBox.shrink();
                       }
                       return Positioned(
-                        right: -2,
-                        top: -2,
+                        right: -2.w,
+                        top: -2.h,
                         child: Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: EdgeInsets.all(3.r),
                           decoration: BoxDecoration(
-                            color: Colors.redAccent,
+                            color: primaryColor, // brand colour for badge
                             shape: BoxShape.circle,
-                            border: Border.all(color: scheme.surface, width: 2),
+                            border: Border.all(color: surfaceColor, width: 2),
                           ),
-                          constraints: const BoxConstraints(
-                            minWidth: 20,
-                            minHeight: 20,
+                          constraints: BoxConstraints(
+                            minWidth: 20.w,
+                            minHeight: 20.h,
                           ),
                           child: Text(
                             '${provider.unreadCount}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 10,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w900,
                             ),
                             textAlign: TextAlign.center,
@@ -198,7 +234,8 @@ class _HeaderActions extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12.w),
+        // Profile avatar
         Semantics(
           label: 'View Profile',
           button: true,
@@ -209,18 +246,16 @@ class _HeaderActions extends StatelessWidget {
               child: Hero(
                 tag: 'profile_avatar',
                 child: Container(
-                  padding: const EdgeInsets.all(2),
+                  padding: EdgeInsets.all(2.r),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    // Use a solid, visible border in both modes
                     border: Border.all(
                       color: primaryColor.withValues(alpha: isDark ? 0.6 : 0.3),
                       width: 2,
                     ),
                   ),
                   child: CircleAvatar(
-                    radius: 20,
-                    // Solid background that's visible in both light and dark
+                    radius: 20.r,
                     backgroundColor: isDark
                         ? primaryColor.withValues(alpha: 0.25)
                         : primaryColor.withValues(alpha: 0.12),
@@ -229,10 +264,9 @@ class _HeaderActions extends StatelessWidget {
                           ? user!.name.trim()[0].toUpperCase()
                           : '?',
                       style: TextStyle(
-                        // Always use primaryColor for the letter — visible on both backgrounds
                         color: isDark ? Colors.white : primaryColor,
                         fontWeight: FontWeight.w900,
-                        fontSize: 16,
+                        fontSize: 16.sp,
                       ),
                     ),
                   ),

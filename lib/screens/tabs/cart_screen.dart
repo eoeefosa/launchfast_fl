@@ -1,19 +1,21 @@
+import 'dart:io';
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:campuschow/providers/store_provider.dart';
-import 'dart:io';
-import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../providers/cart_provider.dart';
-import '../../widgets/cart/cart_item_tile.dart';
-import '../../widgets/cart/order_summary.dart';
-import '../../widgets/cart/checkout_bar.dart';
-import '../../widgets/cart/empty_cart_view.dart';
-import '../../widgets/cart/editing_banner.dart';
-import '../../widgets/cart/frequently_added_section.dart';
+import '../../providers/store_provider.dart';
 import '../../services/api_service.dart';
+import '../../widgets/cart/cart_item_tile.dart';
+import '../../widgets/cart/checkout_bar.dart';
+import '../../widgets/cart/editing_banner.dart';
+import '../../widgets/cart/empty_cart_view.dart';
+import '../../widgets/cart/frequently_added_section.dart';
+import '../../widgets/cart/order_summary.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -23,6 +25,13 @@ class CartScreen extends StatelessWidget {
     final cart = context.watch<CartProvider>();
     final storeProvider = context.watch<StoreProvider>();
     final isIOS = Platform.isIOS;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ── AppColors surfaces ────────────────────────────────────────────
+    final scaffoldBg = isDark
+        ? AppColors.darkScaffold
+        : AppColors.lightScaffold;
+    final accentColor = _getAccentColor(context, cart);
 
     final hasUnavailableItems = cart.items.any((item) {
       final menuItem = storeProvider.menuItems.firstWhere(
@@ -38,27 +47,31 @@ class CartScreen extends StatelessWidget {
           ? const EmptyCartView(key: ValueKey('empty_cart'))
           : Scaffold(
               key: const ValueKey('cart_scaffold'),
-              backgroundColor: Theme.of(context).colorScheme.surface,
+              backgroundColor: scaffoldBg,
               appBar: _buildAppBar(context, isIOS, cart),
-              body: _CartBody(
-                cart: cart,
-                accentColor: _getAccentColor(context, cart),
-              ),
+              body: _CartBody(cart: cart, accentColor: accentColor),
               bottomNavigationBar: CheckoutBar(
                 total: cart.cartTotal,
                 enabled: !hasUnavailableItems,
                 onPressed: () {
-                  final hasSwallowWithoutSoup = cart.items.any((item) =>
-                      (item.menuItem.type == 'swallow' || item.menuItem.category == 'Swallow' || item.menuItem.requiresSoupSelection) &&
-                      (item.selectedSoup == null || item.selectedSoup!['id'] == null)
+                  final hasSwallowWithoutSoup = cart.items.any(
+                    (item) =>
+                        (item.menuItem.type == 'swallow' ||
+                            item.menuItem.category == 'Swallow' ||
+                            item.menuItem.requiresSoupSelection) &&
+                        (item.selectedSoup == null ||
+                            item.selectedSoup!['id'] == null),
                   );
-                  
+
                   if (hasSwallowWithoutSoup) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Row(
                           children: [
-                            Icon(Icons.warning_amber_rounded, color: Colors.white),
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.white,
+                            ),
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -71,12 +84,14 @@ class CartScreen extends StatelessWidget {
                         behavior: SnackBarBehavior.floating,
                         backgroundColor: Colors.red,
                         duration: const Duration(seconds: 4),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
                       ),
                     );
                     return;
                   }
-                  
+
                   context.push('/checkout');
                 },
               ),
@@ -85,7 +100,7 @@ class CartScreen extends StatelessWidget {
   }
 
   Color _getAccentColor(BuildContext context, CartProvider cart) {
-    if (cart.items.isEmpty) return Colors.orange;
+    if (cart.items.isEmpty) return AppColors.primary; // fallback
     final stores = context.read<StoreProvider>().stores;
     final store = stores.firstWhere(
       (s) => s.id == cart.currentStoreId,
@@ -99,8 +114,11 @@ class CartScreen extends StatelessWidget {
     bool isIOS,
     CartProvider cart,
   ) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
 
     if (isIOS) {
       return CupertinoNavigationBar(
@@ -108,7 +126,8 @@ class CartScreen extends StatelessWidget {
           'Your Cart',
           style: TextStyle(
             fontWeight: FontWeight.w800,
-            color: scheme.onSurface,
+            color: textColor,
+            fontSize: 17.sp,
           ),
         ),
         trailing: CupertinoButton(
@@ -119,10 +138,12 @@ class CartScreen extends StatelessWidget {
             style: TextStyle(color: CupertinoColors.destructiveRed),
           ),
         ),
-        backgroundColor: scheme.surface.withValues(alpha: 0.8),
+        backgroundColor: surfaceColor.withValues(alpha: 0.8),
         border: Border(
           bottom: BorderSide(
-            color: scheme.onSurface.withValues(alpha: 0.1),
+            color: isDark
+                ? AppColors.darkBorder.withValues(alpha: 0.4)
+                : AppColors.lightBorder.withValues(alpha: 0.2),
             width: 0.5,
           ),
         ),
@@ -130,22 +151,31 @@ class CartScreen extends StatelessWidget {
     }
 
     return AppBar(
-      title: const Text(
+      title: Text(
         'Your Cart',
-        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          fontSize: 24.sp,
+          color: textColor,
+        ),
       ),
       centerTitle: false,
       actions: [
         TextButton(
           onPressed: cart.clearCart,
-          child: const Text(
+          child: Text(
             'Clear All',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightMuted,
+            ),
           ),
         ),
       ],
-      backgroundColor: scheme.surface,
-      surfaceTintColor: scheme.surface,
+      backgroundColor: surfaceColor,
+      surfaceTintColor: surfaceColor,
       elevation: 0,
     );
   }
@@ -159,7 +189,19 @@ class _CartBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final cardBorder = isDark
+        ? AppColors.darkBorder.withValues(alpha: 0.3)
+        : AppColors.lightBorder.withValues(alpha: 0.4);
+    final storeBg = accentColor.withValues(alpha: isDark ? 0.15 : 0.1);
+
     final stores = context.read<StoreProvider>().stores;
     final store = stores.firstWhere(
       (s) => s.id == cart.currentStoreId,
@@ -168,29 +210,29 @@ class _CartBody extends StatelessWidget {
     final storeName = store.name;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 120.h),
       children: [
         if (cart.editingOrderId != null)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 20),
-            child: EditingBanner(),
+          Padding(
+            padding: EdgeInsets.only(bottom: 20.h),
+            child: const EditingBanner(),
           ),
 
         // Store Header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
           decoration: BoxDecoration(
-            color: accentColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
+            color: storeBg,
+            borderRadius: BorderRadius.circular(16.r),
           ),
           child: Row(
             children: [
-              Icon(Icons.store_rounded, color: accentColor, size: 20),
-              const SizedBox(width: 12),
+              Icon(Icons.store_rounded, color: accentColor, size: 20.sp),
+              SizedBox(width: 12.w),
               Expanded(
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(color: scheme.onSurface, fontSize: 14),
+                    style: TextStyle(color: textColor, fontSize: 14.sp),
                     children: [
                       const TextSpan(text: 'Ordering from '),
                       TextSpan(
@@ -205,15 +247,15 @@ class _CartBody extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: accentColor.withValues(alpha: isDark ? 0.15 : 0.1),
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
                   store.deliveryTime,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.w800,
                     color: accentColor,
                   ),
@@ -223,14 +265,14 @@ class _CartBody extends StatelessWidget {
           ),
         ).animate().fadeIn().slideX(begin: -0.1),
 
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
 
         // Cart Items
         ...cart.items.map(
           (item) => CartItemTile(key: ValueKey(item.id), item: item),
         ),
 
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
 
         // Frequently Added Carousel
         FrequentlyAddedSection(
@@ -238,25 +280,25 @@ class _CartBody extends StatelessWidget {
           accentColor: accentColor,
         ),
 
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
 
-        // Summary
+        // Order Summary (needs its own AppColors upgrade ideally)
         const OrderSummary(),
 
-        const SizedBox(height: 40),
+        SizedBox(height: 40.h),
 
-        // Notes or Promo Code Placeholder
+        // Promo code section
         GestureDetector(
           onTap: () => _showPromoCodeSheet(context, cart),
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20.r),
             decoration: BoxDecoration(
-              color: scheme.surface,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: scheme.onSurface.withValues(alpha: 0.1)),
+              color: surfaceColor,
+              borderRadius: BorderRadius.circular(24.r),
+              border: Border.all(color: cardBorder),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -266,31 +308,35 @@ class _CartBody extends StatelessWidget {
               children: [
                 Icon(
                   Icons.confirmation_number_outlined,
-                  color: cart.appliedPromoCode != null ? Colors.green : scheme.onSurface.withValues(alpha: 0.4),
+                  color: cart.appliedPromoCode != null
+                      ? Colors.green
+                      : mutedColor.withValues(alpha: 0.6),
+                  size: 20.sp,
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Text(
-                  cart.appliedPromoCode != null ? 'Promo applied: ${cart.appliedPromoCode}' : 'Add promo code',
+                  cart.appliedPromoCode != null
+                      ? 'Promo applied: ${cart.appliedPromoCode}'
+                      : 'Add promo code',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: cart.appliedPromoCode != null ? Colors.green : scheme.onSurface.withValues(alpha: 0.5),
+                    fontSize: 14.sp,
+                    color: cart.appliedPromoCode != null
+                        ? Colors.green
+                        : mutedColor,
                   ),
                 ),
                 const Spacer(),
                 if (cart.appliedPromoCode != null)
                   GestureDetector(
                     onTap: () => cart.removePromoCode(),
-                    child: const Icon(
-                      Icons.close,
-                      size: 20,
-                      color: Colors.red,
-                    ),
+                    child: Icon(Icons.close, size: 20.sp, color: Colors.red),
                   )
                 else
                   Icon(
                     Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: scheme.onSurface.withValues(alpha: 0.3),
+                    size: 14.sp,
+                    color: mutedColor.withValues(alpha: 0.5),
                   ),
               ],
             ),
@@ -302,7 +348,7 @@ class _CartBody extends StatelessWidget {
 
   void _showPromoCodeSheet(BuildContext context, CartProvider cart) {
     if (cart.appliedPromoCode != null) return;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -336,10 +382,10 @@ class _PromoCodeSheetState extends State<_PromoCodeSheet> {
     });
 
     try {
-      final response = await apiService.dio.post('/promo-codes/validate', data: {
-        'code': code,
-        'cartAmount': widget.cart.subTotal,
-      });
+      final response = await apiService.dio.post(
+        '/promo-codes/validate',
+        data: {'code': code, 'cartAmount': widget.cart.subTotal},
+      );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         widget.cart.applyPromoCode(
@@ -350,7 +396,10 @@ class _PromoCodeSheetState extends State<_PromoCodeSheet> {
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Promo code applied successfully!'), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text('Promo code applied successfully!'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       } else {
@@ -379,18 +428,27 @@ class _PromoCodeSheetState extends State<_PromoCodeSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final accent = isDark ? AppColors.darkPrimary : AppColors.primary;
+
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        color: surfaceColor,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24.r),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,52 +456,67 @@ class _PromoCodeSheetState extends State<_PromoCodeSheet> {
               Text(
                 'Enter Promo Code',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.w900,
-                  color: scheme.onSurface,
+                  color: textColor,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               TextField(
                 controller: _codeController,
                 textCapitalization: TextCapitalization.characters,
+                style: TextStyle(color: textColor),
                 decoration: InputDecoration(
                   hintText: 'e.g. DISCOUNT20',
+                  hintStyle: TextStyle(color: mutedColor),
                   errorText: _errorMessage,
+                  filled: true,
+                  fillColor: isDark
+                      ? AppColors.darkSurface2.withValues(alpha: 0.5)
+                      : AppColors.lightSurface,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: BorderSide(color: accent, width: 2),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: BorderSide(color: Colors.redAccent, width: 1.5),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 50.h,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _applyCode,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
+                    backgroundColor: accent,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    textStyle: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
+                      ? SizedBox(
+                          height: 20.r,
+                          width: 20.r,
+                          child: const CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
-                      : const Text(
-                          'Apply Code',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      : const Text('Apply Code'),
                 ),
               ),
             ],

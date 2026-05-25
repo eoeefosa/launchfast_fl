@@ -1,5 +1,8 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../models/store.dart';
 import 'store_tabs.dart';
 
@@ -20,13 +23,21 @@ class StoreSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveAccent = isDark ? Theme.of(context).colorScheme.primary : accentColor;
+
+    // ── AppColors for light/dark ────────────────────────────────────────
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+
+    // Keep the store’s own accent colour (passed from HomeScreen)
+    final effectiveAccent = accentColor;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+          padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 12.h),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -37,17 +48,18 @@ class StoreSection extends StatelessWidget {
                   Text(
                     'Our Kitchens',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 24.sp,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -1,
+                      color: textColor,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Text(
                     'Hand-picked for your taste',
                     style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 14.sp,
+                      color: mutedColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -56,10 +68,10 @@ class StoreSection extends StatelessWidget {
               TextButton(
                 onPressed: () => context.push('/stores'),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
                   backgroundColor: effectiveAccent.withValues(alpha: 0.1),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
                 child: Text(
@@ -67,7 +79,7 @@ class StoreSection extends StatelessWidget {
                   style: TextStyle(
                     color: effectiveAccent,
                     fontWeight: FontWeight.w800,
-                    fontSize: 13,
+                    fontSize: 13.sp,
                   ),
                 ),
               ),

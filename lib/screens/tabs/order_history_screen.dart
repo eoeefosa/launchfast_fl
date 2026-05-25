@@ -1,5 +1,8 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/order_provider.dart';
 import '../../models/order.dart';
 import '../../widgets/orders/order_history_card.dart';
@@ -32,7 +35,21 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen>
     final orders = context.select<OrderProvider, List<Order>>(
       (provider) => provider.orders,
     );
-    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // AppColors adapters
+    final scaffoldBg = isDark
+        ? AppColors.darkScaffold
+        : AppColors.lightScaffold;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final accent = isDark ? AppColors.darkPrimary : AppColors.primary;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
     // Filter past orders (anything not from today)
     final now = DateTime.now();
@@ -43,30 +60,30 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen>
             orderDate.month == now.month &&
             orderDate.day == now.day);
       } catch (_) {
-        return true; // If parsing fails, treat as past? or today?
-        // Usually safer to show in history if unsure.
+        return true;
       }
     }).toList();
 
     return Scaffold(
-      backgroundColor: scheme.surface,
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Order History',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 22.sp,
+            color: textColor,
+          ),
         ),
         centerTitle: true,
-        backgroundColor: scheme.surface,
+        backgroundColor: surfaceColor,
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: scheme.primary,
-          labelColor: scheme.primary,
-          unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.5),
-          labelStyle: const TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 14,
-          ),
+          indicatorColor: accent,
+          labelColor: accent,
+          unselectedLabelColor: mutedColor,
+          labelStyle: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.sp),
           indicatorWeight: 3,
           tabs: const [
             Tab(text: 'ALL PAST'),
@@ -95,7 +112,7 @@ class _AllPastOrders extends StatelessWidget {
       return _EmptyHistory();
     }
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.r),
       itemCount: orders.length,
       itemBuilder: (context, index) => OrderHistoryCard(order: orders[index]),
     );
@@ -110,12 +127,15 @@ class _TopOrders extends StatelessWidget {
   Widget build(BuildContext context) {
     if (orders.isEmpty) return _EmptyHistory();
 
-    // Logic for "Top Orders": Group orders that have the exact same items
-    // and sort by frequency.
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isDark ? AppColors.darkPrimary : AppColors.primary;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+
     final Map<String, List<Order>> groupedOrders = {};
 
     for (var order in orders) {
-      // Create a key based on item IDs and quantities
       final itemKeys = order.items.map((i) => '${i.id}:${i.quantity}').toList()
         ..sort();
       final key = itemKeys.join('|');
@@ -127,17 +147,15 @@ class _TopOrders extends StatelessWidget {
       }
     }
 
-    // Sort groups by frequency (descending)
     final sortedKeys = groupedOrders.keys.toList()
       ..sort(
         (a, b) => groupedOrders[b]!.length.compareTo(groupedOrders[a]!.length),
       );
 
-    // Get the latest order from each group to display
     final topOrders = sortedKeys.map((k) => groupedOrders[k]!.first).toList();
 
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.r),
       itemCount: topOrders.length,
       itemBuilder: (context, index) {
         final order = topOrders[index];
@@ -148,30 +166,28 @@ class _TopOrders extends StatelessWidget {
           children: [
             if (frequency > 1)
               Padding(
-                padding: const EdgeInsets.only(left: 12, bottom: 8),
+                padding: EdgeInsets.only(left: 12.w, bottom: 8.h),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(
                     'Ordered $frequency times',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontSize: 11,
+                      color: accent,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
               ),
             OrderHistoryCard(order: order),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
           ],
         );
       },
@@ -182,26 +198,27 @@ class _TopOrders extends StatelessWidget {
 class _EmptyHistory extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.history_toggle_off_rounded,
-            size: 64,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.2),
+            size: 64.sp,
+            color: mutedColor.withValues(alpha: 0.2),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           Text(
             'No past orders yet',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 18.sp,
               fontWeight: FontWeight.w700,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: mutedColor,
             ),
           ),
         ],

@@ -1,4 +1,6 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CategorySelector extends StatelessWidget {
   final String selectedCategory;
@@ -14,37 +16,48 @@ class CategorySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     // Standard icon mapping
     IconData getIcon(String label) {
       switch (label.toLowerCase()) {
-        case 'all': return Icons.restaurant_rounded;
-        case 'rice': return Icons.rice_bowl_rounded;
-        case 'swallow': return Icons.cookie_rounded;
-        case 'soup': return Icons.soup_kitchen_rounded;
-        case 'drinks': return Icons.local_drink_rounded;
-        case 'extras': return Icons.add_circle_outline_rounded;
-        case 'others': return Icons.more_horiz_rounded;
-        default: return Icons.fastfood_rounded;
+        case 'all':
+          return Icons.restaurant_rounded;
+        case 'rice':
+          return Icons.rice_bowl_rounded;
+        case 'swallow':
+          return Icons.cookie_rounded;
+        case 'soup':
+          return Icons.soup_kitchen_rounded;
+        case 'drinks':
+          return Icons.local_drink_rounded;
+        case 'extras':
+          return Icons.add_circle_outline_rounded;
+        case 'others':
+          return Icons.more_horiz_rounded;
+        default:
+          return Icons.fastfood_rounded;
       }
     }
 
     final allCategories = ['All', ...categories.where((c) => c != 'All')];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.symmetric(horizontal: 20.w),
         child: Row(
           children: allCategories.map((label) {
             final isActive = selectedCategory == label;
 
             return Padding(
-              padding: const EdgeInsets.only(right: 12),
+              padding: EdgeInsets.only(right: 12.w),
               child: _CategoryChip(
                 label: label,
                 icon: getIcon(label),
                 isActive: isActive,
+                isDark: isDark,
                 onTap: () => onCategorySelected(label),
               ),
             );
@@ -59,39 +72,49 @@ class _CategoryChip extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool isActive;
+  final bool isDark;
   final VoidCallback onTap;
 
   const _CategoryChip({
     required this.label,
     required this.icon,
     required this.isActive,
+    required this.isDark,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    final brandColor = isDark ? AppColors.darkPrimary : AppColors.primary;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final inactiveTextColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final inactiveBorderColor = isDark
+        ? AppColors.darkBorder.withValues(alpha: 0.5)
+        : AppColors.lightBorder.withValues(alpha: 0.6);
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 12.h),
         decoration: BoxDecoration(
-          color: isActive ? scheme.primary : scheme.surface,
-          borderRadius: BorderRadius.circular(20),
+          color: isActive ? brandColor : surfaceColor,
+          borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-            color: isDark 
-                ? Colors.transparent 
-                : (isActive ? scheme.primary : scheme.onSurface.withValues(alpha: 0.1)),
+            color: isActive ? brandColor : inactiveBorderColor,
             width: 1.5,
           ),
-          boxShadow: (isActive && !isDark)
+          boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: scheme.primary.withValues(alpha: 0.25),
+                    color: isDark
+                        ? brandColor.withValues(alpha: 0.3)
+                        : brandColor.withValues(alpha: 0.25),
                     blurRadius: 10,
                     offset: const Offset(0, 6),
                   ),
@@ -102,20 +125,16 @@ class _CategoryChip extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 20,
-              color: isActive
-                  ? scheme.onPrimary
-                  : scheme.onSurface.withValues(alpha: 0.5),
+              size: 20.sp,
+              color: isActive ? Colors.white : inactiveTextColor,
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10.w),
             Text(
               label,
               style: TextStyle(
-                color: isActive
-                    ? scheme.onPrimary
-                    : scheme.onSurface.withValues(alpha: 0.8),
+                color: isActive ? Colors.white : inactiveTextColor,
                 fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                fontSize: 14,
+                fontSize: 14.sp,
                 letterSpacing: -0.2,
               ),
             ),

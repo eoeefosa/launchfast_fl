@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+// Import your color constants
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data model
@@ -20,11 +23,7 @@ class LiquidGlassNavItem {
 
   final IconData icon;
   final IconData activeIcon;
-
-  /// Short label rendered below the icon. Pass `null` to hide.
   final String? label;
-
-  /// When > 0 a glowing badge is drawn over the icon corner.
   final int? badgeCount;
 }
 
@@ -32,12 +31,6 @@ class LiquidGlassNavItem {
 // Public widget
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// A premium floating bottom navigation bar with a draggable liquid-glass pill.
-///
-/// The pill slides with spring physics and morphs (stretches) as it travels.
-/// Drag anywhere on the bar to reposition it; it snaps on release.
-///
-/// Requires [Scaffold.extendBody] = true so content scrolls under the bar.
 class LiquidGlassBottomBar extends StatefulWidget {
   const LiquidGlassBottomBar({
     super.key,
@@ -63,8 +56,6 @@ class LiquidGlassBottomBar extends StatefulWidget {
 
 class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
     with SingleTickerProviderStateMixin {
-  // Fractional tab index (e.g. 1.5 = midway between tabs 1 & 2).
-  // AnimationController.value IS this position when spring-driven.
   late AnimationController _ctrl;
 
   bool _isDragging = false;
@@ -78,8 +69,6 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      // Must span the full index range — avoids the default [0,1] clamp
-      // that would trap the spring inside the first two tabs.
       lowerBound: 0.0,
       upperBound: (widget.items.length - 1).toDouble(),
       value: widget.currentIndex.toDouble(),
@@ -106,21 +95,15 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
 
   void _springTo(double target, {required double velocity}) {
     _ctrl.stop();
-    const desc = SpringDescription(
-      mass: 1.0,
-      stiffness: 480.0,
-      damping: 26.0, // slight overshoot = lively feel
-    );
+    const desc = SpringDescription(mass: 1.0, stiffness: 480.0, damping: 26.0);
     _ctrl.animateWith(SpringSimulation(desc, _position, target, velocity));
   }
 
   // ── Geometry ───────────────────────────────────────────────────────────────
 
   double get _tabWidth => _barWidth / widget.items.length;
-
   double get _pillCenterX => _tabWidth * (_position + 0.5);
 
-  /// Width morphs via sin curve — 0 at rest, peak midway between tabs.
   double get _pillWidth {
     final basePx = 62.w;
     final maxStretchPx = 30.w;
@@ -167,8 +150,14 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final scheme = Theme.of(context).colorScheme;
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
+
+    // ── Active pill colour from AppColors ──────────────────────────────────
+    final activeColor = isDark ? AppColors.darkPrimary : AppColors.primary;
+    // Inactive icon colour (solid, no extra alpha)
+    final inactiveColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(14.w, 0, 14.w, bottomPadding + 14.h),
@@ -192,10 +181,9 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
                       centerX: _pillCenterX,
                       width: _pillWidth,
                       barHeight: 72.h,
-                      activeColor: scheme.primary,
+                      activeColor: activeColor,
                       isDark: isDark,
                     ),
-
                     // Icon + label tiles
                     Row(
                       children: List.generate(widget.items.length, (i) {
@@ -209,10 +197,8 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
                             child: _NavTile(
                               item: widget.items[i],
                               proximity: _proximity(i),
-                              activeColor: scheme.primary,
-                              inactiveColor: isDark
-                                  ? Colors.white.withValues(alpha: 0.42)
-                                  : Colors.black.withValues(alpha: 0.36),
+                              activeColor: activeColor,
+                              inactiveColor: inactiveColor,
                             ),
                           ),
                         );
@@ -230,12 +216,7 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bar surface
-//
-// FIX: Border uses Border.all() (uniform color) instead of Border(top:, left:,
-//      right:, bottom:) with different per-side colors. Flutter's rendering
-//      engine requires uniform border color when borderRadius is set.
-//      The specular top-edge highlight is achieved via the gradient instead.
+// Bar surface – frosted glass background
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _BarSurface extends StatelessWidget {
@@ -249,18 +230,36 @@ class _BarSurface extends StatelessWidget {
     final radius = Radius.circular(34.r);
     final br = BorderRadius.all(radius);
 
+    // ── Colour palette from AppColors ──────────────────────────────────────
+    final gradientTop = isDark
+        ? AppColors.darkSurface2.withValues(alpha: 0.92)
+        : AppColors.lightBackground;
+    final gradientMid = isDark
+        ? AppColors.darkSurface.withValues(alpha: 0.86)
+        : AppColors.lightSurface.withValues(alpha: 0.96);
+    final gradientBot = isDark
+        ? AppColors.darkBackground.withValues(alpha: 0.90)
+        : AppColors.lightScaffold.withValues(alpha: 0.94);
+
+    final borderColor = isDark
+        ? AppColors.darkBorder.withValues(alpha: 0.5)
+        : AppColors.lightBorder.withValues(alpha: 0.45);
+
+    final shadowAlpha1 = isDark ? 0.55 : 0.13;
+    final shadowAlpha2 = isDark ? 0.22 : 0.05;
+
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: br,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.55 : 0.13),
+            color: Colors.black.withValues(alpha: shadowAlpha1),
             blurRadius: 56,
             spreadRadius: -10,
             offset: const Offset(0, 14),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.05),
+            color: Colors.black.withValues(alpha: shadowAlpha2),
             blurRadius: 16,
             spreadRadius: -2,
             offset: const Offset(0, 4),
@@ -274,31 +273,13 @@ class _BarSurface extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: br,
-              // Top-to-bottom gradient doubles as the specular top-edge.
-              // Lighter at top (catching light) → darker at bottom.
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 stops: const [0.0, 0.35, 1.0],
-                colors: isDark
-                    ? [
-                        Colors.white.withValues(alpha: 0.16),
-                        Colors.white.withValues(alpha: 0.08),
-                        Colors.white.withValues(alpha: 0.04),
-                      ]
-                    : [
-                        Colors.white.withValues(alpha: 0.92),
-                        Colors.white.withValues(alpha: 0.74),
-                        Colors.white.withValues(alpha: 0.58),
-                      ],
+                colors: [gradientTop, gradientMid, gradientBot],
               ),
-              // ✅ FIXED: single uniform border color → works with borderRadius
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.14)
-                    : Colors.white.withValues(alpha: 0.70),
-                width: 0.8,
-              ),
+              border: Border.all(color: borderColor, width: 0.8),
             ),
             child: child,
           ),
@@ -309,7 +290,7 @@ class _BarSurface extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Glass pill
+// Glass pill – sliding active indicator
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _GlassPill extends StatelessWidget {
@@ -352,18 +333,27 @@ class _PillSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final br = BorderRadius.all(Radius.circular(22.r));
 
+    // ── Pill gradient – tinted with activeColor ───────────────────────────
+    final pillGradStart = activeColor.withValues(alpha: isDark ? 0.38 : 0.26);
+    final pillGradMid = activeColor.withValues(alpha: isDark ? 0.22 : 0.14);
+    final pillGradEnd = activeColor.withValues(alpha: isDark ? 0.12 : 0.08);
+
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.22)
+        : Colors.white.withValues(alpha: 0.70);
+
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: br,
         boxShadow: [
-          // Brand-colour glow — the premium signature detail
+          // Brand-colour glow
           BoxShadow(
             color: activeColor.withValues(alpha: isDark ? 0.42 : 0.28),
             blurRadius: 22,
             spreadRadius: -3,
             offset: const Offset(0, 5),
           ),
-          // Crisp lift shadow
+          // Lift shadow
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.40 : 0.12),
             blurRadius: 14,
@@ -375,7 +365,6 @@ class _PillSurface extends StatelessWidget {
       child: ClipRRect(
         borderRadius: br,
         child: BackdropFilter(
-          // Second blur layer inside pill = double-frosted depth
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
             decoration: BoxDecoration(
@@ -384,27 +373,11 @@ class _PillSurface extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 stops: const [0.0, 0.55, 1.0],
-                colors: isDark
-                    ? [
-                        activeColor.withValues(alpha: 0.34),
-                        activeColor.withValues(alpha: 0.20),
-                        activeColor.withValues(alpha: 0.12),
-                      ]
-                    : [
-                        activeColor.withValues(alpha: 0.22),
-                        activeColor.withValues(alpha: 0.12),
-                        activeColor.withValues(alpha: 0.06),
-                      ],
+                colors: [pillGradStart, pillGradMid, pillGradEnd],
               ),
-              // ✅ FIXED: uniform border — no per-side color differences
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.28)
-                    : Colors.white.withValues(alpha: 0.80),
-                width: 0.8,
-              ),
+              border: Border.all(color: borderColor, width: 0.8),
             ),
-            // Inner specular shimmer at top of pill
+            // Inner specular highlight at top
             child: Column(
               children: [
                 Container(
@@ -418,7 +391,7 @@ class _PillSurface extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.white.withValues(alpha: isDark ? 0.20 : 0.55),
+                        Colors.white.withValues(alpha: isDark ? 0.16 : 0.50),
                         Colors.transparent,
                       ],
                     ),
@@ -435,7 +408,7 @@ class _PillSurface extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Nav tile — interpolated from inactive → active via proximity
+// Nav tile – icon + optional label
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _NavTile extends StatelessWidget {
@@ -447,7 +420,7 @@ class _NavTile extends StatelessWidget {
   });
 
   final LiquidGlassNavItem item;
-  final double proximity; // 0.0 → 1.0
+  final double proximity; // 0.0 (inactive) → 1.0 (active)
   final Color activeColor;
   final Color inactiveColor;
 
@@ -494,7 +467,7 @@ class _NavTile extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Badge
+// Badge – uses brand primary for a clean, unified look
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _Badge extends StatelessWidget {
@@ -504,22 +477,24 @@ class _Badge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final label = count > 99 ? '99+' : '$count';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Instead of error, we use the primary colour for a cohesive badge.
+    final badgeColor = isDark ? AppColors.darkPrimary : AppColors.primary;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
       decoration: BoxDecoration(
-        color: scheme.error,
+        color: badgeColor,
         borderRadius: BorderRadius.circular(10.r),
-        // ✅ FIXED: Border.all() → uniform color, compatible with borderRadius
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.38),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: scheme.error.withValues(alpha: 0.55),
+            color: badgeColor.withValues(alpha: 0.55),
             blurRadius: 10,
             spreadRadius: -1,
             offset: const Offset(0, 3),
@@ -531,7 +506,7 @@ class _Badge extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            color: scheme.onError,
+            color: Colors.white,
             fontSize: 9.5.sp,
             fontWeight: FontWeight.w800,
             height: 1.1,

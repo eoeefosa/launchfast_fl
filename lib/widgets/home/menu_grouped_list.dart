@@ -1,4 +1,6 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../models/menu_item.dart';
 import 'menu_item_card.dart';
 
@@ -18,6 +20,11 @@ class MenuGroupedList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedIcon =
+        (isDark ? AppColors.darkTextSecondary : AppColors.lightMuted)
+            .withValues(alpha: 0.4);
+
     if (groupedItems.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
@@ -25,19 +32,15 @@ class MenuGroupedList extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.search_off_rounded,
-                size: 64,
-                color: Theme.of(context).colorScheme.onSurface.withValues(
-                  alpha: 0.1,
-                ),
-              ),
-              const SizedBox(height: 16),
+              Icon(Icons.search_off_rounded, size: 64.sp, color: mutedIcon),
+              SizedBox(height: 16.h),
               Text(
-                emptyMessage ?? "No items found",
+                emptyMessage ?? 'No items found',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 16,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightMuted,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -48,21 +51,18 @@ class MenuGroupedList extends StatelessWidget {
     }
 
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final category = groupedItems.keys.elementAt(index);
-          final items = groupedItems[category]!;
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final category = groupedItems.keys.elementAt(index);
+        final items = groupedItems[category]!;
 
-          return _CategoryGroup(
-            category: category,
-            items: items,
-            accentColor: accentColor,
-            onAdd: onAdd,
-            index: index,
-          );
-        },
-        childCount: groupedItems.length,
-      ),
+        return _CategoryGroup(
+          category: category,
+          items: items,
+          accentColor: accentColor,
+          onAdd: onAdd,
+          index: index,
+        );
+      }, childCount: groupedItems.length),
     );
   }
 }
@@ -84,15 +84,21 @@ class _CategoryGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 600 + (index * 100)),
-      curve: Curves.easeOutBack,
+      duration: Duration(milliseconds: 500 + (index * 80)),
+      curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Opacity(
           opacity: value.clamp(0.0, 1.0),
           child: Transform.translate(
-            offset: Offset(0, 40 * (1 - value)),
+            offset: Offset(0, 30.h * (1 - value)),
             child: child,
           ),
         );
@@ -100,46 +106,55 @@ class _CategoryGroup extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 32, 20, 16),
+            padding: EdgeInsets.fromLTRB(20.w, 28.h, 20.w, 12.h),
             child: Row(
               children: [
                 Container(
-                  width: 4,
-                  height: 16,
+                  width: 4.w,
+                  height: 18.h,
                   decoration: BoxDecoration(
                     color: accentColor,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(2.r),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 10.w),
                 Text(
                   category.toUpperCase(),
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.4,
+                    color: textColor,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Divider(
-                    color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-                    thickness: 1.5,
-                  ),
+                SizedBox(width: 10.w),
+                Text(
+                  '${items.length} items',
+                  style: TextStyle(fontSize: 12.sp, color: mutedColor),
                 ),
+                const Spacer(),
+                // Optional: a subtle see‑all arrow, remove if not needed
+                Icon(Icons.arrow_forward_ios, size: 14.sp, color: mutedColor),
               ],
             ),
           ),
-          ...items.map(
-            (item) => MenuItemCard(
-              item: item,
-              accent: accentColor,
-              onAdd: () => onAdd(item),
-            ),
-          ),
-          const SizedBox(height: 8),
+          // Cards
+          ...List.generate(items.length, (i) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16.w,
+                right: 16.w,
+                bottom: i < items.length - 1 ? 12.h : 20.h,
+              ),
+              child: MenuItemCard(
+                item: items[i],
+                accent: accentColor,
+                onAdd: () => onAdd(items[i]),
+              ),
+            );
+          }),
         ],
       ),
     );

@@ -199,12 +199,14 @@ Future<void> _initFirebase() async {
   // Register the background handler before any other FCM call.
   FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
 
-  // Crashlytics: fatal Flutter framework errors.
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  // Crashlytics: non-fatal Flutter framework errors.
+  FlutterError.onError = (details) {
+    FirebaseCrashlytics.instance.recordFlutterError(details);
+  };
 
-  // Crashlytics: fatal async errors outside the Flutter framework.
+  // Crashlytics: non-fatal async errors outside the Flutter framework.
   PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
     return true;
   };
 }

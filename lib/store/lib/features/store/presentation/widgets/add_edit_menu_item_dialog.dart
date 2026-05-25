@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
+import 'package:campuschow/widgets/common/universal_image.dart';
 
 class AddEditMenuItemDialog extends StatefulWidget {
   final StoreProvider provider;
@@ -274,18 +275,13 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
                   ),
                   clipBehavior: Clip.hardEdge,
                   child: _selectedImageStr != null
-                      ? _selectedImageStr!.startsWith('data:image')
-                          ? Image.memory(
-                              base64Decode(_selectedImageStr!.split(',').last),
-                              fit: BoxFit.cover,
-                            )
-                          : Image.network(
-                              _selectedImageStr!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => const Center(
-                                child: Icon(Icons.error_outline, color: Colors.red),
-                              ),
-                            )
+                      ? UniversalImage(
+                          imageUrl: _selectedImageStr!,
+                          fit: BoxFit.cover,
+                          errorWidget: const Center(
+                            child: Icon(Icons.error_outline, color: Colors.red),
+                          ),
+                        )
                       : Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [

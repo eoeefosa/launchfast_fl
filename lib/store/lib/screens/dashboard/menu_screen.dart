@@ -4,6 +4,7 @@ import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:campuschow/store/lib/features/store/presentation/widgets/add_edit_menu_item_dialog.dart';
+import 'package:campuschow/widgets/common/universal_image.dart';
 
 class StoreMenuScreen extends StatefulWidget {
   const StoreMenuScreen({super.key});
@@ -298,9 +299,7 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
       ),
     );
   }
-
-  }
-
+}
 
 // ─── Menu Item Card ───────────────────────────────────────────────────────────
 class _MenuItemCard extends StatelessWidget {
@@ -352,16 +351,14 @@ class _MenuItemCard extends StatelessWidget {
                 width: 70,
                 height: 70,
                 color: AppColors.primary.withValues(alpha: 0.1),
-                child: item.image.isNotEmpty && item.image.startsWith('http')
-                    ? Image.network(
-                        item.image,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.fastfood,
-                          color: AppColors.primary,
-                        ),
-                      )
-                    : const Icon(Icons.fastfood, color: AppColors.primary),
+                child: UniversalImage(
+                  imageUrl: item.image,
+                  fit: BoxFit.cover,
+                  errorWidget: const Icon(
+                    Icons.fastfood,
+                    color: AppColors.primary,
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 12),

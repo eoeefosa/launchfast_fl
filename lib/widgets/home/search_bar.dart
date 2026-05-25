@@ -1,39 +1,407 @@
+import 'package:campuschow/constants/app_colors.dart';
+import 'package:campuschow/widgets/common/universal_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
-class HomeSearchBar extends StatelessWidget {
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
+import '../../providers/store_provider.dart';
+import '../../models/menu_item.dart';
+import '../../widgets/responsive_layout.dart';
 
-  const HomeSearchBar({
-    super.key,
-    required this.controller,
-    required this.onChanged,
+class SearchScreen extends StatefulWidget {
+  const SearchScreen({super.key});
+
+  @override
+  State<SearchScreen> createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  final TextEditingController _controller = TextEditingController();
+  List<String> _history = [];
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _history = prefs.getStringList('search_history') ?? [];
+    });
+  }
+
+  Future<void> _saveHistory(String query) async {
+    if (query.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    _history.remove(query);
+    _history.insert(0, query);
+    if (_history.length > 10) _history.removeLast();
+    await prefs.setStringList('search_history', _history);
+    setState(() {});
+  }
+
+  Future<void> _clearHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('search_history');
+    setState(() {
+      _history = [];
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final storeProvider = context.watch<StoreProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // AppColors
+    final scaffoldBg = isDark
+        ? AppColors.darkScaffold
+        : AppColors.lightScaffold;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final searchFieldBg = isDark
+        ? AppColors.darkSurface2.withValues(alpha: 0.6)
+        : AppColors.lightSurface.withValues(alpha: 0.7);
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final accent = isDark ? AppColors.darkPrimary : AppColors.primary;
+
+    final results = _query.isEmpty
+        ? <MenuItem>[]
+        : storeProvider.menuItems.where((item) {
+            final matchesQuery =
+                item.name.toLowerCase().contains(_query.toLowerCase()) ||
+                item.description.toLowerCase().contains(_query.toLowerCase()) ||
+                item.category.toLowerCase().contains(_query.toLowerCase());
+            final isNotStandaloneOption =
+                item.category != 'Meat' && item.category != 'Salad';
+            return matchesQuery && isNotStandaloneOption;
+          }).toList();
+
+    return ResponsiveLayout(
+      child: Scaffold(
+        backgroundColor: scaffoldBg,
+        appBar: AppBar(
+          backgroundColor: surfaceColor,
+          elevation: 0,
+          leadingWidth: 40.w,
+          leading: Padding(
+            padding: EdgeInsets.only(left: 12.w),
+            child: IconButton(
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: textColor,
+                size: 20.sp,
+              ),
+              onPressed: () => context.pop(),
+            ),
+          ),
+          title: Container(
+            height: 48.h,
+            decoration: BoxDecoration(
+              color: searchFieldBg,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: TextField(
+              controller: _controller,
+              autofocus: true,
+              style: TextStyle(color: textColor, fontSize: 14.sp),
+              onChanged: (val) => setState(() => _query = val),
+              onSubmitted: _saveHistory,
+              decoration: InputDecoration(
+                hintText: 'Search for food...',
+                hintStyle: TextStyle(
+                  color: mutedColor.withValues(alpha: 0.6),
+                  fontSize: 14.sp,
+                ),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: mutedColor.withValues(alpha: 0.6),
+                  size: 20.sp,
+                ),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: mutedColor.withValues(alpha: 0.6),
+                          size: 18.sp,
+                        ),
+                        onPressed: () {
+                          _controller.clear();
+                          setState(() => _query = '');
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+              ),
+            ),
+          ),
+        ),
+        body: _query.isEmpty ? _buildHistory() : _buildResults(results),
+      ),
+    );
+  }
+
+  Widget _buildHistory() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final chipBg = isDark
+        ? AppColors.darkSurface2.withValues(alpha: 0.6)
+        : AppColors.lightSurface.withValues(alpha: 0.6);
+    final chipBorder = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+
+    if (_history.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_rounded,
+              size: 80.sp,
+              color: mutedColor.withValues(alpha: 0.15),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'Search for your cravings',
+              style: TextStyle(
+                color: mutedColor,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ).animate().fadeIn();
+    }
+
+    return ListView(
+      padding: EdgeInsets.all(20.r),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'RECENT SEARCHES',
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+                color: mutedColor,
+              ),
+            ),
+            TextButton(
+              onPressed: _clearHistory,
+              child: Text(
+                'Clear All',
+                style: TextStyle(color: Colors.redAccent, fontSize: 12.sp),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8.h),
+        Wrap(
+          spacing: 10.w,
+          runSpacing: 10.h,
+          children: _history
+              .map(
+                (h) => _HistoryChip(
+                  label: h,
+                  onTap: () {
+                    _controller.text = h;
+                    setState(() => _query = h);
+                  },
+                  backgroundColor: chipBg,
+                  borderColor: chipBorder,
+                  textColor: textColor,
+                ),
+              )
+              .toList(),
+        ),
+      ],
+    ).animate().fadeIn();
+  }
+
+  Widget _buildResults(List<MenuItem> results) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+
+    if (results.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off_rounded,
+              size: 80.sp,
+              color: mutedColor.withValues(alpha: 0.15),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'No results found for "$_query"',
+              style: TextStyle(
+                color: mutedColor,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        final item = results[index];
+        return _SearchResultTile(item: item);
+      },
+    );
+  }
+}
+
+class _HistoryChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  final Color backgroundColor;
+  final Color borderColor;
+  final Color textColor;
+
+  const _HistoryChip({
+    required this.label,
+    required this.onTap,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: scheme.surface,
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        height: 40,
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
         decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(10),
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: borderColor),
         ),
-        child: TextField(
-          controller: controller,
-          onChanged: onChanged,
-          decoration: const InputDecoration(
-            hintText: 'Search for food...',
-            prefixIcon: Icon(Icons.search, size: 20),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: 10),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 13.sp,
+            color: textColor,
           ),
-          style: const TextStyle(fontSize: 14),
         ),
       ),
     );
+  }
+}
+
+class _SearchResultTile extends StatelessWidget {
+  final MenuItem item;
+
+  const _SearchResultTile({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final accent = isDark ? AppColors.darkPrimary : AppColors.primary;
+    final cardBg = isDark ? AppColors.darkSurface : AppColors.lightBackground;
+    final borderColor = isDark
+        ? AppColors.darkBorder.withValues(alpha: 0.3)
+        : AppColors.lightBorder.withValues(alpha: 0.4);
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: borderColor, width: 0.5),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16.r),
+        child: InkWell(
+          onTap: () => context.push('/item/${item.id}'),
+          borderRadius: BorderRadius.circular(16.r),
+          child: Padding(
+            padding: EdgeInsets.all(12.r),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14.r),
+                  child: UniversalImage(
+                    imageUrl: item.image,
+                    width: 70.w,
+                    height: 70.h,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16.sp,
+                          color: textColor,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        item.description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: mutedColor, fontSize: 13.sp),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        '₦${item.price.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          color: accent,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: mutedColor.withValues(alpha: 0.4),
+                  size: 20.sp,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ).animate().fadeIn().slideX(begin: 0.1);
   }
 }

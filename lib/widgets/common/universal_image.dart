@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:campuschow/utils/ui_utils.dart';
 
 class UniversalImage extends StatelessWidget {
   final String imageUrl;
@@ -31,9 +32,13 @@ class UniversalImage extends StatelessWidget {
           width: width,
           height: height,
           fit: fit,
-          errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('Base64 Image load failed: $error');
+            return _buildErrorWidget();
+          },
         );
       } catch (e) {
+        debugPrint('Base64 Image decoding failed: $e');
         return _buildErrorWidget();
       }
     }
@@ -42,13 +47,18 @@ class UniversalImage extends StatelessWidget {
       return _buildErrorWidget();
     }
 
+    final optimizedUrl = UIUtils.optimizeCloudinaryUrl(imageUrl);
+
     return CachedNetworkImage(
-      imageUrl: imageUrl,
+      imageUrl: optimizedUrl,
       width: width,
       height: height,
       fit: fit,
       placeholder: (context, url) => placeholder ?? _buildPlaceholder(),
-      errorWidget: (context, url, error) => errorWidget ?? _buildErrorWidget(),
+      errorWidget: (context, url, error) {
+        debugPrint('Image load failed ($url): $error');
+        return errorWidget ?? _buildErrorWidget();
+      },
     );
   }
 

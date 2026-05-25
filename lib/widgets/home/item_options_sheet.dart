@@ -1,5 +1,8 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/menu_item.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
@@ -33,34 +36,62 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
   Widget build(BuildContext context) {
     final storeProvider = context.watch<StoreProvider>();
     final cartProvider = context.read<CartProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final availableSoups = widget.item.type == 'swallow' || widget.item.compatibleWith?.contains('soup') == true
-        ? storeProvider.menuItems
-              .where(
-                (m) => m.type == 'soup',
-              )
-              .toList()
+    // ── AppColors accent ─────────────────────────────────────────────────
+    final brandAccent = isDark ? AppColors.darkPrimary : AppColors.primary;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final dividerColor = isDark
+        ? AppColors.darkBorder.withValues(alpha: 0.3)
+        : AppColors.lightBorder.withValues(alpha: 0.4);
+
+    // Data
+    final availableSoups =
+        (widget.item.type == 'swallow' ||
+            widget.item.compatibleWith?.contains('soup') == true)
+        ? storeProvider.menuItems.where((m) => m.type == 'soup').toList()
         : <MenuItem>[];
 
     final availableProteins = storeProvider.menuItems
-        .where((m) => m.storeId == widget.item.storeId && m.type == 'protein' && widget.item.compatibleWith?.contains('protein') == true)
+        .where(
+          (m) =>
+              m.storeId == widget.item.storeId &&
+              m.type == 'protein' &&
+              widget.item.compatibleWith?.contains('protein') == true,
+        )
         .toList();
 
     final availableSides = storeProvider.menuItems
-        .where((m) => m.storeId == widget.item.storeId && m.type == 'side' && widget.item.compatibleWith?.contains('side') == true)
+        .where(
+          (m) =>
+              m.storeId == widget.item.storeId &&
+              m.type == 'side' &&
+              widget.item.compatibleWith?.contains('side') == true,
+        )
         .toList();
 
     final availableDrinks = storeProvider.menuItems
-        .where((m) => m.storeId == widget.item.storeId && m.type == 'drink' && widget.item.compatibleWith?.contains('drink') == true)
+        .where(
+          (m) =>
+              m.storeId == widget.item.storeId &&
+              m.type == 'drink' &&
+              widget.item.compatibleWith?.contains('drink') == true,
+        )
         .toList();
 
     final availableAddons = widget.item.addonIds != null
         ? widget.item.addonIds!
               .map(
                 (id) => storeProvider.menuItems.cast<MenuItem?>().firstWhere(
-                      (m) => m?.id == id,
-                      orElse: () => null,
-                    ),
+                  (m) => m?.id == id,
+                  orElse: () => null,
+                ),
               )
               .whereType<MenuItem>()
               .toList()
@@ -89,19 +120,21 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: 24 + MediaQuery.of(context).padding.bottom,
+        left: 24.w,
+        right: 24.w,
+        top: 24.h,
+        bottom: 24.h + MediaQuery.of(context).padding.bottom,
       ),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        color: surfaceColor,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+        border: Border(top: BorderSide(color: dividerColor, width: 1)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Header ───────────────────────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -111,20 +144,16 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                   children: [
                     Text(
                       widget.item.name,
-                      style: const TextStyle(
-                        fontSize: 22,
+                      style: TextStyle(
+                        fontSize: 22.sp,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.5,
+                        color: textColor,
                       ),
                     ),
                     Text(
                       widget.item.description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
+                      style: TextStyle(fontSize: 14.sp, color: mutedColor),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -133,16 +162,16 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
               ),
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close_rounded),
+                icon: Icon(Icons.close_rounded, size: 22.sp),
                 style: IconButton.styleFrom(
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.05),
+                  backgroundColor: mutedColor.withValues(alpha: 0.1),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.h),
+
+          // ── Scrollable options ──────────────────────────────────────────
           Flexible(
             child: SingleChildScrollView(
               child: Column(
@@ -159,26 +188,32 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                       child: ItemDetailOptionsSection(
                         title: 'Select Size',
                         subtitle: 'Required',
-                        children:
-                            widget.item.sizes.map((size) {
-                              return ListTile(
-                                title: Text(size.name),
+                        children: widget.item.sizes
+                            .map(
+                              (size) => ListTile(
+                                title: Text(
+                                  size.name,
+                                  style: TextStyle(color: textColor),
+                                ),
                                 trailing: Text(
                                   '₦${size.price.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    color: brandAccent,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                                 leading: Radio<String>(
                                   value: size.id,
-                                  activeColor: widget.accentColor,
+                                  activeColor: brandAccent,
                                 ),
-                                onTap:
-                                    () => setState(
-                                      () => _selectedSizeId = size.id,
-                                    ),
-                              );
-                            }).toList(),
+                                onTap: () =>
+                                    setState(() => _selectedSizeId = size.id),
+                              ),
+                            )
+                            .toList(),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
                   ],
                   if (availableProteins.isNotEmpty) ...[
                     ItemDetailOptionsSection(
@@ -188,7 +223,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                             (meat) => ItemDetailQuantityOption(
                               item: meat,
                               count: _selectedMeats[meat.id] ?? 0,
-                              accentColor: widget.accentColor,
+                              accentColor: brandAccent,
                               onChanged: (c) =>
                                   setState(() => _selectedMeats[meat.id] = c),
                             ),
@@ -197,7 +232,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                     ),
                   ],
                   if (availableSides.isNotEmpty) ...[
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
                     ItemDetailOptionsSection(
                       title: 'Add Sides',
                       children: availableSides
@@ -205,7 +240,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                             (side) => ItemDetailQuantityOption(
                               item: side,
                               count: _selectedSides[side.id] ?? 0,
-                              accentColor: widget.accentColor,
+                              accentColor: brandAccent,
                               onChanged: (c) =>
                                   setState(() => _selectedSides[side.id] = c),
                             ),
@@ -213,8 +248,9 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                           .toList(),
                     ),
                   ],
-                  if (widget.item.type == 'swallow' || widget.item.compatibleWith?.contains('soup') == true) ...[
-                    const SizedBox(height: 24),
+                  if (widget.item.type == 'swallow' ||
+                      widget.item.compatibleWith?.contains('soup') == true) ...[
+                    SizedBox(height: 24.h),
                     ItemDetailOptionsSection(
                       title: 'Choose a Soup',
                       subtitle: 'Required',
@@ -223,7 +259,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                             (soup) => ItemDetailSoupOption(
                               soup: soup,
                               isSelected: _selectedSoupId == soup.id,
-                              accentColor: widget.accentColor,
+                              accentColor: brandAccent,
                               onTap: () =>
                                   setState(() => _selectedSoupId = soup.id),
                             ),
@@ -232,7 +268,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                     ),
                   ],
                   if (availableDrinks.isNotEmpty) ...[
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
                     ItemDetailOptionsSection(
                       title: 'Add Drinks',
                       children: availableDrinks
@@ -240,7 +276,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                             (drink) => ItemDetailQuantityOption(
                               item: drink,
                               count: _selectedDrinks[drink.id] ?? 0,
-                              accentColor: widget.accentColor,
+                              accentColor: brandAccent,
                               onChanged: (c) =>
                                   setState(() => _selectedDrinks[drink.id] = c),
                             ),
@@ -249,7 +285,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                     ),
                   ],
                   if (availableAddons.isNotEmpty) ...[
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
                     ItemDetailOptionsSection(
                       title: 'Extras & Add-ons',
                       children: availableAddons
@@ -257,7 +293,7 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                             (addon) => ItemDetailQuantityOption(
                               item: addon,
                               count: _selectedAddons[addon.id] ?? 0,
-                              accentColor: widget.accentColor,
+                              accentColor: brandAccent,
                               onChanged: (c) =>
                                   setState(() => _selectedAddons[addon.id] = c),
                             ),
@@ -265,33 +301,37 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
                           .toList(),
                     ),
                   ],
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24.h),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
+
+          SizedBox(height: 16.h),
+
+          // ── Bottom bar ──────────────────────────────────────────────────
           Row(
             children: [
-              _quantityStepper(),
-              const SizedBox(width: 16),
+              _quantityStepper(brandAccent, mutedColor, surfaceColor),
+              SizedBox(width: 16.w),
               Expanded(
                 child: FilledButton(
                   onPressed: () =>
                       _handleAddToCart(cartProvider, storeProvider),
                   style: FilledButton.styleFrom(
-                    backgroundColor: widget.accentColor,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: brandAccent,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    textStyle: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16.sp,
                     ),
                   ),
                   child: Text(
                     'Add to Cart • ₦${totalPrice.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                    ),
                   ),
                 ),
               ),
@@ -302,31 +342,41 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
     );
   }
 
-  Widget _quantityStepper() {
+  // ── Quantity stepper ──────────────────────────────────────────────────────
+  Widget _quantityStepper(Color accent, Color muted, Color surface) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
+        color: accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: accent.withValues(alpha: 0.15), width: 1),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
             onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
-            icon: const Icon(Icons.remove_rounded),
+            icon: Icon(Icons.remove_rounded, size: 20.sp, color: accent),
+            splashRadius: 20.r,
           ),
           Text(
             '$_quantity',
-            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 16.sp,
+              color: accent,
+            ),
           ),
           IconButton(
             onPressed: () => setState(() => _quantity++),
-            icon: const Icon(Icons.add_rounded),
+            icon: Icon(Icons.add_rounded, size: 20.sp, color: accent),
+            splashRadius: 20.r,
           ),
         ],
       ),
     );
   }
 
+  // ── Add to cart logic (unchanged, but dialog styled) ─────────────────────
   void _handleAddToCart(
     CartProvider cartProvider,
     StoreProvider storeProvider,
@@ -338,7 +388,6 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
       return;
     }
 
-    // Build the selectedSoup payload if a soup was chosen
     Map<String, dynamic>? soupPayload;
     if (_selectedSoupId != null) {
       final soup = storeProvider.menuItems.cast<MenuItem?>().firstWhere(
@@ -349,7 +398,6 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
         soupPayload = {
           'id': soup.id,
           'name': soup.name,
-          // If isFreeWithSwallow the customer pays ₦0 for the soup
           'price': soup.isFreeWithSwallow ? 0.0 : soup.price,
         };
       }
@@ -369,38 +417,71 @@ class _ItemOptionsSheetState extends State<ItemOptionsSheet> {
     if (success) {
       Navigator.pop(context, 'SUCCESS');
     } else {
-      // Handle cross-store cart clearing directly in the sheet to preserve options
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Start a new order?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
-          content: const Text('Your cart has items from another store. Clear it and add this item?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                cartProvider.forceClearAndAdd(
-                  item: widget.item,
-                  quantity: _quantity,
-                  selectedMeats: _selectedMeats,
-                  selectedSides: _selectedSides,
-                  selectedDrinks: _selectedDrinks,
-                  selectedAddons: _selectedAddons,
-                  selectedSoup: soupPayload,
-                  selectedSizeId: _selectedSizeId,
-                );
-                Navigator.pop(context); // close dialog
-                Navigator.pop(context, 'SUCCESS'); // close sheet
-              },
-              child: const Text('Clear & Add', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w800)),
-            ),
-          ],
-        ),
+      _showClearCartDialog(
+        cartProvider: cartProvider,
+        soupPayload: soupPayload,
       );
     }
+  }
+
+  void _showClearCartDialog({
+    required CartProvider cartProvider,
+    required Map<String, dynamic>? soupPayload,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppColors.darkSurface : AppColors.lightBackground;
+    final text = isDark ? AppColors.darkText : AppColors.lightText;
+    final muted = isDark ? AppColors.darkTextSecondary : AppColors.lightMuted;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24.r),
+        ),
+        title: Text(
+          'Start a new order?',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 17.sp,
+            color: text,
+          ),
+        ),
+        content: Text(
+          'Your cart has items from another store. Clear it and add this item?',
+          style: TextStyle(color: muted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: muted)),
+          ),
+          TextButton(
+            onPressed: () {
+              cartProvider.forceClearAndAdd(
+                item: widget.item,
+                quantity: _quantity,
+                selectedMeats: _selectedMeats,
+                selectedSides: _selectedSides,
+                selectedDrinks: _selectedDrinks,
+                selectedAddons: _selectedAddons,
+                selectedSoup: soupPayload,
+                selectedSizeId: _selectedSizeId,
+              );
+              Navigator.pop(context); // close dialog
+              Navigator.pop(context, 'SUCCESS'); // close sheet
+            },
+            child: Text(
+              'Clear & Add',
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

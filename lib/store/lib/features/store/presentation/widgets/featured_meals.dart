@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:campuschow/widgets/common/universal_image.dart';
 import 'dart:ui';
 
 class FeaturedMeals extends StatelessWidget {
@@ -74,7 +74,7 @@ class FeaturedMeals extends StatelessWidget {
             // Background Image
             Hero(
               tag: 'featured-${item.id}',
-              child: CachedNetworkImage(
+              child: UniversalImage(
                 imageUrl: item.image,
                 width: double.infinity,
                 height: double.infinity,

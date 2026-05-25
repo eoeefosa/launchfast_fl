@@ -1,8 +1,8 @@
+import 'package:campuschow/widgets/common/universal_image.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
@@ -79,12 +79,12 @@ class CartItemTile extends StatelessWidget {
               // Image Section
               Hero(
                 tag: 'cart_item_${item.menuItem.id}',
-                child: CachedNetworkImage(
+                child: UniversalImage(
                   imageUrl: item.menuItem.image,
                   width: 100,
                   height: 100,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
+                  placeholder: Container(
                     color: AppColors.lightSurface,
                     child: const Center(
                       child: CupertinoActivityIndicator(),

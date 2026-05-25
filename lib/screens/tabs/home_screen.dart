@@ -1,3 +1,4 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -22,9 +23,6 @@ import 'components/home_empty_body.dart';
 // Constants
 // ---------------------------------------------------------------------------
 
-/// Canonical display order for menu categories.
-/// "Soup" is intentionally absent — it is only shown as an add-on inside
-/// swallow items, never as a standalone orderable category.
 const List<String> _kCategoryOrder = [
   'Rice & Pasta',
   'Swallow & Soup',
@@ -47,16 +45,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // ── State ──────────────────────────────────────────────────────────────────
-
   String _activeStoreId = '';
   String _selectedCategory = 'All';
-
-  // Typed as the exact function signature expected by AblyService so the
-  // listener reference is stable across add/remove calls.
   late final void Function(String) _roleListener;
-
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
   void initState() {
@@ -71,9 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // ── Initialisation helpers ─────────────────────────────────────────────────
-
-  /// Pre-selects the first available store so the UI is never blank on launch.
   void _initActiveStore() {
     final stores = context.read<StoreProvider>().stores;
     if (stores.isNotEmpty) {
@@ -81,35 +69,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Registers a real-time role-change listener via Ably.
-  /// Falls back to a no-op when the user is not authenticated.
   void _setupAblyRoleListener() {
     final userId = context.read<AuthProvider>().user?.id;
-
     if (userId != null) {
       _roleListener = (String newRole) {
         if (mounted) context.read<AuthProvider>().updateRole(newRole);
       };
       ablyService.addRoleListener(_roleListener);
     } else {
-      // No-op placeholder keeps the field non-null so dispose() is always safe.
       _roleListener = (_) {};
     }
   }
 
-  // ── Callbacks ──────────────────────────────────────────────────────────────
-
   void _onStoreSelected(String storeId) {
     setState(() {
       _activeStoreId = storeId;
-      _selectedCategory = 'All'; // reset filter on store change
+      _selectedCategory = 'All';
     });
   }
 
-  // ── Data derivation ────────────────────────────────────────────────────────
-
-  /// Returns menu items visible for [storeId] under [category], excluding
-  /// standalone soup items (which only appear as swallow add-ons).
   List<MenuItem> _filteredItems(
     StoreProvider provider,
     String storeId,
@@ -123,16 +101,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }).toList();
   }
 
-  /// Builds a sorted, grouped map of category → items.
-  ///
-  /// Categories present in [_kCategoryOrder] appear first; unknown categories
-  /// are appended alphabetically.
   Map<String, List<MenuItem>> _groupedItems(
     List<MenuItem> filtered,
     String storeId,
     StoreProvider provider,
   ) {
-    // Derive the ordered category list from actual data, not a hard-coded set.
     final present =
         provider.menuItems
             .where((item) => item.storeId == storeId && item.type != 'soup')
@@ -156,26 +129,25 @@ class _HomeScreenState extends State<HomeScreen> {
     };
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     final storeProvider = context.watch<StoreProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Auto-select the first store when stores load after mount (e.g. after
-    // a refresh) and nothing is selected yet.
+    // Use AppColors directly for scaffold background
+    final scaffoldBg = isDark
+        ? AppColors.darkScaffold
+        : AppColors.lightScaffold;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+
     if (_activeStoreId.isEmpty && storeProvider.stores.isNotEmpty) {
-      // Direct assignment — no setState needed here because this is inside
-      // build() and the frame is not yet committed.
       _activeStoreId = storeProvider.stores.first.id;
     }
 
-    // ── Loading skeleton ───────────────────────────────────────────────────
     if (storeProvider.isLoading && storeProvider.stores.isEmpty) {
       return const HomeSkeleton();
     }
 
-    // ── Empty / error state ────────────────────────────────────────────────
     if (storeProvider.stores.isEmpty) {
       return HomeEmptyBody(
         message: storeProvider.error,
@@ -183,9 +155,6 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // ── Loaded state ───────────────────────────────────────────────────────
-    // firstWhere is safe: stores is non-empty and _activeStoreId is always
-    // set to a valid id above.
     final activeStore = storeProvider.stores.firstWhere(
       (s) => s.id == _activeStoreId,
       orElse: () => storeProvider.stores.first,
@@ -197,15 +166,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedCategory,
     );
     final grouped = _groupedItems(filtered, _activeStoreId, storeProvider);
-
-    // Sorted category list for the selector — derived from grouped keys so it
-    // exactly mirrors what is visible in the list.
     final categories = ['All', ...grouped.keys];
-
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: scaffoldBg, // premium background
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -213,17 +178,13 @@ class _HomeScreenState extends State<HomeScreen> {
             CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                // Pull-to-refresh (iOS only — Android uses RefreshIndicator
-                // which should wrap the CustomScrollView at a higher level).
                 if (isIOS)
                   CupertinoSliverRefreshControl(
                     onRefresh: storeProvider.refreshData,
                   ),
 
-                // Home header (greeting, location, etc.)
                 const SliverToBoxAdapter(child: HomeHeader()),
 
-                // "Restaurants" label
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -234,12 +195,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Restaurants',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: textColor, // readable on scaffold bg
                       ),
                     ),
                   ),
                 ),
 
-                // Store selector row — fade + slide in on first render.
                 SliverToBoxAdapter(
                   child: FadeSlideIn(
                     child: StoreSection(
@@ -251,14 +212,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // Sticky category selector.
                 SliverPersistentHeader(
-                  // Give it a unique key per store so it rebuilds when the
-                  // store changes and the category list may differ.
                   key: ValueKey(_activeStoreId),
                   pinned: true,
                   delegate: CategoryHeaderDelegate(
-                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    backgroundColor: scaffoldBg, // header matches scaffold
                     child: CategorySelector(
                       selectedCategory: _selectedCategory,
                       categories: categories,
@@ -268,11 +226,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // Menu items — fade in on category / store switch.
                 SliverPadding(
                   padding: const EdgeInsets.only(top: 8, bottom: 120),
                   sliver: AnimatedMenuList(
-                    // key forces a fresh animation when the store changes.
                     key: ValueKey(_activeStoreId),
                     groupedItems: grouped,
                     accentColor: activeStore.accentColor,
@@ -285,7 +241,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
 
-            // Floating cart bar pinned above the bottom safe area.
             Positioned(
               bottom: 10,
               left: 0,
@@ -301,10 +256,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Add-item flow ──────────────────────────────────────────────────────────
-
-  /// Opens the options sheet for items that need configuration, or adds
-  /// directly to the cart for simple items.
   Future<void> _handleAddItem(BuildContext context, MenuItem item) async {
     final cartProvider = context.read<CartProvider>();
     final store = context.read<StoreProvider>().stores.firstWhere(
@@ -345,21 +296,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ── Dialog / snackbar helpers ──────────────────────────────────────────────
-
   void _showAddedSnackBar(BuildContext context, String itemName) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final snackBarBg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final snackBarText = isDark ? AppColors.darkText : AppColors.lightText;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$itemName added to cart'),
+        content: Text(itemName, style: TextStyle(color: snackBarText)),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 1),
+        backgroundColor: snackBarBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
-  /// Prompts the user to clear their cart before adding an item from a
-  /// different store. Adapts to the platform's native dialog style.
   void _showClearCartDialog(BuildContext context, MenuItem item) {
     void clearAndAdd() {
       context.read<CartProvider>().forceClearAndAdd(item: item, quantity: 1);
@@ -390,25 +342,39 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     } else {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final dialogBg = isDark
+          ? AppColors.darkSurface
+          : AppColors.lightBackground;
+      final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+
       showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
+          backgroundColor: dialogBg,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
-          title: const Text(
+          title: Text(
             title,
-            style: TextStyle(fontWeight: FontWeight.w900),
+            style: TextStyle(fontWeight: FontWeight.w900, color: textColor),
           ),
-          content: const Text(body),
+          content: Text(body, style: TextStyle(color: textColor)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightMuted,
+                ),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: Colors.red, // destructive action kept red
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

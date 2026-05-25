@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../models/menu_item.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:campuschow/widgets/common/universal_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../home/item_options_sheet.dart';
 
@@ -154,7 +154,7 @@ class _SuggestionCard extends StatelessWidget {
               Expanded(
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                  child: CachedNetworkImage(
+                  child: UniversalImage(
                     imageUrl: item.image,
                     width: double.infinity,
                     fit: BoxFit.cover,
