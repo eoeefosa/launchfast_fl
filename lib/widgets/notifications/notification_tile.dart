@@ -79,7 +79,9 @@ class _NotificationText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutedColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
+    final mutedColor = Theme.of(
+      context,
+    ).colorScheme.onSurface.withValues(alpha: 0.4);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,7 +108,9 @@ class _NotificationText extends StatelessWidget {
         Text(
           item.message,
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.65),
             height: 1.3,
           ),
         ),
@@ -130,7 +134,8 @@ class _NotificationIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color) = _typeConfig[type] ?? (Icons.notifications, Colors.grey);
+    final (icon, color) =
+        _typeConfig[type] ?? (Icons.notifications, Colors.grey);
 
     return Container(
       padding: const EdgeInsets.all(10),

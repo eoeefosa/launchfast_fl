@@ -172,7 +172,9 @@ class _VerificationSheetState extends State<VerificationSheet> {
 
   Color get _subtitleColor {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (isDark) return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
+    if (isDark) {
+      return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
+    }
 
     switch (_predictedNetwork) {
       case 'MTN':
@@ -203,7 +205,9 @@ class _VerificationSheetState extends State<VerificationSheet> {
           color: _networkColor,
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: isDark ? scheme.onSurface.withValues(alpha: 0.1) : Colors.transparent,
+            color: isDark
+                ? scheme.onSurface.withValues(alpha: 0.1)
+                : Colors.transparent,
             width: 1,
           ),
           boxShadow: [
@@ -237,7 +241,10 @@ class _VerificationSheetState extends State<VerificationSheet> {
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: Icon(Icons.close_rounded, color: _titleColor.withValues(alpha: 0.5)),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: _titleColor.withValues(alpha: 0.5),
+                      ),
                       style: IconButton.styleFrom(
                         backgroundColor: _titleColor.withValues(alpha: 0.05),
                       ),
@@ -246,12 +253,16 @@ class _VerificationSheetState extends State<VerificationSheet> {
                 ),
                 const SizedBox(height: 16),
                 Container(
-                  decoration: isDark && _predictedNetwork.isNotEmpty ? BoxDecoration(
-                    border: Border(
-                      left: BorderSide(color: _accentColor, width: 4),
-                    ),
-                  ) : null,
-                  padding: isDark && _predictedNetwork.isNotEmpty ? const EdgeInsets.only(left: 16) : null,
+                  decoration: isDark && _predictedNetwork.isNotEmpty
+                      ? BoxDecoration(
+                          border: Border(
+                            left: BorderSide(color: _accentColor, width: 4),
+                          ),
+                        )
+                      : null,
+                  padding: isDark && _predictedNetwork.isNotEmpty
+                      ? const EdgeInsets.only(left: 16)
+                      : null,
                   child: _codeSent ? _buildOtpStep() : _buildSendStep(context),
                 ),
                 const SizedBox(height: 16),
@@ -274,7 +285,7 @@ class _VerificationSheetState extends State<VerificationSheet> {
           Text(
             'Enter your phone number to receive a 6-digit OTP via Telegram or SMS.',
             style: TextStyle(
-              color: _subtitleColor, 
+              color: _subtitleColor,
               fontSize: 14,
               fontWeight: FontWeight.w500,
               height: 1.5,
@@ -284,7 +295,7 @@ class _VerificationSheetState extends State<VerificationSheet> {
           TextField(
             controller: _phoneCtrl,
             style: TextStyle(
-              color: _titleColor, 
+              color: _titleColor,
               fontWeight: FontWeight.w700,
               fontSize: 18,
             ),
@@ -299,9 +310,11 @@ class _VerificationSheetState extends State<VerificationSheet> {
                 color: _subtitleColor.withValues(alpha: 0.3),
               ),
               filled: true,
-              fillColor: isDark 
-                  ? scheme.onSurface.withValues(alpha: 0.05) 
-                  : (_predictedNetwork.isNotEmpty ? Colors.white.withValues(alpha: 0.5) : Colors.grey[100]),
+              fillColor: isDark
+                  ? scheme.onSurface.withValues(alpha: 0.05)
+                  : (_predictedNetwork.isNotEmpty
+                        ? Colors.white.withValues(alpha: 0.5)
+                        : Colors.grey[100]),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -322,7 +335,10 @@ class _VerificationSheetState extends State<VerificationSheet> {
                   children: [
                     if (_predictedNetwork.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: _accentColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -342,13 +358,19 @@ class _VerificationSheetState extends State<VerificationSheet> {
             ),
             keyboardType: TextInputType.phone,
             maxLength: 11,
-            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+            buildCounter:
+                (
+                  context, {
+                  required currentLength,
+                  required isFocused,
+                  maxLength,
+                }) => null,
           ),
         ] else
           Text(
             'We will send a 6-digit verification code to your email address: ${widget.auth.user!.email}.',
             style: TextStyle(
-              color: _subtitleColor, 
+              color: _subtitleColor,
               fontSize: 14,
               fontWeight: FontWeight.w500,
               height: 1.5,
@@ -375,7 +397,7 @@ class _VerificationSheetState extends State<VerificationSheet> {
         Text(
           'A 6-digit code has been sent. Please enter it below to verify.',
           style: TextStyle(
-            color: _subtitleColor, 
+            color: _subtitleColor,
             fontSize: 14,
             fontWeight: FontWeight.w500,
             height: 1.5,
@@ -403,8 +425,8 @@ class _VerificationSheetState extends State<VerificationSheet> {
               letterSpacing: 12,
             ),
             filled: true,
-            fillColor: isDark 
-                ? scheme.onSurface.withValues(alpha: 0.05) 
+            fillColor: isDark
+                ? scheme.onSurface.withValues(alpha: 0.05)
                 : Colors.white.withValues(alpha: 0.5),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
@@ -423,7 +445,13 @@ class _VerificationSheetState extends State<VerificationSheet> {
           keyboardType: TextInputType.number,
           maxLength: 6,
           textAlign: TextAlign.center,
-          buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+          buildCounter:
+              (
+                context, {
+                required currentLength,
+                required isFocused,
+                maxLength,
+              }) => null,
         ),
         const SizedBox(height: 32),
         CustomButton(

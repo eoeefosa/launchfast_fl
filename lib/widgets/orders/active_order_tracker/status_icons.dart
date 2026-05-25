@@ -14,7 +14,8 @@ class StatusIcon extends StatelessWidget {
     if (status == OrderStatus.preparing) icon = Icons.restaurant_rounded;
     if (status == OrderStatus.readyForPickup) icon = Icons.inventory_2_rounded;
     if (status == OrderStatus.pickingUp) icon = Icons.handshake_rounded;
-    if (status == OrderStatus.onTheWay || status == OrderStatus.outForDelivery) {
+    if (status == OrderStatus.onTheWay ||
+        status == OrderStatus.outForDelivery) {
       icon = Icons.delivery_dining_rounded;
     }
     if (status == OrderStatus.delivered) icon = Icons.check_circle_rounded;

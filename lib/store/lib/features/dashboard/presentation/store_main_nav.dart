@@ -414,7 +414,10 @@ class _StoreMainNavState extends State<StoreMainNav>
               child: SafeArea(
                 top: false,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: List.generate(_navItems.length, (i) {
@@ -448,7 +451,9 @@ class _StoreMainNavState extends State<StoreMainNav>
                                   alignment: Alignment.center,
                                   children: [
                                     AnimatedSwitcher(
-                                      duration: const Duration(milliseconds: 200),
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
                                       child: Icon(
                                         isActive ? item.activeIcon : item.icon,
                                         key: ValueKey(isActive),

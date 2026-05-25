@@ -1,4 +1,6 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../widgets/home/location_selector.dart';
@@ -10,50 +12,67 @@ class GuestAddressTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.darkPrimary : AppColors.primary;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(18.r),
       onTap: () => LocationSelector.show(context),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          color: Colors.grey.shade50,
-          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(18.r),
+          color: surfaceColor,
+          border: Border.all(color: borderColor),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16.r),
           child: Row(
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16.r),
+                  color: primaryColor.withValues(alpha: 0.1),
                 ),
                 child: SizedBox(
-                  height: 52,
-                  width: 52,
-                  child: Icon(Icons.location_on_rounded, color: primary),
+                  height: 52.h,
+                  width: 52.w,
+                  child: Icon(
+                    Icons.location_on_rounded,
+                    color: primaryColor,
+                    size: 24.sp,
+                  ),
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: 14.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       auth.currentAddress ?? 'Set delivery address',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15.sp,
+                        color: textColor,
+                      ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4.h),
                     Text(
                       'Tap to select location',
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: TextStyle(color: mutedColor, fontSize: 13.sp),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded),
+              Icon(Icons.chevron_right_rounded, color: mutedColor, size: 20.sp),
             ],
           ),
         ),
@@ -78,6 +97,9 @@ class GuestContactForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.darkPrimary : AppColors.primary;
+
     return Column(
       children: [
         ContactField(
@@ -86,7 +108,7 @@ class GuestContactForm extends StatelessWidget {
           icon: Icons.person_outline_rounded,
           textCapitalization: TextCapitalization.words,
         ),
-        const SizedBox(height: 18),
+        SizedBox(height: 18.h),
         ContactField(
           controller: phoneController,
           label: 'Phone number',
@@ -94,15 +116,16 @@ class GuestContactForm extends StatelessWidget {
           keyboardType: TextInputType.phone,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         ),
-        const SizedBox(height: 22),
+        SizedBox(height: 22.h),
         SizedBox(
           width: double.infinity,
           child: FilledButton(
             style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(56),
+              minimumSize: Size.fromHeight(56.h),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(18.r),
               ),
+              backgroundColor: primaryColor,
             ),
             onPressed: () {
               if (nameController.text.trim().isEmpty ||
@@ -112,9 +135,9 @@ class GuestContactForm extends StatelessWidget {
               }
               onContinue();
             },
-            child: const Text(
+            child: Text(
               'Continue',
-              style: TextStyle(fontWeight: FontWeight.w700),
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16.sp),
             ),
           ),
         ),
@@ -123,8 +146,6 @@ class GuestContactForm extends StatelessWidget {
   }
 }
 
-/// A modal dialog that collects or updates a guest user's name and phone
-/// number before order placement.
 class GuestContactDialog extends StatefulWidget {
   const GuestContactDialog({
     super.key,
@@ -144,21 +165,33 @@ class _GuestContactDialogState extends State<GuestContactDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.darkPrimary : AppColors.primary;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
 
     return AlertDialog(
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      backgroundColor: surfaceColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28.r)),
       icon: Icon(
         Icons.contact_phone_outlined,
-        color: colorScheme.primary,
-        size: 42,
+        color: primaryColor,
+        size: 42.sp,
       ),
       title: Text(
         'Contact Information',
         textAlign: TextAlign.center,
-        style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+        style: TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: 18.sp,
+          color: textColor,
+        ),
       ),
       content: Form(
         key: _formKey,
@@ -168,11 +201,9 @@ class _GuestContactDialogState extends State<GuestContactDialog> {
             Text(
               'Please enter your details to receive delivery and order updates.',
               textAlign: TextAlign.center,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: TextStyle(fontSize: 13.sp, color: mutedColor),
             ),
-            const SizedBox(height: 18),
+            SizedBox(height: 18.h),
             ContactField(
               controller: widget.nameController,
               label: 'Full name',
@@ -181,7 +212,7 @@ class _GuestContactDialogState extends State<GuestContactDialog> {
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Name is required' : null,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             ContactField(
               controller: widget.phoneController,
               label: 'Phone number',
@@ -201,15 +232,20 @@ class _GuestContactDialogState extends State<GuestContactDialog> {
               child: OutlinedButton(
                 onPressed: () => Navigator.of(context).pop(false),
                 style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
+                  minimumSize: Size.fromHeight(48.h),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(14.r),
+                  ),
+                  side: BorderSide(
+                    color: isDark
+                        ? AppColors.darkBorder
+                        : AppColors.lightBorder,
                   ),
                 ),
-                child: const Text('Cancel'),
+                child: Text('Cancel', style: TextStyle(color: textColor)),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12.w),
             Expanded(
               child: FilledButton(
                 onPressed: () {
@@ -218,14 +254,18 @@ class _GuestContactDialogState extends State<GuestContactDialog> {
                   }
                 },
                 style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
+                  minimumSize: Size.fromHeight(48.h),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(14.r),
                   ),
+                  backgroundColor: primaryColor,
                 ),
-                child: const Text(
+                child: Text(
                   'Save',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15.sp,
+                  ),
                 ),
               ),
             ),
@@ -236,7 +276,6 @@ class _GuestContactDialogState extends State<GuestContactDialog> {
   }
 }
 
-/// A reusable validated [TextFormField] for guest contact forms.
 class ContactField extends StatelessWidget {
   const ContactField({
     super.key,
@@ -259,7 +298,12 @@ class ContactField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.darkPrimary : AppColors.primary;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
 
     return TextFormField(
       controller: controller,
@@ -267,15 +311,21 @@ class ContactField extends StatelessWidget {
       textCapitalization: textCapitalization,
       inputFormatters: inputFormatters,
       validator: validator,
+      style: TextStyle(color: textColor, fontSize: 15.sp),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: colorScheme.onSurfaceVariant),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        labelStyle: TextStyle(color: mutedColor),
+        prefixIcon: Icon(icon, color: mutedColor, size: 20.sp),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18.r)),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: colorScheme.primary),
+          borderRadius: BorderRadius.circular(18.r),
+          borderSide: BorderSide(color: primaryColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18.r),
+          borderSide: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+          ),
         ),
       ),
     );

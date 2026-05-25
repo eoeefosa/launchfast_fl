@@ -69,9 +69,10 @@ class _PickupScannerSheetState extends State<PickupScannerSheet>
     HapticFeedback.mediumImpact();
 
     // Find the matching order (QR encodes full order ID)
-    final match = widget.orders
-        .cast<ScanOrder?>()
-        .firstWhere((o) => o!.id == raw, orElse: () => null);
+    final match = widget.orders.cast<ScanOrder?>().firstWhere(
+      (o) => o!.id == raw,
+      orElse: () => null,
+    );
 
     if (match == null) {
       setState(() => _scanned = false);
@@ -93,12 +94,12 @@ class _PickupScannerSheetState extends State<PickupScannerSheet>
 
     // Match by last-8-chars short code OR full ID
     final match = widget.orders.cast<ScanOrder?>().firstWhere(
-          (o) =>
-              o!.shortCode == query ||
-              o.id.toUpperCase() == query ||
-              o.id.toUpperCase().endsWith(query),
-          orElse: () => null,
-        );
+      (o) =>
+          o!.shortCode == query ||
+          o.id.toUpperCase() == query ||
+          o.id.toUpperCase().endsWith(query),
+      orElse: () => null,
+    );
 
     if (match == null) {
       setState(() => _searchError = 'No order found with code "$query".');
@@ -159,8 +160,11 @@ class _PickupScannerSheetState extends State<PickupScannerSheet>
                     color: AppColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.storefront_rounded,
-                      color: AppColors.primary, size: 20),
+                  child: const Icon(
+                    Icons.storefront_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -271,10 +275,7 @@ class _ScanTab extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  MobileScanner(
-                    controller: controller,
-                    onDetect: onDetect,
-                  ),
+                  MobileScanner(controller: controller, onDetect: onDetect),
                   // Scan overlay frame
                   _ScannerOverlay(),
                 ],
@@ -327,21 +328,21 @@ class _CornerPainter extends CustomPainter {
         Offset(size.width - len, 0),
         Offset(size.width - r, 0),
         Offset(size.width, r),
-        Offset(size.width, len)
+        Offset(size.width, len),
       ],
       // bottom-left
       [
         Offset(0, size.height - len),
         Offset(0, size.height - r),
         Offset(r, size.height),
-        Offset(len, size.height)
+        Offset(len, size.height),
       ],
       // bottom-right
       [
         Offset(size.width - len, size.height),
         Offset(size.width - r, size.height),
         Offset(size.width, size.height - r),
-        Offset(size.width, size.height - len)
+        Offset(size.width, size.height - len),
       ],
     ];
 
@@ -402,18 +403,25 @@ class _SearchTab extends StatelessWidget {
                 fontWeight: FontWeight.w400,
               ),
               errorText: error,
-              prefixIcon: const Icon(Icons.tag_rounded, color: AppColors.primary),
+              prefixIcon: const Icon(
+                Icons.tag_rounded,
+                color: AppColors.primary,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
                 borderSide: BorderSide(color: Colors.grey.shade300),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
-                borderSide:
-                    const BorderSide(color: AppColors.primary, width: 2),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 2,
+                ),
               ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 20,
+              ),
             ),
           ),
 
@@ -432,7 +440,8 @@ class _SearchTab extends StatelessWidget {
                 backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ),
@@ -448,8 +457,11 @@ class _SearchTab extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.info_outline_rounded,
-                    size: 16, color: Colors.blue),
+                const Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: Colors.blue,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(

@@ -98,7 +98,7 @@ class _WorkerMainNavState extends State<WorkerMainNav>
       if (storeProvider.stores.isEmpty) {
         await storeProvider.refreshData();
       }
-      
+
       if (!mounted) return;
 
       final activeId = storeProvider.activeStoreId;

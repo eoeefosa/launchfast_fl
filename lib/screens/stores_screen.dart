@@ -1,6 +1,9 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
 import '../providers/store_provider.dart';
 import '../models/store.dart';
 
@@ -11,53 +14,88 @@ class StoresScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final storeProvider = context.watch<StoreProvider>();
     final stores = storeProvider.stores;
-    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final scaffoldBg = isDark
+        ? AppColors.darkScaffold
+        : AppColors.lightScaffold;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final borderColor = isDark
+        ? AppColors.darkBorder.withValues(alpha: 0.2)
+        : AppColors.lightBorder.withValues(alpha: 0.4);
+    final shadowColor = isDark
+        ? Colors.black.withValues(alpha: 0.25)
+        : Colors.black.withValues(alpha: 0.04);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'All Stores',
-          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: -0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
+            fontSize: 20.sp,
+            color: textColor,
+          ),
         ),
-        backgroundColor: scheme.surface,
-        surfaceTintColor: scheme.surface,
+        backgroundColor: surfaceColor,
+        surfaceTintColor: surfaceColor,
         elevation: 0,
       ),
       body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         itemCount: stores.length,
         itemBuilder: (context, index) {
           final store = stores[index];
-          return _buildStoreCard(context, store);
+          return _buildStoreCard(
+            context,
+            store,
+            surfaceColor: surfaceColor,
+            borderColor: borderColor,
+            shadowColor: shadowColor,
+            textColor: textColor,
+            mutedColor: mutedColor,
+          );
         },
       ),
     );
   }
 
-  Widget _buildStoreCard(BuildContext context, Store store) {
-    final scheme = Theme.of(context).colorScheme;
+  Widget _buildStoreCard(
+    BuildContext context,
+    Store store, {
+    required Color surfaceColor,
+    required Color borderColor,
+    required Color shadowColor,
+    required Color textColor,
+    required Color mutedColor,
+  }) {
     final accentColor = store.accentColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
+      margin: EdgeInsets.only(bottom: 16.h), // 24 → 16
       decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: scheme.onSurface.withValues(alpha: 0.05),
-          width: 1,
-        ),
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(20.r), // 24 → 20
+        border: Border.all(color: borderColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: shadowColor,
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20.r),
         child: InkWell(
           onTap: () => context.push('/store/${store.id}'),
           child: Column(
@@ -66,7 +104,7 @@ class StoresScreen extends StatelessWidget {
               Stack(
                 children: [
                   Container(
-                    height: 140,
+                    height: 110.h, // 140 → 110
                     width: double.infinity,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -81,23 +119,25 @@ class StoresScreen extends StatelessWidget {
                     child: Center(
                       child: Icon(
                         Icons.storefront_rounded,
-                        size: 56,
+                        size: 44.sp, // 56 → 44
                         color: Colors.white.withValues(alpha: 0.2),
                       ),
                     ),
                   ),
                   // Delivery Time Badge
                   Positioned(
-                    bottom: 12,
-                    right: 12,
+                    bottom: 10.h,
+                    right: 10.w,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 4.h,
+                      ), // 10/6 → 8/4
                       decoration: BoxDecoration(
-                        color: scheme.surfaceContainerLowest,
-                        borderRadius: BorderRadius.circular(12),
+                        color: isDark
+                            ? AppColors.darkSurface2
+                            : AppColors.lightSurface,
+                        borderRadius: BorderRadius.circular(10.r),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.1),
@@ -109,16 +149,16 @@ class StoresScreen extends StatelessWidget {
                         children: [
                           Icon(
                             Icons.access_time_filled_rounded,
-                            size: 14,
-                            color: scheme.onSurface,
+                            size: 12.sp, // 14 → 12
+                            color: textColor,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4.w),
                           Text(
                             store.deliveryTime,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 10.sp, // 12 → 10
                               fontWeight: FontWeight.w900,
-                              color: scheme.onSurface,
+                              color: textColor,
                             ),
                           ),
                         ],
@@ -132,19 +172,19 @@ class StoresScreen extends StatelessWidget {
                         color: Colors.black54,
                         child: Center(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 10,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 8.h,
                             ),
                             decoration: BoxDecoration(
-                              color: scheme.surface,
-                              borderRadius: BorderRadius.circular(12),
+                              color: surfaceColor,
+                              borderRadius: BorderRadius.circular(10.r),
                             ),
                             child: Text(
                               'CLOSED',
                               style: TextStyle(
-                                color: scheme.onSurface,
-                                fontSize: 16,
+                                color: textColor,
+                                fontSize: 14.sp,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 2,
                               ),
@@ -157,7 +197,7 @@ class StoresScreen extends StatelessWidget {
               ),
               // Store Info
               Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(16.r), // 20 → 16
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -167,35 +207,37 @@ class StoresScreen extends StatelessWidget {
                         Expanded(
                           child: Text(
                             store.name,
-                            style: const TextStyle(
-                              fontSize: 20,
+                            style: TextStyle(
+                              fontSize: 18.sp, // 20 → 18
                               fontWeight: FontWeight.w900,
                               letterSpacing: -0.5,
+                              color: textColor,
                             ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6.w,
+                            vertical: 3.h,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.amber.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.amber.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6.r),
                           ),
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.star_rounded,
-                                size: 16,
+                                size: 14.sp, // 16 → 14
                                 color: Colors.amber,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4.w),
                               Text(
                                 store.rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  fontSize: 14,
+                                style: TextStyle(
+                                  fontSize: 12.sp, // 14 → 12
                                   fontWeight: FontWeight.w900,
+                                  color: textColor,
                                 ),
                               ),
                             ],
@@ -203,18 +245,18 @@ class StoresScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 4.h), // 6 → 4
                     Text(
                       store.tagline,
                       style: TextStyle(
-                        color: scheme.onSurface.withValues(alpha: 0.6),
-                        fontSize: 14,
+                        color: mutedColor,
+                        fontSize: 12.sp, // 14 → 12
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Divider(color: scheme.onSurface.withValues(alpha: 0.05)),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 12.h), // 16 → 12
+                    Divider(color: borderColor, height: 1, thickness: 1),
+                    SizedBox(height: 12.h), // 16 → 12
                   ],
                 ),
               ),

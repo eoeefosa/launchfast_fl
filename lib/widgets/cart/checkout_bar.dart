@@ -66,7 +66,9 @@ class CheckoutBar extends StatelessWidget {
               const SizedBox(width: 20),
               Expanded(
                 child: _CheckoutButton(
-                  onPressed: enabled ? (onPressed ?? () => context.push('/checkout')) : null,
+                  onPressed: enabled
+                      ? (onPressed ?? () => context.push('/checkout'))
+                      : null,
                   isIOS: isIOS,
                   enabled: enabled,
                 ),

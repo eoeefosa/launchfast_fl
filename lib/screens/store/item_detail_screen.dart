@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +13,7 @@ import '../../models/menu_item.dart';
 
 import 'components/item_detail_scroll_body.dart';
 import 'components/item_detail_footer.dart';
-import 'components/item_detail_dialogs.dart';
+import 'components/item_detail_dialogs.dart'; // keep for unavailable dialog
 import 'components/item_detail_placeholders.dart';
 
 import 'package:campuschow/widgets/responsive_layout.dart';
@@ -27,17 +29,14 @@ class ItemDetailScreen extends StatefulWidget {
 
 class _ItemDetailScreenState extends State<ItemDetailScreen>
     with TickerProviderStateMixin {
-  // ── State ──────────────────────────────────────────────────────────────────
-
   int _quantity = 1;
   String? _selectedSoupId;
+  String? _selectedSizeId; // ← NEW: size selection
   final Map<String, int> _selectedMeats = {};
   final Map<String, int> _selectedSides = {};
   final Map<String, int> _selectedDrinks = {};
   final Map<String, int> _selectedAddons = {};
   StreamSubscription<String>? _alertSub;
-
-  // ── Animation controllers ──────────────────────────────────────────────────
 
   late final AnimationController _heroController;
   late final AnimationController _contentController;
@@ -47,8 +46,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
   late final Animation<double> _contentFade;
   late final Animation<Offset> _contentSlide;
   late final Animation<Offset> _footerSlide;
-
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
   void initState() {
@@ -78,18 +75,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       parent: _contentController,
       curve: Curves.easeOut,
     );
-    _contentSlide = Tween<Offset>(
-      begin: const Offset(0, 0.06),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _contentController, curve: Curves.easeOutCubic),
-    );
-    _footerSlide = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _footerController, curve: Curves.easeOutBack),
-    );
+    _contentSlide =
+        Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _contentController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+    _footerSlide = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _footerController, curve: Curves.easeOutBack),
+        );
 
     _heroController.forward();
     Future.delayed(const Duration(milliseconds: 180), () {
@@ -117,14 +113,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     super.dispose();
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     final storeProvider = context.watch<StoreProvider>();
     final cartProvider = context.read<CartProvider>();
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final scaffoldBg = isDark
+        ? AppColors.darkScaffold
+        : AppColors.lightScaffold;
 
     final item = storeProvider.menuItems.cast<MenuItem?>().firstWhere(
       (m) => m?.id == widget.id,
@@ -139,7 +136,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
 
     final store = storeProvider.stores.cast<dynamic>().firstWhere(
       (s) => s.id == item.storeId,
-      orElse: () => storeProvider.stores.isNotEmpty ? storeProvider.stores.first : null,
+      orElse: () =>
+          storeProvider.stores.isNotEmpty ? storeProvider.stores.first : null,
     );
 
     if (store == null) {
@@ -147,6 +145,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     }
 
     final components = _resolveAvailableComponents(item, storeProvider);
+
+    // If sizes exist and no size is selected, auto-select the first one
+    if (_selectedSizeId == null && item.sizes.isNotEmpty) {
+      _selectedSizeId = item.sizes.first.id;
+    }
 
     final totalPrice = PriceCalculator.computeTotal(
       item: item,
@@ -163,20 +166,25 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       availableDrinks: components.drinks,
       meatPrices: storeProvider.meatPrices,
       saladPrice: storeProvider.saladPrice,
+      selectedSizeId: _selectedSizeId, // ← pass size
     );
+
+    final accentColor = store.accentColor;
 
     return ResponsiveLayout(
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
-          statusBarColor: null,
+          statusBarColor: Colors.transparent,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-          systemNavigationBarColor: null,
-          systemNavigationBarDividerColor: null,
-          systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          systemNavigationBarColor: scaffoldBg,
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarIconBrightness: isDark
+              ? Brightness.light
+              : Brightness.dark,
         ),
         child: Scaffold(
-          backgroundColor: theme.scaffoldBackgroundColor,
+          backgroundColor: scaffoldBg,
           body: Stack(
             children: [
               ItemDetailScrollBody(
@@ -186,7 +194,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                 contentSlide: _contentSlide,
                 item: item,
                 store: store,
-                accentColor: store.accentColor,
+                accentColor: accentColor,
                 availableSoups: components.soups,
                 availableAddons: components.addons,
                 availableProteins: components.proteins,
@@ -197,12 +205,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                 selectedSides: _selectedSides,
                 selectedDrinks: _selectedDrinks,
                 selectedSoupId: _selectedSoupId,
+                selectedSizeId: _selectedSizeId, // ← NEW
                 isDark: isDark,
-                onMeatChanged: (id, count) => setState(() => _selectedMeats[id] = count),
-                onAddonChanged: (id, count) => setState(() => _selectedAddons[id] = count),
-                onSideChanged: (id, count) => setState(() => _selectedSides[id] = count),
-                onDrinkChanged: (id, count) => setState(() => _selectedDrinks[id] = count),
+                onMeatChanged: (id, count) =>
+                    setState(() => _selectedMeats[id] = count),
+                onAddonChanged: (id, count) =>
+                    setState(() => _selectedAddons[id] = count),
+                onSideChanged: (id, count) =>
+                    setState(() => _selectedSides[id] = count),
+                onDrinkChanged: (id, count) =>
+                    setState(() => _selectedDrinks[id] = count),
                 onSoupSelected: (id) => setState(() => _selectedSoupId = id),
+                onSizeSelected: (id) =>
+                    setState(() => _selectedSizeId = id), // ← NEW
               ),
               Positioned(
                 bottom: 0,
@@ -214,9 +229,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                     item: item,
                     quantity: _quantity,
                     totalPrice: totalPrice,
-                    accentColor: store.accentColor,
+                    accentColor: accentColor,
                     isDark: isDark,
                     selectedSoupId: _selectedSoupId,
+                    selectedSizeId: _selectedSizeId, // ← NEW
                     selectedMeats: _selectedMeats,
                     selectedSides: _selectedSides,
                     selectedDrinks: _selectedDrinks,
@@ -240,8 +256,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     );
   }
 
-  // ── Data Resolution ────────────────────────────────────────────────────────
-
   AvailableComponents _resolveAvailableComponents(
     MenuItem item,
     StoreProvider storeProvider,
@@ -253,22 +267,30 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
         : <MenuItem>[];
 
     final proteins = compatible.contains('protein')
-        ? storeProvider.menuItems.where((m) => m.storeId == item.storeId && m.type == 'protein').toList()
+        ? storeProvider.menuItems
+              .where((m) => m.storeId == item.storeId && m.type == 'protein')
+              .toList()
         : <MenuItem>[];
 
     final sides = compatible.contains('side')
-        ? storeProvider.menuItems.where((m) => m.storeId == item.storeId && m.type == 'side').toList()
+        ? storeProvider.menuItems
+              .where((m) => m.storeId == item.storeId && m.type == 'side')
+              .toList()
         : <MenuItem>[];
 
     final drinks = compatible.contains('drink')
-        ? storeProvider.menuItems.where((m) => m.storeId == item.storeId && m.type == 'drink').toList()
+        ? storeProvider.menuItems
+              .where((m) => m.storeId == item.storeId && m.type == 'drink')
+              .toList()
         : <MenuItem>[];
 
     final addons = (item.addonIds ?? [])
-        .map((id) => storeProvider.menuItems.cast<MenuItem?>().firstWhere(
-              (m) => m?.id == id,
-              orElse: () => null,
-            ))
+        .map(
+          (id) => storeProvider.menuItems.cast<MenuItem?>().firstWhere(
+            (m) => m?.id == id,
+            orElse: () => null,
+          ),
+        )
         .whereType<MenuItem>()
         .toList();
 
@@ -281,15 +303,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     );
   }
 
-  // ── Cart logic ─────────────────────────────────────────────────────────────
-
   void _handleAddToCart(
     BuildContext context,
     CartProvider cartProvider,
     MenuItem item,
     StoreProvider storeProvider,
   ) {
-    if ((item.category == 'Swallow' || item.requiresSoupSelection) && _selectedSoupId == null) {
+    if ((item.category == 'Swallow' || item.requiresSoupSelection) &&
+        _selectedSoupId == null) {
       _showSnack(context, 'Please select a soup first');
       return;
     }
@@ -317,6 +338,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       selectedDrinks: _selectedDrinks,
       selectedAddons: _selectedAddons,
       selectedSoup: soupPayload,
+      selectedSizeId: _selectedSizeId, // ← include size
     );
 
     if (success) {
@@ -326,17 +348,23 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
             content: Text('${item.name} added to cart'),
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 1),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
           ),
         );
       }
       context.pop();
     } else {
-      _showClearCartDialog(context, cartProvider, item, storeProvider, soupPayload);
+      _showClearCartDialog(
+        context,
+        cartProvider,
+        item,
+        storeProvider,
+        soupPayload,
+      );
     }
   }
-
-  // ── Dialogs & snackbars ────────────────────────────────────────────────────
 
   void _showUnavailableDialog() {
     if (!mounted) return;
@@ -349,6 +377,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     });
   }
 
+  // ── Premium clear‑cart dialog (styled like the sheet) ───────────────────
   void _showClearCartDialog(
     BuildContext context,
     CartProvider cartProvider,
@@ -356,22 +385,59 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     StoreProvider storeProvider,
     Map<String, dynamic>? soupPayload,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppColors.darkSurface : AppColors.lightBackground;
+    final text = isDark ? AppColors.darkText : AppColors.lightText;
+    final muted = isDark ? AppColors.darkTextSecondary : AppColors.lightMuted;
+
     showDialog(
       context: context,
-      builder: (_) => ItemDetailClearCartDialog(
-        onConfirm: () {
-          cartProvider.forceClearAndAdd(
-            item: item,
-            quantity: _quantity,
-            selectedMeats: _selectedMeats,
-            selectedSides: _selectedSides,
-            selectedDrinks: _selectedDrinks,
-            selectedAddons: _selectedAddons,
-            selectedSoup: soupPayload,
-          );
-          Navigator.pop(context);
-          context.pop();
-        },
+      builder: (_) => AlertDialog(
+        backgroundColor: surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24.r),
+        ),
+        title: Text(
+          'Start a new order?',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 17.sp,
+            color: text,
+          ),
+        ),
+        content: Text(
+          'Your cart has items from another store. Clear it and add this item?',
+          style: TextStyle(color: muted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: muted)),
+          ),
+          TextButton(
+            onPressed: () {
+              cartProvider.forceClearAndAdd(
+                item: item,
+                quantity: _quantity,
+                selectedMeats: _selectedMeats,
+                selectedSides: _selectedSides,
+                selectedDrinks: _selectedDrinks,
+                selectedAddons: _selectedAddons,
+                selectedSoup: soupPayload,
+                selectedSizeId: _selectedSizeId, // ← include size
+              );
+              Navigator.pop(context); // close dialog
+              context.pop(); // close screen
+            },
+            child: Text(
+              'Clear & Add',
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -381,7 +447,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
       ),
     );
   }

@@ -19,7 +19,7 @@ class NotificationDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -41,7 +41,7 @@ class NotificationDetailSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          
+
           Row(
             children: [
               _NotificationIcon(type: item.type),
@@ -61,7 +61,9 @@ class NotificationDetailSheet extends StatelessWidget {
                     Text(
                       DateFormat('MMM d, yyyy • h:mm a').format(item.timestamp),
                       style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -71,15 +73,19 @@ class NotificationDetailSheet extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.2,
+              ),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
+              border: Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.5),
+              ),
             ),
             child: Text(
               item.message,
@@ -90,9 +96,9 @@ class NotificationDetailSheet extends StatelessWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 40),
-          
+
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -126,7 +132,8 @@ class _NotificationIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color) = _typeConfig[type] ?? (Icons.notifications, Colors.grey);
+    final (icon, color) =
+        _typeConfig[type] ?? (Icons.notifications, Colors.grey);
 
     return Container(
       padding: const EdgeInsets.all(12),

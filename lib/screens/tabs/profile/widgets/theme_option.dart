@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -8,7 +7,8 @@ class ThemeOption extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const ThemeOption({super.key, 
+  const ThemeOption({
+    super.key,
     required this.label,
     required this.icon,
     required this.selected,

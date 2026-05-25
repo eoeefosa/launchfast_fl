@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:campuschow/store/lib/features/store/data/store_model.dart';
+import '../data/store_model.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
 import 'store_provider.dart';
 import 'widgets/store_detail_header.dart';

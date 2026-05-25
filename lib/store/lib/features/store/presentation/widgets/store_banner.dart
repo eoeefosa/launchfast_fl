@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:campuschow/store/lib/features/store/data/store_model.dart';
+import '../../data/store_model.dart';
 
 class StoreBanner extends StatelessWidget {
   final Store store;
 
   const StoreBanner({super.key, required this.store});
 
-  
   @override
   Widget build(BuildContext context) {
     return Container(

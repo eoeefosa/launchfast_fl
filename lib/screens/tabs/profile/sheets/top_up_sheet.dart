@@ -156,13 +156,16 @@ class _TopUpDialogState extends State<TopUpDialog> {
                   Text(
                     'Top Up Wallet',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: scheme.onSurface,
-                        ),
+                      fontWeight: FontWeight.w900,
+                      color: scheme.onSurface,
+                    ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.close_rounded, color: scheme.onSurface.withValues(alpha: 0.5)),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: scheme.onSurface.withValues(alpha: 0.5),
+                    ),
                     style: IconButton.styleFrom(
                       backgroundColor: scheme.onSurface.withValues(alpha: 0.06),
                       padding: const EdgeInsets.all(6),

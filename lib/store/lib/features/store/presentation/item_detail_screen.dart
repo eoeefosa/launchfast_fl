@@ -60,10 +60,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Item Unavailable', style: TextStyle(fontWeight: FontWeight.w900)),
-        content: const Text(
-          'This item has just been marked as unavailable.',
+        title: const Text(
+          'Item Unavailable',
+          style: TextStyle(fontWeight: FontWeight.w900),
         ),
+        content: const Text('This item has just been marked as unavailable.'),
         actions: [
           FilledButton(
             onPressed: () {
@@ -140,10 +141,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       return const Scaffold(body: Center(child: Text('Store not found')));
     }
 
-    final soups = item.type == 'swallow' || item.compatibleWith?.contains('soup') == true
-        ? storeProvider.menuItems
-              .where((m) => m.type == 'soup')
-              .toList()
+    final soups =
+        item.type == 'swallow' || item.compatibleWith?.contains('soup') == true
+        ? storeProvider.menuItems.where((m) => m.type == 'soup').toList()
         : <MenuItem>[];
     final addons = (item.addonIds ?? [])
         .map(
@@ -174,7 +174,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                         isDark: Theme.of(context).brightness == Brightness.dark,
                       ),
                       const SizedBox(height: 32),
-                      _buildOptions(item, soups, addons, availableMeats, availableSalads, store.color),
+                      _buildOptions(
+                        item,
+                        soups,
+                        addons,
+                        availableMeats,
+                        availableSalads,
+                        store.color,
+                      ),
                       const SizedBox(height: 120),
                     ],
                   ),
@@ -183,17 +190,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
             ),
           ),
           _buildFooter(
-            item, 
+            item,
             _computeTotal(
-              item, 
-              soups, 
-              addons, 
-              availableMeats, 
-              availableSalads, 
-              storeProvider.meatPrices, 
-              storeProvider.saladPrice
-            ), 
-            store.color
+              item,
+              soups,
+              addons,
+              availableMeats,
+              availableSalads,
+              storeProvider.meatPrices,
+              storeProvider.saladPrice,
+            ),
+            store.color,
           ),
         ],
       ),
@@ -213,23 +220,33 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
         if (availableMeats.isNotEmpty)
           OptionSection(
             title: 'Add Meat',
-            children: availableMeats.map((meat) => ItemOptionTile(
-              item: meat,
-              count: _selectedMeats[meat.id] ?? 0,
-              accent: accent,
-              onChanged: (c) => setState(() => _selectedMeats[meat.id] = c),
-            )).toList(),
+            children: availableMeats
+                .map(
+                  (meat) => ItemOptionTile(
+                    item: meat,
+                    count: _selectedMeats[meat.id] ?? 0,
+                    accent: accent,
+                    onChanged: (c) =>
+                        setState(() => _selectedMeats[meat.id] = c),
+                  ),
+                )
+                .toList(),
           ),
         if (availableSalads.isNotEmpty) ...[
           const SizedBox(height: 32),
           OptionSection(
             title: 'Add Sides',
-            children: availableSalads.map((side) => ItemOptionTile(
-              item: side,
-              count: _selectedSides[side.id] ?? 0,
-              accent: accent,
-              onChanged: (c) => setState(() => _selectedSides[side.id] = c),
-            )).toList(),
+            children: availableSalads
+                .map(
+                  (side) => ItemOptionTile(
+                    item: side,
+                    count: _selectedSides[side.id] ?? 0,
+                    accent: accent,
+                    onChanged: (c) =>
+                        setState(() => _selectedSides[side.id] = c),
+                  ),
+                )
+                .toList(),
           ),
         ],
         if (soups.isNotEmpty) ...[
@@ -240,8 +257,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
             children: [
               RadioGroup<String>(
                 groupValue: _selectedSoupId,
-                onChanged: (value) =>
-                    setState(() => _selectedSoupId = value),
+                onChanged: (value) => setState(() => _selectedSoupId = value),
                 child: Column(
                   children: soups
                       .map(
@@ -251,8 +267,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                               ? 'Free'
                               : '₦${s.price}',
                           isSelected: _selectedSoupId == s.id,
-                          onTap: () =>
-                              setState(() => _selectedSoupId = s.id),
+                          onTap: () => setState(() => _selectedSoupId = s.id),
                           trailing: Radio<String>(value: s.id),
                         ),
                       )
@@ -266,12 +281,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
           const SizedBox(height: 32),
           OptionSection(
             title: 'Add-ons',
-            children: addons.map((addon) => ItemOptionTile(
-              item: addon,
-              count: _selectedAddons[addon.id] ?? 0,
-              accent: accent,
-              onChanged: (c) => setState(() => _selectedAddons[addon.id] = c),
-            )).toList(),
+            children: addons
+                .map(
+                  (addon) => ItemOptionTile(
+                    item: addon,
+                    count: _selectedAddons[addon.id] ?? 0,
+                    accent: accent,
+                    onChanged: (c) =>
+                        setState(() => _selectedAddons[addon.id] = c),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ],
@@ -332,7 +352,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     final cart = context.read<CartProvider>();
     final storeProvider = context.read<StoreProvider>();
 
-    if ((item.type == 'swallow' || item.compatibleWith?.contains('soup') == true) && _selectedSoupId == null) {
+    if ((item.type == 'swallow' ||
+            item.compatibleWith?.contains('soup') == true) &&
+        _selectedSoupId == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please select a soup')));

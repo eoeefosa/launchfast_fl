@@ -17,12 +17,19 @@ class StepperControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final btnBg = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[100]!;
+    final btnBg = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.grey[100]!;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _StepButton(icon: Icons.remove, color: btnBg, iconColor: count > 0 ? accentColor : Colors.grey, onTap: onDecrement),
+        _StepButton(
+          icon: Icons.remove,
+          color: btnBg,
+          iconColor: count > 0 ? accentColor : Colors.grey,
+          onTap: onDecrement,
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: SizedBox(
@@ -34,7 +41,12 @@ class StepperControl extends StatelessWidget {
             ),
           ),
         ),
-        _StepButton(icon: Icons.add, color: accentColor, iconColor: Colors.white, onTap: onIncrement),
+        _StepButton(
+          icon: Icons.add,
+          color: accentColor,
+          iconColor: Colors.white,
+          onTap: onIncrement,
+        ),
       ],
     );
   }
@@ -46,7 +58,12 @@ class _StepButton extends StatelessWidget {
   final Color iconColor;
   final VoidCallback onTap;
 
-  const _StepButton({required this.icon, required this.color, required this.iconColor, required this.onTap});
+  const _StepButton({
+    required this.icon,
+    required this.color,
+    required this.iconColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

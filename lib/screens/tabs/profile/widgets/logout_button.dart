@@ -80,7 +80,9 @@ class LogoutButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
             side: BorderSide(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.1),
             ),
           ),
           title: const Text(
@@ -90,7 +92,9 @@ class LogoutButton extends StatelessWidget {
           content: Text(
             'Are you sure you want to sign out?',
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           actions: [
@@ -99,7 +103,9 @@ class LogoutButton extends StatelessWidget {
               child: Text(
                 'CANCEL',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                   fontWeight: FontWeight.bold,
                 ),
               ),

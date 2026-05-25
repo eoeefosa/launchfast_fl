@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
-import 'package:campuschow/store/lib/features/store/data/store_model.dart';
+import 'package:campuschow/models/store.dart';
 
 class CartProvider with ChangeNotifier {
   List<CartItem> _items = [];

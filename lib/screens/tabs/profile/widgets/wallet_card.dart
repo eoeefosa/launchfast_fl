@@ -1,5 +1,7 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import '../../../../providers/auth_provider.dart';
 import '../sheets/top_up_sheet.dart';
@@ -15,12 +17,15 @@ class WalletCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final primary = scheme.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = isDark ? AppColors.darkPrimary : AppColors.primary;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      height: 230,
+      margin: EdgeInsets.symmetric(
+        horizontal: 20.w,
+        vertical: 10.h,
+      ), // slightly less vertical
+      height: 200.h, // reduced from 230
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -28,24 +33,24 @@ class WalletCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(28.r), // 32 → 28
         boxShadow: [
           BoxShadow(
             color: primary.withValues(alpha: 0.25),
-            blurRadius: 25,
-            offset: const Offset(0, 12),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Stack(
         children: [
-          // Decorative background elements
+          // Decorative background circles – scaled down
           Positioned(
-            right: -40,
-            top: -40,
+            right: -30.w,
+            top: -30.h,
             child: Container(
-              width: 160,
-              height: 160,
+              width: 120.w,
+              height: 120.h,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
@@ -53,11 +58,11 @@ class WalletCard extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: -20,
-            bottom: -20,
+            left: -15.w,
+            bottom: -15.h,
             child: Container(
-              width: 100,
-              height: 100,
+              width: 80.w,
+              height: 80.h,
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
@@ -65,66 +70,68 @@ class WalletCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(20.r), // 24 → 20
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: EdgeInsets.all(6.r), // 8 → 6
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8.r), // 10 → 8
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.wallet_rounded,
                             color: Colors.white,
-                            size: 18,
+                            size: 16.sp, // 18 → 16
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        const Text(
+                        SizedBox(width: 10.w), // 12 → 10
+                        Text(
                           'CampusChow Wallet',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 14,
+                            fontSize: 13.sp, // 14 → 13
                             fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
+                            letterSpacing: 0.3,
                           ),
                         ),
                       ],
                     ),
-                    const Icon(
+                    Icon(
                       Icons.qr_code_scanner_rounded,
                       color: Colors.white70,
-                      size: 20,
+                      size: 18.sp, // 20 → 18
                     ),
                   ],
                 ),
                 const Spacer(),
+                // Balance label & amount
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Available Balance',
                       style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 12,
+                        fontSize: 11.sp, // 12 → 11
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 2.h), // 4 → 2
                     Text(
                       '₦${NumberFormat('#,##0.00').format(auth.user!.walletBalance)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 38,
+                        fontSize: 30.sp, // 38 → 30
                         fontWeight: FontWeight.w900,
-                        letterSpacing: -1.5,
+                        letterSpacing: -1.2,
                       ),
                     ).animate().shimmer(
                       duration: 2.seconds,
@@ -133,29 +140,37 @@ class WalletCard extends StatelessWidget {
                   ],
                 ),
                 const Spacer(),
+                // Deposit button
                 SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _showTopUpModal(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: primary,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => _showTopUpModal(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: primary,
+                          elevation: 0,
+                          padding: EdgeInsets.symmetric(
+                            vertical: 12.h,
+                          ), // 14 → 12
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              14.r,
+                            ), // 16 → 14
+                          ),
+                        ),
+                        child: Text(
+                          'Deposit Funds',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13.sp, // 14 → 13
+                            letterSpacing: 0.4,
+                          ),
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      'Deposit Funds',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 14,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
+                    )
+                    .animate()
+                    .fadeIn(delay: 600.ms)
+                    .slideY(begin: 0.15), // slightly smaller slide
               ],
             ),
           ),

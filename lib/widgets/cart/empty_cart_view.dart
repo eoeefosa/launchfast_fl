@@ -118,7 +118,9 @@ class EmptyCartView extends StatelessWidget {
                                         end: Alignment.bottomRight,
                                         colors: [
                                           store.accentColor,
-                                          store.accentColor.withValues(alpha: 0.8),
+                                          store.accentColor.withValues(
+                                            alpha: 0.8,
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -126,7 +128,9 @@ class EmptyCartView extends StatelessWidget {
                                       child: Icon(
                                         Icons.storefront_rounded,
                                         size: 48,
-                                        color: Colors.white.withValues(alpha: 0.2),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.2,
+                                        ),
                                       ),
                                     ),
                                   ),

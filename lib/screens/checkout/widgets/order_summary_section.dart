@@ -32,12 +32,9 @@ class OrderSummarySection extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ),
-                Text('₦${PriceCalculator.calculateCartItemPrice(
-                  item,
-                  meatPrices: context.read<StoreProvider>().meatPrices,
-                  saladPrice: context.read<StoreProvider>().saladPrice,
-                  allMenuItems: context.read<StoreProvider>().menuItems,
-                ).toStringAsFixed(0)}'),
+                Text(
+                  '₦${PriceCalculator.calculateCartItemPrice(item, meatPrices: context.read<StoreProvider>().meatPrices, saladPrice: context.read<StoreProvider>().saladPrice, allMenuItems: context.read<StoreProvider>().menuItems).toStringAsFixed(0)}',
+                ),
               ],
             ),
           ),
@@ -56,7 +53,12 @@ class OrderSummarySection extends StatelessWidget {
     );
   }
 
-  Widget _row(BuildContext context, String label, double value, {String? valueLabel}) {
+  Widget _row(
+    BuildContext context,
+    String label,
+    double value, {
+    String? valueLabel,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(

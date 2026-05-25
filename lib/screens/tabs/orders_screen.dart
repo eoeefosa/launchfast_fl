@@ -127,7 +127,11 @@ class _OrdersAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
-          child: Icon(CupertinoIcons.clock, size: 22.sp, color: mutedColor),
+          child: Icon(
+            CupertinoIcons.clock,
+            size: 20.sp,
+            color: mutedColor,
+          ), // smaller
           onPressed: () =>
               import_go_router.GoRouter.of(context).push('/orders/history'),
         ),
@@ -146,7 +150,7 @@ class _OrdersAppBar extends StatelessWidget implements PreferredSizeWidget {
         'My Orders',
         style: TextStyle(
           fontWeight: FontWeight.w900,
-          fontSize: 24.sp,
+          fontSize: 22.sp, // slightly smaller
           letterSpacing: -1,
           color: textColor,
         ),
@@ -155,7 +159,11 @@ class _OrdersAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           onPressed: () =>
               import_go_router.GoRouter.of(context).push('/orders/history'),
-          icon: Icon(Icons.history_rounded, color: textColor),
+          icon: Icon(
+            Icons.history_rounded,
+            size: 22.sp,
+            color: textColor,
+          ), // smaller
           tooltip: 'Order History',
         ),
         SizedBox(width: 8.w),
@@ -184,12 +192,10 @@ class _OrdersBody extends StatelessWidget {
   final bool isIOS;
 
   List<Widget> _getChildren(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
     return [
       if (hasActiveOrder) ...[
         const _SectionLabel('Active Delivery'),
-        SizedBox(height: 16.h),
+        SizedBox(height: 12.h), // reduced
         GestureDetector(
           onTap: () {
             import_go_router.GoRouter.of(
@@ -198,15 +204,15 @@ class _OrdersBody extends StatelessWidget {
           },
           child: ActiveOrderTracker(order: activeOrder),
         ),
-        SizedBox(height: 40.h),
+        SizedBox(height: 32.h), // reduced
       ],
       if (orders.isEmpty)
         const _EmptyState()
       else ...[
         const _SectionLabel("Today's Orders", animationDelay: 200),
-        SizedBox(height: 16.h),
+        SizedBox(height: 12.h), // reduced
         ...orders.map((o) => OrderHistoryCard(order: o)),
-        SizedBox(height: 40.h),
+        SizedBox(height: 32.h), // reduced
       ],
     ];
   }
@@ -241,7 +247,10 @@ class _IOSScrollView extends StatelessWidget {
       slivers: [
         CupertinoSliverRefreshControl(onRefresh: orderProvider.refreshOrders),
         SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+          padding: EdgeInsets.symmetric(
+            horizontal: 20.w,
+            vertical: 20.h,
+          ), // less vertical
           sliver: SliverList(delegate: SliverChildListDelegate(children)),
         ),
       ],
@@ -263,7 +272,10 @@ class _AndroidScrollView extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: orderProvider.refreshOrders,
       child: ListView(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: 20.w,
+          vertical: 20.h,
+        ), // less vertical
         children: children,
       ),
     );
@@ -284,7 +296,7 @@ class _SectionLabel extends StatelessWidget {
     return Text(
           text,
           style: TextStyle(
-            fontSize: 18.sp,
+            fontSize: 16.sp, // slightly smaller
             fontWeight: FontWeight.w900,
             letterSpacing: -0.5,
             color: textColor,
@@ -313,25 +325,25 @@ class _EmptyState extends StatelessWidget {
     return Center(
       child: Column(
         children: [
-          SizedBox(height: 80.h),
+          SizedBox(height: 60.h), // reduced
           Icon(
             Icons.receipt_long_rounded,
-            size: 80.sp,
+            size: 64.sp, // reduced
             color: surfaceContainer,
           ),
-          SizedBox(height: 24.h),
+          SizedBox(height: 20.h), // reduced
           Text(
             'No orders yet',
             style: TextStyle(
-              fontSize: 20.sp,
+              fontSize: 18.sp, // slightly smaller
               fontWeight: FontWeight.w800,
               color: textColor,
             ),
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: 6.h), // reduced
           Text(
             'When you place an order, it will appear here.',
-            style: TextStyle(color: mutedColor, fontSize: 14.sp),
+            style: TextStyle(color: mutedColor, fontSize: 13.sp), // smaller
           ),
         ],
       ),
@@ -344,33 +356,33 @@ class _GuestBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppColors.darkPrimary : AppColors.primary;
-    final surfaceColor = isDark
-        ? AppColors.darkSurface
-        : AppColors.lightBackground;
-    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
 
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
-      padding: EdgeInsets.all(16.r),
+      margin: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0), // tighter
+      padding: EdgeInsets.all(12.r), // reduced
       decoration: BoxDecoration(
         color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.08),
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(14.r), // slightly smaller
         border: Border.all(
           color: primaryColor.withValues(alpha: isDark ? 0.25 : 0.2),
         ),
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline_rounded, color: primaryColor, size: 20.sp),
-          SizedBox(width: 12.w),
+          Icon(
+            Icons.info_outline_rounded,
+            color: primaryColor,
+            size: 18.sp,
+          ), // smaller
+          SizedBox(width: 10.w),
           Expanded(
             child: Text(
               'Sign in to sync your orders across all your devices.',
               style: TextStyle(
                 color: primaryColor,
                 fontWeight: FontWeight.w600,
-                fontSize: 13.sp,
+                fontSize: 12.sp, // smaller
               ),
             ),
           ),

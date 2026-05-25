@@ -48,16 +48,17 @@ class DashboardTopSellingItems extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => StoreTopSellingScreen(
-                        items: items,
-                        orders: orders,
-                      ),
+                      builder: (_) =>
+                          StoreTopSellingScreen(items: items, orders: orders),
                     ),
                   );
                 },
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 0,
+                  ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -81,11 +82,18 @@ class DashboardTopSellingItems extends StatelessWidget {
               return ListTile(
                 leading: CircleAvatar(
                   backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  child: const Icon(Icons.trending_up, color: AppColors.primary, size: 20),
+                  child: const Icon(
+                    Icons.trending_up,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
                 title: Text(
                   entry.key,
-                  style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 trailing: Text(
                   '${entry.value} sold',

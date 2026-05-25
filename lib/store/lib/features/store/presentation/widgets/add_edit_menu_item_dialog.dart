@@ -41,7 +41,9 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     final item = widget.item;
     _nameCtrl = TextEditingController(text: item?.name ?? '');
     _descCtrl = TextEditingController(text: item?.description ?? '');
-    _priceCtrl = TextEditingController(text: item != null ? '${item.price}' : '');
+    _priceCtrl = TextEditingController(
+      text: item != null ? '${item.price}' : '',
+    );
     _selectedImageStr = item?.image;
     _selectedCat = item?.category ?? 'Rice & Pasta';
     _isReady = item?.isReady ?? true;
@@ -49,16 +51,24 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     _isFreeWithSwallow = item?.isFreeWithSwallow ?? false;
     _requiresSoupSelection = item?.requiresSoupSelection ?? false;
     if (item?.sizes != null) {
-      _sizes = item!.sizes!.map((e) => {
-        'name': TextEditingController(text: e.name),
-        'price': TextEditingController(text: e.price.toString()),
-      }).toList();
+      _sizes = item!.sizes!
+          .map(
+            (e) => {
+              'name': TextEditingController(text: e.name),
+              'price': TextEditingController(text: e.price.toString()),
+            },
+          )
+          .toList();
     }
     if (item?.meatOptions != null) {
-      _meatOptions = item!.meatOptions!.map((e) => {
-        'name': TextEditingController(text: e.name),
-        'price': TextEditingController(text: e.price.toString()),
-      }).toList();
+      _meatOptions = item!.meatOptions!
+          .map(
+            (e) => {
+              'name': TextEditingController(text: e.name),
+              'price': TextEditingController(text: e.price.toString()),
+            },
+          )
+          .toList();
     }
   }
 
@@ -67,9 +77,15 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     _nameCtrl.dispose();
     _descCtrl.dispose();
     _priceCtrl.dispose();
-    
-    for (var s in _sizes) { s['name']?.dispose(); s['price']?.dispose(); }
-    for (var m in _meatOptions) { m['name']?.dispose(); m['price']?.dispose(); }
+
+    for (var s in _sizes) {
+      s['name']?.dispose();
+      s['price']?.dispose();
+    }
+    for (var m in _meatOptions) {
+      m['name']?.dispose();
+      m['price']?.dispose();
+    }
 
     super.dispose();
   }
@@ -78,38 +94,74 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     final name = _nameCtrl.text.trim();
     final desc = _descCtrl.text.trim();
     final price = double.tryParse(_priceCtrl.text.trim()) ?? 0;
-    
+
     if (name.isEmpty || price <= 0 || _selectedImageStr == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please provide a name, price, and image')),
+        const SnackBar(
+          content: Text('Please provide a name, price, and image'),
+        ),
       );
       return;
     }
 
     final isEdit = widget.item != null;
 
-    final sizesData = _sizes.where((s) => s['name']!.text.isNotEmpty).map((s) => {
-      'name': s['name']!.text.trim(),
-      'price': double.tryParse(s['price']!.text.trim()) ?? 0.0,
-    }).toList();
+    final sizesData = _sizes
+        .where((s) => s['name']!.text.isNotEmpty)
+        .map(
+          (s) => {
+            'name': s['name']!.text.trim(),
+            'price': double.tryParse(s['price']!.text.trim()) ?? 0.0,
+          },
+        )
+        .toList();
 
-    final meatData = _meatOptions.where((m) => m['name']!.text.isNotEmpty).map((m) => {
-      'name': m['name']!.text.trim(),
-      'price': double.tryParse(m['price']!.text.trim()) ?? 0.0,
-    }).toList();
+    final meatData = _meatOptions
+        .where((m) => m['name']!.text.isNotEmpty)
+        .map(
+          (m) => {
+            'name': m['name']!.text.trim(),
+            'price': double.tryParse(m['price']!.text.trim()) ?? 0.0,
+          },
+        )
+        .toList();
 
     String type = 'main';
     List<String> compatibleWith = [];
-    
+
     switch (_selectedCat) {
-      case 'Rice & Pasta': type = 'main'; compatibleWith = ['protein', 'side', 'drink']; break;
-      case 'Swallow & Soup': type = 'swallow'; compatibleWith = ['soup', 'protein', 'drink']; break;
-      case 'Soup': type = 'soup'; compatibleWith = []; break;
-      case 'Drinks': type = 'drink'; compatibleWith = []; break;
-      case 'Side': type = 'side'; compatibleWith = []; break;
-      case 'Protein': type = 'protein'; compatibleWith = []; break;
-      case 'Snacks & Pastries': type = 'snack'; compatibleWith = ['drink']; break;
-      default: type = 'main'; compatibleWith = []; break;
+      case 'Rice & Pasta':
+        type = 'main';
+        compatibleWith = ['protein', 'side', 'drink'];
+        break;
+      case 'Swallow & Soup':
+        type = 'swallow';
+        compatibleWith = ['soup', 'protein', 'drink'];
+        break;
+      case 'Soup':
+        type = 'soup';
+        compatibleWith = [];
+        break;
+      case 'Drinks':
+        type = 'drink';
+        compatibleWith = [];
+        break;
+      case 'Side':
+        type = 'side';
+        compatibleWith = [];
+        break;
+      case 'Protein':
+        type = 'protein';
+        compatibleWith = [];
+        break;
+      case 'Snacks & Pastries':
+        type = 'snack';
+        compatibleWith = ['drink'];
+        break;
+      default:
+        type = 'main';
+        compatibleWith = [];
+        break;
     }
 
     final data = {
@@ -131,7 +183,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     };
 
     Navigator.pop(context);
-    
+
     if (isEdit) {
       await widget.provider.updateMenuItem(widget.item!.id, data);
     } else {
@@ -141,10 +193,14 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isEdit ? 'Item updated successfully' : 'Item added successfully'),
+          content: Text(
+            isEdit ? 'Item updated successfully' : 'Item added successfully',
+          ),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -166,9 +222,9 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to pick image')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to pick image')));
       }
     }
   }
@@ -199,8 +255,14 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: AppColors.primary),
-                title: Text('Choose from Gallery', style: TextStyle(color: textColor)),
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: AppColors.primary,
+                ),
+                title: Text(
+                  'Choose from Gallery',
+                  style: TextStyle(color: textColor),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.gallery);
@@ -258,9 +320,25 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
               const SizedBox(height: 20),
               _buildField('Item Name', _nameCtrl, textColor, muted, border, bg),
               const SizedBox(height: 14),
-              _buildField('Description', _descCtrl, textColor, muted, border, bg, maxLines: 2),
+              _buildField(
+                'Description',
+                _descCtrl,
+                textColor,
+                muted,
+                border,
+                bg,
+                maxLines: 2,
+              ),
               const SizedBox(height: 14),
-              _buildField('Price (₦)', _priceCtrl, textColor, muted, border, bg, keyboardType: TextInputType.number),
+              _buildField(
+                'Price (₦)',
+                _priceCtrl,
+                textColor,
+                muted,
+                border,
+                bg,
+                keyboardType: TextInputType.number,
+              ),
               const SizedBox(height: 14),
               // ── Image Picker ──
               GestureDetector(
@@ -285,9 +363,16 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
                       : Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.camera_alt_outlined, size: 40, color: AppColors.primary),
+                            const Icon(
+                              Icons.camera_alt_outlined,
+                              size: 40,
+                              color: AppColors.primary,
+                            ),
                             const SizedBox(height: 10),
-                            Text('Tap to add photo', style: TextStyle(color: muted, fontSize: 14)),
+                            Text(
+                              'Tap to add photo',
+                              style: TextStyle(color: muted, fontSize: 14),
+                            ),
                           ],
                         ),
                 ),
@@ -297,48 +382,123 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: ['Rice & Pasta', 'Swallow & Soup', 'Soup', 'Drinks', 'Side', 'Protein', 'Snacks & Pastries', 'Others'].map((c) => GestureDetector(
-                  onTap: () => setState(() => _selectedCat = c),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _selectedCat == c ? AppColors.primary : bg,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _selectedCat == c ? AppColors.primary : border,
-                      ),
-                    ),
-                    child: Text(
-                      c,
-                      style: TextStyle(
-                        color: _selectedCat == c ? Colors.white : muted,
-                        fontWeight: _selectedCat == c ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                )).toList(),
+                children:
+                    [
+                          'Rice & Pasta',
+                          'Swallow & Soup',
+                          'Soup',
+                          'Drinks',
+                          'Side',
+                          'Protein',
+                          'Snacks & Pastries',
+                          'Others',
+                        ]
+                        .map(
+                          (c) => GestureDetector(
+                            onTap: () => setState(() => _selectedCat = c),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _selectedCat == c
+                                    ? AppColors.primary
+                                    : bg,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: _selectedCat == c
+                                      ? AppColors.primary
+                                      : border,
+                                ),
+                              ),
+                              child: Text(
+                                c,
+                                style: TextStyle(
+                                  color: _selectedCat == c
+                                      ? Colors.white
+                                      : muted,
+                                  fontWeight: _selectedCat == c
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
               ),
               if (_selectedCat == 'Swallow & Soup') ...[
                 const SizedBox(height: 16),
-                _toggleRow('Requires Soup Selection', _requiresSoupSelection, muted, textColor, border, (v) => setState(() => _requiresSoupSelection = v)),
+                _toggleRow(
+                  'Requires Soup Selection',
+                  _requiresSoupSelection,
+                  muted,
+                  textColor,
+                  border,
+                  (v) => setState(() => _requiresSoupSelection = v),
+                ),
                 const SizedBox(height: 4),
-                Text('Customers must choose a soup when ordering this swallow.', style: TextStyle(color: muted, fontSize: 12)),
+                Text(
+                  'Customers must choose a soup when ordering this swallow.',
+                  style: TextStyle(color: muted, fontSize: 12),
+                ),
               ],
               if (_selectedCat == 'Soup') ...[
                 const SizedBox(height: 16),
-                _toggleRow('Free with Swallow', _isFreeWithSwallow, muted, textColor, border, (v) => setState(() => _isFreeWithSwallow = v)),
+                _toggleRow(
+                  'Free with Swallow',
+                  _isFreeWithSwallow,
+                  muted,
+                  textColor,
+                  border,
+                  (v) => setState(() => _isFreeWithSwallow = v),
+                ),
                 const SizedBox(height: 4),
-                Text('This soup will be ₦0 when paired with a swallow.', style: TextStyle(color: muted, fontSize: 12)),
+                Text(
+                  'This soup will be ₦0 when paired with a swallow.',
+                  style: TextStyle(color: muted, fontSize: 12),
+                ),
               ],
               const SizedBox(height: 20),
-              _buildDynamicList('Meat / Portion Options', 'e.g. Small, Big, Half', _meatOptions, textColor, muted, border, bg),
+              _buildDynamicList(
+                'Meat / Portion Options',
+                'e.g. Small, Big, Half',
+                _meatOptions,
+                textColor,
+                muted,
+                border,
+                bg,
+              ),
               const SizedBox(height: 20),
-              _buildDynamicList('Sizes / Portions (Optional)', 'e.g. 1.5 Portion', _sizes, textColor, muted, border, bg),
+              _buildDynamicList(
+                'Sizes / Portions (Optional)',
+                'e.g. 1.5 Portion',
+                _sizes,
+                textColor,
+                muted,
+                border,
+                bg,
+              ),
               const SizedBox(height: 16),
-              _toggleRow('Available Now', _isReady, muted, textColor, border, (v) => setState(() => _isReady = v)),
+              _toggleRow(
+                'Available Now',
+                _isReady,
+                muted,
+                textColor,
+                border,
+                (v) => setState(() => _isReady = v),
+              ),
               const SizedBox(height: 8),
-              _toggleRow('Mark as Popular', _popular, muted, textColor, border, (v) => setState(() => _popular = v)),
+              _toggleRow(
+                'Mark as Popular',
+                _popular,
+                muted,
+                textColor,
+                border,
+                (v) => setState(() => _popular = v),
+              ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _saveItem,
@@ -346,12 +506,17 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 0,
                 ),
                 child: Text(
                   isEdit ? 'Save Changes' : 'Add Item',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -443,16 +608,25 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title, style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+            ),
             TextButton.icon(
               onPressed: () {
                 setState(() {
-                  list.add({'name': TextEditingController(), 'price': TextEditingController()});
+                  list.add({
+                    'name': TextEditingController(),
+                    'price': TextEditingController(),
+                  });
                 });
               },
               icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
-              label: const Text('Add', style: TextStyle(color: AppColors.primary)),
-            )
+              label: const Text(
+                'Add',
+                style: TextStyle(color: AppColors.primary),
+              ),
+            ),
           ],
         ),
         ...list.asMap().entries.map((entry) {
@@ -464,12 +638,29 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: _buildField('', item['name']!, textColor, muted, border, fillColor, hintText: placeholder),
+                  child: _buildField(
+                    '',
+                    item['name']!,
+                    textColor,
+                    muted,
+                    border,
+                    fillColor,
+                    hintText: placeholder,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   flex: 1,
-                  child: _buildField('', item['price']!, textColor, muted, border, fillColor, keyboardType: TextInputType.number, hintText: 'Price'),
+                  child: _buildField(
+                    '',
+                    item['price']!,
+                    textColor,
+                    muted,
+                    border,
+                    fillColor,
+                    keyboardType: TextInputType.number,
+                    hintText: 'Price',
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
@@ -480,7 +671,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
                       list.removeAt(idx);
                     });
                   },
-                )
+                ),
               ],
             ),
           );
@@ -500,10 +691,7 @@ void showAddEditMenuItemDialog(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => AddEditMenuItemDialog(
-      provider: provider,
-      storeId: storeId,
-      item: item,
-    ),
+    builder: (_) =>
+        AddEditMenuItemDialog(provider: provider, storeId: storeId, item: item),
   );
 }

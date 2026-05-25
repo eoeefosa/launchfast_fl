@@ -1,4 +1,6 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../models/menu_item.dart';
 import '../../../providers/cart_provider.dart';
 
@@ -13,6 +15,7 @@ class ItemDetailFooter extends StatelessWidget {
   final Color accentColor;
   final bool isDark;
   final String? selectedSoupId;
+  final String? selectedSizeId; // NEW – unused but accepted
   final Map<String, int> selectedMeats;
   final Map<String, int> selectedSides;
   final Map<String, int> selectedDrinks;
@@ -30,6 +33,7 @@ class ItemDetailFooter extends StatelessWidget {
     required this.accentColor,
     required this.isDark,
     required this.selectedSoupId,
+    this.selectedSizeId, // optional, defaults to null
     required this.selectedMeats,
     required this.selectedSides,
     required this.selectedDrinks,
@@ -42,24 +46,29 @@ class ItemDetailFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surfaceBg = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    // ── AppColors surfaces ──────────────────────────────────────────
+    final surfaceBg = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
     final borderTop = isDark
-        ? Colors.white.withValues(alpha: 0.06)
-        : Colors.grey[200]!;
+        ? AppColors.darkBorder.withValues(alpha: 0.4)
+        : AppColors.lightBorder.withValues(alpha: 0.6);
 
     return Container(
       padding: EdgeInsets.fromLTRB(
-        20,
-        16,
-        20,
-        MediaQuery.of(context).padding.bottom + 16,
+        20.w,
+        16.h,
+        20.w,
+        MediaQuery.of(context).padding.bottom + 16.h,
       ),
       decoration: BoxDecoration(
         color: surfaceBg,
         border: Border(top: BorderSide(color: borderTop, width: 1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.35)
+                : Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
@@ -76,7 +85,7 @@ class ItemDetailFooter extends StatelessWidget {
             },
             onIncrement: () => onQuantityChanged(quantity + 1),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: 14.w),
           Expanded(
             child: ItemDetailAddToCartButton(
               totalPrice: totalPrice,
@@ -112,12 +121,14 @@ class ItemDetailQuantityStepper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey[100]!;
+    final bg = isDark
+        ? AppColors.darkSurface2.withValues(alpha: 0.5)
+        : AppColors.lightSurface;
 
     return Container(
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14.r),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -129,7 +140,7 @@ class ItemDetailQuantityStepper extends StatelessWidget {
             accentColor: accentColor,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: EdgeInsets.symmetric(horizontal: 4.w),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 180),
               transitionBuilder: (child, anim) =>
@@ -137,9 +148,10 @@ class ItemDetailQuantityStepper extends StatelessWidget {
               child: Text(
                 '$quantity',
                 key: ValueKey(quantity),
-                style: const TextStyle(
-                  fontSize: 17,
+                style: TextStyle(
+                  fontSize: 17.sp,
                   fontWeight: FontWeight.w800,
+                  color: isDark ? AppColors.darkText : AppColors.lightText,
                 ),
               ),
             ),
@@ -172,17 +184,18 @@ class ItemDetailFooterStepButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final disabledColor = Colors.grey.withValues(alpha: 0.35);
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12.r),
           child: Icon(
             icon,
-            size: 20,
-            color: enabled ? accentColor : Colors.grey.withValues(alpha: 0.35),
+            size: 20.sp,
+            color: enabled ? accentColor : disabledColor,
           ),
         ),
       ),
@@ -252,10 +265,10 @@ class _ItemDetailAddToCartButtonState extends State<ItemDetailAddToCartButton>
       child: ScaleTransition(
         scale: _scale,
         child: Container(
-          height: 52,
+          height: 52.h,
           decoration: BoxDecoration(
             color: widget.accentColor,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(14.r),
             boxShadow: [
               BoxShadow(
                 color: widget.accentColor.withValues(alpha: 0.4),
@@ -267,37 +280,34 @@ class _ItemDetailAddToCartButtonState extends State<ItemDetailAddToCartButton>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Padding(
-                padding: EdgeInsets.only(left: 20),
+              Padding(
+                padding: EdgeInsets.only(left: 20.w),
                 child: Text(
                   'Add to Cart',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
-                    fontSize: 15,
+                    fontSize: 15.sp,
                     letterSpacing: 0.2,
                   ),
                 ),
               ),
               Container(
-                margin: const EdgeInsets.only(right: 6),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 7,
-                ),
+                margin: EdgeInsets.only(right: 6.w),
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 7.h),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(10.r),
                 ),
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   child: Text(
                     '₦${widget.totalPrice.toStringAsFixed(2)}',
                     key: ValueKey(widget.totalPrice),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
-                      fontSize: 14,
+                      fontSize: 14.sp,
                     ),
                   ),
                 ),

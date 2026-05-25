@@ -29,7 +29,9 @@ class ResponsiveLayout extends StatelessWidget {
 
     // Premium centered presentation on tablets/iPads
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF3F4F6),
+      backgroundColor: isDark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF3F4F6),
       body: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: maxWidth),
@@ -44,9 +46,7 @@ class ResponsiveLayout extends StatelessWidget {
                 ),
               ],
             ),
-            child: ClipRect(
-              child: child,
-            ),
+            child: ClipRect(child: child),
           ),
         ),
       ),

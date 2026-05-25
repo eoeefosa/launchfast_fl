@@ -9,29 +9,30 @@ class OrderTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = order.status;
-    final isPickup = order.deliveryType.toLowerCase() == 'pickup' || 
-                    order.deliveryType.toLowerCase() == 'store_pickup';
+    final isPickup =
+        order.deliveryType.toLowerCase() == 'pickup' ||
+        order.deliveryType.toLowerCase() == 'store_pickup';
 
     final steps = [
       {'title': 'Confirmed', 'icon': Icons.check_circle_outline_rounded},
       {'title': 'Cooking', 'icon': Icons.outdoor_grill_rounded},
       {
-        'title': isPickup ? 'Ready' : 'On Way', 
-        'icon': isPickup ? Icons.shopping_bag_outlined : Icons.moped_rounded
+        'title': isPickup ? 'Ready' : 'On Way',
+        'icon': isPickup ? Icons.shopping_bag_outlined : Icons.moped_rounded,
       },
       {
-        'title': isPickup ? 'Picked Up' : 'Arrived', 
-        'icon': isPickup ? Icons.check_circle_rounded : Icons.home_rounded
+        'title': isPickup ? 'Picked Up' : 'Arrived',
+        'icon': isPickup ? Icons.check_circle_rounded : Icons.home_rounded,
       },
     ];
 
     int currentStep = 0;
     if (status == OrderStatus.accepted || status == OrderStatus.preparing) {
       currentStep = 1;
-    } else if (status == OrderStatus.readyForPickup || 
-               status == OrderStatus.pickingUp || 
-               status == OrderStatus.onTheWay || 
-               status == OrderStatus.outForDelivery) {
+    } else if (status == OrderStatus.readyForPickup ||
+        status == OrderStatus.pickingUp ||
+        status == OrderStatus.onTheWay ||
+        status == OrderStatus.outForDelivery) {
       currentStep = 2;
     } else if (status == OrderStatus.delivered) {
       currentStep = 3;
@@ -54,12 +55,17 @@ class OrderTimeline extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isCompleted
                           ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          : Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest
+                                .withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                       boxShadow: isCurrent
                           ? [
                               BoxShadow(
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.2),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -70,7 +76,9 @@ class OrderTimeline extends StatelessWidget {
                       steps[index]['icon'] as IconData,
                       color: isCompleted
                           ? Theme.of(context).colorScheme.surface
-                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                          : Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.4),
                       size: 22,
                     ),
                   ),
@@ -84,7 +92,9 @@ class OrderTimeline extends StatelessWidget {
                           : FontWeight.w600,
                       color: isCompleted
                           ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                          : Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ],

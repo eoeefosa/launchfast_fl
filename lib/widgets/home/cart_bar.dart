@@ -28,9 +28,6 @@ class CartBar extends StatelessWidget {
         ? AppColors.darkSurface
         : AppColors.lightBackground;
     final textColor = isDark ? AppColors.darkText : AppColors.lightText;
-    final mutedColor = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightMuted;
     final borderColor = isDark
         ? AppColors.darkBorder.withValues(alpha: 0.4)
         : AppColors.lightBorder.withValues(alpha: 0.5);

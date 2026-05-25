@@ -91,9 +91,7 @@ class _BrowseButton extends StatelessWidget {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 0,
       ),
       child: const Text(

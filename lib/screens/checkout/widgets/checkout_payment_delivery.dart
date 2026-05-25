@@ -1,4 +1,6 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/cart_provider.dart';
 import '../checkout_screen.dart';
@@ -25,24 +27,26 @@ class DeliveryOptions extends StatelessWidget {
           (m) => '${m[1]},',
         );
 
-    return Column(
+    return Row(
       children: [
-        OptionTile(
-          title: 'Priority Delivery',
-          subtitle: 'Fast delivery to your location',
-          trailingText: '₦$priorityFee',
-          icon: Icons.flash_on_rounded,
-          active: selected == DeliveryType.priority,
-          onTap: () => onChanged(DeliveryType.priority),
+        Expanded(
+          child: OptionTile(
+            title: 'Priority',
+            subtitle: '₦$priorityFee',
+            icon: Icons.flash_on_rounded,
+            active: selected == DeliveryType.priority,
+            onTap: () => onChanged(DeliveryType.priority),
+          ),
         ),
-        const SizedBox(height: 10),
-        OptionTile(
-          title: 'Store Pickup',
-          subtitle: 'Pick up your order yourself',
-          trailingText: 'FREE',
-          icon: Icons.storefront_rounded,
-          active: selected == DeliveryType.pickup,
-          onTap: () => onChanged(DeliveryType.pickup),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: OptionTile(
+            title: 'Pickup',
+            subtitle: 'FREE',
+            icon: Icons.storefront_rounded,
+            active: selected == DeliveryType.pickup,
+            onTap: () => onChanged(DeliveryType.pickup),
+          ),
         ),
       ],
     );
@@ -72,25 +76,34 @@ class PaymentOptions extends StatelessWidget {
     final walletSelected = selected == CheckoutPaymentMethod.wallet;
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        OptionTile(
-          title: 'Wallet',
-          subtitle: 'Balance: ₦${balance.toStringAsFixed(0)}',
-          icon: Icons.account_balance_wallet_rounded,
-          active: walletSelected,
-          error: walletSelected && insufficient,
-          onTap: () => onChanged(CheckoutPaymentMethod.wallet),
-        ),
-        const SizedBox(height: 10),
-        OptionTile(
-          title: 'Paystack',
-          subtitle: 'Card • Transfer • USSD',
-          icon: Icons.credit_card_rounded,
-          active: selected == CheckoutPaymentMethod.paystack,
-          onTap: () => onChanged(CheckoutPaymentMethod.paystack),
+        Row(
+          children: [
+            Expanded(
+              child: OptionTile(
+                title: 'Wallet',
+                subtitle: '₦${balance.toStringAsFixed(0)}',
+                icon: Icons.account_balance_wallet_rounded,
+                active: walletSelected,
+                error: walletSelected && insufficient,
+                onTap: () => onChanged(CheckoutPaymentMethod.wallet),
+              ),
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: OptionTile(
+                title: 'Paystack',
+                subtitle: 'Card • Transfer',
+                icon: Icons.credit_card_rounded,
+                active: selected == CheckoutPaymentMethod.paystack,
+                onTap: () => onChanged(CheckoutPaymentMethod.paystack),
+              ),
+            ),
+          ],
         ),
         if (walletSelected && insufficient) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: 12.h),
           InsufficientBanner(onFund: onFundWallet),
         ],
       ],
@@ -105,28 +118,48 @@ class InsufficientBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bannerBg = isDark
+        ? Colors.red.shade700.withValues(alpha: 0.15)
+        : Colors.red.withValues(alpha: 0.08);
+    final borderColor = isDark
+        ? Colors.red.shade700.withValues(alpha: 0.25)
+        : Colors.red.withValues(alpha: 0.2);
+    final textColor = isDark ? Colors.red.shade200 : Colors.red.shade700;
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+        color: bannerBg,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: borderColor),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(14.r),
         child: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.red),
-            const SizedBox(width: 12),
+            Icon(Icons.warning_amber_rounded, color: textColor, size: 20.sp),
+            SizedBox(width: 12.w),
             Expanded(
               child: Text(
-                'Insufficient wallet balance for this order.',
+                'Insufficient wallet balance.',
                 style: TextStyle(
-                  color: Colors.red.shade700,
+                  color: textColor,
                   fontWeight: FontWeight.w600,
+                  fontSize: 13.sp,
                 ),
               ),
             ),
-            TextButton(onPressed: onFund, child: const Text('Fund')),
+            TextButton(
+              onPressed: onFund,
+              child: Text(
+                'Fund',
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13.sp,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -156,79 +189,99 @@ class OptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final primary = error ? Colors.red : scheme.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = error
+        ? Colors.red
+        : (isDark ? AppColors.darkPrimary : AppColors.primary);
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final surfaceContainerLow = isDark
+        ? AppColors.darkSurface2
+        : AppColors.lightSurface;
+    final onSurfaceColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final outlineVariant = isDark
+        ? AppColors.darkBorder.withValues(alpha: 0.4)
+        : AppColors.lightBorder.withValues(alpha: 0.6);
+    final subtitleColor = error
+        ? Colors.red
+        : (isDark ? AppColors.darkTextSecondary : AppColors.lightMuted)
+              .withValues(alpha: 0.6);
 
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        // 👇 tighter padding
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14.r), // slightly smaller
           border: Border.all(
-            color: active ? primary : scheme.outlineVariant,
-            width: active ? 1.5 : 1,
+            color: active ? primary : outlineVariant,
+            width: active ? 1.8 : 1,
           ),
           color: active
-              ? primary.withValues(alpha: 0.06)
-              : scheme.surfaceContainerLow,
+              ? primary.withValues(alpha: isDark ? 0.12 : 0.06)
+              : surfaceContainerLow,
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 220),
-              height: 42,
-              width: 42,
+              // 👇 smaller icon box
+              height: 24.h,
+              width: 24.w,
               decoration: BoxDecoration(
-                color: active ? primary : Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                color: active
+                    ? primary
+                    : (isDark ? surfaceColor : Colors.white),
+                borderRadius: BorderRadius.circular(10.r),
                 border: active
                     ? null
-                    : Border.all(color: Colors.grey.shade200),
+                    : Border.all(
+                        color: isDark
+                            ? AppColors.darkBorder.withValues(alpha: 0.2)
+                            : Colors.grey.shade200,
+                      ),
               ),
               child: Icon(
                 icon,
-                color: active ? Colors.white : scheme.onSurface,
-                size: 22,
+                color: active ? Colors.white : onSurfaceColor,
+                size: 14.sp, // smaller icon
               ),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: error
-                          ? Colors.red
-                          : scheme.onSurface.withValues(alpha: 0.6),
-                      fontSize: 12,
-                      fontWeight:
-                          error ? FontWeight.w600 : FontWeight.w500,
-                    ),
-                  ),
-                ],
+            SizedBox(height: 6.h), // less vertical space
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 12.sp, // slightly smaller
+                color: onSurfaceColor,
               ),
+              textAlign: TextAlign.center,
             ),
-            if (trailingText != null)
+            SizedBox(height: 2.h),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: subtitleColor,
+                fontSize: 10.sp, // legible but compact
+                fontWeight: error ? FontWeight.w600 : FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (trailingText != null) ...[
+              SizedBox(height: 4.h),
               Text(
                 trailingText!,
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
-                  fontSize: 14,
-                  color: active ? primary : scheme.onSurface,
+                  fontSize: 12.sp,
+                  color: active ? primary : onSurfaceColor,
                 ),
               ),
+            ],
           ],
         ),
       ),

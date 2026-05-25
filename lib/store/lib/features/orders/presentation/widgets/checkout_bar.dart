@@ -114,9 +114,7 @@ class _CheckoutButton extends StatelessWidget {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         minimumSize: const Size(double.infinity, 56),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 8,
         shadowColor: AppColors.primary.withValues(alpha: 0.4),
       ),

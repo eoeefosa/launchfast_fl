@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:get_it/get_it.dart';
 import 'package:campuschow/providers/order_provider.dart';
 import 'package:campuschow/services/ably_service.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class MockAdapter implements HttpClientAdapter {
   late Future<ResponseBody> Function(RequestOptions options) handler;
@@ -97,7 +98,7 @@ class MockAblyService implements AblyService {
   void removeSubscriptionKey(String key) {}
   @override
   set onPushActivationFailed(
-    void Function(Object error)? _onPushActivationFailed,
+    void Function(Object error)? onPushActivationFailed,
   ) {}
   @override
   void Function(Object error)? get onPushActivationFailed => null;
@@ -160,11 +161,16 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        ChangeNotifierProvider<OrderProvider>(
-          create: (_) => OrderProvider(),
-          child: MaterialApp(
-            home: Scaffold(
-              body: PriceAdjustmentPanel(order: mockOrder, onUpdated: () {}),
+        ScreenUtilInit(
+          designSize: const Size(390, 844),
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (context, child) => ChangeNotifierProvider<OrderProvider>(
+            create: (_) => OrderProvider(),
+            child: MaterialApp(
+              home: Scaffold(
+                body: PriceAdjustmentPanel(order: mockOrder, onUpdated: () {}),
+              ),
             ),
           ),
         ),
@@ -216,15 +222,20 @@ void main() {
         };
 
         await tester.pumpWidget(
-          ChangeNotifierProvider<OrderProvider>(
-            create: (_) => OrderProvider(),
-            child: MaterialApp(
-              home: Scaffold(
-                body: PriceAdjustmentPanel(
-                  order: mockOrder,
-                  onUpdated: () {
-                    onUpdatedCalled = true;
-                  },
+          ScreenUtilInit(
+            designSize: const Size(390, 844),
+            minTextAdapt: true,
+            splitScreenMode: true,
+            builder: (context, child) => ChangeNotifierProvider<OrderProvider>(
+              create: (_) => OrderProvider(),
+              child: MaterialApp(
+                home: Scaffold(
+                  body: PriceAdjustmentPanel(
+                    order: mockOrder,
+                    onUpdated: () {
+                      onUpdatedCalled = true;
+                    },
+                  ),
                 ),
               ),
             ),
@@ -281,15 +292,20 @@ void main() {
         };
 
         await tester.pumpWidget(
-          ChangeNotifierProvider<OrderProvider>(
-            create: (_) => OrderProvider(),
-            child: MaterialApp(
-              home: Scaffold(
-                body: PriceAdjustmentPanel(
-                  order: mockOrder,
-                  onUpdated: () {
-                    onUpdatedCalled = true;
-                  },
+          ScreenUtilInit(
+            designSize: const Size(390, 844),
+            minTextAdapt: true,
+            splitScreenMode: true,
+            builder: (context, child) => ChangeNotifierProvider<OrderProvider>(
+              create: (_) => OrderProvider(),
+              child: MaterialApp(
+                home: Scaffold(
+                  body: PriceAdjustmentPanel(
+                    order: mockOrder,
+                    onUpdated: () {
+                      onUpdatedCalled = true;
+                    },
+                  ),
                 ),
               ),
             ),

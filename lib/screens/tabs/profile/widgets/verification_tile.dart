@@ -31,9 +31,7 @@ class VerificationTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: color.withValues(alpha: 0.1),
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.1)),
         ),
         child: Text(
           verified ? 'VERIFIED' : 'PENDING',

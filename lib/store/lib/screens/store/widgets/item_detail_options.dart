@@ -333,7 +333,11 @@ class RadioDot extends StatelessWidget {
   final bool isSelected;
   final Color accentColor;
 
-  const RadioDot({super.key, required this.isSelected, required this.accentColor});
+  const RadioDot({
+    super.key,
+    required this.isSelected,
+    required this.accentColor,
+  });
 
   @override
   Widget build(BuildContext context) {

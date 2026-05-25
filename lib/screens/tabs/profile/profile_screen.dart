@@ -2,13 +2,13 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:campuschow/screens/tabs/profile/widgets/logout_button.dart';
-import 'package:campuschow/screens/tabs/profile/widgets/theme_switcher.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../../constants/app_colors.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../widgets/home/location_selector.dart';
 
@@ -18,7 +18,8 @@ import 'widgets/wallet_card.dart';
 import 'widgets/settings_tile.dart';
 import 'widgets/verification_tile.dart';
 import 'widgets/delete_account_button.dart';
-
+import 'widgets/logout_button.dart';
+import 'widgets/theme_switcher.dart';
 import 'widgets/unauthenticated_view.dart';
 import 'sheets/verification_sheet.dart';
 
@@ -32,29 +33,38 @@ class ProfileScreen extends StatelessWidget {
 
     if (user == null) return const UnauthenticatedView();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isIOS = Platform.isIOS;
 
+    // ── AppColors scaffold & app bar ──────────────────────────────────────
+    final scaffoldBg = isDark
+        ? AppColors.darkScaffold
+        : AppColors.lightScaffold;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        surfaceTintColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: surfaceColor,
+        surfaceTintColor: surfaceColor,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'Profile',
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            fontSize: 28,
+            fontSize: 22.sp, // tightened from 28
             letterSpacing: -1,
+            color: textColor,
           ),
         ),
       ),
       body: RefreshIndicator.adaptive(
         onRefresh: () async {
-          await Future.wait([
-            auth.refreshUser(),
-          ]);
+          await Future.wait([auth.refreshUser()]);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -67,7 +77,9 @@ class ProfileScreen extends StatelessWidget {
 
               const SectionHeader(title: 'Activity'),
               ProfileSettingsTile(
-                icon: isIOS ? CupertinoIcons.list_bullet_indent : Icons.history_rounded,
+                icon: isIOS
+                    ? CupertinoIcons.list_bullet_indent
+                    : Icons.history_rounded,
                 title: 'Transaction History',
                 subtitle: 'View your deposits and spending',
                 onTap: () => context.push('/profile/transactions'),
@@ -102,11 +114,11 @@ class ProfileScreen extends StatelessWidget {
               ),
 
               const SectionHeader(title: 'Preferences'),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: LocationSelector(),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                child: const LocationSelector(),
               ),
-              ThemeSwitcher(),
+              const ThemeSwitcher(),
 
               const SectionHeader(title: 'Support & Help'),
               ProfileSettingsTile(
@@ -115,23 +127,21 @@ class ProfileScreen extends StatelessWidget {
                     : Icons.support_agent,
                 title: 'Contact Support',
                 subtitle: 'Chat with us on WhatsApp',
-                onTap: () {
-                  _launchWhatsApp();
-                },
+                onTap: () => _launchWhatsApp(),
               ),
               ProfileSettingsTile(
                 icon: isIOS ? CupertinoIcons.info_circle : Icons.info_outline,
                 title: 'About CampusChow',
                 onTap: () {
-                  // Show about dialog
+                  // Show about dialog – can be implemented later
                 },
               ),
 
-              const SizedBox(height: 32),
+              SizedBox(height: 28.h),
               LogoutButton(auth: auth),
-              const SizedBox(height: 8),
+              SizedBox(height: 6.h),
               Center(child: DeleteAccountButton(auth: auth)),
-              const SizedBox(height: 200),
+              SizedBox(height: 200.h),
             ],
           ),
         ),
@@ -166,15 +176,19 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 6.h), // tightened
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 10.sp, // was 11
           fontWeight: FontWeight.w900,
-          color: scheme.onSurface.withValues(alpha: 0.4),
+          color: mutedColor.withValues(alpha: 0.6),
           letterSpacing: 1.5,
         ),
       ),

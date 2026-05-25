@@ -35,247 +35,279 @@ class CartItemTile extends StatelessWidget {
 
     // Find current readiness from provider as model might be stale
     final isReady = storeProvider.menuItems
-        .firstWhere((m) => m.id == item.menuItem.id, orElse: () => item.menuItem)
+        .firstWhere(
+          (m) => m.id == item.menuItem.id,
+          orElse: () => item.menuItem,
+        )
         .isReady;
 
-    final isSwallow = item.menuItem.type == 'swallow' ||
+    final isSwallow =
+        item.menuItem.type == 'swallow' ||
         item.menuItem.category == 'Swallow' ||
         item.menuItem.requiresSoupSelection;
-    final lacksSoup = isSwallow && (item.selectedSoup == null || item.selectedSoup!['id'] == null);
+    final lacksSoup =
+        isSwallow &&
+        (item.selectedSoup == null || item.selectedSoup!['id'] == null);
 
     return Dismissible(
-      key: Key('dismiss_${item.id}'),
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) {
-        cart.removeItemById(item.id);
-        HapticFeedback.mediumImpact();
-      },
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Colors.red.shade400,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
-        child: const Icon(CupertinoIcons.delete, color: Colors.white, size: 28),
-      ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: !isReady || lacksSoup 
-              ? Border.all(color: Colors.red.withValues(alpha: 0.5), width: 2) 
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+          key: Key('dismiss_${item.id}'),
+          direction: DismissDirection.endToStart,
+          onDismissed: (_) {
+            cart.removeItemById(item.id);
+            HapticFeedback.mediumImpact();
+          },
+          background: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.red.shade400,
+              borderRadius: BorderRadius.circular(24),
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: IntrinsicHeight(
-              child: Row(
-                children: [
-                  // Image Section
-                  Stack(
-                    children: [
-                      Hero(
-                        tag: 'cart_item_${item.id}',
-                        child: UniversalImage(
-                          imageUrl: item.menuItem.image,
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          placeholder: Container(
-                            color: AppColors.lightSurface,
-                            child: const Center(
-                              child: CupertinoActivityIndicator(),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 24),
+            child: const Icon(
+              CupertinoIcons.delete,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: !isReady || lacksSoup
+                  ? Border.all(
+                      color: Colors.red.withValues(alpha: 0.5),
+                      width: 2,
+                    )
+                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: IntrinsicHeight(
+                child: Row(
+                  children: [
+                    // Image Section
+                    Stack(
+                      children: [
+                        Hero(
+                          tag: 'cart_item_${item.id}',
+                          child: UniversalImage(
+                            imageUrl: item.menuItem.image,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            placeholder: Container(
+                              color: AppColors.lightSurface,
+                              child: const Center(
+                                child: CupertinoActivityIndicator(),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      if (!isReady)
-                        Positioned.fill(
-                          child: Container(
-                            color: Colors.black45,
-                            child: const Center(
-                              child: Icon(Icons.warning_amber_rounded, color: Colors.white),
+                        if (!isReady)
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.black45,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
+                      ],
+                    ),
 
-                  const SizedBox(width: 16),
+                    const SizedBox(width: 16),
 
-                  // Details Section
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            item.menuItem.name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.5,
+                    // Details Section
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              item.menuItem.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                              ),
                             ),
-                          ),
-                          if (!isReady)
-                            const Text(
-                              'Item no longer available',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          else if (lacksSoup) ...[
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Soup required',
-                                    style: TextStyle(
-                                      fontSize: 11,
+                            if (!isReady)
+                              const Text(
+                                'Item no longer available',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            else if (lacksSoup) ...[
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.warning_amber_rounded,
                                       color: Colors.red,
-                                      fontWeight: FontWeight.bold,
+                                      size: 14,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Soup required',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ] else if (customizationSummary.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                customizationSummary,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Text(
+                                  '₦${itemTotal.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                ),
+                                if (isReady) ...[
+                                  const SizedBox(width: 12),
+                                  GestureDetector(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      // In a real app, we'd pass the item to edit.
+                                      // For now, we just navigate to the detail page.
+                                      context.push('/item/${item.menuItem.id}');
+                                    },
+                                    child: Text(
+                                      'Edit',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withValues(alpha: 0.7),
+                                        decoration: TextDecoration.underline,
+                                      ),
                                     ),
                                   ),
                                 ],
-                              ),
-                            ),
-                          ] else if (customizationSummary.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              customizationSummary,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              ],
                             ),
                           ],
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Text(
-                                '₦${itemTotal.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                              if (isReady) ...[
-                                const SizedBox(width: 12),
-                                GestureDetector(
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    // In a real app, we'd pass the item to edit.
-                                    // For now, we just navigate to the detail page.
-                                    context.push('/item/${item.menuItem.id}');
-                                  },
+                        ),
+                      ),
+                    ),
+
+                    // Quantity Controller
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
+                              .withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _QuantityButton(
+                              icon: isIOS ? CupertinoIcons.minus : Icons.remove,
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                cart.updateQuantityById(
+                                  item.id,
+                                  item.quantity - 1,
+                                );
+                              },
+                            ),
+                            Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
                                   child: Text(
-                                    'Edit',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
-                                      decoration: TextDecoration.underline,
+                                    '${item.quantity}',
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w900,
                                     ),
                                   ),
+                                )
+                                .animate(target: item.quantity.toDouble())
+                                .scale(
+                                  duration: 200.ms,
+                                  curve: Curves.easeOutBack,
                                 ),
-                              ],
-                            ],
-                          ),
-                        ],
+                            _QuantityButton(
+                              icon: isIOS ? CupertinoIcons.plus : Icons.add,
+                              onPressed: isReady
+                                  ? () {
+                                      HapticFeedback.lightImpact();
+                                      cart.updateQuantityById(
+                                        item.id,
+                                        item.quantity + 1,
+                                      );
+                                    }
+                                  : null,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-
-                  // Quantity Controller
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _QuantityButton(
-                            icon: isIOS ? CupertinoIcons.minus : Icons.remove,
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                              cart.updateQuantityById(
-                                item.id,
-                                item.quantity - 1,
-                              );
-                            },
-                          ),
-                          Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 4,
-                                ),
-                                child: Text(
-                                  '${item.quantity}',
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              )
-                              .animate(target: item.quantity.toDouble())
-                              .scale(
-                                duration: 200.ms,
-                                curve: Curves.easeOutBack,
-                              ),
-                          _QuantityButton(
-                            icon: isIOS ? CupertinoIcons.plus : Icons.add,
-                            onPressed: isReady ? () {
-                              HapticFeedback.lightImpact();
-                              cart.updateQuantityById(
-                                item.id,
-                                item.quantity + 1,
-                              );
-                            } : null,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      )
-      .animate()
-      .fadeIn(duration: 400.ms)
-      .slideX(begin: 0.2, curve: Curves.easeOutCubic);
+        )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .slideX(begin: 0.2, curve: Curves.easeOutCubic);
   }
 }
 

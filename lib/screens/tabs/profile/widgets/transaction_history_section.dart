@@ -9,7 +9,8 @@ class TransactionHistorySection extends StatefulWidget {
   const TransactionHistorySection({super.key});
 
   @override
-  State<TransactionHistorySection> createState() => _TransactionHistorySectionState();
+  State<TransactionHistorySection> createState() =>
+      _TransactionHistorySectionState();
 }
 
 class _TransactionHistorySectionState extends State<TransactionHistorySection> {
@@ -56,12 +57,16 @@ class _TransactionHistorySectionState extends State<TransactionHistorySection> {
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected 
-                        ? Colors.white 
-                        : (isDark ? scheme.onSurface.withValues(alpha: 0.7) : Colors.grey[700]),
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark
+                              ? scheme.onSurface.withValues(alpha: 0.7)
+                              : Colors.grey[700]),
                   ),
                   selectedColor: scheme.primary,
-                  backgroundColor: isDark ? scheme.surfaceContainerHighest : Colors.grey[100],
+                  backgroundColor: isDark
+                      ? scheme.surfaceContainerHighest
+                      : Colors.grey[100],
                   side: BorderSide.none,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -90,16 +95,20 @@ class _TransactionHistorySectionState extends State<TransactionHistorySection> {
               child: Column(
                 children: [
                   Icon(
-                    Icons.history, 
-                    size: 48, 
-                    color: isDark ? scheme.onSurface.withValues(alpha: 0.1) : Colors.grey[300]
+                    Icons.history,
+                    size: 48,
+                    color: isDark
+                        ? scheme.onSurface.withValues(alpha: 0.1)
+                        : Colors.grey[300],
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No transactions yet',
                     style: TextStyle(
-                      color: isDark ? scheme.onSurface.withValues(alpha: 0.4) : Colors.grey[500], 
-                      fontWeight: FontWeight.w500
+                      color: isDark
+                          ? scheme.onSurface.withValues(alpha: 0.4)
+                          : Colors.grey[500],
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -107,7 +116,9 @@ class _TransactionHistorySectionState extends State<TransactionHistorySection> {
             ),
           )
         else
-          ..._getFilteredTransactions(payment.transactions).map((tx) => _TransactionTile(tx: tx)),
+          ..._getFilteredTransactions(
+            payment.transactions,
+          ).map((tx) => _TransactionTile(tx: tx)),
       ],
     );
   }
@@ -115,14 +126,23 @@ class _TransactionHistorySectionState extends State<TransactionHistorySection> {
   List<TransactionItem> _getFilteredTransactions(List<TransactionItem> txs) {
     if (_selectedFilter == 'All') return txs;
     if (_selectedFilter == 'Deposits') {
-      return txs.where((t) => t.purpose.toLowerCase().contains('deposit') || 
-                              t.purpose.toLowerCase().contains('top-up')).toList();
+      return txs
+          .where(
+            (t) =>
+                t.purpose.toLowerCase().contains('deposit') ||
+                t.purpose.toLowerCase().contains('top-up'),
+          )
+          .toList();
     }
     if (_selectedFilter == 'Orders') {
-      return txs.where((t) => t.purpose.toLowerCase().contains('order')).toList();
+      return txs
+          .where((t) => t.purpose.toLowerCase().contains('order'))
+          .toList();
     }
     if (_selectedFilter == 'Cashback') {
-      return txs.where((t) => t.purpose.toLowerCase().contains('cashback')).toList();
+      return txs
+          .where((t) => t.purpose.toLowerCase().contains('cashback'))
+          .toList();
     }
     return txs;
   }
@@ -149,16 +169,20 @@ class _TransactionTile extends StatelessWidget {
         color: scheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? scheme.outlineVariant.withValues(alpha: 0.5) : Colors.grey[100]!,
+          color: isDark
+              ? scheme.outlineVariant.withValues(alpha: 0.5)
+              : Colors.grey[100]!,
           width: 1,
         ),
-        boxShadow: isDark ? null : [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Row(
         children: [
@@ -166,13 +190,18 @@ class _TransactionTile extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: (isCredit ? creditColor : (isDark ? scheme.primary : Colors.blue))
-                  .withValues(alpha: 0.1),
+              color:
+                  (isCredit
+                          ? creditColor
+                          : (isDark ? scheme.primary : Colors.blue))
+                      .withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               isCredit ? Icons.add_rounded : Icons.shopping_bag_outlined,
-              color: isCredit ? creditColor : (isDark ? scheme.primary : Colors.blue),
+              color: isCredit
+                  ? creditColor
+                  : (isDark ? scheme.primary : Colors.blue),
               size: 20,
             ),
           ),
@@ -264,4 +293,3 @@ class _StatusBadge extends StatelessWidget {
     );
   }
 }
-

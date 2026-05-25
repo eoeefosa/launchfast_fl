@@ -32,15 +32,19 @@ class MenuGroupedList extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.search_off_rounded, size: 64.sp, color: mutedIcon),
-              SizedBox(height: 16.h),
+              Icon(
+                Icons.search_off_rounded,
+                size: 56.sp,
+                color: mutedIcon,
+              ), // 64 → 56
+              SizedBox(height: 12.h), // 16 → 12
               Text(
                 emptyMessage ?? 'No items found',
                 style: TextStyle(
                   color: isDark
                       ? AppColors.darkTextSecondary
                       : AppColors.lightMuted,
-                  fontSize: 16.sp,
+                  fontSize: 14.sp, // 16 → 14
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -98,7 +102,10 @@ class _CategoryGroup extends StatelessWidget {
         return Opacity(
           opacity: value.clamp(0.0, 1.0),
           child: Transform.translate(
-            offset: Offset(0, 30.h * (1 - value)),
+            offset: Offset(
+              0,
+              20.h * (1 - value),
+            ), // 30.h → 20.h (less translation)
             child: child,
           ),
         );
@@ -108,35 +115,46 @@ class _CategoryGroup extends StatelessWidget {
         children: [
           // Header
           Padding(
-            padding: EdgeInsets.fromLTRB(20.w, 28.h, 20.w, 12.h),
+            padding: EdgeInsets.fromLTRB(
+              16.w,
+              20.h,
+              16.w,
+              8.h,
+            ), // 20.w → 16.w, 28.h → 20.h, 12.h → 8.h
             child: Row(
               children: [
                 Container(
                   width: 4.w,
-                  height: 18.h,
+                  height: 16.h, // 18.h → 16.h
                   decoration: BoxDecoration(
                     color: accentColor,
                     borderRadius: BorderRadius.circular(2.r),
                   ),
                 ),
-                SizedBox(width: 10.w),
+                SizedBox(width: 8.w), // 10.w → 8.w
                 Text(
                   category.toUpperCase(),
                   style: TextStyle(
-                    fontSize: 13.sp,
+                    fontSize: 12.sp, // 13.sp → 12.sp
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 1.4,
+                    letterSpacing: 1.2, // 1.4 → 1.2
                     color: textColor,
                   ),
                 ),
-                SizedBox(width: 10.w),
+                SizedBox(width: 8.w), // 10.w → 8.w
                 Text(
                   '${items.length} items',
-                  style: TextStyle(fontSize: 12.sp, color: mutedColor),
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: mutedColor,
+                  ), // 12.sp → 11.sp
                 ),
                 const Spacer(),
-                // Optional: a subtle see‑all arrow, remove if not needed
-                Icon(Icons.arrow_forward_ios, size: 14.sp, color: mutedColor),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 12.sp,
+                  color: mutedColor,
+                ), // 14.sp → 12.sp
               ],
             ),
           ),
@@ -144,9 +162,11 @@ class _CategoryGroup extends StatelessWidget {
           ...List.generate(items.length, (i) {
             return Padding(
               padding: EdgeInsets.only(
-                left: 16.w,
-                right: 16.w,
-                bottom: i < items.length - 1 ? 12.h : 20.h,
+                left: 14.w, // 16.w → 14.w
+                right: 14.w,
+                bottom: i < items.length - 1
+                    ? 10.h
+                    : 16.h, // 12.h → 10.h, 20.h → 16.h
               ),
               child: MenuItemCard(
                 item: items[i],

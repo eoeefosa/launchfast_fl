@@ -21,15 +21,18 @@ class FrequentlyAddedSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final storeProvider = context.watch<StoreProvider>();
     final cartProvider = context.read<CartProvider>();
-    
+
     // Filter items from the same store under 1000 Naira that are NOT already in cart
     final cartItemIds = cartProvider.items.map((i) => i.menuItem.id).toSet();
-    final suggestions = storeProvider.menuItems.where((m) => 
-      m.storeId == storeId && 
-      m.price < 1000 && 
-      !cartItemIds.contains(m.id) &&
-      m.category != 'Soup' // Soups are usually handled in item details
-    ).toList();
+    final suggestions = storeProvider.menuItems
+        .where(
+          (m) =>
+              m.storeId == storeId &&
+              m.price < 1000 &&
+              !cartItemIds.contains(m.id) &&
+              m.category != 'Soup', // Soups are usually handled in item details
+        )
+        .toList();
 
     if (suggestions.isEmpty) return const SizedBox.shrink();
 
@@ -60,10 +63,12 @@ class FrequentlyAddedSection extends StatelessWidget {
                 item: item,
                 accentColor: accentColor,
                 onTap: () async {
-                  final hasCompatibleItems = (item.compatibleWith?.isNotEmpty ?? false) ||
+                  final hasCompatibleItems =
+                      (item.compatibleWith?.isNotEmpty ?? false) ||
                       (item.addonIds?.isNotEmpty ?? false) ||
                       item.sizes.isNotEmpty;
-                  final needsSheet = item.type == 'main' ||
+                  final needsSheet =
+                      item.type == 'main' ||
                       item.type == 'swallow' ||
                       hasCompatibleItems;
 
@@ -84,13 +89,18 @@ class FrequentlyAddedSection extends StatelessWidget {
                             content: Text('${item.name} added to cart'),
                             behavior: SnackBarBehavior.floating,
                             duration: const Duration(seconds: 1),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         );
                       }
                     }
                   } else {
-                    final success = cartProvider.addToCart(item: item, quantity: 1);
+                    final success = cartProvider.addToCart(
+                      item: item,
+                      quantity: 1,
+                    );
                     if (success) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -98,7 +108,9 @@ class FrequentlyAddedSection extends StatelessWidget {
                             content: Text('${item.name} added to cart'),
                             behavior: SnackBarBehavior.floating,
                             duration: const Duration(seconds: 1),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         );
                       }
@@ -128,7 +140,7 @@ class _SuggestionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       width: 140,
       decoration: BoxDecoration(
@@ -153,7 +165,9 @@ class _SuggestionCard extends StatelessWidget {
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
                   child: UniversalImage(
                     imageUrl: item.image,
                     width: double.infinity,

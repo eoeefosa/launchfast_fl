@@ -108,17 +108,19 @@ class _SummaryRow extends StatelessWidget {
           ),
         ),
         Text(
-          isDiscount ? '-₦${value.toStringAsFixed(0)}' : '₦${value.toStringAsFixed(0)}',
+          isDiscount
+              ? '-₦${value.toStringAsFixed(0)}'
+              : '₦${value.toStringAsFixed(0)}',
           style: TextStyle(
             fontSize: isTotal ? 20 : 14,
             fontWeight: isTotal ? FontWeight.w900 : FontWeight.w700,
-            color: isDiscount 
+            color: isDiscount
                 ? Colors.green
                 : isTotal
-                  ? AppColors.primary
-                  : Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: dimmed ? 0.6 : 1.0),
+                ? AppColors.primary
+                : Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: dimmed ? 0.6 : 1.0),
           ),
         ),
       ],

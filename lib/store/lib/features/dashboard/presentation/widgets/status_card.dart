@@ -66,7 +66,9 @@ class DashboardStatusCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  isOpen ? 'Accepting orders right now' : 'Not accepting orders',
+                  isOpen
+                      ? 'Accepting orders right now'
+                      : 'Not accepting orders',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 13,

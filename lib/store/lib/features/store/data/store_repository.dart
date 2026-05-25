@@ -1,6 +1,6 @@
 import 'package:campuschow/store/lib/core/network/api_client.dart';
 import 'package:campuschow/store/lib/features/dashboard/data/staff_member_model.dart';
-import 'package:campuschow/store/lib/features/store/data/store_model.dart';
+import 'store_model.dart';
 import 'package:dio/dio.dart';
 
 class StoreRepository {

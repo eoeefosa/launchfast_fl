@@ -23,7 +23,7 @@ class CampusChowSplashScreen extends StatelessWidget {
         children: [
           // Guaranteed background color
           Container(color: scheme.surface),
-          
+
           // Subtle radial glow for depth
           Positioned.fill(
             child: Container(
@@ -47,23 +47,28 @@ class CampusChowSplashScreen extends StatelessWidget {
                 Semantics(
                   label: 'Campus Chow Logo',
                   image: true,
-                  child: Image.asset(
-                    'assets/appicon.png', 
-                    height: 120,
-                    errorBuilder: (context, error, stackTrace) => Icon(
-                      Icons.fastfood_rounded,
-                      size: 120,
-                      color: scheme.primary,
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(duration: 600.ms)
-                      .slideX(begin: -0.2, end: 0, curve: Curves.easeOutCubic)
-                      .shimmer(
-                        delay: 800.ms,
-                        duration: 1500.ms,
-                        color: Colors.white.withValues(alpha: 0.5),
-                      ),
+                  child:
+                      Image.asset(
+                            'assets/appicon.png',
+                            height: 120,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.fastfood_rounded,
+                              size: 120,
+                              color: scheme.primary,
+                            ),
+                          )
+                          .animate()
+                          .fadeIn(duration: 600.ms)
+                          .slideX(
+                            begin: -0.2,
+                            end: 0,
+                            curve: Curves.easeOutCubic,
+                          )
+                          .shimmer(
+                            delay: 800.ms,
+                            duration: 1500.ms,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
                 ),
 
                 const SizedBox(height: 24),
@@ -107,17 +112,14 @@ class CampusChowSplashScreen extends StatelessWidget {
                 const SizedBox(height: 8),
 
                 Text(
-                      'FOOD DELIVERY',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: scheme.onSurface.withValues(alpha: 0.6),
-                        letterSpacing: 6,
-                      ),
-                    )
-                    .animate()
-                    .fadeIn(delay: 1000.ms)
-                    .blurXY(begin: 10, end: 0),
+                  'FOOD DELIVERY',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: scheme.onSurface.withValues(alpha: 0.6),
+                    letterSpacing: 6,
+                  ),
+                ).animate().fadeIn(delay: 1000.ms).blurXY(begin: 10, end: 0),
               ],
             ),
           ),
@@ -127,9 +129,9 @@ class CampusChowSplashScreen extends StatelessWidget {
             bottom: 80,
             left: 0,
             right: 0,
-            child: const CampusChowLoading(size: 32)
-                .animate()
-                .fadeIn(delay: 1000.ms, duration: 800.ms),
+            child: const CampusChowLoading(
+              size: 32,
+            ).animate().fadeIn(delay: 1000.ms, duration: 800.ms),
           ),
         ],
       ),

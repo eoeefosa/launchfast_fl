@@ -78,9 +78,9 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
                   Text(
                     'Edit Profile',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: scheme.onSurface,
-                        ),
+                      fontWeight: FontWeight.w900,
+                      color: scheme.onSurface,
+                    ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),

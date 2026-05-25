@@ -76,7 +76,8 @@ class _ContactConfirmSheetState extends State<ContactConfirmSheet> {
     _phoneCtrl = TextEditingController(text: widget.currentPhone ?? '');
 
     // Start in edit mode when data is missing
-    _editingName = widget.needsName || (widget.currentName ?? '').trim().isEmpty;
+    _editingName =
+        widget.needsName || (widget.currentName ?? '').trim().isEmpty;
     _editingPhone =
         widget.needsPhone || (widget.currentPhone ?? '').trim().isEmpty;
   }
@@ -95,7 +96,9 @@ class _ContactConfirmSheetState extends State<ContactConfirmSheet> {
     bool valid = true;
 
     if (_nameCtrl.text.trim().length < 2) {
-      setState(() => _nameError = 'Enter your full name (at least 2 characters)');
+      setState(
+        () => _nameError = 'Enter your full name (at least 2 characters)',
+      );
       valid = false;
     }
     if (_phoneCtrl.text.trim().length < 7) {
@@ -107,10 +110,7 @@ class _ContactConfirmSheetState extends State<ContactConfirmSheet> {
     HapticFeedback.lightImpact();
     Navigator.pop(
       context,
-      ContactInfo(
-        name: _nameCtrl.text.trim(),
-        phone: _phoneCtrl.text.trim(),
-      ),
+      ContactInfo(name: _nameCtrl.text.trim(), phone: _phoneCtrl.text.trim()),
     );
   }
 
@@ -380,8 +380,7 @@ class _ReadonlyRow extends StatelessWidget {
               ),
             ),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: scheme.onSurface.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(20),

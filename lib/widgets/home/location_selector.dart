@@ -183,7 +183,6 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
     final mutedColor = isDark
         ? AppColors.darkTextSecondary
         : AppColors.lightMuted;
-    final cardBg = isDark ? AppColors.darkSurface2 : AppColors.lightSurface;
     final borderColor = isDark
         ? AppColors.darkBorder.withValues(alpha: 0.3)
         : AppColors.lightBorder.withValues(alpha: 0.5);

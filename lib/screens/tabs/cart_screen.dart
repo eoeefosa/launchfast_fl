@@ -27,7 +27,6 @@ class CartScreen extends StatelessWidget {
     final isIOS = Platform.isIOS;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // ── AppColors surfaces ────────────────────────────────────────────
     final scaffoldBg = isDark
         ? AppColors.darkScaffold
         : AppColors.lightScaffold;
@@ -100,7 +99,7 @@ class CartScreen extends StatelessWidget {
   }
 
   Color _getAccentColor(BuildContext context, CartProvider cart) {
-    if (cart.items.isEmpty) return AppColors.primary; // fallback
+    if (cart.items.isEmpty) return AppColors.primary;
     final stores = context.read<StoreProvider>().stores;
     final store = stores.firstWhere(
       (s) => s.id == cart.currentStoreId,
@@ -127,7 +126,7 @@ class CartScreen extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.w800,
             color: textColor,
-            fontSize: 17.sp,
+            fontSize: 16.sp, // slightly smaller
           ),
         ),
         trailing: CupertinoButton(
@@ -155,7 +154,7 @@ class CartScreen extends StatelessWidget {
         'Your Cart',
         style: TextStyle(
           fontWeight: FontWeight.w900,
-          fontSize: 24.sp,
+          fontSize: 20.sp, // 22 → 20
           color: textColor,
         ),
       ),
@@ -167,6 +166,7 @@ class CartScreen extends StatelessWidget {
             'Clear All',
             style: TextStyle(
               fontWeight: FontWeight.bold,
+              fontSize: 13.sp, // 14 → 13
               color: isDark
                   ? AppColors.darkTextSecondary
                   : AppColors.lightMuted,
@@ -210,29 +210,44 @@ class _CartBody extends StatelessWidget {
     final storeName = store.name;
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 120.h),
+      padding: EdgeInsets.fromLTRB(
+        20.w,
+        10.h,
+        20.w,
+        90.h,
+      ), // top 12 → 10, bottom 100 → 90
       children: [
         if (cart.editingOrderId != null)
           Padding(
-            padding: EdgeInsets.only(bottom: 20.h),
+            padding: EdgeInsets.only(bottom: 14.h), // 16 → 14
             child: const EditingBanner(),
           ),
 
         // Store Header
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          padding: EdgeInsets.symmetric(
+            horizontal: 12.w,
+            vertical: 8.h,
+          ), // 14 → 12, 10 → 8
           decoration: BoxDecoration(
             color: storeBg,
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(12.r), // 14 → 12
           ),
           child: Row(
             children: [
-              Icon(Icons.store_rounded, color: accentColor, size: 20.sp),
-              SizedBox(width: 12.w),
+              Icon(
+                Icons.store_rounded,
+                color: accentColor,
+                size: 16.sp,
+              ), // 18 → 16
+              SizedBox(width: 8.w), // 10 → 8
               Expanded(
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(color: textColor, fontSize: 14.sp),
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 12.sp,
+                    ), // 13 → 12
                     children: [
                       const TextSpan(text: 'Ordering from '),
                       TextSpan(
@@ -247,15 +262,18 @@ class _CartBody extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 5.w,
+                  vertical: 2.h,
+                ), // 6 → 5, 3 → 2
                 decoration: BoxDecoration(
                   color: accentColor.withValues(alpha: isDark ? 0.15 : 0.1),
-                  borderRadius: BorderRadius.circular(8.r),
+                  borderRadius: BorderRadius.circular(5.r), // 6 → 5
                 ),
                 child: Text(
                   store.deliveryTime,
                   style: TextStyle(
-                    fontSize: 11.sp,
+                    fontSize: 9.sp, // 10 → 9
                     fontWeight: FontWeight.w800,
                     color: accentColor,
                   ),
@@ -265,36 +283,33 @@ class _CartBody extends StatelessWidget {
           ),
         ).animate().fadeIn().slideX(begin: -0.1),
 
-        SizedBox(height: 24.h),
-
+        SizedBox(height: 16.h), // 20 → 16
         // Cart Items
         ...cart.items.map(
           (item) => CartItemTile(key: ValueKey(item.id), item: item),
         ),
 
-        SizedBox(height: 24.h),
-
+        SizedBox(height: 16.h), // 20 → 16
         // Frequently Added Carousel
-        FrequentlyAddedSection(
-          storeId: cart.currentStoreId!,
-          accentColor: accentColor,
-        ),
+        if (cart.currentStoreId != null)
+          FrequentlyAddedSection(
+            storeId: cart.currentStoreId!,
+            accentColor: accentColor,
+          ),
 
-        SizedBox(height: 24.h),
-
-        // Order Summary (needs its own AppColors upgrade ideally)
+        SizedBox(height: 16.h), // 20 → 16
+        // Order Summary
         const OrderSummary(),
 
-        SizedBox(height: 40.h),
-
+        SizedBox(height: 28.h), // 32 → 28
         // Promo code section
         GestureDetector(
           onTap: () => _showPromoCodeSheet(context, cart),
           child: Container(
-            padding: EdgeInsets.all(20.r),
+            padding: EdgeInsets.all(14.r), // 16 → 14
             decoration: BoxDecoration(
               color: surfaceColor,
-              borderRadius: BorderRadius.circular(24.r),
+              borderRadius: BorderRadius.circular(18.r), // 20 → 18
               border: Border.all(color: cardBorder),
               boxShadow: [
                 BoxShadow(
@@ -311,16 +326,16 @@ class _CartBody extends StatelessWidget {
                   color: cart.appliedPromoCode != null
                       ? Colors.green
                       : mutedColor.withValues(alpha: 0.6),
-                  size: 20.sp,
+                  size: 16.sp, // 18 → 16
                 ),
-                SizedBox(width: 12.w),
+                SizedBox(width: 8.w), // 10 → 8
                 Text(
                   cart.appliedPromoCode != null
                       ? 'Promo applied: ${cart.appliedPromoCode}'
                       : 'Add promo code',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 14.sp,
+                    fontSize: 12.sp, // 13 → 12
                     color: cart.appliedPromoCode != null
                         ? Colors.green
                         : mutedColor,
@@ -330,12 +345,16 @@ class _CartBody extends StatelessWidget {
                 if (cart.appliedPromoCode != null)
                   GestureDetector(
                     onTap: () => cart.removePromoCode(),
-                    child: Icon(Icons.close, size: 20.sp, color: Colors.red),
+                    child: Icon(
+                      Icons.close,
+                      size: 16.sp,
+                      color: Colors.red,
+                    ), // 18 → 16
                   )
                 else
                   Icon(
                     Icons.arrow_forward_ios_rounded,
-                    size: 14.sp,
+                    size: 11.sp, // 12 → 11
                     color: mutedColor.withValues(alpha: 0.5),
                   ),
               ],
@@ -448,7 +467,7 @@ class _PromoCodeSheetState extends State<_PromoCodeSheet> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(24.r),
+          padding: EdgeInsets.all(18.r), // 20 → 18
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,19 +475,19 @@ class _PromoCodeSheetState extends State<_PromoCodeSheet> {
               Text(
                 'Enter Promo Code',
                 style: TextStyle(
-                  fontSize: 20.sp,
+                  fontSize: 17.sp, // 18 → 17
                   fontWeight: FontWeight.w900,
                   color: textColor,
                 ),
               ),
-              SizedBox(height: 16.h),
+              SizedBox(height: 10.h), // 12 → 10
               TextField(
                 controller: _codeController,
                 textCapitalization: TextCapitalization.characters,
-                style: TextStyle(color: textColor),
+                style: TextStyle(color: textColor, fontSize: 14.sp),
                 decoration: InputDecoration(
                   hintText: 'e.g. DISCOUNT20',
-                  hintStyle: TextStyle(color: mutedColor),
+                  hintStyle: TextStyle(color: mutedColor, fontSize: 12.sp),
                   errorText: _errorMessage,
                   filled: true,
                   fillColor: isDark
@@ -488,10 +507,10 @@ class _PromoCodeSheetState extends State<_PromoCodeSheet> {
                   ),
                 ),
               ),
-              SizedBox(height: 24.h),
+              SizedBox(height: 16.h), // 20 → 16
               SizedBox(
                 width: double.infinity,
-                height: 50.h,
+                height: 44.h, // 46 → 44
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _applyCode,
                   style: ElevatedButton.styleFrom(
@@ -501,14 +520,14 @@ class _PromoCodeSheetState extends State<_PromoCodeSheet> {
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     textStyle: TextStyle(
-                      fontSize: 16.sp,
+                      fontSize: 14.sp, // 15 → 14
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   child: _isLoading
                       ? SizedBox(
-                          height: 20.r,
-                          width: 20.r,
+                          height: 16.r, // 18 → 16
+                          width: 16.r,
                           child: const CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(

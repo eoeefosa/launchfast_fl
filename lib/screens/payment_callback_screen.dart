@@ -65,7 +65,9 @@ class _PaymentCallbackScreenState extends State<PaymentCallbackScreen> {
       _statusMessage = 'Payment successful!';
       _result = PaymentResult(
         success: true,
-        type: widget.type == 'wallet_topup' ? PaymentType.walletTopUp : PaymentType.orderPayment,
+        type: widget.type == 'wallet_topup'
+            ? PaymentType.walletTopUp
+            : PaymentType.orderPayment,
         orderId: widget.orderId,
       );
     });
@@ -75,7 +77,7 @@ class _PaymentCallbackScreenState extends State<PaymentCallbackScreen> {
     // Refresh data immediately and wait for it
     final auth = context.read<AuthProvider>();
     final orders = context.read<OrderProvider>();
-    
+
     try {
       if (widget.type == 'wallet_topup') {
         await auth.refreshUser();
@@ -83,7 +85,9 @@ class _PaymentCallbackScreenState extends State<PaymentCallbackScreen> {
         await orders.refreshOrders();
       }
     } catch (e) {
-      debugPrint('[PaymentCallback] Refresh failed but payment was success: $e');
+      debugPrint(
+        '[PaymentCallback] Refresh failed but payment was success: $e',
+      );
     }
 
     if (mounted) {
@@ -119,7 +123,7 @@ class _PaymentCallbackScreenState extends State<PaymentCallbackScreen> {
         // Refresh data in the background and wait to ensure UI is fresh
         final auth = context.read<AuthProvider>();
         final orders = context.read<OrderProvider>();
-        
+
         if (result.isWalletTopUp) {
           await auth.refreshUser();
         } else {
@@ -183,28 +187,30 @@ class _PaymentCallbackScreenState extends State<PaymentCallbackScreen> {
           child: Center(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 400),
-              transitionBuilder: (child, anim) =>
-                  FadeTransition(opacity: anim, child: ScaleTransition(scale: anim, child: child)),
+              transitionBuilder: (child, anim) => FadeTransition(
+                opacity: anim,
+                child: ScaleTransition(scale: anim, child: child),
+              ),
               child: switch (_state) {
                 _ScreenState.loading => _LoadingView(
-                    key: const ValueKey('loading'),
-                    message: _statusMessage,
-                    scheme: scheme,
-                  ),
+                  key: const ValueKey('loading'),
+                  message: _statusMessage,
+                  scheme: scheme,
+                ),
                 _ScreenState.success => _SuccessView(
-                    key: const ValueKey('success'),
-                    message: _statusMessage,
-                    result: _result,
-                    scheme: scheme,
-                    onNavigate: () => _navigate(_result!),
-                  ),
+                  key: const ValueKey('success'),
+                  message: _statusMessage,
+                  result: _result,
+                  scheme: scheme,
+                  onNavigate: () => _navigate(_result!),
+                ),
                 _ScreenState.failed => _FailedView(
-                    key: const ValueKey('failed'),
-                    message: _errorMessage ?? 'Payment verification failed.',
-                    scheme: scheme,
-                    onRetry: _retry,
-                    onGoHome: () => context.go('/orders'),
-                  ),
+                  key: const ValueKey('failed'),
+                  message: _errorMessage ?? 'Payment verification failed.',
+                  scheme: scheme,
+                  onRetry: _retry,
+                  onGoHome: () => context.go('/orders'),
+                ),
               },
             ),
           ),
@@ -288,7 +294,11 @@ class _SuccessView extends StatelessWidget {
             color: Colors.green.withValues(alpha: 0.12),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 72),
+          child: const Icon(
+            Icons.check_circle_rounded,
+            color: Colors.green,
+            size: 72,
+          ),
         ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack),
         const SizedBox(height: 28),
         Text(
@@ -321,7 +331,11 @@ class _SuccessView extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.account_balance_wallet_rounded, color: scheme.primary, size: 20),
+                Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: scheme.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 10),
                 Text(
                   'New balance: ₦${result!.walletBalance!.toStringAsFixed(0)}',
@@ -342,7 +356,9 @@ class _SuccessView extends StatelessWidget {
           child: FilledButton(
             onPressed: onNavigate,
             style: FilledButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
             child: Text(
               result?.isWalletTopUp == true ? 'View Wallet' : 'View My Orders',
@@ -382,7 +398,11 @@ class _FailedView extends StatelessWidget {
             color: Colors.red.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.error_outline_rounded, color: Colors.red, size: 72),
+          child: const Icon(
+            Icons.error_outline_rounded,
+            color: Colors.red,
+            size: 72,
+          ),
         ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack),
         const SizedBox(height: 28),
         Text(
@@ -422,9 +442,14 @@ class _FailedView extends StatelessWidget {
                 onPressed: onGoHome,
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                child: const Text('My Orders', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: const Text(
+                  'My Orders',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -433,9 +458,14 @@ class _FailedView extends StatelessWidget {
                 onPressed: onRetry,
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                child: const Text('Retry', style: TextStyle(fontWeight: FontWeight.w800)),
+                child: const Text(
+                  'Retry',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
               ),
             ),
           ],

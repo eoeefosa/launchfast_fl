@@ -3,7 +3,7 @@ import 'package:campuschow/store/lib/core/network/api_client.dart';
 import 'package:campuschow/store/lib/core/error/result.dart';
 import 'package:campuschow/store/lib/core/error/failures.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
-import 'package:campuschow/store/lib/features/store/data/store_model.dart';
+import 'store_model.dart';
 
 class MenuRepository {
   Future<Result<List<MenuItem>>> getMenuItems(String storeId) async {

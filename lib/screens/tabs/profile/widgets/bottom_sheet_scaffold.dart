@@ -26,14 +26,16 @@ class BottomSheetScaffold extends StatelessWidget {
         color: backgroundColor ?? scheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         border: Border.all(
-          color: theme.brightness == Brightness.dark 
-              ? scheme.onSurface.withValues(alpha: 0.1) 
+          color: theme.brightness == Brightness.dark
+              ? scheme.onSurface.withValues(alpha: 0.1)
               : Colors.transparent,
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.4 : 0.1),
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.4 : 0.1,
+            ),
             blurRadius: 40,
             offset: const Offset(0, -10),
           ),

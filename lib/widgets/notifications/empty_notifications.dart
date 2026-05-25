@@ -5,7 +5,9 @@ class EmptyNotifications extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutedColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
+    final mutedColor = Theme.of(
+      context,
+    ).colorScheme.onSurface.withValues(alpha: 0.4);
 
     return Center(
       child: Column(
@@ -14,7 +16,9 @@ class EmptyNotifications extends StatelessWidget {
           Icon(
             Icons.notifications_off_outlined,
             size: 80,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
           const SizedBox(height: 16),
           Text(
@@ -29,7 +33,9 @@ class EmptyNotifications extends StatelessWidget {
           Text(
             "We'll notify you when something happens.",
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           ),
         ],

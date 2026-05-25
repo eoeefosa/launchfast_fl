@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../core/providers/base_provider.dart';
 import '../../../core/error/failures.dart';
 import '../../../core/services/ably_service.dart';
-import 'package:campuschow/store/lib/features/store/data/store_model.dart';
+import '../data/store_model.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
 import '../data/menu_repository.dart';
 import '../data/store_repository.dart';

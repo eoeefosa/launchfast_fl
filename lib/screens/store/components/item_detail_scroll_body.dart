@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/menu_item.dart';
 import 'item_detail_hero.dart';
 import 'item_detail_header.dart';
-import 'item_detail_options.dart';
+import 'item_detail_options.dart'; // contains RadioGroup, ItemDetailOptionsSection, etc.
 
 // ─────────────────────────────────────────────
 //  Scrollable body
@@ -28,6 +28,7 @@ class ItemDetailScrollBody extends StatelessWidget {
   final Map<String, int> selectedSides;
   final Map<String, int> selectedDrinks;
   final String? selectedSoupId;
+  final String? selectedSizeId;
   final bool isDark;
 
   final void Function(String id, int count) onMeatChanged;
@@ -35,6 +36,7 @@ class ItemDetailScrollBody extends StatelessWidget {
   final void Function(String id, int count) onSideChanged;
   final void Function(String id, int count) onDrinkChanged;
   final void Function(String id) onSoupSelected;
+  final void Function(String id) onSizeSelected;
 
   const ItemDetailScrollBody({
     super.key,
@@ -55,12 +57,14 @@ class ItemDetailScrollBody extends StatelessWidget {
     required this.selectedSides,
     required this.selectedDrinks,
     required this.selectedSoupId,
+    this.selectedSizeId,
     required this.isDark,
     required this.onMeatChanged,
     required this.onAddonChanged,
     required this.onSideChanged,
     required this.onDrinkChanged,
     required this.onSoupSelected,
+    required this.onSizeSelected,
   });
 
   @override
@@ -86,6 +90,37 @@ class ItemDetailScrollBody extends StatelessWidget {
                       accentColor: accentColor,
                       isDark: isDark,
                     ),
+
+                    // ── Size selection (updated) ──────────────────────────
+                    if (item.sizes.isNotEmpty) ...[
+                      const SizedBox(height: 32),
+                      RadioGroup<String>(
+                        groupValue: selectedSizeId,
+                        onChanged: (val) => onSizeSelected(val!),
+                        child: ItemDetailOptionsSection(
+                          title: 'Select Size',
+                          subtitle: 'Required',
+                          children: item.sizes.map((size) {
+                            return ListTile(
+                              title: Text(size.name),
+                              trailing: Text(
+                                '₦${size.price.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  color: accentColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              leading: Radio<String>(
+                                value: size.id,
+                                activeColor: accentColor,
+                              ),
+                              onTap: () => onSizeSelected(size.id),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+
                     if (availableProteins.isNotEmpty) ...[
                       const SizedBox(height: 32),
                       ItemDetailOptionsSection(
@@ -118,7 +153,8 @@ class ItemDetailScrollBody extends StatelessWidget {
                             .toList(),
                       ),
                     ],
-                    if (item.type == 'swallow' || item.compatibleWith?.contains('soup') == true) ...[
+                    if (item.type == 'swallow' ||
+                        item.compatibleWith?.contains('soup') == true) ...[
                       const SizedBox(height: 32),
                       ItemDetailOptionsSection(
                         title: 'Choose a Soup',

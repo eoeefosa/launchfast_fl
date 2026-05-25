@@ -51,9 +51,15 @@ class OrderReceipt extends StatelessWidget {
                 // Fee rows
                 OrderSummaryRow(label: 'Subtotal', value: order.subtotal),
                 if (order.serviceFee > 0)
-                  OrderSummaryRow(label: 'Service Fee', value: order.serviceFee),
+                  OrderSummaryRow(
+                    label: 'Service Fee',
+                    value: order.serviceFee,
+                  ),
                 if (order.deliveryFee > 0)
-                  OrderSummaryRow(label: 'Delivery Fee', value: order.deliveryFee),
+                  OrderSummaryRow(
+                    label: 'Delivery Fee',
+                    value: order.deliveryFee,
+                  ),
                 if (order.walletDeduction > 0)
                   OrderSummaryRow(
                     label: 'Wallet Applied',
@@ -100,10 +106,7 @@ class OrderSummaryRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 14, color: muted),
-          ),
+          Text(label, style: TextStyle(fontSize: 14, color: muted)),
           Text(
             value < 0
                 ? '-₦${value.abs().toStringAsFixed(0)}'
@@ -161,8 +164,6 @@ class OrderDetailItem extends StatelessWidget {
 
   final CartItem item;
 
-
-
   double _getModifierUnitPrice({
     required String type,
     required String key,
@@ -170,7 +171,9 @@ class OrderDetailItem extends StatelessWidget {
     required double saladPrice,
     required List<MenuItem> allMenuItems,
   }) {
-    final item = allMenuItems.firstWhereOrNull((m) => m.id == key || m.name == key);
+    final item = allMenuItems.firstWhereOrNull(
+      (m) => m.id == key || m.name == key,
+    );
     if (item != null) return item.price;
     switch (type) {
       case 'meat':
@@ -192,47 +195,79 @@ class OrderDetailItem extends StatelessWidget {
 
     // Resolve name
     String displayName = item.menuItem.name;
-    if (displayName.toUpperCase() == 'CHICKEN & TURKEY' || (displayName.toLowerCase().contains('chicken') && displayName.toLowerCase().contains('turkey'))) {
-      final hasTurkey = item.selectedMeats?.keys.any((k) => k.toLowerCase().contains('turkey')) ?? false;
+    if (displayName.toUpperCase() == 'CHICKEN & TURKEY' ||
+        (displayName.toLowerCase().contains('chicken') &&
+            displayName.toLowerCase().contains('turkey'))) {
+      final hasTurkey =
+          item.selectedMeats?.keys.any(
+            (k) => k.toLowerCase().contains('turkey'),
+          ) ??
+          false;
       displayName = hasTurkey ? 'TURKEY' : 'CHICKEN';
     }
 
     // Is it a main item (Rice & Pasta, Swallow & Soup, Swallow, etc.)?
     final cat = item.menuItem.category.toLowerCase();
     final type = item.menuItem.type?.toLowerCase() ?? '';
-    final isMain = type == 'main' || type == 'swallow' || cat.contains('rice') || cat.contains('pasta') || cat.contains('spaghetti') || cat.contains('swallow');
+    final isMain =
+        type == 'main' ||
+        type == 'swallow' ||
+        cat.contains('rice') ||
+        cat.contains('pasta') ||
+        cat.contains('spaghetti') ||
+        cat.contains('swallow');
 
     double basePrice = item.menuItem.price;
     if (item.selectedSizeId != null) {
-      final size = item.menuItem.sizes.firstWhereOrNull((s) => s.id == item.selectedSizeId);
+      final size = item.menuItem.sizes.firstWhereOrNull(
+        (s) => s.id == item.selectedSizeId,
+      );
       if (size != null) {
         basePrice = size.price;
       }
     }
 
     if (isMain) {
-      rows.add(OrderDetailRow(
-        leftText: '$displayName  ${item.quantity} ${item.quantity == 1 ? 'portion' : 'portions'} × ₦${basePrice.toStringAsFixed(0)}',
-        rightText: '₦${(basePrice * item.quantity).toStringAsFixed(0)}',
-      ));
+      rows.add(
+        OrderDetailRow(
+          leftText:
+              '$displayName  ${item.quantity} ${item.quantity == 1 ? 'portion' : 'portions'} × ₦${basePrice.toStringAsFixed(0)}',
+          rightText: '₦${(basePrice * item.quantity).toStringAsFixed(0)}',
+        ),
+      );
     } else {
-      rows.add(OrderDetailRow(
-        leftText: '$displayName ×${item.quantity}',
-        rightText: '₦${(basePrice * item.quantity).toStringAsFixed(0)}',
-      ));
+      rows.add(
+        OrderDetailRow(
+          leftText: '$displayName ×${item.quantity}',
+          rightText: '₦${(basePrice * item.quantity).toStringAsFixed(0)}',
+        ),
+      );
     }
 
     // Now, build modifiers.
-    final hasMeatsDetails = item.selectedMeatsDetails != null && item.selectedMeatsDetails!.isNotEmpty;
-    final hasMeatsMap = item.selectedMeats?.entries.any((e) => e.value > 0) ?? false;
+    final hasMeatsDetails =
+        item.selectedMeatsDetails != null &&
+        item.selectedMeatsDetails!.isNotEmpty;
+    final hasMeatsMap =
+        item.selectedMeats?.entries.any((e) => e.value > 0) ?? false;
 
     void addMeat(String name, double price, int qty) {
-      final unitPrice = price > 0 ? price : _getModifierUnitPrice(type: 'meat', key: name, meatPrices: meatPrices, saladPrice: saladPrice, allMenuItems: allMenuItems);
-      rows.add(OrderDetailRow(
-        leftText: '$name ×$qty',
-        rightText: '₦${(unitPrice * qty).toStringAsFixed(0)}',
-        isModifier: true,
-      ));
+      final unitPrice = price > 0
+          ? price
+          : _getModifierUnitPrice(
+              type: 'meat',
+              key: name,
+              meatPrices: meatPrices,
+              saladPrice: saladPrice,
+              allMenuItems: allMenuItems,
+            );
+      rows.add(
+        OrderDetailRow(
+          leftText: '$name ×$qty',
+          rightText: '₦${(unitPrice * qty).toStringAsFixed(0)}',
+          isModifier: true,
+        ),
+      );
     }
 
     if (hasMeatsDetails) {
@@ -250,21 +285,30 @@ class OrderDetailItem extends StatelessWidget {
           addMeat(name, 0.0, count);
         }
       });
-    } else if (isMain) {
-
-    }
+    } else if (isMain) {}
 
     // Add other modifiers (Sides, Drinks, Addons, Soups)
     void addModifier(String type, String name, double price, int qty) {
-      final unitPrice = price > 0 ? price : _getModifierUnitPrice(type: type, key: name, meatPrices: meatPrices, saladPrice: saladPrice, allMenuItems: allMenuItems);
-      rows.add(OrderDetailRow(
-        leftText: '$name ×$qty',
-        rightText: '₦${(unitPrice * qty).toStringAsFixed(0)}',
-        isModifier: true,
-      ));
+      final unitPrice = price > 0
+          ? price
+          : _getModifierUnitPrice(
+              type: type,
+              key: name,
+              meatPrices: meatPrices,
+              saladPrice: saladPrice,
+              allMenuItems: allMenuItems,
+            );
+      rows.add(
+        OrderDetailRow(
+          leftText: '$name ×$qty',
+          rightText: '₦${(unitPrice * qty).toStringAsFixed(0)}',
+          isModifier: true,
+        ),
+      );
     }
 
-    if (item.selectedSidesDetails != null && item.selectedSidesDetails!.isNotEmpty) {
+    if (item.selectedSidesDetails != null &&
+        item.selectedSidesDetails!.isNotEmpty) {
       for (final dynamic element in item.selectedSidesDetails!) {
         if (element is Map) {
           final name = element['name']?.toString() ?? 'Option';
@@ -279,7 +323,8 @@ class OrderDetailItem extends StatelessWidget {
       });
     }
 
-    if (item.selectedDrinksDetails != null && item.selectedDrinksDetails!.isNotEmpty) {
+    if (item.selectedDrinksDetails != null &&
+        item.selectedDrinksDetails!.isNotEmpty) {
       for (final dynamic element in item.selectedDrinksDetails!) {
         if (element is Map) {
           final name = element['name']?.toString() ?? 'Option';
@@ -294,7 +339,8 @@ class OrderDetailItem extends StatelessWidget {
       });
     }
 
-    if (item.selectedAddonsDetails != null && item.selectedAddonsDetails!.isNotEmpty) {
+    if (item.selectedAddonsDetails != null &&
+        item.selectedAddonsDetails!.isNotEmpty) {
       for (final dynamic element in item.selectedAddonsDetails!) {
         if (element is Map) {
           final name = element['name']?.toString() ?? 'Option';
@@ -312,11 +358,13 @@ class OrderDetailItem extends StatelessWidget {
     if (item.selectedSoup != null) {
       final name = item.selectedSoup!['name']?.toString() ?? 'Soup';
       final price = (item.selectedSoup!['price'] as num?)?.toDouble() ?? 0.0;
-      rows.add(OrderDetailRow(
-        leftText: '$name ×${item.quantity}',
-        rightText: '₦${(price * item.quantity).toStringAsFixed(0)}',
-        isModifier: true,
-      ));
+      rows.add(
+        OrderDetailRow(
+          leftText: '$name ×${item.quantity}',
+          rightText: '₦${(price * item.quantity).toStringAsFixed(0)}',
+          isModifier: true,
+        ),
+      );
     }
 
     return rows;
@@ -346,7 +394,9 @@ class OrderDetailItem extends StatelessWidget {
                           '↳ ',
                           style: TextStyle(
                             fontSize: 14,
-                            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            color: colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.5,
+                            ),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -355,9 +405,13 @@ class OrderDetailItem extends StatelessWidget {
                         child: Text(
                           row.leftText,
                           style: TextStyle(
-                            fontWeight: row.isModifier ? FontWeight.w500 : FontWeight.w800,
+                            fontWeight: row.isModifier
+                                ? FontWeight.w500
+                                : FontWeight.w800,
                             fontSize: row.isModifier ? 13 : 15,
-                            color: row.isModifier ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
+                            color: row.isModifier
+                                ? colorScheme.onSurfaceVariant
+                                : colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -368,9 +422,13 @@ class OrderDetailItem extends StatelessWidget {
                 Text(
                   row.rightText,
                   style: TextStyle(
-                    fontWeight: row.isModifier ? FontWeight.w500 : FontWeight.w800,
+                    fontWeight: row.isModifier
+                        ? FontWeight.w500
+                        : FontWeight.w800,
                     fontSize: row.isModifier ? 13 : 15,
-                    color: row.isModifier ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
+                    color: row.isModifier
+                        ? colorScheme.onSurfaceVariant
+                        : colorScheme.onSurface,
                   ),
                 ),
               ],

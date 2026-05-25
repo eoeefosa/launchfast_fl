@@ -1,4 +1,6 @@
+import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CheckoutSection extends StatelessWidget {
   const CheckoutSection({super.key, required this.title, required this.child});
@@ -8,41 +10,52 @@ class CheckoutSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // ── AppColors adapt ──────────────────────────────────────────────────
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
+    final borderColor = isDark
+        ? AppColors.darkBorder.withValues(alpha: 0.5)
+        : AppColors.lightBorder.withValues(alpha: 0.5);
+    final titleColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightMuted;
+    final shadowColor = isDark
+        ? Colors.black.withValues(alpha: 0.2)
+        : Colors.black.withValues(alpha: 0.04);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 0),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: scheme.outlineVariant.withValues(alpha: 0.5),
-          ),
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(24.r),
+          border: Border.all(color: borderColor),
           boxShadow: [
             BoxShadow(
               blurRadius: 30,
               offset: const Offset(0, 8),
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+              color: shadowColor,
             ),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: EdgeInsets.all(18.r),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 12.sp,
                   letterSpacing: 1,
                   fontWeight: FontWeight.w800,
-                  color: scheme.onSurface.withValues(alpha: 0.5),
+                  color: titleColor,
                 ),
               ),
-              const SizedBox(height: 18),
+              SizedBox(height: 18.h),
               child,
             ],
           ),

@@ -132,9 +132,10 @@ class _NotificationTile extends StatelessWidget {
             case NotificationType.orderUpdate:
               // Try to extract orderId from metadata for direct navigation
               final meta = item.metadata;
-              final orderId = meta?['orderId']?.toString() ??
-                              meta?['order_id']?.toString() ??
-                              meta?['id']?.toString();
+              final orderId =
+                  meta?['orderId']?.toString() ??
+                  meta?['order_id']?.toString() ??
+                  meta?['id']?.toString();
               if (orderId != null) {
                 Navigator.of(context, rootNavigator: true).push(
                   MaterialPageRoute(

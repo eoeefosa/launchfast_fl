@@ -6,11 +6,7 @@ class ItemHeroImage extends StatelessWidget {
   final String imageUrl;
   final Animation<double>? heroScale;
 
-  const ItemHeroImage({
-    super.key,
-    required this.imageUrl,
-    this.heroScale,
-  });
+  const ItemHeroImage({super.key, required this.imageUrl, this.heroScale});
 
   @override
   Widget build(BuildContext context) {
@@ -75,15 +71,11 @@ class ItemHeroImage extends StatelessWidget {
                 Icons.arrow_back_ios_new,
                 () => Navigator.pop(context),
               ),
-              _buildIconButton(
-                context,
-                Icons.favorite_border,
-                () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Added to favorites')),
-                  );
-                },
-              ),
+              _buildIconButton(context, Icons.favorite_border, () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Added to favorites')),
+                );
+              }),
             ],
           ),
         ),
@@ -92,7 +84,10 @@ class ItemHeroImage extends StatelessWidget {
   }
 
   Widget _buildIconButton(
-      BuildContext context, IconData icon, VoidCallback onTap) {
+    BuildContext context,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return Material(
       color: Theme.of(context).cardColor.withValues(alpha: 0.9),
       shape: const CircleBorder(),

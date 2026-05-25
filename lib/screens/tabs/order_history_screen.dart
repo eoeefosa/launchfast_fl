@@ -49,7 +49,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen>
     final surfaceColor = isDark
         ? AppColors.darkSurface
         : AppColors.lightBackground;
-    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
     // Filter past orders (anything not from today)
     final now = DateTime.now();
@@ -129,9 +128,6 @@ class _TopOrders extends StatelessWidget {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = isDark ? AppColors.darkPrimary : AppColors.primary;
-    final mutedColor = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightMuted;
 
     final Map<String, List<Order>> groupedOrders = {};
 

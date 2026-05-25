@@ -1,13 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+
 import '../../../providers/auth_provider.dart';
 
 class StoreHeader extends StatelessWidget {
-  const StoreHeader({super.key, required this.store, required this.scheme});
+  const StoreHeader({
+    super.key,
+    required this.store,
+    required this.surfaceColor,
+    required this.textColor,
+    required this.mutedColor,
+    required this.borderColor,
+    required this.statBgColor,
+  });
 
   final dynamic store;
-  final ColorScheme scheme;
+  final Color surfaceColor;
+  final Color textColor;
+  final Color mutedColor;
+  final Color borderColor;
+  final Color statBgColor;
 
   @override
   Widget build(BuildContext context) {
@@ -15,11 +29,11 @@ class StoreHeader extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        color: surfaceColor,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+        padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 8.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -28,10 +42,11 @@ class StoreHeader extends StatelessWidget {
                 Expanded(
                   child: Text(
                     store.name as String,
-                    style: const TextStyle(
-                      fontSize: 28,
+                    style: TextStyle(
+                      fontSize: 22.sp,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: -1,
+                      letterSpacing: -0.8,
+                      color: textColor,
                     ),
                   ),
                 ),
@@ -41,41 +56,47 @@ class StoreHeader extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 6.h),
             Text(
               store.tagline as String,
               style: TextStyle(
-                fontSize: 16,
-                color: scheme.onSurface.withValues(alpha: 0.6),
+                fontSize: 13.sp,
+                color: mutedColor,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 16.h),
             Row(
               children: [
                 StatBadge(
                   icon: Icons.star_rounded,
                   label: store.rating.toString(),
                   iconColor: Colors.amber,
-                  scheme: scheme,
+                  textColor: textColor,
+                  bgColor: statBgColor,
+                  borderColor: borderColor,
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 8.w),
                 StatBadge(
                   icon: Icons.access_time_filled_rounded,
                   label: store.deliveryTime as String,
                   iconColor: Colors.blue,
-                  scheme: scheme,
+                  textColor: textColor,
+                  bgColor: statBgColor,
+                  borderColor: borderColor,
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 8.w),
                 StatBadge(
                   icon: Icons.delivery_dining_rounded,
                   label: 'Free',
                   iconColor: Colors.green,
-                  scheme: scheme,
+                  textColor: textColor,
+                  bgColor: statBgColor,
+                  borderColor: borderColor,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 10.h),
           ],
         ),
       ),
@@ -111,7 +132,7 @@ class FavouriteButton extends StatelessWidget {
         icon: Icon(
           isFavorite ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
           color: accentColor,
-          size: 24,
+          size: 20.sp,
         ),
         onPressed: !isAuthenticated
             ? null
@@ -129,6 +150,8 @@ class FavouriteButton extends StatelessWidget {
                   }
                 }
               },
+        padding: EdgeInsets.all(8.r),
+        constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.h),
       ),
     );
   }
@@ -140,32 +163,40 @@ class StatBadge extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.iconColor,
-    required this.scheme,
+    required this.textColor,
+    required this.bgColor,
+    required this.borderColor,
   });
 
   final IconData icon;
   final String label;
   final Color iconColor;
-  final ColorScheme scheme;
+  final Color textColor;
+  final Color bgColor;
+  final Color borderColor;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: borderColor.withValues(alpha: 0.3)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: iconColor),
-            const SizedBox(width: 8),
+            Icon(icon, size: 16.sp, color: iconColor),
+            SizedBox(width: 6.w),
             Text(
               label,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w800,
+                color: textColor,
+              ),
             ),
           ],
         ),

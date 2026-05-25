@@ -39,11 +39,7 @@ class OrderSummary extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Divider(height: 1),
           ),
-          _SummaryRow(
-            label: 'Total',
-            value: cart.cartTotal,
-            isTotal: true,
-          ),
+          _SummaryRow(label: 'Total', value: cart.cartTotal, isTotal: true),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1);

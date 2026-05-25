@@ -16,7 +16,17 @@ class StoreMenuScreen extends StatefulWidget {
 class _StoreMenuScreenState extends State<StoreMenuScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'All';
-  final List<String> _categories = ['All', 'Rice & Pasta', 'Swallow & Soup', 'Soup', 'Drinks', 'Side', 'Protein', 'Snacks & Pastries', 'Others'];
+  final List<String> _categories = [
+    'All',
+    'Rice & Pasta',
+    'Swallow & Soup',
+    'Soup',
+    'Drinks',
+    'Side',
+    'Protein',
+    'Snacks & Pastries',
+    'Others',
+  ];
 
   @override
   void initState() {
@@ -51,7 +61,9 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
 
     if (storeId == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
@@ -79,8 +91,12 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: () =>
-                showAddEditMenuItemDialog(context, storeProvider, storeId, null),
+            onPressed: () => showAddEditMenuItemDialog(
+              context,
+              storeProvider,
+              storeId,
+              null,
+            ),
           ),
         ],
       ),

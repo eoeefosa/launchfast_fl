@@ -67,9 +67,7 @@ class UniversalImage extends StatelessWidget {
       width: width,
       height: height,
       color: Colors.grey.withValues(alpha: 0.1),
-      child: const Center(
-        child: CupertinoActivityIndicator(),
-      ),
+      child: const Center(child: CupertinoActivityIndicator()),
     );
   }
 

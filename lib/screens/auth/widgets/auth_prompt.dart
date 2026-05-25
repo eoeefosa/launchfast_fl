@@ -14,7 +14,9 @@ class AuthPrompt extends StatelessWidget {
         Text(
           isLogin ? "Don't have an account? " : 'Already have an account? ',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         GestureDetector(

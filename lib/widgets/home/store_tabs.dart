@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/store.dart';
+import 'package:campuschow/models/store.dart';
 
 class StoreTabs extends StatelessWidget {
   final List<Store> stores;
@@ -26,7 +26,7 @@ class StoreTabs extends StatelessWidget {
         itemBuilder: (context, index) {
           final store = stores[index];
           final isActive = store.id == activeStoreId;
-          final accentColor = store.accentColor;
+          final accentColor = store.color;
 
           return Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -56,9 +56,7 @@ class StoreTabs extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                      color: isActive
-                          ? accentColor
-                          : scheme.onSurfaceVariant,
+                      color: isActive ? accentColor : scheme.onSurfaceVariant,
                     ),
                   ),
                 ),

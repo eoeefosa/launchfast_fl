@@ -10,7 +10,10 @@ class TopUpSheet extends StatefulWidget {
 
   const TopUpSheet({super.key, this.initialAmount = 1000});
 
-  static Future<void> show(BuildContext context, {double initialAmount = 1000}) {
+  static Future<void> show(
+    BuildContext context, {
+    double initialAmount = 1000,
+  }) {
     return showDialog(
       context: context,
       barrierColor: Colors.black54,
@@ -65,10 +68,7 @@ class _TopUpSheetState extends State<TopUpSheet> {
     try {
       final response = await apiService.dio.post(
         '/payments/topup',
-        data: {
-          'amount': amt,
-          'source': 'mobile',
-        },
+        data: {'amount': amt, 'source': 'mobile'},
       );
 
       final paystackData = response.data['data'] as Map<String, dynamic>?;
@@ -113,87 +113,135 @@ class _TopUpSheetState extends State<TopUpSheet> {
     final scheme = Theme.of(context).colorScheme;
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-      ),
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: scheme.onSurface.withValues(alpha: 0.08),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const _TopUpHeader(),
-            const SizedBox(height: 24),
-            _AmountInputField(controller: _amountCtrl, onChanged: (_) => setState(() {})),
-            const SizedBox(height: 16),
-            _QuickAmountChips(
-              selectedAmount: _amountCtrl.text,
-              onAmountSelected: (amt) => setState(() => _amountCtrl.text = amt),
-            ),
-            const SizedBox(height: 12),
-            const _SecurityBadge(),
-            if (_hasValidAmount) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Amount to Deposit', style: TextStyle(fontSize: 12, color: scheme.onSurface.withValues(alpha: 0.7))),
-                        Text('₦${_parsedAmount?.toStringAsFixed(2)}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onSurface)),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Processing Fee (2.5%)', style: TextStyle(fontSize: 12, color: scheme.onSurface.withValues(alpha: 0.7))),
-                        Text('₦${_feeAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onSurface)),
-                      ],
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 6),
-                      child: Divider(),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Total Charge', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: scheme.onSurface)),
-                        Text('₦${_totalCharge.toStringAsFixed(2)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: scheme.primary)),
-                      ],
-                    ),
-                  ],
-                ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: scheme.onSurface.withValues(alpha: 0.08),
               ),
-            ],
-            const SizedBox(height: 24),
-            _DepositButton(
-              isLoading: _isLoading, 
-              onPressed: _deposit,
-              label: _hasValidAmount ? 'Pay ₦${_totalCharge.toStringAsFixed(0)}' : 'Deposit via Paystack',
             ),
-          ],
-        ),
-      ),
-    )
-    .animate()
-    .fadeIn(duration: 180.ms)
-    .scale(begin: const Offset(0.95, 0.95), curve: Curves.easeOutBack);
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _TopUpHeader(),
+                const SizedBox(height: 24),
+                _AmountInputField(
+                  controller: _amountCtrl,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 16),
+                _QuickAmountChips(
+                  selectedAmount: _amountCtrl.text,
+                  onAmountSelected: (amt) =>
+                      setState(() => _amountCtrl.text = amt),
+                ),
+                const SizedBox(height: 12),
+                const _SecurityBadge(),
+                if (_hasValidAmount) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest.withValues(
+                        alpha: 0.3,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Amount to Deposit',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: scheme.onSurface.withValues(alpha: 0.7),
+                              ),
+                            ),
+                            Text(
+                              '₦${_parsedAmount?.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: scheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Processing Fee (2.5%)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: scheme.onSurface.withValues(alpha: 0.7),
+                              ),
+                            ),
+                            Text(
+                              '₦${_feeAmount.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: scheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 6),
+                          child: Divider(),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Total Charge',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: scheme.onSurface,
+                              ),
+                            ),
+                            Text(
+                              '₦${_totalCharge.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                color: scheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                _DepositButton(
+                  isLoading: _isLoading,
+                  onPressed: _deposit,
+                  label: _hasValidAmount
+                      ? 'Pay ₦${_totalCharge.toStringAsFixed(0)}'
+                      : 'Deposit via Paystack',
+                ),
+              ],
+            ),
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 180.ms)
+        .scale(begin: const Offset(0.95, 0.95), curve: Curves.easeOutBack);
   }
 }
 
@@ -223,11 +271,7 @@ class _TopUpHeader extends StatelessWidget {
               color: scheme.onSurface.withValues(alpha: 0.06),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.close_rounded,
-              size: 20,
-              color: scheme.onSurface,
-            ),
+            child: Icon(Icons.close_rounded, size: 20, color: scheme.onSurface),
           ),
         ),
       ],
@@ -296,7 +340,10 @@ class _QuickAmountChips extends StatelessWidget {
   final String selectedAmount;
   final ValueChanged<String> onAmountSelected;
 
-  const _QuickAmountChips({required this.selectedAmount, required this.onAmountSelected});
+  const _QuickAmountChips({
+    required this.selectedAmount,
+    required this.onAmountSelected,
+  });
 
   static const _quickAmounts = [1000, 2000, 5000];
 
@@ -319,7 +366,9 @@ class _QuickAmountChips extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: selectedAmount == amt.toString()
                           ? scheme.primary.withValues(alpha: 0.1)
-                          : (isDark ? scheme.surfaceContainerHighest : Colors.black.withValues(alpha: 0.04)),
+                          : (isDark
+                                ? scheme.surfaceContainerHighest
+                                : Colors.black.withValues(alpha: 0.04)),
                       border: Border.all(
                         color: selectedAmount == amt.toString()
                             ? scheme.primary
@@ -382,7 +431,11 @@ class _DepositButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String label;
 
-  const _DepositButton({required this.isLoading, required this.onPressed, required this.label});
+  const _DepositButton({
+    required this.isLoading,
+    required this.onPressed,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {

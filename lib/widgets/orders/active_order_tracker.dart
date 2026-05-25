@@ -152,8 +152,8 @@ class ActiveOrderTracker extends StatelessWidget {
       case OrderStatus.preparing:
         return 'Your chef is working their magic right now.';
       case OrderStatus.readyForPickup:
-        return isPickup 
-            ? 'Your meal is ready! Please come pick it up.' 
+        return isPickup
+            ? 'Your meal is ready! Please come pick it up.'
             : 'Your meal is ready and waiting for a rider.';
       case OrderStatus.pickingUp:
         return 'A rider is picking up your order from the store.';
@@ -161,9 +161,12 @@ class ActiveOrderTracker extends StatelessWidget {
       case OrderStatus.outForDelivery:
         return 'Hang tight! Your food is being delivered.';
       case OrderStatus.delivered:
-        return isPickup ? 'Hope you enjoyed your meal!' : 'Enjoy your delicious meal!';
+        return isPickup
+            ? 'Hope you enjoyed your meal!'
+            : 'Enjoy your delicious meal!';
       case OrderStatus.cancelled:
-        if (order.rejectionReason != null && order.rejectionReason!.isNotEmpty) {
+        if (order.rejectionReason != null &&
+            order.rejectionReason!.isNotEmpty) {
           return 'This order was cancelled. Reason: ${order.rejectionReason}';
         }
         return 'This order was cancelled. Please contact support for details.';

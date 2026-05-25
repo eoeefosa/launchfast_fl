@@ -604,6 +604,10 @@ class AuthProvider extends ChangeNotifier {
       final rawNonce = _generateNonce();
       final nonce    = _sha256ofString(rawNonce);
 
+      if (kDebugMode) {
+        debugPrint('[AuthProvider] signInWithApple: rawNonce=$rawNonce, hashedNonce=$nonce');
+      }
+
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
@@ -612,6 +616,11 @@ class AuthProvider extends ChangeNotifier {
         nonce: nonce,
       );
 
+      if (kDebugMode) {
+        debugPrint('[AuthProvider] Apple Credential received: email=${appleCredential.email}, '
+            'identityToken length=${appleCredential.identityToken?.length}');
+      }
+
       final credential = OAuthProvider('apple.com').credential(
         idToken:  appleCredential.identityToken,
         rawNonce: rawNonce,
@@ -619,6 +628,10 @@ class AuthProvider extends ChangeNotifier {
 
       final userCredential  = await FirebaseAuth.instance.signInWithCredential(credential);
       final firebaseIdToken = await userCredential.user?.getIdToken();
+
+      if (kDebugMode) {
+        debugPrint('[AuthProvider] Firebase Sign-In successful. ID Token length=${firebaseIdToken?.length}');
+      }
 
       if (firebaseIdToken == null) {
         throw Exception('Failed to get Firebase ID token');
@@ -637,8 +650,11 @@ class AuthProvider extends ChangeNotifier {
       await _persistAuthResponse(data);
       _initializeAblySafely();
       _syncFCMTokenSafely();
-    } catch (e) {
-      if (kDebugMode) debugPrint('[AuthProvider] signInWithApple error: $e');
+    } catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint('[AuthProvider] signInWithApple error: $e');
+        debugPrint('[AuthProvider] Stack trace: $stack');
+      }
       if (context.mounted) {
         UIUtils.showErrorDialog(context, 'Apple Sign-In Failed', _translateAuthError(e));
       }

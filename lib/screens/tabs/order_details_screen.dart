@@ -89,10 +89,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     final scaffoldBg = isDark
         ? AppColors.darkScaffold
         : AppColors.lightScaffold;
-    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
-    final mutedColor = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightMuted;
 
     // Loading state
     if (_isLoading) {

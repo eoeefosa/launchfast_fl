@@ -24,11 +24,15 @@ class UnauthenticatedView extends StatelessWidget {
               right: 16,
               child: IconButton(
                 onPressed: () {
-                  final newMode = themeProvider.isDark ? ThemeMode.light : ThemeMode.dark;
+                  final newMode = themeProvider.isDark
+                      ? ThemeMode.light
+                      : ThemeMode.dark;
                   themeProvider.setTheme(newMode);
                 },
                 icon: Icon(
-                  themeProvider.isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                  themeProvider.isDark
+                      ? Icons.light_mode_rounded
+                      : Icons.dark_mode_rounded,
                   color: scheme.onSurface,
                 ),
                 style: IconButton.styleFrom(
@@ -66,7 +70,10 @@ class UnauthenticatedView extends StatelessWidget {
                         size: 80,
                         color: primary,
                       ),
-                    ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
+                    ).animate().scale(
+                      duration: 600.ms,
+                      curve: Curves.easeOutBack,
+                    ),
                     const SizedBox(height: 32),
                     Text(
                       'Join the Experience',

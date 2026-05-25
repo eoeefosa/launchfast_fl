@@ -1,15 +1,16 @@
-import 'package:campuschow/constants/app_colors.dart';
-import 'package:campuschow/widgets/common/universal_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../providers/store_provider.dart';
-import '../../models/menu_item.dart';
-import '../../widgets/responsive_layout.dart';
+import 'package:campuschow/providers/store_provider.dart';
+import 'package:campuschow/models/menu_item.dart';
+import 'package:campuschow/constants/app_colors.dart';
+import 'package:campuschow/widgets/responsive_layout.dart';
+import 'package:campuschow/screens/store/item_detail_screen.dart';
+import 'package:campuschow/widgets/common/universal_image.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -20,8 +21,8 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _controller = TextEditingController();
-  List<String> _history = [];
   String _query = '';
+  List<String> _history = [];
 
   @override
   void initState() {
@@ -41,7 +42,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final prefs = await SharedPreferences.getInstance();
     _history.remove(query);
     _history.insert(0, query);
-    if (_history.length > 10) _history.removeLast();
+    if (_history.length > 8) _history.removeLast();
     await prefs.setStringList('search_history', _history);
     setState(() {});
   }
@@ -49,9 +50,13 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _clearHistory() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('search_history');
-    setState(() {
-      _history = [];
-    });
+    setState(() => _history = []);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -73,7 +78,6 @@ class _SearchScreenState extends State<SearchScreen> {
     final searchFieldBg = isDark
         ? AppColors.darkSurface2.withValues(alpha: 0.6)
         : AppColors.lightSurface.withValues(alpha: 0.7);
-    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final accent = isDark ? AppColors.darkPrimary : AppColors.primary;
 
     final results = _query.isEmpty
@@ -148,7 +152,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ),
-        body: _query.isEmpty ? _buildHistory() : _buildResults(results),
+        body: _query.isEmpty ? _buildHistory() : _buildResults(results, accent),
       ),
     );
   }
@@ -235,12 +239,11 @@ class _SearchScreenState extends State<SearchScreen> {
     ).animate().fadeIn();
   }
 
-  Widget _buildResults(List<MenuItem> results) {
+  Widget _buildResults(List<MenuItem> results, Color accent) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final mutedColor = isDark
         ? AppColors.darkTextSecondary
         : AppColors.lightMuted;
-    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
 
     if (results.isEmpty) {
       return Center(
@@ -263,15 +266,28 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ],
         ),
-      );
+      ).animate().fadeIn();
     }
 
     return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+      padding: EdgeInsets.all(20.r),
       itemCount: results.length,
       itemBuilder: (context, index) {
         final item = results[index];
-        return _SearchResultTile(item: item);
+        return _ResultCard(
+          item: item,
+          accent: accent,
+          mutedColor: mutedColor,
+          onTap: () {
+            _saveHistory(_query);
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => ItemDetailScreen(id: item.id),
+            );
+          },
+        );
       },
     );
   }
@@ -300,15 +316,15 @@ class _HistoryChip extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(30.r),
           border: Border.all(color: borderColor),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 13.sp,
             color: textColor,
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -316,47 +332,57 @@ class _HistoryChip extends StatelessWidget {
   }
 }
 
-class _SearchResultTile extends StatelessWidget {
+class _ResultCard extends StatelessWidget {
   final MenuItem item;
+  final Color accent;
+  final Color mutedColor;
+  final VoidCallback onTap;
 
-  const _SearchResultTile({required this.item});
+  const _ResultCard({
+    required this.item,
+    required this.accent,
+    required this.mutedColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
     final textColor = isDark ? AppColors.darkText : AppColors.lightText;
-    final mutedColor = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightMuted;
-    final accent = isDark ? AppColors.darkPrimary : AppColors.primary;
-    final cardBg = isDark ? AppColors.darkSurface : AppColors.lightBackground;
-    final borderColor = isDark
-        ? AppColors.darkBorder.withValues(alpha: 0.3)
-        : AppColors.lightBorder.withValues(alpha: 0.4);
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: borderColor, width: 0.5),
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16.r),
         child: InkWell(
-          onTap: () => context.push('/item/${item.id}'),
-          borderRadius: BorderRadius.circular(16.r),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24.r),
           child: Padding(
             padding: EdgeInsets.all(12.r),
             child: Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(14.r),
+                  borderRadius: BorderRadius.circular(16.r),
                   child: UniversalImage(
                     imageUrl: item.image,
                     width: 70.w,
-                    height: 70.h,
+                    height: 70.w,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -368,17 +394,12 @@ class _SearchResultTile extends StatelessWidget {
                       Text(
                         item.name,
                         style: TextStyle(
+                          fontSize: 15.sp,
                           fontWeight: FontWeight.w800,
-                          fontSize: 16.sp,
                           color: textColor,
                         ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        item.description,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: mutedColor, fontSize: 13.sp),
                       ),
                       SizedBox(height: 4.h),
                       Text(

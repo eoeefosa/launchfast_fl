@@ -52,7 +52,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _submit() async {
-
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final authProvider = context.read<AuthProvider>();
@@ -91,6 +90,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
@@ -99,137 +99,137 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return ResponsiveLayout(
       child: Scaffold(
         body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const BackButton(),
-                const SizedBox(height: 32),
-                const Text(
-                  'Create Account',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Join Campus Chow — carefully crafted for your campus needs.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                    height: 1.5,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const BackButton(),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'Create Account',
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
-                ),
-                const SizedBox(height: 32),
-                AppTextField(
-                  controller: _nameController,
-                  hint: 'Full Name',
-                  icon: Icons.person_outline,
-                  validator: Validators.required('Full name'),
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _emailController,
-                  hint: 'Email',
-                  icon: Icons.mail_outline,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: Validators.email,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _addressController,
-                  hint: 'Default Delivery Address',
-                  icon: Icons.location_on_outlined,
-                  validator: Validators.required('Delivery address'),
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _phoneController,
-                  hint: 'Phone Number',
-                  icon: Icons.call_outlined,
-                  keyboardType: TextInputType.phone,
-                  validator: Validators.phone,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _passwordController,
-                  hint: 'Password',
-                  icon: Icons.lock_outline,
-                  obscureText: !_showPassword,
-                  validator: Validators.password,
-                  suffixIcon: PasswordToggleIcon(
-                    isVisible: _showPassword,
-                    onToggle: _togglePasswordVisibility,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                CustomButton(
-                  label: 'Sign Up',
-                  isLoading: isLoading,
-                  onPressed: _submit,
-                  primaryColor: primaryColor,
-                ),
-                const SizedBox(height: 24),
-
-                /// Divider
-                Row(
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        color: Theme.of(
-                          context,
-                        ).dividerColor.withValues(alpha: 0.5),
-                      ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Join Campus Chow — carefully crafted for your campus needs.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
+                      height: 1.5,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'OR',
-                        style: TextStyle(
+                  ),
+                  const SizedBox(height: 32),
+                  AppTextField(
+                    controller: _nameController,
+                    hint: 'Full Name',
+                    icon: Icons.person_outline,
+                    validator: Validators.required('Full name'),
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    controller: _emailController,
+                    hint: 'Email',
+                    icon: Icons.mail_outline,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: Validators.email,
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    controller: _addressController,
+                    hint: 'Default Delivery Address',
+                    icon: Icons.location_on_outlined,
+                    validator: Validators.required('Delivery address'),
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    controller: _phoneController,
+                    hint: 'Phone Number',
+                    icon: Icons.call_outlined,
+                    keyboardType: TextInputType.phone,
+                    validator: Validators.phone,
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    controller: _passwordController,
+                    hint: 'Password',
+                    icon: Icons.lock_outline,
+                    obscureText: !_showPassword,
+                    validator: Validators.password,
+                    suffixIcon: PasswordToggleIcon(
+                      isVisible: _showPassword,
+                      onToggle: _togglePasswordVisibility,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  CustomButton(
+                    label: 'Sign Up',
+                    isLoading: isLoading,
+                    onPressed: _submit,
+                    primaryColor: primaryColor,
+                  ),
+                  const SizedBox(height: 24),
+
+                  /// Divider
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.4),
-                          fontSize: 14,
+                          ).dividerColor.withValues(alpha: 0.5),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: Divider(
-                        color: Theme.of(
-                          context,
-                        ).dividerColor.withValues(alpha: 0.5),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'OR',
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.4),
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
+                      Expanded(
+                        child: Divider(
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  /// Google login
+                  GoogleSignInButton(
+                    isLoading: isLoading,
+                    onPressed: _submitGoogleLogin,
+                  ),
+
+                  if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+                    const SizedBox(height: 12),
+                    AppleSignInButton(
+                      isLoading: isLoading,
+                      onPressed: _submitAppleLogin,
                     ),
                   ],
-                ),
 
-                const SizedBox(height: 24),
-
-                /// Google login
-                GoogleSignInButton(
-                  isLoading: isLoading,
-                  onPressed: _submitGoogleLogin,
-                ),
-
-                if (Theme.of(context).platform == TargetPlatform.iOS) ...[
-                  const SizedBox(height: 12),
-                  AppleSignInButton(
-                    isLoading: isLoading,
-                    onPressed: _submitAppleLogin,
-                  ),
+                  const SizedBox(height: 32),
+                  const AuthPrompt(isLogin: false),
                 ],
-
-                const SizedBox(height: 32),
-                const AuthPrompt(isLogin: false),
-              ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

@@ -6,6 +6,7 @@ class Store {
   final String name;
   final String tagline;
   final Color accentColor;
+  Color get color => accentColor;
   final String deliveryTime;
   final double rating;
   final bool isOpen;

@@ -24,7 +24,11 @@ class OptionSection extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -0.2),
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+              ),
             ),
             if (subtitle != null) ...[
               const SizedBox(width: 8),
@@ -55,7 +59,12 @@ class _SubtitleBadge extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.orange, letterSpacing: 0.3),
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Colors.orange,
+          letterSpacing: 0.3,
+        ),
       ),
     );
   }
@@ -81,14 +90,20 @@ class SelectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
-    
+
     final borderColor = isSelected
         ? theme.colorScheme.primary.withValues(alpha: 0.6)
-        : isDark ? Colors.white.withValues(alpha: 0.09) : Colors.grey[200]!;
-        
+        : isDark
+        ? Colors.white.withValues(alpha: 0.09)
+        : Colors.grey[200]!;
+
     final bgColor = isDark
-        ? (isSelected ? Colors.white.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.03))
-        : (isSelected ? theme.colorScheme.primary.withValues(alpha: 0.04) : Colors.white);
+        ? (isSelected
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.white.withValues(alpha: 0.03))
+        : (isSelected
+              ? theme.colorScheme.primary.withValues(alpha: 0.04)
+              : Colors.white);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -112,9 +127,21 @@ class SelectionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5)),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14.5,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text(subtitle, style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : Colors.grey[500])),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white54 : Colors.grey[500],
+                        ),
+                      ),
                     ],
                   ),
                 ),

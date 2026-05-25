@@ -50,16 +50,10 @@ class ProfileSettingsTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: (iconColor ?? scheme.primary).withValues(
-                alpha: 0.08,
-              ),
+              color: (iconColor ?? scheme.primary).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: iconColor ?? scheme.primary,
-            ),
+            child: Icon(icon, size: 20, color: iconColor ?? scheme.primary),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -69,8 +63,7 @@ class ProfileSettingsTile extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    color:
-                        titleColor ?? scheme.onSurface,
+                    color: titleColor ?? scheme.onSurface,
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
                     letterSpacing: -0.2,
@@ -92,7 +85,9 @@ class ProfileSettingsTile extends StatelessWidget {
           ),
           trailing ??
               Icon(
-                isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right_rounded,
+                isIOS
+                    ? CupertinoIcons.chevron_right
+                    : Icons.chevron_right_rounded,
                 color: scheme.onSurface.withValues(alpha: 0.3),
                 size: 18,
               ),

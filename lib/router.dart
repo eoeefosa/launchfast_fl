@@ -127,6 +127,8 @@ GoRouter createRouter(AuthProvider auth) {
       debugPrint('''
 [Router Redirect]
 location: $loc
+fullPath: ${state.fullPath}
+matchedLocation: ${state.matchedLocation}
 authenticated: $isAuthed
 role: ${auth.user?.role}
 ''');
@@ -136,6 +138,7 @@ role: ${auth.user?.role}
       // ─────────────────────────────────────────────────────────────
 
       if (!auth.initialized) {
+        debugPrint('[Router] Waiting for auth initialization...');
         // Prevent navigating away during auth bootstrap
         return loc == routeSplash ? null : routeSplash;
       }
@@ -145,7 +148,9 @@ role: ${auth.user?.role}
       // ─────────────────────────────────────────────────────────────
 
       if (loc == routeSplash) {
-        return isAuthed ? _roleHomePage(auth) : routeHome;
+        final target = isAuthed ? _roleHomePage(auth) : routeHome;
+        debugPrint('[Router] Splash redirecting to $target');
+        return target;
       }
 
       // ─────────────────────────────────────────────────────────────
@@ -153,8 +158,7 @@ role: ${auth.user?.role}
       // ─────────────────────────────────────────────────────────────
 
       if (!isAuthed && _isProtectedRoute(loc)) {
-        debugPrint('[Router] Blocked unauthenticated access');
-
+        debugPrint('[Router] Blocked unauthenticated access to $loc, redirecting to login');
         return routeLogin;
       }
 

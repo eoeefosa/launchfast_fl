@@ -1,6 +1,7 @@
 import 'package:campuschow/constants/app_colors.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/menu_item.dart';
@@ -19,10 +20,6 @@ import '../../widgets/home/fade_slide_in.dart';
 import '../../widgets/home/animated_menu_list.dart';
 import 'components/home_empty_body.dart';
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const List<String> _kCategoryOrder = [
   'Rice & Pasta',
   'Swallow & Soup',
@@ -32,10 +29,6 @@ const List<String> _kCategoryOrder = [
   'Snacks & Pastries',
   'Others',
 ];
-
-// ---------------------------------------------------------------------------
-// HomeScreen
-// ---------------------------------------------------------------------------
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -134,7 +127,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final storeProvider = context.watch<StoreProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Use AppColors directly for scaffold background
     final scaffoldBg = isDark
         ? AppColors.darkScaffold
         : AppColors.lightScaffold;
@@ -170,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Scaffold(
-      backgroundColor: scaffoldBg, // premium background
+      backgroundColor: scaffoldBg,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -187,15 +179,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 6.h,
                     ),
                     child: Text(
                       'Restaurants',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: textColor, // readable on scaffold bg
+                        fontSize: 16.sp,
+                        color: textColor,
                       ),
                     ),
                   ),
@@ -216,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   key: ValueKey(_activeStoreId),
                   pinned: true,
                   delegate: CategoryHeaderDelegate(
-                    backgroundColor: scaffoldBg, // header matches scaffold
+                    backgroundColor: scaffoldBg,
                     child: CategorySelector(
                       selectedCategory: _selectedCategory,
                       categories: categories,
@@ -227,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 SliverPadding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 120),
+                  padding: EdgeInsets.only(top: 6.h, bottom: 110.h),
                   sliver: AnimatedMenuList(
                     key: ValueKey(_activeStoreId),
                     groupedItems: grouped,
@@ -242,11 +235,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             Positioned(
-              bottom: 10,
+              bottom: 8.h,
               left: 0,
               right: 0,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(horizontal: 12.w),
                 child: CartBar(accent: activeStore.accentColor),
               ),
             ),
@@ -307,7 +300,9 @@ class _HomeScreenState extends State<HomeScreen> {
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 1),
         backgroundColor: snackBarBg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
       ),
     );
   }
@@ -353,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (dialogContext) => AlertDialog(
           backgroundColor: dialogBg,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(24.r),
           ),
           title: Text(
             title,
@@ -374,10 +369,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, // destructive action kept red
+                backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
               ),
               onPressed: clearAndAdd,

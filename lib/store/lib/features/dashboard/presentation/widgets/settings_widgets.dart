@@ -18,7 +18,13 @@ class SettingsSectionCard extends StatelessWidget {
         color: surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: border),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: child,
     );
@@ -33,7 +39,10 @@ class SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDark ? AppColors.darkText : AppColors.lightText;
-    return Text(text, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold));
+    return Text(
+      text,
+      style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold),
+    );
   }
 }
 
@@ -68,9 +77,18 @@ class SettingsInputField extends StatelessWidget {
         prefixIcon: Icon(icon, color: AppColors.primary, size: 20),
         filled: true,
         fillColor: Colors.transparent,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.primary)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.primary),
+        ),
       ),
     );
   }

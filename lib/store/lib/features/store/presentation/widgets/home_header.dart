@@ -5,7 +5,6 @@ import 'package:campuschow/store/lib/core/providers/notification_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'location_selector.dart';
 
-
 class HomeHeader extends StatelessWidget {
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;

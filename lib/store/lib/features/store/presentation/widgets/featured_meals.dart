@@ -7,11 +7,7 @@ class FeaturedMeals extends StatelessWidget {
   final List<MenuItem> items;
   final Function(MenuItem) onAdd;
 
-  const FeaturedMeals({
-    super.key,
-    required this.items,
-    required this.onAdd,
-  });
+  const FeaturedMeals({super.key, required this.items, required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +169,10 @@ class FeaturedMeals extends StatelessWidget {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(12),

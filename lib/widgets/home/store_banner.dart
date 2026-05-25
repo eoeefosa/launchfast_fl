@@ -74,23 +74,29 @@ class StoreBanner extends StatelessWidget {
   }
 
   Widget _buildInfo(IconData icon, String text, {Color? color}) {
-    return Builder(builder: (context) {
-      final scheme = Theme.of(context).colorScheme;
-      return Row(
-        children: [
-          Icon(icon, size: 14, color: color ?? scheme.onSurface.withValues(alpha: 0.6)),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
+    return Builder(
+      builder: (context) {
+        final scheme = Theme.of(context).colorScheme;
+        return Row(
+          children: [
+            Icon(
+              icon,
+              size: 14,
               color: color ?? scheme.onSurface.withValues(alpha: 0.6),
             ),
-          ),
-        ],
-      );
-    });
+            const SizedBox(width: 4),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: color ?? scheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildStatus(bool isOpen) {
