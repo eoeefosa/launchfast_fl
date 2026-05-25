@@ -4,11 +4,8 @@ import 'package:campuschow/screens/auth/widgets/auth_prompt.dart';
 import 'package:campuschow/screens/auth/widgets/constants.dart';
 import 'package:campuschow/screens/auth/widgets/custom_button.dart';
 import 'package:campuschow/screens/auth/widgets/password_toggle.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/order_provider.dart';
-import '../../services/api_service.dart';
 import '../../widgets/responsive_layout.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -37,47 +34,21 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _showPassword = !_showPassword);
 
   Future<void> _submitEmailLogin() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    await _authenticate(
-      () => context.read<AuthProvider>().login(
-        _emailController.text.trim(),
-        _passwordController.text,
-      ),
+    if (!_formKey.currentState!.validate()) return;
+
+    await context.read<AuthProvider>().login(
+      context,
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
     );
   }
 
   Future<void> _submitGoogleLogin() async {
-    await _authenticate(() => context.read<AuthProvider>().signInWithGoogle());
+    await context.read<AuthProvider>().signInWithGoogle(context);
   }
 
   Future<void> _submitAppleLogin() async {
-    await _authenticate(() => context.read<AuthProvider>().signInWithApple());
-  }
-
-  Future<void> _authenticate(Future<void> Function() action) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final orderProvider = context.read<OrderProvider>();
-
-    try {
-      await action();
-      if (!mounted) return;
-      // Refresh orders for customers after login.
-      // Store owners / workers are handled by their own screens.
-      final auth = context.read<AuthProvider>();
-      if (!auth.isStoreOwner && !auth.isWorker) {
-        orderProvider.refreshOrders();
-      }
-
-      // Explicitly trigger navigation. GoRouter's redirect guard will 
-      // intercept this and route to the correct role-based dashboard if needed.
-      context.go('/home');
-      
-      debugPrint('[LoginScreen] Auth complete. Navigating...');
-    } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(ApiService.getErrorMessage(e))),
-      );
-    }
+    await context.read<AuthProvider>().signInWithApple(context);
   }
 
   @override
@@ -97,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const BackButton(),
                   const SizedBox(height: 32),
-  
+
                   /// Header
                   const Text(
                     'Welcome Back',
@@ -114,9 +85,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 1.5,
                     ),
                   ),
-  
+
                   const SizedBox(height: 40),
-  
+
                   /// Email
                   AppTextField(
                     controller: _emailController,
@@ -125,9 +96,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     keyboardType: TextInputType.emailAddress,
                     validator: Validators.email,
                   ),
-  
+
                   const SizedBox(height: 20),
-  
+
                   /// Password
                   AppTextField(
                     controller: _passwordController,
@@ -140,14 +111,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       onToggle: _togglePasswordVisibility,
                     ),
                   ),
-  
+
                   const SizedBox(height: 12),
-  
+
                   /// Forgot password
                   const ForgotPasswordButton(),
-  
+
                   const SizedBox(height: 20),
-  
+
                   /// Login button
                   CustomButton(
                     label: 'Sign In',
@@ -155,9 +126,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _submitEmailLogin,
                     primaryColor: primaryColor,
                   ),
-  
+
                   const SizedBox(height: 24),
-  
+
                   /// Divider
                   Row(
                     children: [
@@ -189,15 +160,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
-  
+
                   const SizedBox(height: 24),
-  
+
                   /// Google login
                   GoogleSignInButton(
                     isLoading: isLoading,
                     onPressed: _submitGoogleLogin,
                   ),
-  
+
                   if (Theme.of(context).platform == TargetPlatform.iOS) ...[
                     const SizedBox(height: 12),
                     AppleSignInButton(
@@ -205,9 +176,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: _submitAppleLogin,
                     ),
                   ],
-  
+
                   const SizedBox(height: 40),
-  
+
                   /// Signup prompt
                   const AuthPrompt(isLogin: true),
                 ],

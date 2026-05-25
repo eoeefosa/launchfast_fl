@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
-import '../../services/api_service.dart';
+import '../../utils/ui_utils.dart';
 
 import 'package:campuschow/widgets/responsive_layout.dart';
 
@@ -44,53 +44,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _showPassword = !_showPassword);
 
   Future<void> _submitGoogleLogin() async {
-    await _authenticate(() => context.read<AuthProvider>().signInWithGoogle());
+    await context.read<AuthProvider>().signInWithGoogle(context);
   }
 
   Future<void> _submitAppleLogin() async {
-    await _authenticate(() => context.read<AuthProvider>().signInWithApple());
-  }
-
-  Future<void> _authenticate(Future<void> Function() action) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final orderProvider = context.read<OrderProvider>();
-
-    try {
-      await action();
-      if (!mounted) return;
-      
-      final auth = context.read<AuthProvider>();
-      if (!auth.isStoreOwner && !auth.isWorker && !auth.isAdmin) {
-        orderProvider.refreshOrders();
-      }
-
-      if (auth.isAdmin || auth.isStoreOwner) {
-        context.go('/dashboard');
-      } else if (auth.isWorker) {
-        context.go('/worker');
-      } else {
-        context.go('/home');
-      }
-      
-      debugPrint('[RegisterScreen] Auth complete. Navigating...');
-    } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(ApiService.getErrorMessage(e))),
-      );
-    }
+    await context.read<AuthProvider>().signInWithApple(context);
   }
 
   Future<void> _submit() async {
+
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final authProvider = context.read<AuthProvider>();
     final orderProvider = context.read<OrderProvider>();
 
-    final messenger = ScaffoldMessenger.of(context);
-    // final router = GoRouter.of(context);
-
     try {
-      await authProvider.register({
+      await authProvider.register(context, {
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'address': _addressController.text.trim(),
@@ -117,12 +86,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         context.go('/home');
       }
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(ApiService.getErrorMessage(e))),
-      );
+      if (mounted) {
+        UIUtils.showErrorDialog(context, 'Registration Failed', e.toString());
+      }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);

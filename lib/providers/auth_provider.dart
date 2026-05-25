@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:campuschow/utils/ui_utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:flutter/foundation.dart';
@@ -242,10 +244,27 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ─────────────────────────────────────────────────────────────
+  // Error Helper
+  // ─────────────────────────────────────────────────────────────
+
+  String _translateAuthError(dynamic error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'user-not-found': return 'No user found for that email.';
+        case 'wrong-password': return 'Wrong password provided.';
+        case 'email-already-in-use': return 'An account already exists for that email.';
+        case 'invalid-credential': return 'Invalid email or password.';
+        case 'network-request-failed': return 'Network error. Please check your connection.';
+      }
+    }
+    return error.toString().replaceAll('Exception: ', '').replaceAll('Exception', '');
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // Login
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(BuildContext context, String email, String password) async {
     if (_authOperationInProgress) return;
     _authOperationInProgress = true;
     _setLoading(true);
@@ -257,7 +276,9 @@ class AuthProvider extends ChangeNotifier {
       _syncFCMTokenSafely();
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] login error: $e');
-      rethrow; // FIX #9 — consistent error propagation
+      if (context.mounted) {
+        UIUtils.showErrorDialog(context, 'Login Failed', _translateAuthError(e));
+      }
     } finally {
       _authOperationInProgress = false;
       _setLoading(false);
@@ -268,7 +289,7 @@ class AuthProvider extends ChangeNotifier {
   // Register
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> register(Map<String, dynamic> payload) async {
+  Future<void> register(BuildContext context, Map<String, dynamic> payload) async {
     if (_authOperationInProgress) return;
     _authOperationInProgress = true;
     _setLoading(true);
@@ -280,7 +301,9 @@ class AuthProvider extends ChangeNotifier {
       _syncFCMTokenSafely();
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] register error: $e');
-      rethrow;
+      if (context.mounted) {
+        UIUtils.showErrorDialog(context, 'Registration Failed', _translateAuthError(e));
+      }
     } finally {
       _authOperationInProgress = false;
       _setLoading(false);
@@ -542,7 +565,7 @@ class AuthProvider extends ChangeNotifier {
   // Social Sign-In
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> signInWithGoogle() async {
+  Future<void> signInWithGoogle(BuildContext context) async {
     _setLoading(true);
     try {
       final googleUser = await _googleSignIn.signIn();
@@ -555,7 +578,6 @@ class AuthProvider extends ChangeNotifier {
       );
 
       final userCredential   = await FirebaseAuth.instance.signInWithCredential(credential);
-      // FIX #11 — use ?. not ! since getIdToken() is technically nullable
       final firebaseIdToken  = await userCredential.user?.getIdToken();
 
       if (firebaseIdToken == null) {
@@ -568,13 +590,15 @@ class AuthProvider extends ChangeNotifier {
       _syncFCMTokenSafely();
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] signInWithGoogle error: $e');
-      rethrow;
+      if (context.mounted) {
+        UIUtils.showErrorDialog(context, 'Google Sign-In Failed', _translateAuthError(e));
+      }
     } finally {
       _setLoading(false);
     }
   }
 
-  Future<void> signInWithApple() async {
+  Future<void> signInWithApple(BuildContext context) async {
     _setLoading(true);
     try {
       final rawNonce = _generateNonce();
@@ -615,7 +639,9 @@ class AuthProvider extends ChangeNotifier {
       _syncFCMTokenSafely();
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] signInWithApple error: $e');
-      rethrow;
+      if (context.mounted) {
+        UIUtils.showErrorDialog(context, 'Apple Sign-In Failed', _translateAuthError(e));
+      }
     } finally {
       _setLoading(false);
     }

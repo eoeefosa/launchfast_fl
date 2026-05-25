@@ -3,10 +3,8 @@ import 'package:campuschow/store/lib/features/auth/presentation/widgets/apptextf
 import 'package:campuschow/store/lib/features/auth/presentation/widgets/auth_prompt.dart';
 import 'package:campuschow/store/lib/features/auth/presentation/widgets/custom_button.dart';
 import 'package:campuschow/store/lib/features/auth/presentation/widgets/password_toggle.dart';
-import 'package:campuschow/store/lib/features/orders/presentation/order_provider.dart';
 import 'widgets/constants.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:campuschow/store/lib/features/auth/presentation/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -36,45 +34,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _submitEmailLogin() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    await _authenticate(
-      () => context.read<AuthProvider>().login(
+    await context.read<AuthProvider>().login(
+        context,
         _emailCtrl.text.trim(),
         _passwordCtrl.text,
-      ),
-    );
+      );
   }
 
   Future<void> _submitGoogleLogin() async {
-    await _authenticate(() => context.read<AuthProvider>().signInWithGoogle());
-  }
-
-  Future<void> _authenticate(Future<void> Function() action) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final orderProvider = context.read<OrderProvider>();
-    final router = GoRouter.of(context);
-
-    try {
-      await action();
-      orderProvider.refreshOrders();
-
-      if (!mounted) return;
-      final auth = context.read<AuthProvider>();
-      if (auth.isStoreOwner) {
-        router.go('/dashboard');
-      } else if (auth.user?.role == 'STORE_WORKER') {
-        router.go('/worker');
-      } else {
-        router.go('/store');
-        // messenger.showSnackBar(
-        //   const SnackBar(
-        //     content: Text('Access denied: You do not have store access'),
-        //   ),
-        // );
-        // await auth.logout();
-      }
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
-    }
+    await context.read<AuthProvider>().signInWithGoogle(context);
   }
 
   // ─── Build ────────────────────────────────────────────────────────────────

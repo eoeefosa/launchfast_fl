@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data model
@@ -23,7 +24,7 @@ class LiquidGlassNavItem {
   /// Short label rendered below the icon. Pass `null` to hide.
   final String? label;
 
-  /// When > 0 a glowing error-coloured badge is drawn over the icon corner.
+  /// When > 0 a glowing badge is drawn over the icon corner.
   final int? badgeCount;
 }
 
@@ -33,11 +34,10 @@ class LiquidGlassNavItem {
 
 /// A premium floating bottom navigation bar with a draggable liquid-glass pill.
 ///
-/// The pill slides between tabs with spring physics and morphs (stretches) as
-/// it travels — giving a tactile, liquid feel. Drag anywhere on the bar to
-/// move the pill; it snaps to the nearest tab on release.
+/// The pill slides with spring physics and morphs (stretches) as it travels.
+/// Drag anywhere on the bar to reposition it; it snaps on release.
 ///
-/// Requires [Scaffold.extendBody] = true so the bar floats above the body.
+/// Requires [Scaffold.extendBody] = true so content scrolls under the bar.
 class LiquidGlassBottomBar extends StatefulWidget {
   const LiquidGlassBottomBar({
     super.key,
@@ -63,14 +63,12 @@ class LiquidGlassBottomBar extends StatefulWidget {
 
 class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
     with SingleTickerProviderStateMixin {
-  // Fractional tab index where the pill sits (e.g. 1.5 = midway between tabs 1 & 2).
-  // This IS the AnimationController's value when spring-driven.
+  // Fractional tab index (e.g. 1.5 = midway between tabs 1 & 2).
+  // AnimationController.value IS this position when spring-driven.
   late AnimationController _ctrl;
 
   bool _isDragging = false;
   double _barWidth = 0.0;
-
-  // Last index that triggered haptic — avoids repeat fires on the same boundary.
   int _lastHapticIndex = -1;
 
   double get _position => _ctrl.value;
@@ -80,8 +78,8 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      // Bounds match the actual fractional-index range so spring overshoots
-      // are not clamped to [0, 1].
+      // Must span the full index range — avoids the default [0,1] clamp
+      // that would trap the spring inside the first two tabs.
       lowerBound: 0.0,
       upperBound: (widget.items.length - 1).toDouble(),
       value: widget.currentIndex.toDouble(),
@@ -110,8 +108,8 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
     _ctrl.stop();
     const desc = SpringDescription(
       mass: 1.0,
-      stiffness: 480.0, // snappy but not jarring
-      damping: 26.0, // slight overshoot gives a lively feel
+      stiffness: 480.0,
+      damping: 26.0, // slight overshoot = lively feel
     );
     _ctrl.animateWith(SpringSimulation(desc, _position, target, velocity));
   }
@@ -120,25 +118,20 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
 
   double get _tabWidth => _barWidth / widget.items.length;
 
-  /// X coordinate of the pill's centre for the current fractional position.
   double get _pillCenterX => _tabWidth * (_position + 0.5);
 
-  /// Pill width morphs as it travels between tabs.
-  ///
-  /// At rest on a tab: [_kBasePillWidth].
-  /// Midway between two tabs: [_kBasePillWidth] + [_kMaxStretch].
+  /// Width morphs via sin curve — 0 at rest, peak midway between tabs.
   double get _pillWidth {
-    const kBasePillWidth = 62.0;
-    const kMaxStretch = 32.0;
+    final basePx = 62.w;
+    final maxStretchPx = 30.w;
     final frac = _position - _position.floorToDouble();
-    return kBasePillWidth + math.sin(math.pi * frac) * kMaxStretch;
+    return basePx + math.sin(math.pi * frac) * maxStretchPx;
   }
 
-  /// How "activated" tab [index] is, from 0→1, based on pill proximity.
   double _proximity(int index) =>
       (1.0 - (_position - index).abs()).clamp(0.0, 1.0);
 
-  // ── Gesture handlers ───────────────────────────────────────────────────────
+  // ── Drag handlers ──────────────────────────────────────────────────────────
 
   void _onDragStart(DragStartDetails _) {
     _isDragging = true;
@@ -150,7 +143,6 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
     final delta = (details.primaryDelta ?? 0) / _tabWidth;
     _ctrl.value = (_position + delta).clamp(0.0, widget.items.length - 1.0);
 
-    // Haptic tick each time the pill crosses a tab centre.
     final nearest = _position.round();
     if (nearest != _lastHapticIndex) {
       HapticFeedback.selectionClick();
@@ -179,7 +171,7 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(14, 0, 14, bottomPadding + 14),
+      padding: EdgeInsets.fromLTRB(14.w, 0, 14.w, bottomPadding + 14.h),
       child: LayoutBuilder(
         builder: (context, constraints) {
           _barWidth = constraints.maxWidth;
@@ -191,19 +183,20 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
             child: _BarSurface(
               isDark: isDark,
               child: SizedBox(
-                height: 74,
+                height: 72.h,
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    // ── Glass pill ──────────────────────────────────────────
+                    // Sliding glass pill
                     _GlassPill(
                       centerX: _pillCenterX,
                       width: _pillWidth,
+                      barHeight: 72.h,
                       activeColor: scheme.primary,
                       isDark: isDark,
                     ),
 
-                    // ── Tab tiles ───────────────────────────────────────────
+                    // Icon + label tiles
                     Row(
                       children: List.generate(widget.items.length, (i) {
                         return Expanded(
@@ -237,7 +230,12 @@ class _LiquidGlassBottomBarState extends State<LiquidGlassBottomBar>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bar surface — frosted glass container
+// Bar surface
+//
+// FIX: Border uses Border.all() (uniform color) instead of Border(top:, left:,
+//      right:, bottom:) with different per-side colors. Flutter's rendering
+//      engine requires uniform border color when borderRadius is set.
+//      The specular top-edge highlight is achieved via the gradient instead.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _BarSurface extends StatelessWidget {
@@ -248,10 +246,10 @@ class _BarSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const br = BorderRadius.all(Radius.circular(34));
+    final radius = Radius.circular(34.r);
+    final br = BorderRadius.all(radius);
 
     return DecoratedBox(
-      // Outer shadows — depth + subtle primary tint at bottom
       decoration: BoxDecoration(
         borderRadius: br,
         boxShadow: [
@@ -276,49 +274,30 @@ class _BarSurface extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: br,
-              // Vertical gradient gives a subtle 3-D curvature illusion.
+              // Top-to-bottom gradient doubles as the specular top-edge.
+              // Lighter at top (catching light) → darker at bottom.
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                stops: const [0.0, 0.45, 1.0],
+                stops: const [0.0, 0.35, 1.0],
                 colors: isDark
                     ? [
-                        Colors.white.withValues(alpha: 0.13),
-                        Colors.white.withValues(alpha: 0.07),
+                        Colors.white.withValues(alpha: 0.16),
+                        Colors.white.withValues(alpha: 0.08),
                         Colors.white.withValues(alpha: 0.04),
                       ]
                     : [
-                        Colors.white.withValues(alpha: 0.90),
-                        Colors.white.withValues(alpha: 0.72),
+                        Colors.white.withValues(alpha: 0.92),
+                        Colors.white.withValues(alpha: 0.74),
                         Colors.white.withValues(alpha: 0.58),
                       ],
               ),
-              border: Border(
-                // Bright specular edge at top (simulates light from above)
-                top: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.22)
-                      : Colors.white.withValues(alpha: 0.95),
-                  width: 1.0,
-                ),
-                left: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.white.withValues(alpha: 0.55),
-                  width: 0.5,
-                ),
-                right: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.white.withValues(alpha: 0.55),
-                  width: 0.5,
-                ),
-                bottom: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.03)
-                      : Colors.white.withValues(alpha: 0.25),
-                  width: 0.5,
-                ),
+              // ✅ FIXED: single uniform border color → works with borderRadius
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.14)
+                    : Colors.white.withValues(alpha: 0.70),
+                width: 0.8,
               ),
             ),
             child: child,
@@ -330,34 +309,34 @@ class _BarSurface extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Glass pill — the sliding, morphing indicator
+// Glass pill
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _GlassPill extends StatelessWidget {
   const _GlassPill({
     required this.centerX,
     required this.width,
+    required this.barHeight,
     required this.activeColor,
     required this.isDark,
   });
 
   final double centerX;
   final double width;
+  final double barHeight;
   final Color activeColor;
   final bool isDark;
 
-  static const double _pillH = 54.0;
-  static const double _barH = 74.0;
-  static const double _topOffset = (_barH - _pillH) / 2;
-
   @override
   Widget build(BuildContext context) {
+    final pillH = 54.h;
+    final topOffset = (barHeight - pillH) / 2;
+
     return Positioned(
-      top: _topOffset,
-      // Pin by centre so morphing expands symmetrically.
+      top: topOffset,
       left: centerX - width / 2,
       width: width,
-      height: _pillH,
+      height: pillH,
       child: _PillSurface(activeColor: activeColor, isDark: isDark),
     );
   }
@@ -371,45 +350,36 @@ class _PillSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Border radius tracks width so it stays stadium-shaped during morphing.
-    const br = BorderRadius.all(Radius.circular(22));
+    final br = BorderRadius.all(Radius.circular(22.r));
 
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: br,
         boxShadow: [
-          // Coloured glow — the premium signature
+          // Brand-colour glow — the premium signature detail
           BoxShadow(
             color: activeColor.withValues(alpha: isDark ? 0.42 : 0.28),
             blurRadius: 22,
             spreadRadius: -3,
             offset: const Offset(0, 5),
           ),
-          // Crisp drop shadow for lift
+          // Crisp lift shadow
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.40 : 0.12),
             blurRadius: 14,
             spreadRadius: -1,
             offset: const Offset(0, 5),
           ),
-          // Inset-like edge on the left (gives 3-D depth)
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.06),
-            blurRadius: 2,
-            spreadRadius: 0,
-            offset: const Offset(-1, 0),
-          ),
         ],
       ),
       child: ClipRRect(
         borderRadius: br,
         child: BackdropFilter(
-          // Extra blur inside the pill for a double-frosted look.
+          // Second blur layer inside pill = double-frosted depth
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: br,
-              // Primary-tinted gradient: top-left light → bottom-right deeper
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -426,43 +396,23 @@ class _PillSurface extends StatelessWidget {
                         activeColor.withValues(alpha: 0.06),
                       ],
               ),
-              border: Border(
-                // Specular highlight at the very top edge
-                top: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.35)
-                      : Colors.white.withValues(alpha: 0.90),
-                  width: 0.8,
-                ),
-                left: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.14)
-                      : Colors.white.withValues(alpha: 0.60),
-                  width: 0.5,
-                ),
-                right: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : Colors.white.withValues(alpha: 0.28),
-                  width: 0.5,
-                ),
-                bottom: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.03)
-                      : Colors.white.withValues(alpha: 0.14),
-                  width: 0.5,
-                ),
+              // ✅ FIXED: uniform border — no per-side color differences
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.28)
+                    : Colors.white.withValues(alpha: 0.80),
+                width: 0.8,
               ),
             ),
-            // Inner specular shimmer — bright gradient at top of pill
+            // Inner specular shimmer at top of pill
             child: Column(
               children: [
                 Container(
-                  height: 14,
+                  height: 14.h,
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(22),
-                      topRight: Radius.circular(22),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(22.r),
+                      topRight: Radius.circular(22.r),
                     ),
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -485,28 +435,26 @@ class _PillSurface extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Nav tile — icon + label, interpolated from inactive → active
+// Nav tile — interpolated from inactive → active via proximity
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _NavTile extends StatelessWidget {
   const _NavTile({
     required this.item,
-    required this.proximity, // 0.0 = fully inactive, 1.0 = fully active
+    required this.proximity,
     required this.activeColor,
     required this.inactiveColor,
   });
 
   final LiquidGlassNavItem item;
-  final double proximity;
+  final double proximity; // 0.0 → 1.0
   final Color activeColor;
   final Color inactiveColor;
 
   @override
   Widget build(BuildContext context) {
     final iconColor = Color.lerp(inactiveColor, activeColor, proximity)!;
-    // Use the filled icon variant as the pill approaches.
     final iconData = proximity > 0.5 ? item.activeIcon : item.icon;
-    // Subtle grow as the pill arrives.
     final iconScale = 1.0 + (proximity * 0.16);
     final hasBadge = (item.badgeCount ?? 0) > 0;
 
@@ -518,27 +466,24 @@ class _NavTile extends StatelessWidget {
           children: [
             Transform.scale(
               scale: iconScale,
-              child: Icon(iconData, color: iconColor, size: 23),
+              child: Icon(iconData, color: iconColor, size: 23.sp),
             ),
             if (hasBadge)
               Positioned(
-                right: -9,
-                top: -5,
+                right: -9.w,
+                top: -5.h,
                 child: _Badge(count: item.badgeCount!),
               ),
           ],
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         if (item.label != null)
           AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 160),
             style: TextStyle(
-              fontSize: 10.5,
+              fontSize: 10.5.sp,
               fontWeight: proximity > 0.5 ? FontWeight.w700 : FontWeight.w500,
-              color: iconColor.withValues(
-                // Labels fade in as the pill approaches, out as it leaves.
-                alpha: 0.38 + (proximity * 0.62),
-              ),
+              color: iconColor.withValues(alpha: 0.38 + (proximity * 0.62)),
               letterSpacing: 0.12,
             ),
             child: Text(item.label!),
@@ -563,11 +508,11 @@ class _Badge extends StatelessWidget {
     final label = count > 99 ? '99+' : '$count';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
       decoration: BoxDecoration(
         color: scheme.error,
-        borderRadius: BorderRadius.circular(10),
-        // Semi-transparent white border reads correctly on any glass surface
+        borderRadius: BorderRadius.circular(10.r),
+        // ✅ FIXED: Border.all() → uniform color, compatible with borderRadius
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.38),
           width: 1.5,
@@ -581,13 +526,13 @@ class _Badge extends StatelessWidget {
           ),
         ],
       ),
-      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+      constraints: BoxConstraints(minWidth: 18.w, minHeight: 18.h),
       child: Center(
         child: Text(
           label,
           style: TextStyle(
             color: scheme.onError,
-            fontSize: 9.5,
+            fontSize: 9.5.sp,
             fontWeight: FontWeight.w800,
             height: 1.1,
             letterSpacing: -0.2,

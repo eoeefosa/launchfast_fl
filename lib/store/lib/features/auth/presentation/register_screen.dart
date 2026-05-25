@@ -45,7 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      await authProvider.signInWithGoogle();
+      await authProvider.signInWithGoogle(context);
       if (!mounted) return;
       if (authProvider.isAuthenticated) {
         if (authProvider.isStoreOwner) {
@@ -77,7 +77,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'category': 'Fast Food', // Backend requires category
         });
       } else {
-        await authProvider.register({
+        await authProvider.register(context, {
           'restaurantName': _storeNameController.text.trim(),
           'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
