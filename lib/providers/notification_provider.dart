@@ -1,29 +1,27 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:campuschow/services/api_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:campuschow/store/lib/core/services/notification_service.dart';
-import 'package:campuschow/store/lib/core/network/api_client.dart';
 import 'package:campuschow/models/notification_entity.dart';
 import '../locator.dart';
 import '../models/notification_item.dart';
 import '../services/ably_service.dart';
 
 class NotificationProvider with ChangeNotifier {
-
   NotificationProvider({
     // FIX #3 — injected dependencies, not globals
     ApiService? apiService,
     AblyService? ablyService,
-  })  : _apiService = apiService ?? locator<ApiService>(),
-        _ablyService = ablyService ?? locator<AblyService>();
+  }) : _apiService = apiService ?? locator<ApiService>(),
+       _ablyService = ablyService ?? locator<AblyService>();
 
   // ─────────────────────────────────────────────────────────────
   // Dependencies
   // ─────────────────────────────────────────────────────────────
 
-  final ApiService  _apiService;
+  final ApiService _apiService;
   final AblyService _ablyService;
 
   // ─────────────────────────────────────────────────────────────
@@ -32,10 +30,10 @@ class NotificationProvider with ChangeNotifier {
 
   late Box<NotificationEntity> _box;
   List<NotificationItem> _notifications = [];
-  bool _isLoading          = false;
-  bool _initialized        = false;
-  bool _disposed           = false;
-  bool _refreshInProgress  = false;
+  bool _isLoading = false;
+  bool _initialized = false;
+  bool _disposed = false;
+  bool _refreshInProgress = false;
   Timer? _pendingRefreshTimer;
 
   // ─────────────────────────────────────────────────────────────
@@ -43,8 +41,8 @@ class NotificationProvider with ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   List<NotificationItem> get notifications => _notifications;
-  bool get isLoading   => _isLoading;
-  int  get unreadCount => _notifications.where((n) => !n.isRead).length;
+  bool get isLoading => _isLoading;
+  int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
   // ─────────────────────────────────────────────────────────────
   // FIX #1 — explicit initialize() instead of async work in constructor.
@@ -94,14 +92,18 @@ class NotificationProvider with ChangeNotifier {
   void _scheduleDelayedRefresh() {
     _pendingRefreshTimer?.cancel();
     _pendingRefreshTimer = Timer(const Duration(seconds: 3), () {
-      if (kDebugMode) debugPrint('[NotificationProvider] Delayed refresh triggered');
+      if (kDebugMode) {
+        debugPrint('[NotificationProvider] Delayed refresh triggered');
+      }
       refresh();
     });
   }
 
   void _processPayload(Map<String, dynamic> payload) {
     // FIX #4 — no raw payload in production logs
-    if (kDebugMode) debugPrint('[NotificationProvider] Real-time payload received');
+    if (kDebugMode) {
+      debugPrint('[NotificationProvider] Real-time payload received');
+    }
 
     final notification = NotificationItem(
       id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
@@ -128,12 +130,12 @@ class NotificationProvider with ChangeNotifier {
 
     final entity = NotificationEntity()
       ..notificationId = item.id
-      ..title          = item.title
-      ..message        = item.message
-      ..type           = item.type.name
-      ..timestamp      = item.timestamp
-      ..isRead         = item.isRead
-      ..metadata       = item.metadata != null ? jsonEncode(item.metadata) : null;
+      ..title = item.title
+      ..message = item.message
+      ..type = item.type.name
+      ..timestamp = item.timestamp
+      ..isRead = item.isRead
+      ..metadata = item.metadata != null ? jsonEncode(item.metadata) : null;
 
     await _box.add(entity);
     _notifications.insert(0, item);
@@ -156,7 +158,9 @@ class NotificationProvider with ChangeNotifier {
       _notifications = _boxToList();
       _safeNotify();
 
-      if (kDebugMode) debugPrint('[NotificationProvider] Syncing with backend...');
+      if (kDebugMode) {
+        debugPrint('[NotificationProvider] Syncing with backend...');
+      }
 
       final response = await _apiService.dio.get('/notifications');
 
@@ -164,22 +168,26 @@ class NotificationProvider with ChangeNotifier {
         final List<dynamic> data = response.data;
 
         if (kDebugMode) {
-          debugPrint('[NotificationProvider] Received ${data.length} notifications');
+          debugPrint(
+            '[NotificationProvider] Received ${data.length} notifications',
+          );
         }
 
         final backendEntities = data.map((item) {
-          final backendId    = item['_id']?.toString() ?? '';
+          final backendId = item['_id']?.toString() ?? '';
           final backendTitle = item['title'] ?? '';
-          final backendBody  = item['body'] ?? '';
+          final backendBody = item['body'] ?? '';
 
           // Preserve read state for entries that were marked locally
           // before the backend confirmed the update.
-          final isLocallyRead = _notifications.any((n) =>
-            n.isRead &&
-            (n.id == backendId ||
-              (n.id.startsWith('temp_') &&
-               n.title == backendTitle &&
-               n.message == backendBody)));
+          final isLocallyRead = _notifications.any(
+            (n) =>
+                n.isRead &&
+                (n.id == backendId ||
+                    (n.id.startsWith('temp_') &&
+                        n.title == backendTitle &&
+                        n.message == backendBody)),
+          );
 
           final bool finalIsRead = (item['isRead'] == true) || isLocallyRead;
 
@@ -190,16 +198,14 @@ class NotificationProvider with ChangeNotifier {
 
           return NotificationEntity()
             ..notificationId = backendId
-            ..title          = backendTitle
-            ..message        = backendBody
-            ..type           = item['type'] ?? 'serverAlert'
-            ..timestamp      = item['createdAt'] != null
+            ..title = backendTitle
+            ..message = backendBody
+            ..type = item['type'] ?? 'serverAlert'
+            ..timestamp = item['createdAt'] != null
                 ? DateTime.parse(item['createdAt'])
                 : DateTime.now()
-            ..isRead         = finalIsRead
-            ..metadata       = item['data'] != null
-                ? jsonEncode(item['data'])
-                : null;
+            ..isRead = finalIsRead
+            ..metadata = item['data'] != null ? jsonEncode(item['data']) : null;
         }).toList();
 
         await _box.clear();
@@ -210,13 +216,17 @@ class NotificationProvider with ChangeNotifier {
         _notifications = _boxToList();
 
         if (kDebugMode) {
-          debugPrint('[NotificationProvider] Synced ${_notifications.length} notifications');
+          debugPrint(
+            '[NotificationProvider] Synced ${_notifications.length} notifications',
+          );
         }
       }
     } catch (e) {
       // Non-fatal — local cache is still displayed
       if (kDebugMode) {
-        debugPrint('[NotificationProvider] Backend sync failed (using cache): $e');
+        debugPrint(
+          '[NotificationProvider] Backend sync failed (using cache): $e',
+        );
       }
     } finally {
       _refreshInProgress = false;
@@ -234,7 +244,9 @@ class NotificationProvider with ChangeNotifier {
       );
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[NotificationProvider] _pushReadStatusToBackend failed: $e');
+        debugPrint(
+          '[NotificationProvider] _pushReadStatusToBackend failed: $e',
+        );
       }
     }
   }
@@ -245,15 +257,17 @@ class NotificationProvider with ChangeNotifier {
 
   List<NotificationItem> _boxToList() {
     return _box.values
-        .map((e) => NotificationItem.fromMap({
-              'id':        e.notificationId,
-              'title':     e.title,
-              'message':   e.message,
-              'type':      e.type,
-              'timestamp': e.timestamp.toIso8601String(),
-              'isRead':    e.isRead,
-              'metadata':  e.metadata != null ? jsonDecode(e.metadata!) : null,
-            }))
+        .map(
+          (e) => NotificationItem.fromMap({
+            'id': e.notificationId,
+            'title': e.title,
+            'message': e.message,
+            'type': e.type,
+            'timestamp': e.timestamp.toIso8601String(),
+            'isRead': e.isRead,
+            'metadata': e.metadata != null ? jsonDecode(e.metadata!) : null,
+          }),
+        )
         .toList()
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
   }
@@ -266,9 +280,9 @@ class NotificationProvider with ChangeNotifier {
 
   Future<void> markAsRead(String id) async {
     // Update Hive
-    final hiveIndex = _box.values
-        .toList()
-        .indexWhere((e) => e.notificationId == id);
+    final hiveIndex = _box.values.toList().indexWhere(
+      (e) => e.notificationId == id,
+    );
     if (hiveIndex != -1) {
       final entity = _box.getAt(hiveIndex)!;
       entity.isRead = true;
@@ -278,8 +292,9 @@ class NotificationProvider with ChangeNotifier {
     // Update in-memory list
     final listIndex = _notifications.indexWhere((n) => n.id == id);
     if (listIndex != -1) {
-      _notifications[listIndex] =
-          _notifications[listIndex].copyWith(isRead: true);
+      _notifications[listIndex] = _notifications[listIndex].copyWith(
+        isRead: true,
+      );
       _safeNotify();
     }
 
@@ -303,15 +318,17 @@ class NotificationProvider with ChangeNotifier {
       await _apiService.dio.patch('/notifications/read-all');
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[NotificationProvider] markAllAsRead backend sync failed: $e');
+        debugPrint(
+          '[NotificationProvider] markAllAsRead backend sync failed: $e',
+        );
       }
     }
   }
 
   Future<void> removeNotification(String id) async {
-    final index = _box.values
-        .toList()
-        .indexWhere((e) => e.notificationId == id);
+    final index = _box.values.toList().indexWhere(
+      (e) => e.notificationId == id,
+    );
     if (index != -1) await _box.deleteAt(index);
 
     _notifications.removeWhere((n) => n.id == id);
@@ -323,7 +340,9 @@ class NotificationProvider with ChangeNotifier {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[NotificationProvider] removeNotification backend failed: $e');
+        debugPrint(
+          '[NotificationProvider] removeNotification backend failed: $e',
+        );
       }
     }
   }
@@ -333,7 +352,9 @@ class NotificationProvider with ChangeNotifier {
     try {
       await _apiService.dio.delete('/notifications');
     } catch (e) {
-      if (kDebugMode) debugPrint('[NotificationProvider] clearAll backend failed: $e');
+      if (kDebugMode) {
+        debugPrint('[NotificationProvider] clearAll backend failed: $e');
+      }
       rethrow; // Local cache preserved when backend call fails
     }
 
@@ -351,8 +372,8 @@ class NotificationProvider with ChangeNotifier {
 
     final normalized = type.toLowerCase();
 
-    if (normalized == 'deposit'       ||
-        normalized == 'walletupdate'  ||
+    if (normalized == 'deposit' ||
+        normalized == 'walletupdate' ||
         normalized == 'wallet_update' ||
         normalized == 'wallet_topup') {
       return NotificationType.walletUpdate;

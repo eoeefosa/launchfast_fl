@@ -278,13 +278,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         confirmedPhone: contact.phone,
       );
 
-      final Order? order = await orderProvider.placeOrder(orderPayload);
+      final Order order = await orderProvider.placeOrder(orderPayload);
       if (!mounted) return;
-
-      if (order == null) {
-        _showErrorDialog(orderProvider.error ?? 'Could not place order.');
-        return;
-      }
 
       if (_paymentMethod == CheckoutPaymentMethod.paystack) {
         await _handlePaystackPayment(

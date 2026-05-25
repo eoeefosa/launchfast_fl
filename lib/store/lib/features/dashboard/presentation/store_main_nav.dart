@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:campuschow/providers/cart_provider.dart';
 import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:campuschow/store/lib/core/services/ably_service.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 import 'package:campuschow/models/store.dart' as main_store;
 import 'package:campuschow/models/menu_item.dart' as main_menu_item;
+import 'package:campuschow/widgets/common/liquid_glass_bottom_bar.dart';
 import 'main_dashboard.dart';
 import 'order_screen.dart';
 import 'menu_screen.dart';
@@ -383,127 +385,141 @@ class _StoreMainNavState extends State<StoreMainNav>
           );
         },
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: navBg,
-          border: Border(top: BorderSide(color: navBorder, width: 0.8)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
-              blurRadius: 20,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(_navItems.length, (i) {
+      bottomNavigationBar: Platform.isIOS
+          ? LiquidGlassBottomBar(
+              currentIndex: _currentIndex,
+              onTap: _onTabTapped,
+              items: List.generate(_navItems.length, (i) {
                 final item = _navItems[i];
-                final isActive = _currentIndex == i;
-                final hasBadge = i == 1 && _newOrderCount > 0;
+                return LiquidGlassNavItem(
+                  icon: item.icon,
+                  activeIcon: item.activeIcon,
+                  label: item.label,
+                  badgeCount: i == 1 ? _newOrderCount : null,
+                );
+              }),
+            )
+          : Container(
+              decoration: BoxDecoration(
+                color: navBg,
+                border: Border(top: BorderSide(color: navBorder, width: 0.8)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: List.generate(_navItems.length, (i) {
+                      final item = _navItems[i];
+                      final isActive = _currentIndex == i;
+                      final hasBadge = i == 1 && _newOrderCount > 0;
 
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => _onTabTapped(i),
-                    behavior: HitTestBehavior.opaque,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeInOut,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? AppColors.primary.withValues(alpha: 0.1)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Icon with badge
-                          Stack(
-                            clipBehavior: Clip.none,
-                            alignment: Alignment.center,
-                            children: [
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 200),
-                                child: Icon(
-                                  isActive ? item.activeIcon : item.icon,
-                                  key: ValueKey(isActive),
-                                  size: 24,
-                                  color: isActive
-                                      ? AppColors.primary
-                                      : isDark
-                                      ? AppColors.darkMuted
-                                      : AppColors.lightMuted,
-                                ),
-                              ),
-                              if (hasBadge)
-                                Positioned(
-                                  top: -5,
-                                  right: -6,
-                                  child: ScaleTransition(
-                                    scale: _badgeScale,
-                                    child: Container(
-                                      constraints: const BoxConstraints(
-                                        minWidth: 18,
-                                        minHeight: 18,
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => _onTabTapped(i),
+                          behavior: HitTestBehavior.opaque,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOut,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 8,
+                              horizontal: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? AppColors.primary.withValues(alpha: 0.1)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Icon with badge
+                                Stack(
+                                  clipBehavior: Clip.none,
+                                  alignment: Alignment.center,
+                                  children: [
+                                    AnimatedSwitcher(
+                                      duration: const Duration(milliseconds: 200),
+                                      child: Icon(
+                                        isActive ? item.activeIcon : item.icon,
+                                        key: ValueKey(isActive),
+                                        size: 24,
+                                        color: isActive
+                                            ? AppColors.primary
+                                            : isDark
+                                            ? AppColors.darkMuted
+                                            : AppColors.lightMuted,
                                       ),
-                                      padding: const EdgeInsets.all(2),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.redAccent,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          _newOrderCount > 9
-                                              ? '9+'
-                                              : '$_newOrderCount',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
+                                    ),
+                                    if (hasBadge)
+                                      Positioned(
+                                        top: -5,
+                                        right: -6,
+                                        child: ScaleTransition(
+                                          scale: _badgeScale,
+                                          child: Container(
+                                            constraints: const BoxConstraints(
+                                              minWidth: 18,
+                                              minHeight: 18,
+                                            ),
+                                            padding: const EdgeInsets.all(2),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.redAccent,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                _newOrderCount > 9
+                                                    ? '9+'
+                                                    : '$_newOrderCount',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ),
+                                  ],
                                 ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          // Label
-                          AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 200),
-                            style: TextStyle(
-                              color: isActive
-                                  ? AppColors.primary
-                                  : isDark
-                                  ? AppColors.darkMuted
-                                  : AppColors.lightMuted,
-                              fontSize: 11,
-                              fontWeight: isActive
-                                  ? FontWeight.w700
-                                  : FontWeight.normal,
+                                const SizedBox(height: 4),
+                                // Label
+                                AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 200),
+                                  style: TextStyle(
+                                    color: isActive
+                                        ? AppColors.primary
+                                        : isDark
+                                        ? AppColors.darkMuted
+                                        : AppColors.lightMuted,
+                                    fontSize: 11,
+                                    fontWeight: isActive
+                                        ? FontWeight.w700
+                                        : FontWeight.normal,
+                                  ),
+                                  child: Text(item.label),
+                                ),
+                              ],
                             ),
-                            child: Text(item.label),
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    }),
                   ),
-                );
-              }),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }

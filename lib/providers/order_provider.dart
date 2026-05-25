@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../locator.dart';
 import '../models/order.dart';
@@ -9,19 +8,18 @@ import '../services/ably_service.dart';
 import '../services/api_service.dart';
 
 class OrderProvider with ChangeNotifier {
-
   OrderProvider({
     // FIX #13 — injected, not global
     AblyService? ablyService,
     FlutterSecureStorage? storage,
-  })  : _ablyService = ablyService ?? locator<AblyService>(),
-        _storage = storage ?? const FlutterSecureStorage();
+  }) : _ablyService = ablyService ?? locator<AblyService>(),
+       _storage = storage ?? const FlutterSecureStorage();
 
   // ─────────────────────────────────────────────────────────────
   // Dependencies
   // ─────────────────────────────────────────────────────────────
 
-  final AblyService         _ablyService;
+  final AblyService _ablyService;
   // FIX #11 — FlutterSecureStorage instead of SharedPreferences
   // so order data (addresses, totals) is encrypted at rest.
   final FlutterSecureStorage _storage;
@@ -36,10 +34,10 @@ class OrderProvider with ChangeNotifier {
   // State
   // ─────────────────────────────────────────────────────────────
 
-  List<Order> _orders  = [];
-  bool        _isLoading = false;
-  bool        _disposed  = false;
-  String?     _error;
+  List<Order> _orders = [];
+  bool _isLoading = false;
+  bool _disposed = false;
+  String? _error;
 
   // FIX #16 — track subscribed order IDs to prevent duplicate Ably listeners
   final Set<String> _subscribedOrderIds = {};
@@ -48,9 +46,9 @@ class OrderProvider with ChangeNotifier {
   // Getters
   // ─────────────────────────────────────────────────────────────
 
-  List<Order> get orders    => _orders;
-  bool        get isLoading => _isLoading;
-  String?     get error     => _error;
+  List<Order> get orders => _orders;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
   // ─────────────────────────────────────────────────────────────
   // FIX #10 — userId is passed in from AuthProvider, not read from
@@ -64,18 +62,24 @@ class OrderProvider with ChangeNotifier {
     await _loadLocalOrders();
 
     if (userId != null) {
-      if (kDebugMode) debugPrint('[OrderProvider] Subscribing to real-time updates');
+      if (kDebugMode) {
+        debugPrint('[OrderProvider] Subscribing to real-time updates');
+      }
       _ablyService.subscribeToUserOrders(userId, _onOrderUpdate);
     } else {
       // Guest session — subscribe to each individually tracked order
-      if (kDebugMode) debugPrint('[OrderProvider] Guest session — initialising Ably');
+      if (kDebugMode) {
+        debugPrint('[OrderProvider] Guest session — initialising Ably');
+      }
       try {
         await _ablyService.initAblyGuest();
         for (final order in _orders) {
           _subscribeToOrder(order.id);
         }
       } catch (e) {
-        if (kDebugMode) debugPrint('[OrderProvider] Guest Ably init failed: $e');
+        if (kDebugMode) {
+          debugPrint('[OrderProvider] Guest Ably init failed: $e');
+        }
       }
     }
   }
@@ -91,9 +95,11 @@ class OrderProvider with ChangeNotifier {
         final List<dynamic> list = jsonDecode(ordersStr);
         _orders = list.map((i) => Order.fromJson(i)).toList();
         if (kDebugMode) {
-          debugPrint('[OrderProvider] Loaded ${_orders.length} cached order(s)');
+          debugPrint(
+            '[OrderProvider] Loaded ${_orders.length} cached order(s)',
+          );
         }
-        notifyListeners();
+        _safeNotify();
       }
     } catch (e) {
       if (kDebugMode) debugPrint('[OrderProvider] _loadLocalOrders error: $e');
@@ -123,7 +129,9 @@ class OrderProvider with ChangeNotifier {
 
   void _onOrderUpdate(String orderId, OrderStatus status) {
     if (kDebugMode) {
-      debugPrint('[OrderProvider] Ably update — orderId=$orderId, status=${status.name}');
+      debugPrint(
+        '[OrderProvider] Ably update — orderId=$orderId, status=${status.name}',
+      );
     }
     updateOrderStatus(orderId, status);
     if (status == OrderStatus.priceAdjusted) {
@@ -136,21 +144,25 @@ class OrderProvider with ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   Future<void> refreshOrders() async {
-    if (kDebugMode) debugPrint('[OrderProvider] refreshOrders: fetching from remote...');
+    if (kDebugMode) {
+      debugPrint('[OrderProvider] refreshOrders: fetching from remote...');
+    }
     _isLoading = true;
-    notifyListeners();
+    _safeNotify();
 
     try {
       _orders = await locator<OrderRepository>().getMyOrders();
-      _error  = null;
+      _error = null;
       await _persistOrders();
-      if (kDebugMode) debugPrint('[OrderProvider] Fetched ${_orders.length} order(s)');
+      if (kDebugMode) {
+        debugPrint('[OrderProvider] Fetched ${_orders.length} order(s)');
+      }
     } catch (e) {
       _error = ApiService.getErrorMessage(e);
       if (kDebugMode) debugPrint('[OrderProvider] refreshOrders error: $e');
     } finally {
       _isLoading = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
@@ -160,7 +172,7 @@ class OrderProvider with ChangeNotifier {
 
   Future<Order> placeOrder(Map<String, dynamic> orderData) async {
     _isLoading = true;
-    notifyListeners();
+    _safeNotify();
 
     try {
       final newOrder = await locator<OrderRepository>().placeOrder(orderData);
@@ -171,7 +183,9 @@ class OrderProvider with ChangeNotifier {
       _subscribeToOrder(newOrder.id);
 
       await _persistOrders();
-      if (kDebugMode) debugPrint('[OrderProvider] Order placed — id=${newOrder.id}');
+      if (kDebugMode) {
+        debugPrint('[OrderProvider] Order placed — id=${newOrder.id}');
+      }
       return newOrder;
     } catch (e) {
       _error = ApiService.getErrorMessage(e);
@@ -179,7 +193,7 @@ class OrderProvider with ChangeNotifier {
       rethrow;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
@@ -193,7 +207,7 @@ class OrderProvider with ChangeNotifier {
     String? email,
   }) async {
     _isLoading = true;
-    notifyListeners();
+    _safeNotify();
 
     try {
       final response = await locator<OrderRepository>().initializePayment(
@@ -202,7 +216,9 @@ class OrderProvider with ChangeNotifier {
         email: email,
       );
       _error = null;
-      if (kDebugMode) debugPrint('[OrderProvider] Payment initialised for orderId=$orderId');
+      if (kDebugMode) {
+        debugPrint('[OrderProvider] Payment initialised for orderId=$orderId');
+      }
       return response;
     } catch (e) {
       _error = ApiService.getErrorMessage(e);
@@ -210,7 +226,7 @@ class OrderProvider with ChangeNotifier {
       rethrow;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
@@ -222,17 +238,23 @@ class OrderProvider with ChangeNotifier {
 
   Future<Order> updateOrder(String id, Map<String, dynamic> orderData) async {
     _isLoading = true;
-    notifyListeners();
+    _safeNotify();
 
     try {
-      final updatedOrder =
-          await locator<OrderRepository>().updateOrder(id, orderData);
+      final updatedOrder = await locator<OrderRepository>().updateOrder(
+        id,
+        orderData,
+      );
 
       final index = _orders.indexWhere((o) => o.id == id);
       if (index != -1) {
         _orders[index] = updatedOrder;
       } else {
-        if (kDebugMode) debugPrint('[OrderProvider] updateOrder: orderId=$id not found locally');
+        if (kDebugMode) {
+          debugPrint(
+            '[OrderProvider] updateOrder: orderId=$id not found locally',
+          );
+        }
       }
 
       _error = null;
@@ -244,7 +266,7 @@ class OrderProvider with ChangeNotifier {
       rethrow;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
@@ -256,10 +278,12 @@ class OrderProvider with ChangeNotifier {
     final index = _orders.indexWhere((o) => o.id == orderId);
     if (index != -1) {
       _orders[index] = _orders[index].copyWith(status: status);
-      notifyListeners();
+      _safeNotify();
     } else {
       if (kDebugMode) {
-        debugPrint('[OrderProvider] updateOrderStatus: orderId=$orderId not found');
+        debugPrint(
+          '[OrderProvider] updateOrderStatus: orderId=$orderId not found',
+        );
       }
     }
   }
@@ -270,13 +294,15 @@ class OrderProvider with ChangeNotifier {
     final index = _orders.indexWhere((o) => o.id == orderId);
     if (index != -1) {
       _orders[index] = _orders[index].copyWith(
-        status:  OrderStatus.outForDelivery,
+        status: OrderStatus.outForDelivery,
         riderId: riderId,
       );
-      notifyListeners();
+      _safeNotify();
     } else {
       if (kDebugMode) {
-        debugPrint('[OrderProvider] assignRiderToOrder: orderId=$orderId not found');
+        debugPrint(
+          '[OrderProvider] assignRiderToOrder: orderId=$orderId not found',
+        );
       }
     }
   }
@@ -291,7 +317,11 @@ class OrderProvider with ChangeNotifier {
     await _storage.delete(key: _kOrders);
     if (kDebugMode) debugPrint('[OrderProvider] Orders cleared');
     // Note: Ably is disconnected globally by AuthProvider on logout —
-    // do not call ablyService.disconnect() here.
+    _safeNotify();
+  }
+
+  void _safeNotify() {
+    if (_disposed) return;
     notifyListeners();
   }
 

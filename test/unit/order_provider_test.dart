@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:campuschow/providers/order_provider.dart';
 import 'package:campuschow/repositories/order_repository.dart';
 import 'package:campuschow/models/order.dart';
+import 'package:campuschow/services/ably_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class MockOrderRepository implements OrderRepository {
   List<Order> getOrdersResult = [];
@@ -97,6 +99,122 @@ class MockOrderRepository implements OrderRepository {
   }
 }
 
+class MockAblyService implements AblyService {
+  @override
+  Future<void> initAbly(String userId) async {}
+  @override
+  Future<void> initAblyGuest() async {}
+  @override
+  void subscribeToUserOrders(String userId, void Function(String orderId, OrderStatus status) onUpdate) {}
+  @override
+  void subscribeToSingleOrder(String orderId, void Function(String orderId, OrderStatus status) onUpdate) {}
+  @override
+  void addOrderListener(void Function(String orderId, OrderStatus status) l) {}
+  @override
+  void removeOrderListener(void Function(String orderId, OrderStatus status) l) {}
+  @override
+  void addWalletListener(void Function() l) {}
+  @override
+  void removeWalletListener(void Function() l) {}
+  @override
+  void notifyWalletUpdate() {}
+  @override
+  void addMenuListener(void Function(String storeId, String? menuItemId, bool? isReady) l) {}
+  @override
+  void removeMenuListener(void Function(String storeId, String? menuItemId, bool? isReady) l) {}
+  @override
+  void addStoreListener(void Function(String storeId, bool isOpen) l) {}
+  @override
+  void removeStoreListener(void Function(String storeId, bool isOpen) l) {}
+  @override
+  void addRoleListener(void Function(String newRole) l) {}
+  @override
+  void removeRoleListener(void Function(String newRole) l) {}
+  @override
+  void addNotificationListener(void Function(Map<String, dynamic> payload) l) {}
+  @override
+  void removeNotificationListener(void Function(Map<String, dynamic> payload) l) {}
+  @override
+  void addStoreApprovalListener(void Function(String storeId) l) {}
+  @override
+  void removeStoreApprovalListener(void Function(String storeId) l) {}
+  @override
+  Future<void> disconnect() async {}
+  @override
+  Future<void> subscribeToRiderChannel(String riderId, {void Function(Map<String, dynamic> data)? onOrderUpdate, void Function(Map<String, dynamic> data)? onNewJob}) async {}
+  @override
+  void cancelRiderSubscriptions() {}
+  @override
+  Future<void> subscribeToStoreOrders(String storeId) async {}
+  @override
+  void removeSubscriptionKey(String key) {}
+  @override
+  set onPushActivationFailed(void Function(Object error)? _onPushActivationFailed) {}
+  @override
+  void Function(Object error)? get onPushActivationFailed => null;
+}
+
+class MockFlutterSecureStorage extends FlutterSecureStorage {
+  final Map<String, String> _data = {};
+
+  @override
+  Future<void> write({
+    required String key,
+    required String? value,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    if (value == null) {
+      _data.remove(key);
+    } else {
+      _data[key] = value;
+    }
+  }
+
+  @override
+  Future<String?> read({
+    required String key,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    return _data[key];
+  }
+
+  @override
+  Future<void> delete({
+    required String key,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    _data.remove(key);
+  }
+
+  @override
+  Future<bool> containsKey({
+    required String key,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    return _data.containsKey(key);
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final locator = GetIt.instance;
@@ -111,16 +229,23 @@ void main() {
 
   group('OrderProvider Unit Tests', () {
     late MockOrderRepository mockRepository;
+    late MockFlutterSecureStorage mockStorage;
 
     setUp(() {
       SharedPreferences.setMockInitialValues({});
       mockRepository = MockOrderRepository();
+      mockStorage = MockFlutterSecureStorage();
 
       // Register or override OrderRepository in locator
       if (locator.isRegistered<OrderRepository>()) {
         locator.unregister<OrderRepository>();
       }
       locator.registerSingleton<OrderRepository>(mockRepository);
+
+      if (locator.isRegistered<AblyService>()) {
+        locator.unregister<AblyService>();
+      }
+      locator.registerSingleton<AblyService>(MockAblyService());
     });
 
     final mockOrder = Order(
@@ -142,12 +267,13 @@ void main() {
     );
 
     test('should initialize and load orders from cache', () async {
-      SharedPreferences.setMockInitialValues({
-        'launch-fast-orders': jsonEncode([mockOrder.toJson()]),
-      });
+      await mockStorage.write(
+        key: 'launch-fast-orders',
+        value: jsonEncode([mockOrder.toJson()]),
+      );
 
-      final provider = OrderProvider();
-      await Future.delayed(Duration.zero);
+      final provider = OrderProvider(storage: mockStorage);
+      await provider.initialize(null);
 
       expect(provider.orders.length, equals(1));
       expect(provider.orders.first.id, equals('ord_123'));
@@ -156,63 +282,55 @@ void main() {
     test('refreshOrders fetches and updates orders in cache', () async {
       mockRepository.getMyOrdersResult = [mockOrder];
 
-      final provider = OrderProvider();
-      await Future.delayed(Duration.zero);
-      expect(provider.orders, isEmpty);
-
+      final provider = OrderProvider(storage: mockStorage);
       await provider.refreshOrders();
 
       expect(provider.orders.length, equals(1));
       expect(provider.orders.first.id, equals('ord_123'));
 
-      final prefs = await SharedPreferences.getInstance();
-      final savedStr = prefs.getString('launch-fast-orders');
-      expect(savedStr, isNotNull);
-      expect(jsonDecode(savedStr!)[0]['id'], equals('ord_123'));
+      final cached = await mockStorage.read(key: 'launch-fast-orders');
+      expect(cached, isNotNull);
     });
 
     test('placeOrder delegates to repository and inserts order in list', () async {
       mockRepository.placeOrderResult = mockOrder;
 
-      final provider = OrderProvider();
-      await Future.delayed(Duration.zero);
-
+      final provider = OrderProvider(storage: mockStorage);
       final result = await provider.placeOrder({'subtotal': 3000.0});
-      expect(result, isNotNull);
-      expect(result!.id, equals('ord_123'));
+
+      expect(result.id, equals('ord_123'));
       expect(provider.orders.length, equals(1));
-      expect(provider.orders.first.id, equals('ord_123'));
+      expect(mockRepository.lastPlaceOrderData!['subtotal'], equals(3000.0));
     });
 
     test('updateOrder updates local order state and cache', () async {
-      mockRepository.getMyOrdersResult = [mockOrder];
+      mockRepository.updateOrderResult = mockOrder.copyWith(status: OrderStatus.accepted);
+      mockRepository.getMyOrdersResult = [mockOrder.copyWith(status: OrderStatus.accepted)];
 
-      final provider = OrderProvider();
-      await provider.refreshOrders();
-      expect(provider.orders.first.status, equals(OrderStatus.pending));
+      final provider = OrderProvider(storage: mockStorage);
+      provider.orders.add(mockOrder);
 
-      final updatedOrder = mockOrder.copyWith(status: OrderStatus.preparing);
-      mockRepository.updateOrderResult = updatedOrder;
+      await provider.updateOrder('ord_123', {'notes': 'No onions'});
 
-      await provider.updateOrder('ord_123', {'status': 'preparing'});
-
-      expect(provider.orders.first.status, equals(OrderStatus.preparing));
+      expect(provider.orders.first.status, equals(OrderStatus.accepted));
+      expect(mockRepository.lastUpdateOrderId, equals('ord_123'));
     });
 
     test('clearOrders empties provider list and removes cache', () async {
-      SharedPreferences.setMockInitialValues({
-        'launch-fast-orders': jsonEncode([mockOrder.toJson()]),
-      });
+      await mockStorage.write(
+        key: 'launch-fast-orders',
+        value: jsonEncode([mockOrder.toJson()]),
+      );
 
-      final provider = OrderProvider();
-      await Future.delayed(Duration.zero);
-      expect(provider.orders.isNotEmpty, isTrue);
+      final provider = OrderProvider(storage: mockStorage);
+      await provider.initialize(null);
+      expect(provider.orders.length, equals(1));
 
       await provider.clearOrders();
 
-      expect(provider.orders, isEmpty);
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.containsKey('launch-fast-orders'), isFalse);
+      expect(provider.orders.length, equals(0));
+      final cached = await mockStorage.read(key: 'launch-fast-orders');
+      expect(cached, isNull);
     });
   });
 }

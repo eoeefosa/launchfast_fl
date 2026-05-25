@@ -1,126 +1,127 @@
 import 'dart:io';
-import 'dart:ui';
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/cart_provider.dart';
+import '../../widgets/common/liquid_glass_bottom_bar.dart';
 import '../../widgets/responsive_layout.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Shell
+// ─────────────────────────────────────────────────────────────────────────────
+
 class TabsShell extends StatelessWidget {
+  const TabsShell({super.key, required this.navigationShell});
+
   final StatefulNavigationShell navigationShell;
 
-  const TabsShell({super.key, required this.navigationShell});
+  // ── Nav-item definitions ───────────────────────────────────────────────────
+
+  /// iOS items — use [LiquidGlassNavItem] so badge and icons are handled
+  /// by [LiquidGlassBottomBar] directly.
+  List<LiquidGlassNavItem> _iosItems(int cartQty) => [
+    const LiquidGlassNavItem(
+      icon: Icons.home_outlined,
+      activeIcon: Icons.home,
+      label: 'Home',
+    ),
+    LiquidGlassNavItem(
+      icon: Icons.shopping_cart_outlined,
+      activeIcon: Icons.shopping_cart,
+      label: 'Cart',
+      badgeCount: cartQty,
+    ),
+    const LiquidGlassNavItem(
+      icon: Icons.receipt_long_outlined,
+      activeIcon: Icons.receipt_long,
+      label: 'Orders',
+    ),
+    const LiquidGlassNavItem(
+      icon: Icons.person_outline,
+      activeIcon: Icons.person,
+      label: 'Profile',
+    ),
+  ];
+
+  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final cartProvider = context.watch<CartProvider>();
-    final totalQuantity = cartProvider.totalQuantity;
-
-    final List<BottomNavigationBarItem> items = [
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.home_outlined),
-        activeIcon: Icon(Icons.home),
-        label: 'Home',
-      ),
-      BottomNavigationBarItem(
-        icon: _buildCartIcon(totalQuantity, false, context),
-        activeIcon: _buildCartIcon(totalQuantity, true, context),
-        label: 'Cart',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.receipt_long_outlined),
-        activeIcon: Icon(Icons.receipt_long),
-        label: 'Orders',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.person_outline),
-        activeIcon: Icon(Icons.person),
-        label: 'Profile',
-      ),
-    ];
-
-    final isIOS = Platform.isIOS;
-    // final primaryColor = Theme.of(context).primaryColor;
+    final cartQty = context.watch<CartProvider>().totalQuantity;
     final scheme = Theme.of(context).colorScheme;
-    final activeColor = scheme.primary;
 
     return ResponsiveLayout(
       child: Scaffold(
         extendBody: true,
         body: navigationShell,
-        bottomNavigationBar: isIOS
-            ? _buildIOSBar(context, navigationShell, items, activeColor)
-            : _buildAndroidBar(context, navigationShell, items, activeColor),
-      ),
-    );
-  }
-
-  Widget _buildIOSBar(
-    BuildContext context,
-    StatefulNavigationShell navigationShell,
-    List<BottomNavigationBarItem> items,
-    Color activeColor,
-  ) {
-    final scheme = Theme.of(context).colorScheme;
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          decoration: BoxDecoration(
-            color: scheme.surface.withValues(alpha: 0.85),
-            border: Border(
-              top: BorderSide(
-                color: scheme.onSurface.withValues(alpha: 0.08),
-                width: 0.5,
+        bottomNavigationBar: Platform.isIOS
+            ? _IosBar(
+                navigationShell: navigationShell,
+                items: _iosItems(cartQty),
+              )
+            : _AndroidBar(
+                navigationShell: navigationShell,
+                cartQty: cartQty,
+                activeColor: scheme.primary,
               ),
-            ),
-          ),
-          child: CupertinoTabBar(
-            currentIndex: navigationShell.currentIndex,
-            onTap: (index) {
-              HapticFeedback.lightImpact();
-              navigationShell.goBranch(index);
-            },
-            backgroundColor: Colors.transparent,
-            activeColor: activeColor,
-            inactiveColor: scheme.onSurface.withValues(alpha: 0.45),
-            items: items.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              final isActive = index == navigationShell.currentIndex;
-              return BottomNavigationBarItem(
-                icon: _AnimatedIcon(
-                  icon: item.icon,
-                  isActive: isActive,
-                  activeColor: activeColor,
-                ),
-                label: item.label,
-              );
-            }).toList(),
-          ),
-        ),
       ),
     );
   }
+}
 
-  Widget _buildAndroidBar(
-    BuildContext context,
-    StatefulNavigationShell navigationShell,
-    List<BottomNavigationBarItem> items,
-    Color activeColor,
-  ) {
+// ─────────────────────────────────────────────────────────────────────────────
+// iOS — Liquid Glass bar
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _IosBar extends StatelessWidget {
+  const _IosBar({required this.navigationShell, required this.items});
+
+  final StatefulNavigationShell navigationShell;
+  final List<LiquidGlassNavItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return LiquidGlassBottomBar(
+      currentIndex: navigationShell.currentIndex,
+      onTap: navigationShell.goBranch,
+      items: items,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Android — Material 3 NavigationBar
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AndroidBar extends StatelessWidget {
+  const _AndroidBar({
+    required this.navigationShell,
+    required this.cartQty,
+    required this.activeColor,
+  });
+
+  final StatefulNavigationShell navigationShell;
+  final int cartQty;
+  final Color activeColor;
+
+  @override
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentIndex = navigationShell.currentIndex;
 
     return Container(
       decoration: BoxDecoration(
         color: scheme.surface,
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.3) : scheme.onSurface.withValues(alpha: 0.08),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.30)
+                : scheme.onSurface.withValues(alpha: 0.07),
             blurRadius: 24,
             offset: const Offset(0, -4),
           ),
@@ -128,16 +129,16 @@ class TabsShell extends StatelessWidget {
       ),
       child: NavigationBarTheme(
         data: NavigationBarThemeData(
-          indicatorColor: activeColor.withValues(alpha: 0.15),
+          indicatorColor: activeColor.withValues(alpha: 0.14),
           indicatorShape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           iconTheme: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return IconThemeData(color: activeColor, size: 28);
+              return IconThemeData(color: activeColor, size: 26);
             }
             return IconThemeData(
-              color: scheme.onSurface.withValues(alpha: 0.6),
+              color: scheme.onSurface.withValues(alpha: 0.55),
               size: 24,
             );
           }),
@@ -145,20 +146,20 @@ class TabsShell extends StatelessWidget {
             if (states.contains(WidgetState.selected)) {
               return TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 color: activeColor,
                 letterSpacing: 0.2,
               );
             }
             return TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurface.withValues(alpha: 0.5),
+              fontWeight: FontWeight.w500,
+              color: scheme.onSurface.withValues(alpha: 0.50),
             );
           }),
         ),
         child: NavigationBar(
-          selectedIndex: navigationShell.currentIndex,
+          selectedIndex: currentIndex,
           onDestinationSelected: (index) {
             HapticFeedback.selectionClick();
             navigationShell.goBranch(index);
@@ -166,68 +167,86 @@ class TabsShell extends StatelessWidget {
           backgroundColor: scheme.surface,
           elevation: 0,
           height: 80,
-          destinations: items.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
-            final isActive = index == navigationShell.currentIndex;
-            return NavigationDestination(
-              icon: _AnimatedIcon(
-                icon: item.icon,
-                isActive: isActive,
-                activeColor: activeColor,
-              ),
-              selectedIcon: _AnimatedIcon(
-                icon: item.activeIcon,
-                isActive: isActive,
-                activeColor: activeColor,
-              ),
-              label: item.label!,
-            );
-          }).toList(),
+          destinations: [
+            const NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: _PulsingIcon(icon: Icon(Icons.home)),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: _CartIcon(quantity: cartQty, isActive: false),
+              selectedIcon: _CartIcon(quantity: cartQty, isActive: true),
+              label: 'Cart',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.receipt_long_outlined),
+              selectedIcon: _PulsingIcon(icon: Icon(Icons.receipt_long)),
+              label: 'Orders',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: _PulsingIcon(icon: Icon(Icons.person)),
+              label: 'Profile',
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _AnimatedIcon extends StatelessWidget {
-  final Widget icon;
-  final bool isActive;
-  final Color activeColor;
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const _AnimatedIcon({
-    required this.icon,
-    required this.isActive,
-    required this.activeColor,
-  });
+/// Subtle breathing animation for the active icon on Android.
+class _PulsingIcon extends StatelessWidget {
+  const _PulsingIcon({required this.icon});
+
+  final Widget icon;
 
   @override
   Widget build(BuildContext context) {
-    if (!isActive) return icon;
-
     return icon
-        .animate(onPlay: (controller) => controller.repeat(reverse: true))
+        .animate(onPlay: (c) => c.repeat(reverse: true))
         .scale(
           begin: const Offset(1, 1),
-          end: const Offset(1.12, 1.12),
-          duration: 1000.ms,
+          end: const Offset(1.10, 1.10),
+          duration: 900.ms,
           curve: Curves.easeInOut,
         );
   }
 }
 
-Widget _buildCartIcon(int quantity, bool isActive, BuildContext context) {
-  final scheme = Theme.of(context).colorScheme;
-  final activeColor = scheme.primary;
+/// Cart icon with a badge overlay, used in the Android [NavigationBar].
+class _CartIcon extends StatelessWidget {
+  const _CartIcon({required this.quantity, required this.isActive});
 
-  return Stack(
-    clipBehavior: Clip.none,
-    children: [
-      Icon(
-        isActive ? Icons.shopping_cart : Icons.shopping_cart_outlined,
-        color: isActive ? activeColor : scheme.onSurface.withValues(alpha: 0.6),
-      ),
-      if (quantity > 0)
+  final int quantity;
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = isActive
+        ? scheme.primary
+        : scheme.onSurface.withValues(alpha: 0.55);
+
+    Widget iconWidget = Icon(
+      isActive ? Icons.shopping_cart : Icons.shopping_cart_outlined,
+      color: color,
+    );
+
+    if (isActive) {
+      iconWidget = _PulsingIcon(icon: iconWidget);
+    }
+
+    if (quantity <= 0) return iconWidget;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        iconWidget,
         Positioned(
           right: -8,
           top: -4,
@@ -237,21 +256,30 @@ Widget _buildCartIcon(int quantity, bool isActive, BuildContext context) {
               color: scheme.error,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: scheme.surface, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: scheme.error.withValues(alpha: 0.40),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
             child: Center(
               child: Text(
-                '$quantity',
+                quantity > 99 ? '99+' : '$quantity',
                 style: TextStyle(
                   color: scheme.onError,
                   fontSize: 10,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
                 ),
                 textAlign: TextAlign.center,
               ),
             ),
           ),
         ),
-    ],
-  );
+      ],
+    );
+  }
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:campuschow/repositories/order_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,10 @@ import 'package:dio/dio.dart';
 import 'package:campuschow/models/order.dart';
 import 'package:campuschow/services/api_service.dart';
 import 'package:campuschow/screens/tabs/order_details_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:get_it/get_it.dart';
+import 'package:campuschow/providers/order_provider.dart';
+import 'package:campuschow/services/ably_service.dart';
 
 class MockAdapter implements HttpClientAdapter {
   late Future<ResponseBody> Function(RequestOptions options) handler;
@@ -23,19 +28,104 @@ class MockAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+class MockAblyService implements AblyService {
+  @override
+  Future<void> initAbly(String userId) async {}
+  @override
+  Future<void> initAblyGuest() async {}
+  @override
+  void subscribeToUserOrders(
+    String userId,
+    void Function(String orderId, OrderStatus status) onUpdate,
+  ) {}
+  @override
+  void subscribeToSingleOrder(
+    String orderId,
+    void Function(String orderId, OrderStatus status) onUpdate,
+  ) {}
+  @override
+  void addOrderListener(void Function(String orderId, OrderStatus status) l) {}
+  @override
+  void removeOrderListener(
+    void Function(String orderId, OrderStatus status) l,
+  ) {}
+  @override
+  void addWalletListener(void Function() l) {}
+  @override
+  void removeWalletListener(void Function() l) {}
+  @override
+  void notifyWalletUpdate() {}
+  @override
+  void addMenuListener(
+    void Function(String storeId, String? menuItemId, bool? isReady) l,
+  ) {}
+  @override
+  void removeMenuListener(
+    void Function(String storeId, String? menuItemId, bool? isReady) l,
+  ) {}
+  @override
+  void addStoreListener(void Function(String storeId, bool isOpen) l) {}
+  @override
+  void removeStoreListener(void Function(String storeId, bool isOpen) l) {}
+  @override
+  void addRoleListener(void Function(String newRole) l) {}
+  @override
+  void removeRoleListener(void Function(String newRole) l) {}
+  @override
+  void addNotificationListener(void Function(Map<String, dynamic> payload) l) {}
+  @override
+  void removeNotificationListener(
+    void Function(Map<String, dynamic> payload) l,
+  ) {}
+  @override
+  void addStoreApprovalListener(void Function(String storeId) l) {}
+  @override
+  void removeStoreApprovalListener(void Function(String storeId) l) {}
+  @override
+  Future<void> disconnect() async {}
+  @override
+  Future<void> subscribeToRiderChannel(
+    String riderId, {
+    void Function(Map<String, dynamic> data)? onOrderUpdate,
+    void Function(Map<String, dynamic> data)? onNewJob,
+  }) async {}
+  @override
+  void cancelRiderSubscriptions() {}
+  @override
+  Future<void> subscribeToStoreOrders(String storeId) async {}
+  @override
+  void removeSubscriptionKey(String key) {}
+  @override
+  set onPushActivationFailed(
+    void Function(Object error)? _onPushActivationFailed,
+  ) {}
+  @override
+  void Function(Object error)? get onPushActivationFailed => null;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  final locator = GetIt.instance;
 
   group('PriceAdjustmentPanel Widget Tests', () {
     late MockAdapter mockAdapter;
     late HttpClientAdapter originalAdapter;
 
     setUpAll(() {
-      const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+      const channel = MethodChannel(
+        'plugins.it_nomads.com/flutter_secure_storage',
+      );
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (methodCall) async {
-        return null;
-      });
+            return null;
+          });
+
+      if (!locator.isRegistered<OrderRepository>()) {
+        locator.registerSingleton<OrderRepository>(OrderRepository());
+      }
+      if (!locator.isRegistered<AblyService>()) {
+        locator.registerSingleton<AblyService>(MockAblyService());
+      }
     });
 
     setUp(() {
@@ -66,13 +156,15 @@ void main() {
       stores: [],
     );
 
-    testWidgets('should render price details correctly', (WidgetTester tester) async {
+    testWidgets('should render price details correctly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PriceAdjustmentPanel(
-              order: mockOrder,
-              onUpdated: () {},
+        ChangeNotifierProvider<OrderProvider>(
+          create: (_) => OrderProvider(),
+          child: MaterialApp(
+            home: Scaffold(
+              body: PriceAdjustmentPanel(order: mockOrder, onUpdated: () {}),
             ),
           ),
         ),
@@ -89,95 +181,131 @@ void main() {
       expect(find.text('Cancel Order'), findsOneWidget);
     });
 
-    testWidgets('clicking Pay Balance sends ACCEPT request and calls onUpdated', (WidgetTester tester) async {
-      var onUpdatedCalled = false;
-      var apiCalled = false;
+    testWidgets(
+      'clicking Pay Balance sends ACCEPT request and calls onUpdated',
+      (WidgetTester tester) async {
+        var onUpdatedCalled = false;
+        var apiCalled = false;
 
-      mockAdapter.handler = (options) async {
-        apiCalled = true;
-        expect(options.path, contains('/orders/ord_123/price-response'));
-        expect(options.method, equals('POST'));
-        expect(options.data['action'], equals('ACCEPT'));
+        mockAdapter.handler = (options) async {
+          if (options.path.contains('/orders/ord_123/price-response')) {
+            apiCalled = true;
+            expect(options.method, equals('POST'));
+            expect(options.data['action'], equals('ACCEPT'));
 
-        return ResponseBody.fromString(
-          jsonEncode({
-            'id': 'ord_123',
-            'status': 'ACCEPTED',
-          }),
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
-        );
-      };
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PriceAdjustmentPanel(
-              order: mockOrder,
-              onUpdated: () {
-                onUpdatedCalled = true;
+            return ResponseBody.fromString(
+              jsonEncode({'id': 'ord_123', 'status': 'ACCEPTED'}),
+              200,
+              headers: {
+                Headers.contentTypeHeader: [Headers.jsonContentType],
               },
+            );
+          }
+
+          if (options.path.contains('/orders/my')) {
+            return ResponseBody.fromString(
+              jsonEncode([]),
+              200,
+              headers: {
+                Headers.contentTypeHeader: [Headers.jsonContentType],
+              },
+            );
+          }
+
+          throw Exception('Unexpected request: ${options.path}');
+        };
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<OrderProvider>(
+            create: (_) => OrderProvider(),
+            child: MaterialApp(
+              home: Scaffold(
+                body: PriceAdjustmentPanel(
+                  order: mockOrder,
+                  onUpdated: () {
+                    onUpdatedCalled = true;
+                  },
+                ),
+              ),
             ),
           ),
-        ),
-      );
-
-      final payButton = find.text('Pay Balance');
-      await tester.tap(payButton);
-      await tester.pump(); // Start request
-
-      await tester.pumpAndSettle();
-
-      expect(apiCalled, isTrue);
-      expect(onUpdatedCalled, isTrue);
-      expect(find.text('Price adjustment accepted. Processing order...'), findsOneWidget);
-    });
-
-    testWidgets('clicking Cancel Order sends REJECT request and calls onUpdated', (WidgetTester tester) async {
-      var onUpdatedCalled = false;
-      var apiCalled = false;
-
-      mockAdapter.handler = (options) async {
-        apiCalled = true;
-        expect(options.path, contains('/orders/ord_123/price-response'));
-        expect(options.method, equals('POST'));
-        expect(options.data['action'], equals('REJECT'));
-
-        return ResponseBody.fromString(
-          jsonEncode({
-            'id': 'ord_123',
-            'status': 'REJECTED',
-          }),
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
         );
-      };
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PriceAdjustmentPanel(
-              order: mockOrder,
-              onUpdated: () {
-                onUpdatedCalled = true;
+        final payButton = find.text('Pay Balance');
+        await tester.tap(payButton);
+        await tester.pump(); // Start request
+
+        await tester.pumpAndSettle();
+
+        expect(apiCalled, isTrue);
+        expect(onUpdatedCalled, isTrue);
+        expect(
+          find.text('Price adjustment accepted. Processing order...'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'clicking Cancel Order sends REJECT request and calls onUpdated',
+      (WidgetTester tester) async {
+        var onUpdatedCalled = false;
+        var apiCalled = false;
+
+        mockAdapter.handler = (options) async {
+          if (options.path.contains('/orders/ord_123/price-response')) {
+            apiCalled = true;
+            expect(options.method, equals('POST'));
+            expect(options.data['action'], equals('REJECT'));
+
+            return ResponseBody.fromString(
+              jsonEncode({'id': 'ord_123', 'status': 'REJECTED'}),
+              200,
+              headers: {
+                Headers.contentTypeHeader: [Headers.jsonContentType],
               },
+            );
+          }
+
+          if (options.path.contains('/orders/my')) {
+            return ResponseBody.fromString(
+              jsonEncode([]),
+              200,
+              headers: {
+                Headers.contentTypeHeader: [Headers.jsonContentType],
+              },
+            );
+          }
+
+          throw Exception('Unexpected request: ${options.path}');
+        };
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<OrderProvider>(
+            create: (_) => OrderProvider(),
+            child: MaterialApp(
+              home: Scaffold(
+                body: PriceAdjustmentPanel(
+                  order: mockOrder,
+                  onUpdated: () {
+                    onUpdatedCalled = true;
+                  },
+                ),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      final cancelButton = find.text('Cancel Order');
-      await tester.tap(cancelButton);
-      await tester.pump(); // Start request
-      await tester.pumpAndSettle();
+        final cancelButton = find.text('Cancel Order');
+        await tester.tap(cancelButton);
+        await tester.pump(); // Start request
 
-      expect(apiCalled, isTrue);
-      expect(onUpdatedCalled, isTrue);
-      expect(find.text('Order cancelled successfully.'), findsOneWidget);
-    });
+        await tester.pumpAndSettle();
+
+        expect(apiCalled, isTrue);
+        expect(onUpdatedCalled, isTrue);
+        expect(find.text('Order cancelled successfully.'), findsOneWidget);
+      },
+    );
   });
 }

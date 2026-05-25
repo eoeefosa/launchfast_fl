@@ -512,8 +512,8 @@ class AuthProvider extends ChangeNotifier {
     if (name == null && phone == null) return;
 
     final updates = <String, dynamic>{
-      if (name  != null) 'name':  name,
-      if (phone != null) 'phone': phone,
+      'name':  ?name,
+      'phone': ?phone,
     };
 
     await updateUser(updates); // Optimistic
@@ -526,10 +526,11 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // FIX #14 — hasSufficientFunds removed from auth layer.
-  // Move this to your CartProvider / CheckoutProvider:
-  //   bool hasSufficientFunds(double total) =>
-  //       (authProvider.user?.walletBalance ?? 0) >= total;
+  // Added hasSufficientFunds back to AuthProvider for compatibility.
+  /// Returns true if the user's wallet balance is sufficient for the given total.
+  bool hasSufficientFunds(double total) {
+    return (user?.walletBalance ?? 0) >= total;
+  }
 
   void setGuestInfo({String? name, String? phone}) {
     if (name  != null) _guestName  = name;
@@ -599,7 +600,16 @@ class AuthProvider extends ChangeNotifier {
         throw Exception('Failed to get Firebase ID token');
       }
 
-      final data = await locator<AuthRepository>().loginWithApple(firebaseIdToken);
+      String? fullName;
+      if (appleCredential.givenName != null || appleCredential.familyName != null) {
+        fullName = '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'.trim();
+        if (fullName.isEmpty) fullName = null;
+      }
+
+      final data = await locator<AuthRepository>().loginWithApple(
+        firebaseIdToken,
+        name: fullName,
+      );
       await _persistAuthResponse(data);
       _initializeAblySafely();
       _syncFCMTokenSafely();

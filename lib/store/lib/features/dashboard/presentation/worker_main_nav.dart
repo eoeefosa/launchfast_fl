@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
@@ -8,6 +9,7 @@ import 'package:campuschow/store/lib/features/dashboard/presentation/worker_dash
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'package:campuschow/store/lib/core/services/ably_service.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
+import 'package:campuschow/widgets/common/liquid_glass_bottom_bar.dart';
 import 'menu_screen.dart';
 
 class WorkerMainNav extends StatefulWidget {
@@ -137,100 +139,114 @@ class _WorkerMainNavState extends State<WorkerMainNav>
         duration: const Duration(milliseconds: 220),
         child: pages[_currentIndex],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 15,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: BottomAppBar(
-          padding: EdgeInsets.zero,
-          height: 70,
-          color: isDark ? AppColors.darkSurface : Colors.white,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(_navItems.length, (i) {
-              final item = _navItems[i];
-              final isActive = _currentIndex == i;
-              final hasBadge = i == 1 && _newOrderCount > 0;
+      bottomNavigationBar: Platform.isIOS
+          ? LiquidGlassBottomBar(
+              currentIndex: _currentIndex,
+              onTap: _onTabTapped,
+              items: List.generate(_navItems.length, (i) {
+                final item = _navItems[i];
+                return LiquidGlassNavItem(
+                  icon: item.icon,
+                  activeIcon: item.activeIcon,
+                  label: item.label,
+                  badgeCount: i == 1 ? _newOrderCount : null,
+                );
+              }),
+            )
+          : Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 15,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: BottomAppBar(
+                padding: EdgeInsets.zero,
+                height: 70,
+                color: isDark ? AppColors.darkSurface : Colors.white,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: List.generate(_navItems.length, (i) {
+                    final item = _navItems[i];
+                    final isActive = _currentIndex == i;
+                    final hasBadge = i == 1 && _newOrderCount > 0;
 
-              return Expanded(
-                child: InkWell(
-                  onTap: () => _onTabTapped(i),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 8),
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Icon(
-                            isActive ? item.activeIcon : item.icon,
-                            size: 24,
-                            color: isActive
-                                ? AppColors.primary
-                                : isDark
-                                ? AppColors.darkMuted
-                                : AppColors.lightMuted,
-                          ),
-                          if (hasBadge)
-                            Positioned(
-                              right: -4,
-                              top: -4,
-                              child: ScaleTransition(
-                                scale: _badgeScale,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 16,
-                                    minHeight: 16,
-                                  ),
-                                  child: Text(
-                                    '$_newOrderCount',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
+                    return Expanded(
+                      child: InkWell(
+                        onTap: () => _onTabTapped(i),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 8),
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Icon(
+                                  isActive ? item.activeIcon : item.icon,
+                                  size: 24,
+                                  color: isActive
+                                      ? AppColors.primary
+                                      : isDark
+                                      ? AppColors.darkMuted
+                                      : AppColors.lightMuted,
                                 ),
+                                if (hasBadge)
+                                  Positioned(
+                                    right: -4,
+                                    top: -4,
+                                    child: ScaleTransition(
+                                      scale: _badgeScale,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 16,
+                                          minHeight: 16,
+                                        ),
+                                        child: Text(
+                                          '$_newOrderCount',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item.label,
+                              style: TextStyle(
+                                color: isActive
+                                    ? AppColors.primary
+                                    : isDark
+                                    ? AppColors.darkMuted
+                                    : AppColors.lightMuted,
+                                fontSize: 11,
+                                fontWeight: isActive
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.label,
-                        style: TextStyle(
-                          color: isActive
-                              ? AppColors.primary
-                              : isDark
-                              ? AppColors.darkMuted
-                              : AppColors.lightMuted,
-                          fontSize: 11,
-                          fontWeight: isActive
-                              ? FontWeight.w700
-                              : FontWeight.w500,
+                            const SizedBox(height: 4),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                    ],
-                  ),
+                    );
+                  }),
                 ),
-              );
-            }),
-          ),
-        ),
-      ),
+              ),
+            ),
     );
   }
 }
