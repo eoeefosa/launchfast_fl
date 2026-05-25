@@ -235,7 +235,12 @@ class AuthProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   void _assertRequiredUserFields(Map<String, dynamic> data) {
-    const required = ['id', 'name', 'email', 'role'];
+    // Backend might return 'id' or '_id'
+    if (data['id'] == null && data['_id'] == null) {
+      throw const FormatException('Auth response missing required field: id');
+    }
+
+    const required = ['name', 'email', 'role'];
     for (final field in required) {
       if (data[field] == null) {
         throw FormatException('Auth response missing required field: $field');
