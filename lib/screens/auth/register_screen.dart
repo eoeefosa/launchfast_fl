@@ -44,11 +44,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _showPassword = !_showPassword);
 
   Future<void> _submitGoogleLogin() async {
-    await context.read<AuthProvider>().signInWithGoogle(context);
+    final auth = context.read<AuthProvider>();
+    await auth.signInWithGoogle(context);
+    if (mounted && auth.isAuthenticated) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
+    }
   }
 
   Future<void> _submitAppleLogin() async {
-    await context.read<AuthProvider>().signInWithApple(context);
+    final auth = context.read<AuthProvider>();
+    await auth.signInWithApple(context);
+    if (mounted && auth.isAuthenticated) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
+    }
   }
 
   Future<void> _submit() async {

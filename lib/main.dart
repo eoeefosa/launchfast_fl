@@ -10,6 +10,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'package:campuschow/services/network_service.dart';
+import 'package:campuschow/widgets/common/network_status_overlay.dart';
+
 import 'package:campuschow/firebase_options.dart';
 import 'package:campuschow/locator.dart';
 import 'package:campuschow/router.dart';
@@ -144,43 +147,41 @@ Future<void> _onBackgroundMessage(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  NetworkService().startMonitoring();
 
   try {
     debugPrint('=== CampusChow Booting ===');
 
+    // 1. Core initializations that must be completed before UI starts
     await _initFirebase();
-    await _initLocalNotifications();
-    await _initFcmPermissionsAndListeners();
-    await _lockOrientation();
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
     setupLocator();
 
     final authProvider = AuthProvider();
     await authProvider.initialize();
+    final router = createRouter(authProvider);
+
+    // 2. Heavy system, permission, and notification tasks triggered in the background
+    _initLocalNotifications().catchError((e) {
+      debugPrint('[Main] Local notifications initialization failed: $e');
+    });
+    _initFcmPermissionsAndListeners().catchError((e) {
+      debugPrint('[Main] FCM permissions and listeners initialization failed: $e');
+    });
+    _lockOrientation();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
     if (!authProvider.isAuthenticated) {
       debugPrint('[Main] Guest user — initialising Ably as guest');
-      // Fire-and-forget; a failed Ably init must not crash the app.
       ablyService.initAblyGuest().catchError(
         (Object e) => debugPrint('[Main] Guest Ably init failed: $e'),
       );
     }
 
-    await notificationService.init();
-
-    final router = createRouter(authProvider);
-
-    debugPrint('''
-[Main] Boot summary:
-  Authenticated: ${authProvider.isAuthenticated}
-  User ID: ${authProvider.user?.id}
-  Role: ${authProvider.user?.role}
-  Is Store Owner: ${authProvider.isStoreOwner}
-''');
+    notificationService.init().catchError((e) {
+      debugPrint('[Main] NotificationService initialization failed: $e');
+    });
 
     debugPrint('[Main] Boot complete — running app');
-
     runApp(CampusChowApp(authProvider: authProvider, router: router));
   } catch (e, stack) {
     // Surface a visible error screen instead of a blank/crashed app.
@@ -382,6 +383,9 @@ class CampusChowApp extends StatelessWidget {
               darkTheme: AppTheme.darkTheme,
               themeMode: themeProvider.themeMode,
               routerConfig: router,
+              builder: (context, child) {
+                return NetworkStatusOverlay(child: child!);
+              },
             ),
           );
         },

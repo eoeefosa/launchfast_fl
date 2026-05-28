@@ -5,6 +5,7 @@ import 'package:campuschow/screens/auth/widgets/constants.dart';
 import 'package:campuschow/screens/auth/widgets/custom_button.dart';
 import 'package:campuschow/screens/auth/widgets/password_toggle.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/responsive_layout.dart';
 
@@ -36,19 +37,43 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submitEmailLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    await context.read<AuthProvider>().login(
+    final auth = context.read<AuthProvider>();
+    await auth.login(
       context,
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
+    if (mounted && auth.isAuthenticated) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
+    }
   }
 
   Future<void> _submitGoogleLogin() async {
-    await context.read<AuthProvider>().signInWithGoogle(context);
+    final auth = context.read<AuthProvider>();
+    await auth.signInWithGoogle(context);
+    if (mounted && auth.isAuthenticated) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
+    }
   }
 
   Future<void> _submitAppleLogin() async {
-    await context.read<AuthProvider>().signInWithApple(context);
+    final auth = context.read<AuthProvider>();
+    await auth.signInWithApple(context);
+    if (mounted && auth.isAuthenticated) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
+    }
   }
 
   @override

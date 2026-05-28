@@ -120,13 +120,23 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      await Future.wait([
-        _restoreSession(),
-        fetchLocation(),
-      ]);
+      // Restore user session offline instantly (takes <10ms)
+      await _restoreSession();
+
+      // Trigger location fetching in the background without blocking the boot sequence
+      fetchLocation().catchError((e) {
+        if (kDebugMode) {
+          debugPrint('[AuthProvider] Initial fetchLocation failed (non-fatal): $e');
+        }
+      });
 
       if (isAuthenticated) {
-        await _initializeAbly();
+        // Initialize Ably real-time services asynchronously in the background
+        _initializeAbly().catchError((e) {
+          if (kDebugMode) {
+            debugPrint('[AuthProvider] Initial Ably initialization failed (non-fatal): $e');
+          }
+        });
         _setupTokenRefreshListener();
         _syncFCMTokenSafely();
       }
@@ -618,17 +628,42 @@ class AuthProvider extends ChangeNotifier {
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        webAuthenticationOptions: WebAuthenticationOptions(
+          clientId: 'com.campuschow.service',
+          redirectUri: Uri.parse(
+            'https://try-auth-f5762.firebaseapp.com/__/auth/handler',
+          ),
+        ),
         nonce: nonce,
       );
 
+      final idToken = appleCredential.identityToken;
+      if (idToken == null) {
+        throw Exception('Apple Sign-In failed: No identity token received');
+      }
+
       if (kDebugMode) {
         debugPrint('[AuthProvider] Apple Credential received: email=${appleCredential.email}, '
-            'identityToken length=${appleCredential.identityToken?.length}');
+            'identityToken length=${idToken.length}');
+        try {
+          final parts = idToken.split('.');
+          if (parts.length > 1) {
+            String payload = parts[1];
+            while (payload.length % 4 != 0) {
+              payload += '=';
+            }
+            final decoded = utf8.decode(base64Url.decode(payload));
+            debugPrint('[AuthProvider] ID Token Payload: $decoded');
+          }
+        } catch (e) {
+          debugPrint('[AuthProvider] Could not decode ID Token: $e');
+        }
       }
 
       final credential = OAuthProvider('apple.com').credential(
-        idToken:  appleCredential.identityToken,
+        idToken:  idToken,
         rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
       );
 
       final userCredential  = await FirebaseAuth.instance.signInWithCredential(credential);
@@ -697,11 +732,22 @@ class AuthProvider extends ChangeNotifier {
       final nonce    = _sha256ofString(rawNonce);
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [],
+        webAuthenticationOptions: WebAuthenticationOptions(
+          clientId: 'com.campuschow.service',
+          redirectUri: Uri.parse(
+            'https://try-auth-f5762.firebaseapp.com/__/auth/handler',
+          ),
+        ),
         nonce: nonce,
       );
+      final idToken = appleCredential.identityToken;
+      if (idToken == null) {
+        throw Exception('Apple re-authentication failed: No identity token received');
+      }
       final credential = OAuthProvider('apple.com').credential(
-        idToken:  appleCredential.identityToken,
+        idToken:  idToken,
         rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
       );
       await user.reauthenticateWithCredential(credential);
     } else if (providers.contains('google.com')) {

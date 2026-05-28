@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'network_service.dart';
 
 /// Called when any API response returns HTTP 401 (token expired / invalid).
 /// Wire this up in AuthProvider so the app navigates to login automatically.
@@ -24,9 +26,11 @@ class ApiService {
   static String get baseUrl {
     if (kReleaseMode) {
       return 'https://campus-chow-three.vercel.app/api';
+      // return 'http://10.231.228.53:3000/api';
     }
     // For local development on iOS Simulator
     return 'https://campus-chow-three.vercel.app/api';
+    // return 'http://10.231.228.53:3000/api';
   }
 
   ApiService() {
@@ -82,6 +86,7 @@ class ApiService {
           debugPrint(
             '✅ [API] ${response.statusCode} ${response.requestOptions.path}',
           );
+          NetworkService().setOnline();
           if (response.data != null) {
             debugPrint('   Response: ${response.data}');
           }
@@ -91,6 +96,16 @@ class ApiService {
           debugPrint(
             '❌ [API] ${e.response?.statusCode ?? 'Network Error'} ${e.requestOptions.path}',
           );
+
+          if (e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.receiveTimeout ||
+              e.type == DioExceptionType.sendTimeout ||
+              e.type == DioExceptionType.connectionError ||
+              e.error is SocketException) {
+            NetworkService().setOffline();
+          } else {
+            NetworkService().setOnline();
+          }
 
           // 401 = token expired or invalid → force logout via the callback.
           if (e.response?.statusCode == 401) {
