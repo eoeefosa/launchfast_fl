@@ -501,10 +501,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
       final isPickup = _isPickupDeliveryType(order.deliveryType);
       if (isPickup) continue;
 
-      final isActive =
-          order.status == OrderStatus.pending ||
-          order.status == OrderStatus.accepted ||
-          order.status == OrderStatus.preparing;
+      final isActive = order.status == OrderStatus.pending;
       if (!isActive) continue;
 
       if (_dismissedUnattendedOrderIds.contains(order.id)) continue;

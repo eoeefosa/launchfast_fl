@@ -61,9 +61,39 @@ class CartItem {
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     final rawId = json['id'] ?? json['_id'];
+
+    // The backend may return the item under different field names:
+    //   - menuItem: fully populated object
+    //   - foodId: fully populated object Map or Bare ObjectId string
+    //   - food: fully populated object Map
+    final rawItem = json['menuItem'] ?? json['food'] ?? json['foodId'];
+    final itemId = (json['menuItemId'] ?? json['foodId'] ?? json['food_id'])?.toString();
+
+    MenuItem? menuItem;
+
+    if (rawItem is Map<String, dynamic>) {
+      menuItem = MenuItem.fromJson(rawItem);
+    } else if (itemId != null && itemId.isNotEmpty) {
+      menuItem = MenuItem(
+        id: itemId,
+        storeId: json['storeId']?.toString() ?? '',
+        name: json['name']?.toString() ?? 'Item',
+        description: '',
+        price: (json['price'] as num?)?.toDouble() ?? 0.0,
+        category: 'Others',
+        image: '',
+      );
+    }
+
+    if (menuItem == null) {
+      throw FormatException(
+        'CartItem.fromJson: could not resolve menuItem from keys: ${json.keys.toList()}',
+      );
+    }
+
     return CartItem(
       id: rawId?.toString() ?? '',
-      menuItem: MenuItem.fromJson(json['menuItem']),
+      menuItem: menuItem,
       quantity: json['quantity'] ?? 1,
       extras: json['extras'] != null ? List<String>.from(json['extras']) : null,
       selectedMeats: json['selectedMeats'] != null

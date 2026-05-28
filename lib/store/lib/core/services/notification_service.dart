@@ -10,6 +10,7 @@ import 'package:campuschow/locator.dart';
 import 'package:campuschow/repositories/auth_repository.dart';
 import 'package:campuschow/router.dart';
 import 'package:campuschow/services/ably_service.dart';
+import 'package:campuschow/store/lib/features/dashboard/presentation/store_order_detail_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Channel identifiers (package-level constants — referenced by main.dart too)
@@ -387,7 +388,11 @@ class NotificationService {
       if (cleanId.startsWith('order_')) {
         cleanId = cleanId.replaceFirst('order_', '');
       }
-      context.push('/order-details/$cleanId');
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          builder: (_) => StoreOrderDetailScreen(orderId: cleanId),
+        ),
+      );
     }
   }
 

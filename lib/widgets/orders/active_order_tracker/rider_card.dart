@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:campuschow/constants/app_colors.dart';
 import 'package:campuschow/widgets/orders/active_order_tracker/call_button.dart';
+import 'package:campuschow/widgets/common/universal_image.dart';
 
 class RiderCard extends StatelessWidget {
   final dynamic rider;
@@ -29,10 +30,12 @@ class RiderCard extends StatelessWidget {
               shape: BoxShape.circle,
               color: Theme.of(context).colorScheme.surface,
               border: Border.all(color: AppColors.primary, width: 2),
-              image: const DecorationImage(
-                image: NetworkImage(
-                  'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&auto=format&fit=crop',
-                ),
+            ),
+            child: const ClipOval(
+              child: UniversalImage(
+                imageUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&auto=format&fit=crop',
+                width: 56,
+                height: 56,
                 fit: BoxFit.cover,
               ),
             ),

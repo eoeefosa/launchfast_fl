@@ -43,9 +43,16 @@ class NotificationProvider with ChangeNotifier {
 
   NotificationType _parseNotificationType(String? type) {
     if (type == null) return NotificationType.serverAlert;
+    final cleanType = type.replaceAll('_', '').replaceAll('-', '').toLowerCase();
+
+    // Map new_order or store_alert to orderUpdate
+    if (cleanType == 'neworder' || cleanType == 'storealert') {
+      return NotificationType.orderUpdate;
+    }
+
     try {
       return NotificationType.values.firstWhere(
-        (t) => t.name.toLowerCase() == type.toLowerCase(),
+        (t) => t.name.toLowerCase() == cleanType,
         orElse: () => NotificationType.serverAlert,
       );
     } catch (_) {

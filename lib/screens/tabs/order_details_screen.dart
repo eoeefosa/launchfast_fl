@@ -78,10 +78,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     }
   }
 
-  bool get _isActive =>
-      _order != null &&
-      _order!.status != OrderStatus.delivered &&
-      _order!.status != OrderStatus.cancelled;
+
 
   @override
   Widget build(BuildContext context) {
@@ -101,8 +98,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       );
     }
 
+    // Watch the orders list in the provider to react to real-time status updates (via Ably/FCM)
+    final orderProvider = context.watch<OrderProvider>();
+    final orderId = widget.orderId ?? _order?.id ?? widget.order?.id;
+    final providerOrder = orderProvider.orders.cast<Order?>().firstWhere(
+          (o) => o?.id == orderId,
+          orElse: () => null,
+        );
+
+    // Use the provider's order if available, otherwise fallback to local _order state
+    final order = providerOrder ?? _order;
+
     // Error / not-found state
-    if (_error != null || _order == null) {
+    if (_error != null || order == null) {
       return Scaffold(
         backgroundColor: scaffoldBg,
         appBar: const OrderDetailsAppBar(),
@@ -113,13 +121,16 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       );
     }
 
-    final isPendingPayment = _order!.status == OrderStatus.pendingPayment;
+    final isPendingPayment = order.status == OrderStatus.pendingPayment;
+    final isActive = order.status != OrderStatus.delivered && order.status != OrderStatus.cancelled;
 
     return Scaffold(
       backgroundColor: scaffoldBg,
       appBar: const OrderDetailsAppBar(),
       body: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
         padding: EdgeInsets.fromLTRB(
           20.w,
           24.h,
@@ -129,19 +140,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_order!.status == OrderStatus.priceAdjusted)
-              PriceAdjustmentPanel(order: _order!, onUpdated: _fetchOrder),
-            if (_isActive) ...[
-              ActiveOrderTracker(order: _order!),
+            if (order.status == OrderStatus.priceAdjusted)
+              PriceAdjustmentPanel(order: order, onUpdated: _fetchOrder),
+            if (isActive) ...[
+              ActiveOrderTracker(order: order),
               SizedBox(height: 32.h),
             ],
-            OrderReceipt(order: _order!),
+            OrderReceipt(order: order),
           ],
         ),
       ),
       bottomNavigationBar: isPendingPayment
           ? _PendingPaymentBottomBar(
-              order: _order!,
+              order: order,
               onPaid: () {
                 _fetchOrder();
                 context.read<OrderProvider>().refreshOrders();

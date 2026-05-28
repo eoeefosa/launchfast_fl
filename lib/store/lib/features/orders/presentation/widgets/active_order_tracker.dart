@@ -10,6 +10,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 import 'order_timeline.dart';
 
+import 'package:campuschow/widgets/common/universal_image.dart';
+
 class ActiveOrderTracker extends StatelessWidget {
   final Order order;
 
@@ -230,10 +232,12 @@ class _RiderCard extends StatelessWidget {
               shape: BoxShape.circle,
               color: Colors.white,
               border: Border.all(color: AppColors.primary, width: 2),
-              image: const DecorationImage(
-                image: NetworkImage(
-                  'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&auto=format&fit=crop',
-                ),
+            ),
+            child: const ClipOval(
+              child: UniversalImage(
+                imageUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&auto=format&fit=crop',
+                width: 56,
+                height: 56,
                 fit: BoxFit.cover,
               ),
             ),

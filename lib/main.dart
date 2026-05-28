@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:developer' as developer;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -76,29 +77,50 @@ const _orderChannel = AndroidNotificationChannel(
 /// Firebase must be re-initialised here because it is a fresh isolate.
 @pragma('vm:entry-point')
 Future<void> _onBackgroundMessage(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  debugPrint('[FCM-BG] id=${message.messageId} data=${message.data}');
-
-  // FCM already displayed a notification for messages that carry a
-  // `notification` payload — avoid showing a duplicate.
-  if (message.notification != null) return;
-  if (message.data.isEmpty) return;
-
-  final (title, body) = _resolveNotificationCopy(message.data);
-  if (title == null || body == null) return;
-
-  final orderId = message.data['orderId'] ?? message.data['id'];
-
   try {
+    developer.log(
+      'Received background message: id=${message.messageId} notification=${message.notification != null} data=${message.data}',
+      name: 'FCM-BG',
+    );
+
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+    // FCM already displayed a notification for messages that carry a
+    // `notification` payload — avoid showing a duplicate.
+    if (message.notification != null) {
+      developer.log('Message contains notification payload, skipping custom local notification.', name: 'FCM-BG');
+      return;
+    }
+    if (message.data.isEmpty) {
+      developer.log('Message data is empty, skipping.', name: 'FCM-BG');
+      return;
+    }
+
+    final (title, body) = _resolveNotificationCopy(message.data);
+    developer.log('Resolved copy: title=$title, body=$body', name: 'FCM-BG');
+
+    if (title == null || body == null) {
+      developer.log('Could not resolve title or body for custom notification.', name: 'FCM-BG');
+      return;
+    }
+
+    final orderId = message.data['orderId'] ?? message.data['id'];
+
+    developer.log('Showing local notification for order: $orderId', name: 'FCM-BG');
     await NotificationService.showStaticNotification(
       id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title: title,
       body: body,
       payload: orderId?.toString(),
     );
+    developer.log('Local notification displayed successfully.', name: 'FCM-BG');
   } catch (e, stack) {
-    debugPrint('[FCM-BG] Error showing static notification: $e\n$stack');
+    developer.log(
+      'Error processing background message',
+      name: 'FCM-BG',
+      error: e,
+      stackTrace: stack,
+    );
   }
 }
 
@@ -202,11 +224,35 @@ Future<void> _initFirebase() async {
 
   // Crashlytics: non-fatal Flutter framework errors.
   FlutterError.onError = (details) {
+    final exceptionStr = details.exception.toString();
+    final isImageError = details.library == 'image resource service' ||
+        exceptionStr.contains('HttpException: Invalid statusCode:') ||
+        exceptionStr.contains('Unable to load asset') ||
+        exceptionStr.contains('NetworkImage') ||
+        exceptionStr.contains('image_stream.dart') ||
+        exceptionStr.contains('res.cloudinary.com');
+
+    if (isImageError) {
+      debugPrint('[Crashlytics] Suppressed expected image resource/network error: $exceptionStr');
+      return;
+    }
+
     FirebaseCrashlytics.instance.recordFlutterError(details);
   };
 
   // Crashlytics: non-fatal async errors outside the Flutter framework.
   PlatformDispatcher.instance.onError = (error, stack) {
+    final errorStr = error.toString();
+    final isImageError = errorStr.contains('HttpException: Invalid statusCode:') ||
+        errorStr.contains('NetworkImage') ||
+        errorStr.contains('CachedNetworkImage') ||
+        errorStr.contains('res.cloudinary.com');
+
+    if (isImageError) {
+      debugPrint('[Crashlytics] Suppressed async image/network error: $errorStr');
+      return true; // handled
+    }
+
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
     return true;
   };
@@ -356,7 +402,13 @@ class CampusChowApp extends StatelessWidget {
             return cartProvider;
           },
         ),
-        ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, OrderProvider>(
+          create: (_) => OrderProvider(),
+          update: (_, authProvider, orderProvider) {
+            orderProvider!.initialize(authProvider.user?.id);
+            return orderProvider;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => RiderJobProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),

@@ -66,6 +66,13 @@ class OrderProvider with ChangeNotifier {
         debugPrint('[OrderProvider] Subscribing to real-time updates');
       }
       _ablyService.subscribeToUserOrders(userId, _onOrderUpdate);
+      
+      // Sync local cache with latest data from backend upon boot / initialization
+      refreshOrders().catchError((e) {
+        if (kDebugMode) {
+          debugPrint('[OrderProvider] Background refresh failed during initialize: $e');
+        }
+      });
     } else {
       // Guest session — subscribe to each individually tracked order
       if (kDebugMode) {
@@ -75,6 +82,15 @@ class OrderProvider with ChangeNotifier {
         await _ablyService.initAblyGuest();
         for (final order in _orders) {
           _subscribeToOrder(order.id);
+        }
+
+        // Also refresh guest orders from remote if we have cached orders
+        if (_orders.isNotEmpty) {
+          refreshOrders().catchError((e) {
+            if (kDebugMode) {
+              debugPrint('[OrderProvider] Background refresh guest failed during initialize: $e');
+            }
+          });
         }
       } catch (e) {
         if (kDebugMode) {

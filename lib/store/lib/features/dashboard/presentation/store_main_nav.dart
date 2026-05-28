@@ -19,6 +19,7 @@ import 'order_screen.dart';
 import 'menu_screen.dart';
 import 'store_history_screen.dart';
 import 'store_setting.dart';
+import 'store_order_detail_screen.dart';
 
 class StoreMainNav extends StatefulWidget {
   const StoreMainNav({super.key});
@@ -237,7 +238,11 @@ class _StoreMainNavState extends State<StoreMainNav>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _onTabTapped(1); // Switch to Orders tab
+              Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(
+                  builder: (_) => StoreOrderDetailScreen(orderId: orderId),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
