@@ -99,8 +99,8 @@ class ActiveOrderTracker extends StatelessWidget {
             if (rider != null) RiderCard(rider: rider, isIOS: isIOS),
 
             // ── Pickup QR ──────────────────────────────────────────────
-            // Show the QR code card when the order is a pickup and ready.
-            if (_isPickup(order.deliveryType))
+            // Show the QR code only while a pickup order is actually ready.
+            if (_shouldShowPickupQr(order))
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                 child: PickupQrCard(orderId: order.id),
@@ -179,5 +179,10 @@ class ActiveOrderTracker extends StatelessWidget {
   bool _isPickup(String deliveryType) {
     final t = deliveryType.toLowerCase();
     return t == 'pickup' || t == 'store_pickup' || t == 'storепickup';
+  }
+
+  bool _shouldShowPickupQr(Order order) {
+    return _isPickup(order.deliveryType) &&
+        order.status == OrderStatus.readyForPickup;
   }
 }

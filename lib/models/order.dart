@@ -93,25 +93,37 @@ extension OrderStatusExtension on OrderStatus {
       case 'PREPARING':
         return OrderStatus.preparing;
       case 'READY_FOR_PICKUP':
+      case 'READYFORPICKUP':
       case 'READY_FOR_DELIVERY':
       case 'READY':
         return OrderStatus.readyForPickup;
       case 'PICKING_UP':
+      case 'PICKINGUP':
         return OrderStatus.pickingUp;
       case 'OUT_FOR_DELIVERY':
+      case 'OUTFORDELIVERY':
         return OrderStatus.outForDelivery;
       case 'ON_THE_WAY':
+      case 'ONTHEWAY':
         return OrderStatus.onTheWay;
       case 'COMPLETED':
       case 'DELIVERED':
+      case 'ORDER_DELIVERED':
+      case 'PICKED_UP':
+      case 'PICKEDUP':
+      case 'FULFILLED':
         return OrderStatus.delivered;
       case 'CANCELLED':
+      case 'CANCELED':
+      case 'REJECTED':
         return OrderStatus.cancelled;
       case 'QUEUED':
         return OrderStatus.queued;
       case 'PRICE_ADJUSTED':
+      case 'PRICEADJUSTED':
         return OrderStatus.priceAdjusted;
       case 'PENDING_PAYMENT':
+      case 'PENDINGPAYMENT':
         return OrderStatus.pendingPayment;
       default:
         return OrderStatus.pending;
@@ -246,7 +258,7 @@ class Order {
       'walletDeduction': walletDeduction,
       'total': total,
       'deliveryType': deliveryType,
-      'status': status.name,
+      'status': status.backendName,
       'date': date,
       'stores': stores.map((s) => s.toJson()).toList(),
       'isPriority': isPriority,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -109,7 +110,7 @@ class OrderProvider with ChangeNotifier {
       final ordersStr = await _storage.read(key: _kOrders);
       if (ordersStr != null) {
         final List<dynamic> list = jsonDecode(ordersStr);
-        _orders = list.map((i) => Order.fromJson(i)).toList();
+        _orders = _normalizeOrders(list.map((i) => Order.fromJson(i)).toList());
         if (kDebugMode) {
           debugPrint(
             '[OrderProvider] Loaded ${_orders.length} cached order(s)',
@@ -167,7 +168,7 @@ class OrderProvider with ChangeNotifier {
     _safeNotify();
 
     try {
-      _orders = await locator<OrderRepository>().getMyOrders();
+      _orders = _normalizeOrders(await locator<OrderRepository>().getMyOrders());
       _error = null;
       await _persistOrders();
       if (kDebugMode) {
@@ -192,7 +193,7 @@ class OrderProvider with ChangeNotifier {
 
     try {
       final newOrder = await locator<OrderRepository>().placeOrder(orderData);
-      _orders.insert(0, newOrder);
+      _replaceOrInsertOrder(newOrder, insertAtStart: true);
       _error = null;
 
       // FIX #16 — guarded subscribe; won't duplicate if already tracked
@@ -262,16 +263,7 @@ class OrderProvider with ChangeNotifier {
         orderData,
       );
 
-      final index = _orders.indexWhere((o) => o.id == id);
-      if (index != -1) {
-        _orders[index] = updatedOrder;
-      } else {
-        if (kDebugMode) {
-          debugPrint(
-            '[OrderProvider] updateOrder: orderId=$id not found locally',
-          );
-        }
-      }
+      _replaceOrInsertOrder(updatedOrder);
 
       _error = null;
       await _persistOrders();
@@ -291,9 +283,16 @@ class OrderProvider with ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   void updateOrderStatus(String orderId, OrderStatus status) {
-    final index = _orders.indexWhere((o) => o.id == orderId);
-    if (index != -1) {
-      _orders[index] = _orders[index].copyWith(status: status);
+    var updated = false;
+    _orders = _orders.map((order) {
+      if (order.id != orderId) return order;
+      updated = true;
+      return order.copyWith(status: status);
+    }).toList();
+
+    if (updated) {
+      _orders = _normalizeOrders(_orders);
+      _persistOrdersInBackground();
       _safeNotify();
     } else {
       if (kDebugMode) {
@@ -313,6 +312,8 @@ class OrderProvider with ChangeNotifier {
         status: OrderStatus.outForDelivery,
         riderId: riderId,
       );
+      _orders = _normalizeOrders(_orders);
+      _persistOrdersInBackground();
       _safeNotify();
     } else {
       if (kDebugMode) {
@@ -339,6 +340,93 @@ class OrderProvider with ChangeNotifier {
   void _safeNotify() {
     if (_disposed) return;
     notifyListeners();
+  }
+
+  void _replaceOrInsertOrder(Order order, {bool insertAtStart = false}) {
+    final index = _orders.indexWhere((o) => o.id == order.id);
+    if (index == -1) {
+      if (insertAtStart) {
+        _orders.insert(0, order);
+      } else {
+        _orders.add(order);
+      }
+    } else {
+      _orders[index] = order;
+    }
+    _orders = _normalizeOrders(_orders);
+  }
+
+  List<Order> _normalizeOrders(List<Order> orders) {
+    final byId = <String, Order>{};
+
+    for (final order in orders) {
+      if (order.id.isEmpty) continue;
+
+      final existing = byId[order.id];
+      if (existing == null || _shouldReplaceOrder(existing, order)) {
+        byId[order.id] = order;
+      }
+    }
+
+    final normalized = byId.values.toList();
+    normalized.sort(
+      (a, b) => _parseOrderDate(b).compareTo(_parseOrderDate(a)),
+    );
+    return normalized;
+  }
+
+  bool _shouldReplaceOrder(Order existing, Order incoming) {
+    final existingRank = _statusRank(existing.status);
+    final incomingRank = _statusRank(incoming.status);
+
+    if (incomingRank != existingRank) {
+      return incomingRank > existingRank;
+    }
+
+    return _parseOrderDate(incoming).isAfter(_parseOrderDate(existing));
+  }
+
+  int _statusRank(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pendingPayment:
+        return 0;
+      case OrderStatus.queued:
+        return 1;
+      case OrderStatus.pending:
+        return 2;
+      case OrderStatus.priceAdjusted:
+        return 3;
+      case OrderStatus.accepted:
+        return 4;
+      case OrderStatus.preparing:
+        return 5;
+      case OrderStatus.readyForPickup:
+        return 6;
+      case OrderStatus.pickingUp:
+        return 7;
+      case OrderStatus.outForDelivery:
+        return 8;
+      case OrderStatus.onTheWay:
+        return 9;
+      case OrderStatus.delivered:
+      case OrderStatus.cancelled:
+        return 10;
+    }
+  }
+
+  DateTime _parseOrderDate(Order order) {
+    return DateTime.tryParse(order.date) ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  void _persistOrdersInBackground() {
+    unawaited(
+      _persistOrders().catchError((Object error) {
+        if (kDebugMode) {
+          debugPrint('[OrderProvider] Failed to persist order update: $error');
+        }
+      }),
+    );
   }
 
   // ─────────────────────────────────────────────────────────────
