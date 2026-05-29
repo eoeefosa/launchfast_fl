@@ -44,11 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordController.text.trim(),
     );
     if (mounted && auth.isAuthenticated) {
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        context.go('/home');
-      }
+      context.go(_postAuthRoute(auth));
     }
   }
 
@@ -56,11 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = context.read<AuthProvider>();
     await auth.signInWithGoogle(context);
     if (mounted && auth.isAuthenticated) {
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        context.go('/home');
-      }
+      context.go(_postAuthRoute(auth));
     }
   }
 
@@ -68,12 +60,14 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = context.read<AuthProvider>();
     await auth.signInWithApple(context);
     if (mounted && auth.isAuthenticated) {
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        context.go('/home');
-      }
+      context.go(_postAuthRoute(auth));
     }
+  }
+
+  String _postAuthRoute(AuthProvider auth) {
+    if (auth.isAdmin || auth.isStoreOwner) return '/dashboard';
+    if (auth.isWorker) return '/worker';
+    return '/home';
   }
 
   @override

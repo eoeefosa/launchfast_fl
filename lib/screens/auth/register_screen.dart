@@ -47,11 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final auth = context.read<AuthProvider>();
     await auth.signInWithGoogle(context);
     if (mounted && auth.isAuthenticated) {
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        context.go('/home');
-      }
+      context.go(_postAuthRoute(auth));
     }
   }
 
@@ -59,12 +55,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final auth = context.read<AuthProvider>();
     await auth.signInWithApple(context);
     if (mounted && auth.isAuthenticated) {
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        context.go('/home');
-      }
+      context.go(_postAuthRoute(auth));
     }
+  }
+
+  String _postAuthRoute(AuthProvider auth) {
+    if (auth.isAdmin || auth.isStoreOwner) return '/dashboard';
+    if (auth.isWorker) return '/worker';
+    return '/home';
   }
 
   Future<void> _submit() async {
@@ -93,13 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       // Explicitly trigger navigation
-      if (isAdmin || isStoreOwner) {
-        context.go('/dashboard');
-      } else if (isWorker) {
-        context.go('/worker');
-      } else {
-        context.go('/home');
-      }
+      context.go(_postAuthRoute(authProvider));
     } catch (e) {
       if (mounted) {
         UIUtils.showErrorDialog(context, 'Registration Failed', e.toString());
