@@ -144,6 +144,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               PriceAdjustmentPanel(order: order, onUpdated: _fetchOrder),
             if (isActive) ...[
               ActiveOrderTracker(order: order),
+              if (order.status == OrderStatus.readyForPickup &&
+                  (order.deliveryType.toLowerCase() == 'pickup' ||
+                      order.deliveryType.toLowerCase() == 'store_pickup')) ...[
+                SizedBox(height: 24.h),
+                UpgradeToDeliveryPanel(order: order, onUpdated: _fetchOrder),
+              ],
               SizedBox(height: 32.h),
             ],
             OrderReceipt(order: order),
@@ -669,6 +675,230 @@ class _PendingPaymentBottomBarState extends State<_PendingPaymentBottomBar> {
                 ),
               ],
             ),
+    );
+  }
+}
+
+class UpgradeToDeliveryPanel extends StatefulWidget {
+  final Order order;
+  final VoidCallback onUpdated;
+
+  const UpgradeToDeliveryPanel({
+    super.key,
+    required this.order,
+    required this.onUpdated,
+  });
+
+  @override
+  State<UpgradeToDeliveryPanel> createState() => _UpgradeToDeliveryPanelState();
+}
+
+class _UpgradeToDeliveryPanelState extends State<UpgradeToDeliveryPanel> {
+  bool _submitting = false;
+
+  Future<void> _upgradeWithWallet() async {
+    setState(() => _submitting = true);
+    try {
+      HapticFeedback.mediumImpact();
+      final res = await OrderRepository().changeToDelivery(widget.order.id, 'Wallet');
+
+      if (mounted) {
+        final auth = context.read<AuthProvider>();
+        await auth.refreshUser();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order upgraded to Delivery via wallet!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        context.read<OrderProvider>().refreshOrders();
+        widget.onUpdated();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pay: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _upgradeWithPaystack() async {
+    setState(() => _submitting = true);
+    try {
+      HapticFeedback.mediumImpact();
+      final auth = context.read<AuthProvider>();
+      final email = auth.isAuthenticated
+          ? (auth.user?.email ?? 'user@campuschow.com')
+          : 'guest@campuschow.com';
+
+      final paymentData = await OrderRepository().changeToDelivery(
+        widget.order.id,
+        'Card',
+        email: email,
+      );
+
+      final authorizationUrl =
+          (paymentData['data'] as Map<String, dynamic>?)?['authorization_url']
+              as String?;
+
+      if (authorizationUrl == null) {
+        throw Exception('Payment initialization failed.');
+      }
+
+      final uri = Uri.parse(authorizationUrl);
+      if (!await canLaunchUrl(uri)) {
+        throw Exception('Could not open payment page.');
+      }
+
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Opening Paystack payment page...')),
+        );
+        widget.onUpdated();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  void _showPaymentSelection() {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isAuthenticated) {
+      _upgradeWithPaystack();
+      return;
+    }
+
+    final balance = auth.user?.walletBalance ?? 0.0;
+    const total = 1300.0;
+    final isInsufficient = balance < total;
+
+    PaymentSheet.show(
+      context: context,
+      current: 'Paystack',
+      balance: balance,
+      total: total,
+      isInsufficient: isInsufficient,
+      onSelected: (method) {
+        if (method == 'Wallet') {
+          _upgradeWithWallet();
+        } else {
+          _upgradeWithPaystack();
+        }
+      },
+      onInsufficientFunds: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Insufficient wallet funds. Please use Paystack.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = AppColors.primary;
+
+    final warningBg = isDark
+        ? const Color(0x1A00B0FF)
+        : const Color(0x2600B0FF);
+    final warningBorder = const Color(0xFF00B0FF);
+    final warningText = isDark
+        ? const Color(0xFF80D8FF)
+        : const Color(0xFF0091EA);
+
+    return Container(
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        color: warningBg,
+        border: Border.all(color: warningBorder, width: 1.5),
+        borderRadius: BorderRadius.circular(24.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.delivery_dining_rounded,
+                color: warningText,
+                size: 28.sp,
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Text(
+                  'Switch to Delivery?',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                    color: warningText,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            'Too busy to pick it up? Have your order delivered to your location instead for a flat fee of ₦1,300.',
+            style: TextStyle(
+              fontSize: 13.sp,
+              height: 1.4,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightText,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          SizedBox(
+            width: double.infinity,
+            height: 52.h,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                elevation: 0,
+              ),
+              onPressed: _submitting ? null : _showPaymentSelection,
+              child: _submitting
+                  ? SizedBox(
+                      width: 20.sp,
+                      height: 20.sp,
+                      child: const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'Request Delivery (₦1,300 Fee)',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

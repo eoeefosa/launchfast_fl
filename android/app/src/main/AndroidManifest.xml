@@ -122,20 +122,16 @@
 
         </activity>
 
-        <!-- ───────────────── Ably Push Receiver ───────────────── -->
-
+        <!-- Remove conflicting Ably Push receivers and services to prevent ANRs -->
+        <receiver
+            android:name="io.ably.flutter.plugin.push.FirebaseMessagingReceiver"
+            tools:node="remove" />
         <receiver
             android:name="io.ably.flutter.plugin.push.PushTrampolineReceiver"
-            android:enabled="true"
-            android:exported="true">
-
-            <intent-filter>
-                <action android:name="io.ably.broadcast.PUSH_ACTIVATE" />
-                <action android:name="io.ably.broadcast.PUSH_DEACTIVATE" />
-                <action android:name="io.ably.broadcast.PUSH_UPDATE_FAILED" />
-            </intent-filter>
-
-        </receiver>
+            tools:node="remove" />
+        <service
+            android:name="io.ably.flutter.plugin.push.PushMessagingService"
+            tools:node="remove" />
 
         <!-- ───────────────── Safe Firebase Messaging Receiver ───────────────── -->
 

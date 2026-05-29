@@ -6,7 +6,6 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -47,32 +46,6 @@ import 'package:campuschow/store/lib/features/store/presentation/store_provider.
 
 /// Root navigator key is now defined in router.dart
 
-/// Plugin instance shared across main and background isolate.
-final FlutterLocalNotificationsPlugin _localNotifications =
-    FlutterLocalNotificationsPlugin();
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Android notification channels
-// ─────────────────────────────────────────────────────────────────────────────
-
-const _highImportanceChannel = AndroidNotificationChannel(
-  'high_importance_channel',
-  'High Importance Notifications',
-  description: 'Used for important notifications.',
-  importance: Importance.high,
-);
-
-const _orderChannel = AndroidNotificationChannel(
-  'launchfast_order_channel',
-  'Order Notifications',
-  description: 'Used for order updates and alerts.',
-  importance: Importance.max,
-);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Background FCM handler — must be a top-level function
-// ─────────────────────────────────────────────────────────────────────────────
-
 /// Runs in a separate Dart isolate; keep it lean.
 /// Firebase must be re-initialised here because it is a fresh isolate.
 @pragma('vm:entry-point')
@@ -83,12 +56,17 @@ Future<void> _onBackgroundMessage(RemoteMessage message) async {
       name: 'FCM-BG',
     );
 
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
     // FCM already displayed a notification for messages that carry a
     // `notification` payload — avoid showing a duplicate.
     if (message.notification != null) {
-      developer.log('Message contains notification payload, skipping custom local notification.', name: 'FCM-BG');
+      developer.log(
+        'Message contains notification payload, skipping custom local notification.',
+        name: 'FCM-BG',
+      );
       return;
     }
     if (message.data.isEmpty) {
@@ -100,18 +78,28 @@ Future<void> _onBackgroundMessage(RemoteMessage message) async {
     developer.log('Resolved copy: title=$title, body=$body', name: 'FCM-BG');
 
     if (title == null || body == null) {
-      developer.log('Could not resolve title or body for custom notification.', name: 'FCM-BG');
+      developer.log(
+        'Could not resolve title or body for custom notification.',
+        name: 'FCM-BG',
+      );
       return;
     }
 
     final orderId = message.data['orderId'] ?? message.data['id'];
+    final type = message.data['type']?.toString();
+    final payload = type == 'new_order' && orderId != null
+        ? 'store_order_$orderId'
+        : orderId?.toString();
 
-    developer.log('Showing local notification for order: $orderId', name: 'FCM-BG');
+    developer.log(
+      'Showing local notification for order: $orderId',
+      name: 'FCM-BG',
+    );
     await NotificationService.showStaticNotification(
       id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title: title,
       body: body,
-      payload: orderId?.toString(),
+      payload: payload,
     );
     developer.log('Local notification displayed successfully.', name: 'FCM-BG');
   } catch (e, stack) {
@@ -149,6 +137,10 @@ Future<void> _onBackgroundMessage(RemoteMessage message) async {
           ? 'Your order status is now: ${status.replaceAll('_', ' ')}'
           : 'Your order is being processed.',
     ),
+    'price_adjusted' || 'priceadjusted' || 'price_adjustment' => (
+      'Order Price Updated',
+      'The store owner updated your order price. Tap to review.',
+    ),
     'deposit' => (
       'Deposit Successful',
       amount != null
@@ -183,12 +175,6 @@ Future<void> main() async {
     final router = createRouter(authProvider);
 
     // 2. Heavy system, permission, and notification tasks triggered in the background
-    _initLocalNotifications().catchError((e) {
-      debugPrint('[Main] Local notifications initialization failed: $e');
-    });
-    _initFcmPermissionsAndListeners().catchError((e) {
-      debugPrint('[Main] FCM permissions and listeners initialization failed: $e');
-    });
     _lockOrientation();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
@@ -225,7 +211,8 @@ Future<void> _initFirebase() async {
   // Crashlytics: non-fatal Flutter framework errors.
   FlutterError.onError = (details) {
     final exceptionStr = details.exception.toString();
-    final isImageError = details.library == 'image resource service' ||
+    final isImageError =
+        details.library == 'image resource service' ||
         exceptionStr.contains('HttpException: Invalid statusCode:') ||
         exceptionStr.contains('Unable to load asset') ||
         exceptionStr.contains('NetworkImage') ||
@@ -233,7 +220,9 @@ Future<void> _initFirebase() async {
         exceptionStr.contains('res.cloudinary.com');
 
     if (isImageError) {
-      debugPrint('[Crashlytics] Suppressed expected image resource/network error: $exceptionStr');
+      debugPrint(
+        '[Crashlytics] Suppressed expected image resource/network error: $exceptionStr',
+      );
       return;
     }
 
@@ -243,121 +232,22 @@ Future<void> _initFirebase() async {
   // Crashlytics: non-fatal async errors outside the Flutter framework.
   PlatformDispatcher.instance.onError = (error, stack) {
     final errorStr = error.toString();
-    final isImageError = errorStr.contains('HttpException: Invalid statusCode:') ||
+    final isImageError =
+        errorStr.contains('HttpException: Invalid statusCode:') ||
         errorStr.contains('NetworkImage') ||
         errorStr.contains('CachedNetworkImage') ||
         errorStr.contains('res.cloudinary.com');
 
     if (isImageError) {
-      debugPrint('[Crashlytics] Suppressed async image/network error: $errorStr');
+      debugPrint(
+        '[Crashlytics] Suppressed async image/network error: $errorStr',
+      );
       return true; // handled
     }
 
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
     return true;
   };
-}
-
-Future<void> _initLocalNotifications() async {
-  debugPrint('[Main][Notifications] Initializing local notifications plugin');
-  const initSettings = InitializationSettings(
-    android: AndroidInitializationSettings('ic_notification'),
-    iOS: DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    ),
-  );
-
-  await _localNotifications.initialize(
-    settings: initSettings,
-    onDidReceiveNotificationResponse: _onNotificationTapped,
-  );
-  debugPrint('[Main][Notifications] Local notifications initialized');
-
-  // Create Android channels (no-op on iOS/other platforms).
-  final androidPlugin = _localNotifications
-      .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin
-      >();
-
-  await androidPlugin?.createNotificationChannel(_highImportanceChannel);
-  await androidPlugin?.createNotificationChannel(_orderChannel);
-}
-
-/// Called when the user taps a local notification (foreground or background).
-void _onNotificationTapped(NotificationResponse response) {
-  debugPrint('[Notification] Tapped — payload=${response.payload}');
-
-  final payload = response.payload;
-  if (payload == null || payload.isEmpty) return;
-
-  String cleanId = payload;
-  if (cleanId.startsWith('order_')) {
-    cleanId = cleanId.replaceFirst('order_', '');
-  }
-
-  // Use GoRouter's global navigation helper so we stay inside the router graph.
-  rootNavigatorKey.currentContext?.go('/order-details/$cleanId');
-}
-
-Future<void> _initFcmPermissionsAndListeners() async {
-  debugPrint('[Main][FCM] Requesting notification permission');
-  final permissionSettings = await FirebaseMessaging.instance.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-  debugPrint(
-    '[Main][FCM] Permission result: auth=${permissionSettings.authorizationStatus} '
-    'alert=${permissionSettings.alert} badge=${permissionSettings.badge} '
-    'sound=${permissionSettings.sound}',
-  );
-
-  final currentSettings = await FirebaseMessaging.instance
-      .getNotificationSettings();
-  debugPrint(
-    '[Main][FCM] Current settings after request: auth=${currentSettings.authorizationStatus} '
-    'alert=${currentSettings.alert} badge=${currentSettings.badge} '
-    'sound=${currentSettings.sound}',
-  );
-
-  // App opened via notification tap while in background.
-  FirebaseMessaging.onMessageOpenedApp.listen((message) {
-    debugPrint(
-      '[Main][FCM] onMessageOpenedApp id=${message.messageId} data=${message.data}',
-    );
-    _navigateToOrder(message);
-  });
-
-  // App launched from a terminated state via notification tap.
-  final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-
-  if (initialMessage != null) {
-    debugPrint(
-      '[Main][FCM] getInitialMessage id=${initialMessage.messageId} data=${initialMessage.data}',
-    );
-    // Delay so the widget tree (and router) have time to mount.
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _navigateToOrder(initialMessage),
-    );
-  } else {
-    debugPrint('[Main][FCM] getInitialMessage returned null');
-  }
-}
-
-/// Common handler for FCM deep-link navigation.
-void _navigateToOrder(RemoteMessage message) {
-  final orderId = message.data['orderId'] ?? message.data['id'];
-  if (orderId == null) return;
-
-  String cleanId = orderId.toString();
-  if (cleanId.startsWith('order_')) {
-    cleanId = cleanId.replaceFirst('order_', '');
-  }
-
-  debugPrint('[FCM] Navigating to order: $cleanId');
-  rootNavigatorKey.currentContext?.go('/order-details/$cleanId');
 }
 
 Future<void> _lockOrientation() async {

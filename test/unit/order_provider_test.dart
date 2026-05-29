@@ -114,6 +114,12 @@ class MockOrderRepository implements OrderRepository {
     }
     return payWithWalletResult!;
   }
+  
+  @override
+  Future<Map<String, dynamic>> changeToDelivery(String orderId, String method, {String? email}) {
+    // TODO: implement changeToDelivery
+    throw UnimplementedError();
+  }
 }
 
 class MockAblyService implements AblyService {

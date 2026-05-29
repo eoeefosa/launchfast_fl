@@ -165,7 +165,7 @@ class _StoreMainNavState extends State<StoreMainNav>
           id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
           title: 'New Order Received! 🚀',
           body: 'You have a new pending order ($orderId). Tap to view.',
-          payload: 'order_$orderId',
+          payload: 'store_order_$orderId',
           channelId: kOrderChannelId,
         );
 

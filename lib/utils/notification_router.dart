@@ -18,7 +18,11 @@ class NotificationRouter {
         metadata?['orderId']?.toString() ??
         metadata?['order_id']?.toString() ??
         metadata?['id']?.toString();
-    if (rawId != null && rawId.startsWith('order_')) {
+    var isStoreOrderPayload = false;
+    if (rawId != null && rawId.startsWith('store_order_')) {
+      rawId = rawId.replaceFirst('store_order_', '');
+      isStoreOrderPayload = true;
+    } else if (rawId != null && rawId.startsWith('order_')) {
       rawId = rawId.replaceFirst('order_', '');
     }
     final orderId = rawId;
@@ -66,6 +70,14 @@ class NotificationRouter {
           break;
 
         default:
+          if (isStoreOrderPayload) {
+            Navigator.of(context, rootNavigator: true).push(
+              MaterialPageRoute(
+                builder: (_) => StoreOrderDetailScreen(orderId: orderId),
+              ),
+            );
+            break;
+          }
           context.push('/order-details/$orderId');
       }
       return;

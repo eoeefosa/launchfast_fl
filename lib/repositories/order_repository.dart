@@ -131,4 +131,20 @@ class OrderRepository {
     }
     return Order.fromJson(response.data);
   }
+
+  Future<Map<String, dynamic>> changeToDelivery(String orderId, String method, {String? email}) async {
+    final response = await apiService.dio.post(
+      '/orders/$orderId/change-to-delivery',
+      data: {
+        'method': method,
+        'email': email,
+      },
+    );
+    if (response.data is! Map) {
+      throw FormatException(
+        'Expected Map from /orders/$orderId/change-to-delivery, got ${response.data.runtimeType}',
+      );
+    }
+    return response.data as Map<String, dynamic>;
+  }
 }

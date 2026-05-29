@@ -110,6 +110,20 @@ class NotificationService {
     );
     debugPrint('[NotificationService] Local notifications initialized');
 
+    final launchDetails = await _localPlugin.getNotificationAppLaunchDetails();
+    final response = launchDetails?.notificationResponse;
+    final payload = response?.payload;
+    if (launchDetails?.didNotificationLaunchApp == true &&
+        payload != null &&
+        payload.isNotEmpty) {
+      debugPrint(
+        '[NotificationService] App launched from local notification payload=$payload',
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigate(type: null, id: payload);
+      });
+    }
+
     await _createAndroidChannels();
   }
 
@@ -143,6 +157,8 @@ class NotificationService {
         'Order Notifications',
         description: 'Used for order alerts and updates',
         importance: Importance.max,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('order_sound'),
       ),
     );
   }
@@ -275,10 +291,15 @@ class NotificationService {
 
     // Show local notification.
     if (message.notification case final n?) {
+      final orderId = message.data['orderId'] ?? message.data['id'];
+      final type = message.data['type']?.toString();
+      final payload = type == 'new_order' && orderId != null
+          ? 'store_order_$orderId'
+          : orderId?.toString();
       await showNotification(
         title: n.title ?? 'New Notification',
         body: n.body ?? '',
-        payload: (message.data['orderId'] ?? message.data['id']) as String?,
+        payload: payload,
         channelId: kHighImportanceChannelId,
       );
       debugPrint('[FCM] Foreground local notification displayed');
@@ -325,11 +346,23 @@ class NotificationService {
 
       case 'order_update':
       case 'order_processing':
+      case 'price_adjusted':
+      case 'priceadjusted':
+      case 'price_adjustment':
         await showNotification(
-          title: type == 'order_processing'
-              ? 'Order Processing'
-              : 'Order Updated',
-          body: status.isNotEmpty
+          title: switch (type) {
+            'order_processing' => 'Order Processing',
+            'price_adjusted' ||
+            'priceadjusted' ||
+            'price_adjustment' => 'Order Price Updated',
+            _ => 'Order Updated',
+          },
+          body:
+              type == 'price_adjusted' ||
+                  type == 'priceadjusted' ||
+                  type == 'price_adjustment'
+              ? 'The store owner updated your order price. Tap to review.'
+              : status.isNotEmpty
               ? 'Your order status is now: ${status.replaceAll('_', ' ')}'
               : 'Your order is being processed.',
           payload: orderId,
@@ -340,7 +373,7 @@ class NotificationService {
         await showNotification(
           title: 'New Order Received!',
           body: 'A customer just placed a new order.',
-          payload: orderId,
+          payload: orderId == null ? null : 'store_order_$orderId',
           channelId: kOrderChannelId,
         );
 
@@ -369,12 +402,24 @@ class NotificationService {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
 
-  void _navigate({required String? type, required String? id}) {
+  void _navigate({
+    required String? type,
+    required String? id,
+    int attempt = 0,
+  }) {
     debugPrint('[Notification] Navigate — type=$type, id=$id');
 
     final context = rootNavigatorKey.currentContext;
     if (context == null) {
-      debugPrint('[Notification] Navigation skipped: context is null');
+      if (attempt < 10) {
+        Future.delayed(const Duration(milliseconds: 200), () {
+          _navigate(type: type, id: id, attempt: attempt + 1);
+        });
+        return;
+      }
+      debugPrint(
+        '[Notification] Navigation skipped after retries: context is null',
+      );
       return;
     }
 
@@ -385,14 +430,28 @@ class NotificationService {
 
     if (id != null && id.isNotEmpty) {
       String cleanId = id;
+      if (cleanId.startsWith('store_order_')) {
+        cleanId = cleanId.replaceFirst('store_order_', '');
+        Navigator.of(context, rootNavigator: true).push(
+          MaterialPageRoute(
+            builder: (_) => StoreOrderDetailScreen(orderId: cleanId),
+          ),
+        );
+        return;
+      }
       if (cleanId.startsWith('order_')) {
         cleanId = cleanId.replaceFirst('order_', '');
       }
-      Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute(
-          builder: (_) => StoreOrderDetailScreen(orderId: cleanId),
-        ),
-      );
+      if (type == 'new_order') {
+        Navigator.of(context, rootNavigator: true).push(
+          MaterialPageRoute(
+            builder: (_) => StoreOrderDetailScreen(orderId: cleanId),
+          ),
+        );
+        return;
+      }
+      context.push('/order-details/$cleanId');
+      return;
     }
   }
 
@@ -577,13 +636,14 @@ class NotificationService {
 
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
-        kHighImportanceChannelId,
-        'Notifications',
+        kOrderChannelId,
+        'Order Notifications',
         channelDescription: 'CampusChow notifications',
         importance: Importance.max,
         priority: Priority.high,
         playSound: true,
         enableVibration: true,
+        sound: RawResourceAndroidNotificationSound('order_sound'),
       ),
       iOS: DarwinNotificationDetails(
         presentAlert: true,

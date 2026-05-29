@@ -87,10 +87,15 @@ import FirebaseCore
     let userInfo = response.notification.request.content.userInfo
     print("[iOS][Notifications] didReceive response action=\(response.actionIdentifier) userInfo=\(userInfo)")
 
-    // Let Firebase handle it if needed
+    // Let Firebase record the message, then forward the tap back to Flutter's
+    // delegate chain so firebase_messaging can deliver onMessageOpenedApp /
+    // getInitialMessage to Dart.
     Messaging.messaging().appDidReceiveMessage(userInfo)
-
-    completionHandler()
+    super.userNotificationCenter(
+      center,
+      didReceive: response,
+      withCompletionHandler: completionHandler
+    )
   }
 
   override func application(

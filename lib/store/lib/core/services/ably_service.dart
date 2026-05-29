@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:ably_flutter/ably_flutter.dart' as ably;
-import 'package:permission_handler/permission_handler.dart';
 import 'package:campuschow/store/lib/core/network/api_client.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 
@@ -23,7 +22,8 @@ import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 ///   can be cancelled independently without a full [disconnect].
 /// - Uses [debugPrint] so logs are silenced in release builds automatically.
 class AblyService {
-  bool get _isTesting => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+  bool get _isTesting =>
+      !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
   // FIX: No public constructor — use the singleton accessor below.
   // This prevents two parts of the app from creating separate Ably connections.
@@ -57,13 +57,16 @@ class AblyService {
 
   // ── Listener registries ─────────────────────────────────────────────────────
 
-  final List<void Function(String orderId, OrderStatus status)> _orderListeners = [];
+  final List<void Function(String orderId, OrderStatus status)>
+  _orderListeners = [];
   final List<void Function()> _walletListeners = [];
   final List<void Function(String storeId, bool isOpen)> _storeListeners = [];
   final List<void Function(String newRole)> _roleListeners = [];
   final List<void Function(String storeId)> _approvalListeners = [];
-  final List<void Function(Map<String, dynamic> payload)> _notificationListeners = [];
-  final List<void Function(String storeId, String? menuItemId, bool? isReady)> _menuListeners = [];
+  final List<void Function(Map<String, dynamic> payload)>
+  _notificationListeners = [];
+  final List<void Function(String storeId, String? menuItemId, bool? isReady)>
+  _menuListeners = [];
 
   // ── Init ────────────────────────────────────────────────────────────────────
 
@@ -198,20 +201,7 @@ class AblyService {
             }),
           );
 
-          try {
-            debugPrint('[AblyService] Requesting notification permissions...');
-            if (defaultTargetPlatform == TargetPlatform.android ||
-                defaultTargetPlatform == TargetPlatform.iOS) {
-              await Permission.notification.request();
-            }
-            if (_realtime == null) return;
-            debugPrint('[AblyService] Activating push...');
-            await current.push.activate();
-            debugPrint('[AblyService] Push activated');
-          } catch (e) {
-            debugPrint('[AblyService] Error activating push: $e');
-            onPushActivationFailed?.call(e);
-          }
+          // Ably push activation is disabled to prevent conflict and ANRs.
         }
 
         if (change.current == ably.ConnectionState.disconnected ||
@@ -334,7 +324,9 @@ class AblyService {
         // If this is a wallet/deposit event, also trigger wallet listeners
         // so the balance refreshes immediately without a manual pull-to-refresh.
         final type = (data['type']?.toString() ?? '').toLowerCase();
-        if (type == 'deposit' || type == 'wallet_topup' || type == 'wallet_update') {
+        if (type == 'deposit' ||
+            type == 'wallet_topup' ||
+            type == 'wallet_update') {
           for (final cb in _walletListeners) {
             cb();
           }
@@ -445,11 +437,8 @@ class AblyService {
     ably.RealtimeChannel channel,
     String channelName,
   ) async {
-    try {
-      await channel.push.subscribeClient();
-    } catch (e) {
-      debugPrint('[AblyService] Push subscribe failed for $channelName: $e');
-    }
+    // Ably push client subscription is disabled as Ably Push is unused in this app.
+    return;
   }
 
   // FIX: Extracted the duplicate-guard + listen pattern into a single helper.
@@ -468,10 +457,14 @@ class AblyService {
     if (target.contains(key)) return;
     target.add(key);
 
-    debugPrint('[AblyService] Attaching listener for event: $eventName on channel: $channelName');
+    debugPrint(
+      '[AblyService] Attaching listener for event: $eventName on channel: $channelName',
+    );
 
     final sub = channel.subscribe(name: eventName).listen((ably.Message msg) {
-      debugPrint('[AblyService] EVENT RECEIVED: $eventName | Channel: $channelName | Data: ${msg.data}');
+      debugPrint(
+        '[AblyService] EVENT RECEIVED: $eventName | Channel: $channelName | Data: ${msg.data}',
+      );
       try {
         final data = Map<String, dynamic>.from(msg.data as Map);
         onMessage(data);
@@ -560,32 +553,42 @@ class AblyService {
     // FIX: Re-check after async gap.
     if (_realtime != rt) return;
 
-    _attachListener(
-      channel: channel,
-      channelName: channelName,
-      eventName: 'new-order',
-      onMessage: (data) {
-        final orderId = data['id'] as String;
-        for (final cb in _orderListeners) {
-          cb(orderId, OrderStatus.pending);
-        }
-      },
-    );
+    void handleNewOrder(Map<String, dynamic> data) {
+      final orderId = _readOrderId(data);
+      if (orderId == null) {
+        debugPrint('[AblyService] new-order missing order id: $data');
+        return;
+      }
+      _emitOrderUpdate(orderId, OrderStatus.pending);
+    }
 
-    _attachListener(
-      channel: channel,
-      channelName: channelName,
-      eventName: 'order-update',
-      onMessage: (data) {
-        final orderId = data['orderId'] as String;
-        final status = OrderStatusExtension.fromString(
-          data['status'] as String,
-        );
-        for (final cb in _orderListeners) {
-          cb(orderId, status);
-        }
-      },
-    );
+    void handleOrderUpdate(Map<String, dynamic> data) {
+      final orderId = _readOrderId(data);
+      final status = _readOrderStatus(data);
+      if (orderId == null || status == null) {
+        debugPrint('[AblyService] order-update missing id/status: $data');
+        return;
+      }
+      _emitOrderUpdate(orderId, status);
+    }
+
+    for (final eventName in const ['new-order', 'new_order']) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: handleNewOrder,
+      );
+    }
+
+    for (final eventName in const ['order-update', 'order_update']) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: handleOrderUpdate,
+      );
+    }
   }
 
   // FIX: subscribeToUserOrders now warns if called before initAbly rather than
@@ -615,20 +618,63 @@ class AblyService {
     if (rt != null) {
       final channelName = 'order:$orderId';
       final channel = rt.channels.get(channelName);
-      
+
       _attachListener(
         channel: channel,
         channelName: channelName,
         eventName: 'order-update',
         onMessage: (data) {
-          final status = OrderStatusExtension.fromString(
-            data['status'] as String,
-          );
-          for (final cb in _orderListeners) {
-            cb(orderId, status);
+          final status = _readOrderStatus(data);
+          if (status == null) {
+            debugPrint(
+              '[AblyService] single order update missing status: $data',
+            );
+            return;
           }
+          _emitOrderUpdate(orderId, status);
         },
       );
+    }
+  }
+
+  String? _readOrderId(Map<String, dynamic> data) {
+    final direct =
+        data['orderId'] ?? data['order_id'] ?? data['id'] ?? data['_id'];
+    if (direct != null && direct.toString().isNotEmpty) {
+      return direct.toString();
+    }
+
+    final order = data['order'];
+    if (order is Map) {
+      final nested = order['orderId'] ?? order['id'] ?? order['_id'];
+      if (nested != null && nested.toString().isNotEmpty) {
+        return nested.toString();
+      }
+    }
+
+    return null;
+  }
+
+  OrderStatus? _readOrderStatus(Map<String, dynamic> data) {
+    final raw = data['status'] ?? data['orderStatus'];
+    if (raw != null && raw.toString().isNotEmpty) {
+      return OrderStatusExtension.fromString(raw.toString());
+    }
+
+    final order = data['order'];
+    if (order is Map) {
+      final nested = order['status'] ?? order['orderStatus'];
+      if (nested != null && nested.toString().isNotEmpty) {
+        return OrderStatusExtension.fromString(nested.toString());
+      }
+    }
+
+    return null;
+  }
+
+  void _emitOrderUpdate(String orderId, OrderStatus status) {
+    for (final cb in List.of(_orderListeners)) {
+      cb(orderId, status);
     }
   }
 
@@ -647,15 +693,15 @@ class AblyService {
     if (!_orderListeners.contains(l)) _orderListeners.add(l);
   }
 
-  void removeOrderListener(void Function(String orderId, OrderStatus status) l) =>
-      _orderListeners.remove(l);
+  void removeOrderListener(
+    void Function(String orderId, OrderStatus status) l,
+  ) => _orderListeners.remove(l);
 
   void addWalletListener(void Function() l) {
     if (!_walletListeners.contains(l)) _walletListeners.add(l);
   }
 
-  void removeWalletListener(void Function() l) =>
-      _walletListeners.remove(l);
+  void removeWalletListener(void Function() l) => _walletListeners.remove(l);
 
   /// Manually triggers all wallet update listeners.
   /// Useful for refreshing the UI when a deposit is detected via FCM.
@@ -698,8 +744,9 @@ class AblyService {
     if (!_notificationListeners.contains(l)) _notificationListeners.add(l);
   }
 
-  void removeNotificationListener(void Function(Map<String, dynamic> payload) l) =>
-      _notificationListeners.remove(l);
+  void removeNotificationListener(
+    void Function(Map<String, dynamic> payload) l,
+  ) => _notificationListeners.remove(l);
 
   /// See [addOrderListener] for the stable-reference requirement.
   void addStoreApprovalListener(void Function(String storeId) l) {
@@ -734,7 +781,7 @@ class AblyService {
         debugPrint('[AblyService] Error during disconnect: $e');
       }
     }
-    
+
     _realtime = null;
     _currentUserId = null;
     _orderListeners.clear();

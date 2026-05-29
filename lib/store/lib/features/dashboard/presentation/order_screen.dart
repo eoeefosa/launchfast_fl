@@ -137,6 +137,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     _orderPollTimer?.cancel();
     _unattendedTimer?.cancel();
     _reminderAudioPlayer?.dispose();
+    ablyService.removeOrderListener(_onAblyOrderUpdate);
     _tabController
       ..removeListener(_onTabChanged)
       ..dispose();
@@ -249,7 +250,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
         id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
         title: 'New Order Received!',
         body: 'You have a new pending order. Tap to view.',
-        payload: 'order_${order.id}',
+        payload: 'store_order_${order.id}',
         channelId: kOrderChannelId,
       );
       if (mounted) {
@@ -458,20 +459,24 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
   // ── Ably ───────────────────────────────────────────────────────────────────
 
   void _subscribeAbly() {
-    ablyService.addOrderListener((orderId, status) {
-      if (!mounted) return;
+    ablyService.addOrderListener(_onAblyOrderUpdate);
+  }
 
-      final index = _orders.indexWhere((order) => order.id == orderId);
-      if (index != -1) {
-        setState(() {
-          _orders[index] = _orders[index].copyWith(status: status);
-        });
-        return;
-      }
+  void _onAblyOrderUpdate(String orderId, OrderStatus status) {
+    if (!mounted) return;
 
-      _loadOrders(showLoading: false);
+    final index = _orders.indexWhere((order) => order.id == orderId);
+    if (index != -1 && status != OrderStatus.pending) {
+      setState(() {
+        _orders[index] = _orders[index].copyWith(status: status);
+      });
+      return;
+    }
+
+    _loadOrders(showLoading: false);
+    if (status == OrderStatus.pending) {
       setState(() => _hasNewOrder = true);
-    });
+    }
   }
 
   // ── Unattended Notification Reminders ──────────────────────────────────────

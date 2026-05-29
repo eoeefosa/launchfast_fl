@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "com.campuschow.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -42,7 +42,7 @@ android {
     defaultConfig {
         applicationId = "com.campuschow.app"
         minSdk = flutter.minSdkVersion   // permission_handler & flutter_secure_storage require API 23+
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

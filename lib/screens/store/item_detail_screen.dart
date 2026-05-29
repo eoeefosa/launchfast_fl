@@ -177,7 +177,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-          systemNavigationBarColor: scaffoldBg,
+          systemNavigationBarColor: Colors.transparent,
           systemNavigationBarDividerColor: Colors.transparent,
           systemNavigationBarIconBrightness: isDark
               ? Brightness.light

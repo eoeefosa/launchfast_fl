@@ -122,12 +122,13 @@ class OrderCard extends StatelessWidget {
           ),
       ],
       OrderStatus.readyForPickup => [
-        const ActionConfig(
-          'On the Way',
-          OrderStatus.onTheWay,
-          AppColors.primary,
-          Icons.directions_bike_rounded,
-        ),
+        if (!isPickup)
+          const ActionConfig(
+            'On the Way',
+            OrderStatus.onTheWay,
+            AppColors.primary,
+            Icons.directions_bike_rounded,
+          ),
         if (isPickup)
           const ActionConfig(
             'Mark Picked Up',
