@@ -236,7 +236,7 @@ void main() {
     test('respondToPriceAdjustment accepts/rejects price changes', () async {
       mockAdapter.handler = (options) async {
         expect(options.path, equals('/orders/ord_123/price-response'));
-        expect(options.method, equals('POST'));
+        expect(options.method, equals('PATCH'));
         expect(options.data['action'], equals('ACCEPT'));
         final acceptedJson = Map<String, dynamic>.from(mockOrderJson)..['status'] = 'ACCEPTED';
         return ResponseBody.fromString(

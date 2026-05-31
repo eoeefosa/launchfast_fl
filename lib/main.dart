@@ -179,10 +179,17 @@ Future<void> main() async {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
     if (!authProvider.isAuthenticated) {
-      debugPrint('[Main] Guest user — initialising Ably as guest');
-      ablyService.initAblyGuest().catchError(
-        (Object e) => debugPrint('[Main] Guest Ably init failed: $e'),
-      );
+      // Only attempt guest Ably initialization when network is available.
+      NetworkService().checkNow().then((online) {
+        if (online) {
+          debugPrint('[Main] Guest user — initialising Ably as guest');
+          ablyService.initAblyGuest().catchError(
+            (Object e) => debugPrint('[Main] Guest Ably init failed: $e'),
+          );
+        } else {
+          debugPrint('[Main] Skipping guest Ably init (offline)');
+        }
+      });
     }
 
     notificationService.init().catchError((e) {

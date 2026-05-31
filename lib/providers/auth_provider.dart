@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:campuschow/repositories/location_repository.dart';
+import 'package:campuschow/services/network_service.dart';
 
 import '../locator.dart';
 import '../services/ably_service.dart';
@@ -285,6 +286,13 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
+      final online = await NetworkService().checkNow();
+      if (!online) {
+        if (context.mounted) {
+          UIUtils.showErrorDialog(context, 'No Internet Connection', 'Please check your network and try again.');
+        }
+        return;
+      }
       final data = await locator<AuthRepository>().login(email, password);
       await _persistAuthResponse(data);
       _initializeAblySafely();
@@ -310,6 +318,13 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
+      final online = await NetworkService().checkNow();
+      if (!online) {
+        if (context.mounted) {
+          UIUtils.showErrorDialog(context, 'No Internet Connection', 'Please check your network and try again.');
+        }
+        return;
+      }
       final data = await locator<AuthRepository>().register(payload);
       await _persistAuthResponse(data);
       _initializeAblySafely();
@@ -583,6 +598,13 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signInWithGoogle(BuildContext context) async {
     _setLoading(true);
     try {
+      final online = await NetworkService().checkNow();
+      if (!online) {
+        if (context.mounted) {
+          UIUtils.showErrorDialog(context, 'No Internet Connection', 'Please check your network and try again.');
+        }
+        return;
+      }
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return;
 
@@ -616,6 +638,13 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signInWithApple(BuildContext context) async {
     _setLoading(true);
     try {
+      final online = await NetworkService().checkNow();
+      if (!online) {
+        if (context.mounted) {
+          UIUtils.showErrorDialog(context, 'No Internet Connection', 'Please check your network and try again.');
+        }
+        return;
+      }
       final rawNonce = _generateNonce();
       final nonce    = _sha256ofString(rawNonce);
 

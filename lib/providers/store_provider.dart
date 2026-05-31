@@ -55,17 +55,19 @@ class StoreProvider with ChangeNotifier {
       }
     });
 
-    ablyService.addMenuListener((storeId, menuItemId, isReady) {
-      if (menuItemId != null && isReady != null) {
+    ablyService.addMenuListener((storeId, menuItemId, isReady, portionsRemaining) {
+      if (menuItemId != null && (isReady != null || portionsRemaining != null)) {
         // Specific item update
         // We update both the main item and its turkey split version if needed
         bool updatedAny = false;
         for (int i = 0; i < _menuItems.length; i++) {
           if (_menuItems[i].id == menuItemId || _menuItems[i].id == '${menuItemId}_turkey') {
             final oldReady = _menuItems[i].isReady;
-            _menuItems[i] = _menuItems[i].copyWith(isReady: isReady);
+            final newReady = isReady ?? (_menuItems[i].portionsRemaining != null ? (_menuItems[i].portionsRemaining! > 0) : _menuItems[i].isReady);
+            final newPortions = portionsRemaining ?? _menuItems[i].portionsRemaining;
+            _menuItems[i] = _menuItems[i].copyWith(isReady: newReady, portionsRemaining: newPortions);
             updatedAny = true;
-            if (oldReady && !isReady) {
+            if (oldReady && !newReady) {
               _alertController.add('ITEM_UNAVAILABLE:${_menuItems[i].id}');
             }
           }

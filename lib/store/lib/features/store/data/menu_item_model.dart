@@ -36,6 +36,7 @@ class MenuItem {
   final bool requiresSoupSelection;
   final int? prepTimeMinutes;
   final bool isReady;
+  final int? portionsRemaining;
   final int? calories;
   final List<String>? addonIds;
   final List<ItemOption>? sizes;
@@ -57,6 +58,7 @@ class MenuItem {
     this.requiresSoupSelection = false,
     this.prepTimeMinutes,
     this.isReady = true,
+    this.portionsRemaining,
     this.calories,
     this.addonIds,
     this.sizes,
@@ -79,8 +81,14 @@ class MenuItem {
       isFreeWithSwallow: json['isFreeWithSwallow'] ?? false,
       requiresSoupSelection: json['requiresSoupSelection'] ?? false,
       prepTimeMinutes: json['prepTimeMinutes'],
-      isReady: json['isReady'] ?? json['available'] ?? true, // Support both isReady and available
-      calories: json['calories'],
+        // Determine portionsRemaining first so isReady respects stock
+        portionsRemaining: json['portionsRemaining'] ?? json['portions'] ?? json['remaining'],
+        calories: json['calories'],
+        isReady: ((json['isReady'] ?? json['available'] ?? true) as bool) &&
+          ((json['portionsRemaining'] == null && json['portions'] == null && json['remaining'] == null) ||
+            ((json['portionsRemaining'] ?? json['portions'] ?? json['remaining']) is int
+              ? (json['portionsRemaining'] ?? json['portions'] ?? json['remaining']) > 0
+              : (int.tryParse((json['portionsRemaining'] ?? json['portions'] ?? json['remaining']).toString()) ?? 0) > 0)),
       addonIds: json['addonIds'] != null ? List<String>.from(json['addonIds']) : null,
       type: json['type']?.toString(),
       compatibleWith: json['compatibleWith'] != null ? List<String>.from(json['compatibleWith']) : null,
@@ -115,6 +123,7 @@ class MenuItem {
       'compatibleWith': compatibleWith,
       'sizes': sizes?.map((e) => e.toJson()).toList(),
       'meatOptions': meatOptions?.map((e) => e.toJson()).toList(),
+      'portionsRemaining': portionsRemaining,
     };
   }
 
@@ -133,6 +142,7 @@ class MenuItem {
     int? prepTimeMinutes,
     bool? isReady,
     int? calories,
+    int? portionsRemaining,
     List<String>? addonIds,
     List<ItemOption>? sizes,
     List<ItemOption>? meatOptions,
@@ -154,6 +164,7 @@ class MenuItem {
       prepTimeMinutes: prepTimeMinutes ?? this.prepTimeMinutes,
       isReady: isReady ?? this.isReady,
       calories: calories ?? this.calories,
+      portionsRemaining: portionsRemaining ?? this.portionsRemaining,
       addonIds: addonIds ?? this.addonIds,
       sizes: sizes ?? this.sizes,
       meatOptions: meatOptions ?? this.meatOptions,

@@ -58,11 +58,11 @@ class MockAblyService implements AblyService {
   void notifyWalletUpdate() {}
   @override
   void addMenuListener(
-    void Function(String storeId, String? menuItemId, bool? isReady) l,
+    void Function(String storeId, String? menuItemId, bool? isReady, int? portionsRemaining) l,
   ) {}
   @override
   void removeMenuListener(
-    void Function(String storeId, String? menuItemId, bool? isReady) l,
+    void Function(String storeId, String? menuItemId, bool? isReady, int? portionsRemaining) l,
   ) {}
   @override
   void addStoreListener(void Function(String storeId, bool isOpen) l) {}
@@ -102,6 +102,12 @@ class MockAblyService implements AblyService {
   ) {}
   @override
   void Function(Object error)? get onPushActivationFailed => null;
+  @override
+  Future<void> publishMenuPriceUpdate({
+    required String storeId,
+    required String? menuItemId,
+    required double price,
+  }) async {}
 }
 
 void main() {
@@ -196,7 +202,7 @@ void main() {
         mockAdapter.handler = (options) async {
           if (options.path.contains('/orders/ord_123/price-response')) {
             apiCalled = true;
-            expect(options.method, equals('POST'));
+            expect(options.method, equals('PATCH'));
             expect(options.data['action'], equals('ACCEPT'));
 
             return ResponseBody.fromString(
@@ -244,7 +250,7 @@ void main() {
 
         final payButton = find.text('Pay Balance');
         await tester.tap(payButton);
-        await tester.pump(); // Start request
+        await tester.pump();
 
         await tester.pumpAndSettle();
 
@@ -266,7 +272,7 @@ void main() {
         mockAdapter.handler = (options) async {
           if (options.path.contains('/orders/ord_123/price-response')) {
             apiCalled = true;
-            expect(options.method, equals('POST'));
+            expect(options.method, equals('PATCH'));
             expect(options.data['action'], equals('REJECT'));
 
             return ResponseBody.fromString(
@@ -314,7 +320,7 @@ void main() {
 
         final cancelButton = find.text('Cancel Order');
         await tester.tap(cancelButton);
-        await tester.pump(); // Start request
+        await tester.pump();
 
         await tester.pumpAndSettle();
 

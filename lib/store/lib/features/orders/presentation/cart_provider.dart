@@ -95,6 +95,15 @@ class CartProvider with ChangeNotifier {
               jsonEncode(selectedAddons ?? {}),
     );
 
+    final available = item.portionsRemaining;
+    if (available != null) {
+      final currentlyInCart = index != -1 ? _items[index].quantity : 0;
+      if (currentlyInCart + quantity > available) {
+        // Do not allow adding more than available
+        return false;
+      }
+    }
+
     if (index != -1) {
       _items[index].quantity += quantity;
     } else {
@@ -154,10 +163,17 @@ class CartProvider with ChangeNotifier {
     );
 
     if (index != -1) {
+      final menuItem = _items[index].menuItem;
+      final available = menuItem.portionsRemaining;
       if (newQuantity <= 0) {
         _items.removeAt(index);
       } else {
-        _items[index].quantity = newQuantity;
+        if (available != null && newQuantity > available) {
+          // Cap to available
+          _items[index].quantity = available;
+        } else {
+          _items[index].quantity = newQuantity;
+        }
       }
       _saveCart();
       notifyListeners();

@@ -120,7 +120,9 @@ class OrderRepository {
   }
 
   Future<Order> respondToPriceAdjustment(String orderId, String action) async {
-    final response = await apiService.dio.post(
+    // NOTE: backend exposes this as PATCH (consistent with /orders/:id/status
+    // and the store-side /orders/:id/adjust-price). Using POST returns 405.
+    final response = await apiService.dio.patch(
       '/orders/$orderId/price-response',
       data: {'action': action},
     );

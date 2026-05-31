@@ -12,6 +12,7 @@ class MenuItem {
   final bool requiresSoupSelection;
   final int? prepTimeMinutes;
   final bool isReady;
+  final int? portionsRemaining;
   final int? calories;
   final List<String>? addonIds;
   final List<ItemSize> sizes;
@@ -33,6 +34,7 @@ class MenuItem {
     this.requiresSoupSelection = false,
     this.prepTimeMinutes,
     this.isReady = true,
+    this.portionsRemaining,
     this.calories,
     this.addonIds,
     this.sizes = const [],
@@ -59,8 +61,14 @@ class MenuItem {
       isFreeWithSwallow: json['isFreeWithSwallow'] ?? false,
       requiresSoupSelection: json['requiresSoupSelection'] ?? false,
       prepTimeMinutes: json['prepTimeMinutes'],
-      isReady: json['isReady'] ?? true,
-      calories: json['calories'],
+        // Compute portionsRemaining first so isReady can reflect stock
+        portionsRemaining: json['portionsRemaining'] ?? json['portions'] ?? json['remaining'],
+        calories: json['calories'],
+        isReady: ((json['isReady'] ?? true) as bool) &&
+          ((json['portionsRemaining'] == null && json['portions'] == null && json['remaining'] == null) ||
+            ((json['portionsRemaining'] ?? json['portions'] ?? json['remaining']) is int
+              ? (json['portionsRemaining'] ?? json['portions'] ?? json['remaining']) > 0
+              : (int.tryParse((json['portionsRemaining'] ?? json['portions'] ?? json['remaining']).toString()) ?? 0) > 0)),
       addonIds: json['addonIds'] != null ? List<String>.from(json['addonIds']) : null,
       type: json['type']?.toString(),
       compatibleWith: json['compatibleWith'] != null ? List<String>.from(json['compatibleWith']) : null,
@@ -94,6 +102,7 @@ class MenuItem {
       'compatibleWith': compatibleWith,
       'sizes': sizes.map((i) => i.toJson()).toList(),
       'extras': extras.map((i) => i.toJson()).toList(),
+      'portionsRemaining': portionsRemaining,
     };
   }
 
@@ -112,6 +121,7 @@ class MenuItem {
     int? prepTimeMinutes,
     bool? isReady,
     int? calories,
+    int? portionsRemaining,
     List<String>? addonIds,
     List<ItemSize>? sizes,
     List<ItemExtra>? extras,
@@ -133,6 +143,7 @@ class MenuItem {
       prepTimeMinutes: prepTimeMinutes ?? this.prepTimeMinutes,
       isReady: isReady ?? this.isReady,
       calories: calories ?? this.calories,
+      portionsRemaining: portionsRemaining ?? this.portionsRemaining,
       addonIds: addonIds ?? this.addonIds,
       sizes: sizes ?? this.sizes,
       extras: extras ?? this.extras,

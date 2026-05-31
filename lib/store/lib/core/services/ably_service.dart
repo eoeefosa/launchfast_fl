@@ -65,7 +65,7 @@ class AblyService {
   final List<void Function(String storeId)> _approvalListeners = [];
   final List<void Function(Map<String, dynamic> payload)>
   _notificationListeners = [];
-  final List<void Function(String storeId, String? menuItemId, bool? isReady)>
+  final List<void Function(String storeId, String? menuItemId, bool? isReady, int? portionsRemaining)>
   _menuListeners = [];
 
   // ── Init ────────────────────────────────────────────────────────────────────
@@ -367,7 +367,8 @@ class AblyService {
     if (rt == null) return;
 
     const channelName = 'public:stores';
-    const eventName = 'store-toggle';
+    // Accept both hyphen and underscore event names from backend
+    const eventNames = ['store-toggle', 'store_toggle'];
 
     final channel = rt.channels.get(channelName);
     await _attachPush(channel, channelName);
@@ -375,18 +376,20 @@ class AblyService {
     // FIX: Re-check after async gap.
     if (_realtime != rt) return;
 
-    _attachListener(
-      channel: channel,
-      channelName: channelName,
-      eventName: eventName,
-      onMessage: (data) {
-        final storeId = data['storeId'] as String;
-        final isOpen = data['isOpen'] as bool;
-        for (final cb in _storeListeners) {
-          cb(storeId, isOpen);
-        }
-      },
-    );
+    for (final eventName in eventNames) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: (data) {
+          final storeId = data['storeId'] as String;
+          final isOpen = data['isOpen'] as bool;
+          for (final cb in _storeListeners) {
+            cb(storeId, isOpen);
+          }
+        },
+      );
+    }
   }
 
   Future<void> _subscribeMenuChannel() async {
@@ -402,33 +405,66 @@ class AblyService {
     // FIX: Re-check after async gap.
     if (_realtime != rt) return;
 
-    // 1. Specific menu item availability update
-    _attachListener(
-      channel: channel,
-      channelName: channelName,
-      eventName: 'menu-item-update',
-      onMessage: (data) {
-        final storeId = data['storeId'] as String;
-        final menuItemId = data['menuItemId'] as String;
-        final isReady = data['isReady'] as bool;
-        for (final cb in _menuListeners) {
-          cb(storeId, menuItemId, isReady);
-        }
-      },
-    );
+    // 1. Specific menu item availability update — accept hyphen/underscore
+    for (final eventName in const ['menu-item-update', 'menu_item_update']) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: (data) {
+          final storeId = data['storeId'] as String;
+          final menuItemId = data['menuItemId'] as String;
+          final isReady = data['isReady'] as bool;
+          for (final cb in _menuListeners) {
+            cb(storeId, menuItemId, isReady, null);
+          }
+        },
+      );
+    }
 
-    // 2. Structural menu change
-    _attachListener(
-      channel: channel,
-      channelName: channelName,
-      eventName: 'menu-changed',
-      onMessage: (data) {
-        final storeId = data['storeId'] as String;
-        for (final cb in _menuListeners) {
-          cb(storeId, null, null);
-        }
-      },
-    );
+    // 2. Structural menu change — accept hyphen/underscore
+    for (final eventName in const ['menu-changed', 'menu_changed']) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: (data) {
+          final storeId = data['storeId'] as String;
+          for (final cb in _menuListeners) {
+            cb(storeId, null, null, null);
+          }
+        },
+      );
+    }
+
+    // 3. Portion/stock updates — trigger structural refresh to reflect counts
+    for (final eventName in const ['portion-update', 'portion_update', 'menu-portion-update', 'menu_portion_update']) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: (data) {
+          final storeId = data['storeId'] as String;
+          final menuItemId = data['menuItemId'] ?? data['itemId'] ?? data['id'];
+          final portionsVal = data['portionsRemaining'] ?? data['portions'] ?? data['remaining'];
+          int? portions;
+          if (portionsVal is int) portions = portionsVal;
+          if (portionsVal is String) portions = int.tryParse(portionsVal);
+
+          if (menuItemId != null && portions != null) {
+            final isReady = portions > 0;
+            for (final cb in _menuListeners) {
+              cb(storeId, menuItemId.toString(), isReady, portions);
+            }
+          } else {
+            // Fallback to structural refresh when payload is unexpected
+            for (final cb in _menuListeners) {
+              cb(storeId, null, null, null);
+            }
+          }
+        },
+      );
+    }
   }
 
   // FIX: Extracted push attachment as its own method. Push failure is now
@@ -477,6 +513,35 @@ class AblyService {
       subscriptionList.add(sub);
     } else {
       _subscriptions.add(sub);
+    }
+  }
+
+  /// Publishes a price update for a menu item to the public menu channel.
+  /// This is safe to call when the app is connected; if not connected the
+  /// method logs and returns without throwing.
+  Future<void> publishMenuPriceUpdate({
+    required String storeId,
+    required String menuItemId,
+    required double price,
+  }) async {
+    final rt = _realtime;
+    if (rt == null) {
+      debugPrint('[AblyService] publishMenuPriceUpdate skipped: not connected');
+      return;
+    }
+
+    try {
+      final channel = rt.channels.get('public:menu');
+      final data = {
+        'storeId': storeId,
+        'menuItemId': menuItemId,
+        'price': price,
+      };
+      // Use a consistent event name accepted by listeners.
+      await channel.publish(name: 'menu-item-update', data: data);
+      debugPrint('[AblyService] Published price update: $data');
+    } catch (e) {
+      debugPrint('[AblyService] Failed to publish menu price update: $e');
     }
   }
 
@@ -714,13 +779,13 @@ class AblyService {
 
   /// See [addOrderListener] for the stable-reference requirement.
   void addMenuListener(
-    void Function(String storeId, String? menuItemId, bool? isReady) l,
+    void Function(String storeId, String? menuItemId, bool? isReady, int? portionsRemaining) l,
   ) {
     if (!_menuListeners.contains(l)) _menuListeners.add(l);
   }
 
   void removeMenuListener(
-    void Function(String storeId, String? menuItemId, bool? isReady) l,
+    void Function(String storeId, String? menuItemId, bool? isReady, int? portionsRemaining) l,
   ) => _menuListeners.remove(l);
 
   /// See [addOrderListener] for the stable-reference requirement.

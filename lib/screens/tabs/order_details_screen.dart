@@ -38,10 +38,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   void initState() {
     super.initState();
     if (widget.order != null) {
+      // Show whatever we already have immediately for snappy UX,
+      // but ALWAYS refresh from the server so stale cached statuses
+      // (e.g. "Ready for Pickup" after the order was actually delivered)
+      // get corrected on open.
       _order = widget.order;
-      if (widget.orderId != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _fetchOrder());
-      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fetchOrder();
+        // Also nudge the global order list so any other screens (home,
+        // orders tab) reflect the latest status.
+        if (mounted) {
+          context.read<OrderProvider>().refreshOrders();
+        }
+      });
     } else {
       _fetchOrder();
     }

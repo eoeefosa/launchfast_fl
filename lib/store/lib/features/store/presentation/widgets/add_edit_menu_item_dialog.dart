@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'package:campuschow/store/lib/core/services/ably_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/store/data/menu_item_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
+import 'package:campuschow/providers/store_provider.dart' as app_store_provider;
 import 'package:campuschow/widgets/common/universal_image.dart';
+import 'package:provider/provider.dart';
 
 class AddEditMenuItemDialog extends StatefulWidget {
   final StoreProvider provider;
@@ -186,8 +189,45 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
 
     if (isEdit) {
       await widget.provider.updateMenuItem(widget.item!.id, data);
+      try {
+        final appProvider = context.read<app_store_provider.StoreProvider>();
+        await appProvider.updateMenuItem(widget.item!.id, data);
+      } catch (e) {
+        // Non-fatal: if updating the public provider fails, ignore.
+      }
+      // Publish real-time price update so customers receive it immediately.
+      try {
+        final storeId = widget.storeId ?? widget.item?.storeId;
+        if (storeId != null) {
+          await ablyService.publishMenuPriceUpdate(
+            storeId: storeId,
+            menuItemId: widget.item!.id,
+            price: price,
+          );
+        }
+      } catch (e) {
+        debugPrint('[AddEditMenuItemDialog] Failed to publish price update: $e');
+      }
     } else {
       await widget.provider.addMenuItem(data);
+      try {
+        final appProvider = context.read<app_store_provider.StoreProvider>();
+        await appProvider.addMenuItem(data);
+      } catch (e) {
+        // Non-fatal
+      }
+      try {
+        final storeId = widget.storeId;
+        if (storeId != null && data['price'] != null) {
+          await ablyService.publishMenuPriceUpdate(
+            storeId: storeId,
+            menuItemId: (data['id']?.toString() ?? ''),
+            price: price,
+          );
+        }
+      } catch (e) {
+        debugPrint('[AddEditMenuItemDialog] Failed to publish new item price: $e');
+      }
     }
 
     if (mounted) {

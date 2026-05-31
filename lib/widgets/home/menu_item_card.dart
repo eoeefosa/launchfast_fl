@@ -166,7 +166,7 @@ class MenuItemCard extends StatelessWidget {
 
                         SizedBox(height: 10.h),
 
-                        // Price + Add / Unavailable
+                        // Price + Add / Unavailable + Remaining
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -195,6 +195,20 @@ class MenuItemCard extends StatelessWidget {
                                   ),
                               ],
                             ),
+                            if (item.portionsRemaining != null)
+                              Padding(
+                                padding: EdgeInsets.only(left: 8.w),
+                                child: Text(
+                                  item.portionsRemaining! > 0
+                                      ? '${item.portionsRemaining} left'
+                                      : '0 left',
+                                  style: TextStyle(
+                                    fontSize: 11.sp,
+                                    color: mutedColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
 
                             // Button
                             if (item.isReady)

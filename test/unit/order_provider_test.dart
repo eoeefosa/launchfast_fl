@@ -117,8 +117,11 @@ class MockOrderRepository implements OrderRepository {
   
   @override
   Future<Map<String, dynamic>> changeToDelivery(String orderId, String method, {String? email}) {
-    // TODO: implement changeToDelivery
-    throw UnimplementedError();
+    lastInitializePaymentOrderId = orderId;
+    lastInitializePaymentMethod = method;
+    lastInitializePaymentEmail = email;
+    // Return the configured initializePaymentResult to simulate payment/init flow
+    return Future.value(initializePaymentResult);
   }
 }
 
@@ -151,11 +154,11 @@ class MockAblyService implements AblyService {
   void notifyWalletUpdate() {}
   @override
   void addMenuListener(
-    void Function(String storeId, String? menuItemId, bool? isReady) l,
+    void Function(String storeId, String? menuItemId, bool? isReady, int? portionsRemaining) l,
   ) {}
   @override
   void removeMenuListener(
-    void Function(String storeId, String? menuItemId, bool? isReady) l,
+    void Function(String storeId, String? menuItemId, bool? isReady, int? portionsRemaining) l,
   ) {}
   @override
   void addStoreListener(void Function(String storeId, bool isOpen) l) {}
@@ -195,6 +198,13 @@ class MockAblyService implements AblyService {
   ) {}
   @override
   void Function(Object error)? get onPushActivationFailed => null;
+  @override
+ @override
+Future<void> publishMenuPriceUpdate({
+  required String storeId,
+  required String? menuItemId,
+  required double price,
+}) async {}
 }
 
 class MockFlutterSecureStorage extends FlutterSecureStorage {
