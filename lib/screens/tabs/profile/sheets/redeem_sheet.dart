@@ -219,6 +219,7 @@ class _RedeemSheetState extends State<RedeemSheet> {
                           final impressions = await notificationService.getAnalyticsImpressions();
                           final opens = await notificationService.getAnalyticsOpens();
                           if (!mounted) return;
+                          // ignore: use_build_context_synchronously
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Analytics — impressions: $impressions, opens: $opens')),
                           );

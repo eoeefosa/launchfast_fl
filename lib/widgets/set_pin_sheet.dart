@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../repositories/wallet_repository.dart';
 import '../services/api_service.dart';
-import 'pin_entry_sheet.dart';
 
 /// Two-step "enter new PIN → confirm PIN" flow.
 /// Call [SetPinSheet.show] — resolves true when PIN is set successfully.

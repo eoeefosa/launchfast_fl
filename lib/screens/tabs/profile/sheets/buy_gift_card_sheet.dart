@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:campuschow/providers/auth_provider.dart';
+import 'package:campuschow/repositories/wallet_repository.dart';
+import 'package:campuschow/services/api_service.dart';
+import 'package:campuschow/store/lib/core/services/notification_service.dart';
+import 'package:campuschow/utils/ui_utils.dart';
+import 'package:campuschow/widgets/pin_entry_sheet.dart';
+import 'package:campuschow/widgets/set_pin_sheet.dart';
 import 'package:provider/provider.dart';
-import '../../../../providers/auth_provider.dart';
-import '../../../../repositories/wallet_repository.dart';
-import '../../../../services/api_service.dart';
-import '../../../../store/lib/core/services/notification_service.dart';
-import '../../../../utils/ui_utils.dart';
-import '../../../../widgets/pin_entry_sheet.dart';
-import '../../../../widgets/set_pin_sheet.dart';
-import '../../../auth/widgets/apptextfield.dart';
-import '../../../auth/widgets/custom_button.dart';
+import 'package:campuschow/screens/auth/widgets/apptextfield.dart';
+import 'package:campuschow/screens/auth/widgets/custom_button.dart';
 
 class BuyGiftCardSheet extends StatefulWidget {
   const BuyGiftCardSheet({super.key});
