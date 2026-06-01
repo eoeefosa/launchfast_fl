@@ -1,6 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:campuschow/providers/theme_provider.dart';
@@ -33,6 +32,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   bool _isSaving = false;
   bool _isSoundEnabled = true;
   List<_OrderCharge> _charges = [];
+  String? _settingsPin; // null = no PIN set
 
   @override
   void initState() {
@@ -80,10 +80,15 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
       _deliveryTimeCtrl.text = store.deliveryTime;
       _deliveryFeeCtrl.text = store.deliveryFee.toInt().toString();
 
-      // Load sound preference and charges
+      // Load charges and PIN from the store model (backend-persisted).
+      _charges = store.charges
+          .map((e) => _OrderCharge.fromJson(e))
+          .toList();
+      _settingsPin = store.settingsPin;
+
+      // Sound preference is device-local only.
       final prefs = await SharedPreferences.getInstance();
       _isSoundEnabled = prefs.getBool('order_notifications_sound') ?? true;
-      _charges = _loadChargesFromPrefs(prefs, store.id);
     } catch (e) {
       debugPrint('[StoreSettings] _loadStore error: $e');
       _showSnackBar('Failed to load store settings', success: false);
@@ -106,6 +111,13 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
 
   Future<void> _saveStore() async {
     if (_storeId == null) return;
+
+    // If a PIN is set, verify it before allowing the save.
+    if (_settingsPin != null && _settingsPin!.isNotEmpty) {
+      final ok = await _showPinDialog(mode: _PinMode.verify);
+      if (!mounted || ok != true) return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final storeProvider = context.read<StoreProvider>();
@@ -115,6 +127,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         'deliveryTime': _deliveryTimeCtrl.text.trim(),
         'deliveryFee':
             double.tryParse(_deliveryFeeCtrl.text.trim())?.toInt() ?? 0,
+        'charges': _charges.map((c) => c.toJson()).toList(),
       });
       if (mounted) {
         _showSnackBar('Store updated successfully', success: true);
@@ -125,9 +138,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         _showSnackBar('Failed to save store settings', success: false);
       }
     } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -142,45 +153,23 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
 
   // ─── Charges ──────────────────────────────────────────────────────────────
 
-  static List<_OrderCharge> _loadChargesFromPrefs(
-      SharedPreferences prefs, String storeId) {
-    final raw = prefs.getString('store_charges_$storeId');
-    if (raw == null) return [];
-    try {
-      final list = jsonDecode(raw) as List;
-      return list
-          .map((e) => _OrderCharge.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<void> _saveCharges() async {
-    if (_storeId == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      'store_charges_$_storeId',
-      jsonEncode(_charges.map((c) => c.toJson()).toList()),
-    );
-  }
-
-  void _addCharge() {
-    _showChargeDialog(null);
-  }
-
-  void _editCharge(int index) {
-    _showChargeDialog(_charges[index], index: index);
-  }
+  void _addCharge() => _showChargeDialog(null);
+  void _editCharge(int index) => _showChargeDialog(_charges[index], index: index);
 
   void _removeCharge(int index) {
     setState(() => _charges.removeAt(index));
-    _saveCharges();
+    // Persist to backend immediately on removal.
+    if (_storeId != null) {
+      context.read<StoreProvider>().updateStore(_storeId!, {
+        'charges': _charges.map((c) => c.toJson()).toList(),
+      }).catchError((e) {
+        debugPrint('[StoreSettings] _removeCharge persist error: $e');
+      });
+    }
   }
 
   void _showChargeDialog(_OrderCharge? existing, {int? index}) {
-    final nameCtrl =
-        TextEditingController(text: existing?.name ?? '');
+    final nameCtrl = TextEditingController(text: existing?.name ?? '');
     final amountCtrl = TextEditingController(
         text: existing != null ? existing.amount.toInt().toString() : '');
 
@@ -235,13 +224,69 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                   _charges.add(charge);
                 }
               });
-              _saveCharges();
+              // Persist charges to backend immediately.
+              if (_storeId != null) {
+                context.read<StoreProvider>().updateStore(_storeId!, {
+                  'charges': _charges.map((c) => c.toJson()).toList(),
+                }).catchError((e) {
+                  debugPrint('[StoreSettings] charge persist error: $e');
+                });
+              }
             },
             child: const Text('Save'),
           ),
         ],
       ),
     );
+  }
+
+  // ─── PIN ──────────────────────────────────────────────────────────────────
+
+  /// Shows PIN entry dialog. Returns true if the entered PIN matches [_settingsPin]
+  /// (verify mode) or if the new PIN was saved successfully (set mode).
+  Future<bool?> _showPinDialog({required _PinMode mode}) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _PinDialog(
+        mode: mode,
+        currentPin: _settingsPin,
+        onConfirm: (newPin) async {
+          if (mode == _PinMode.set || mode == _PinMode.change) {
+            // Persist the new PIN to backend.
+            try {
+              await context.read<StoreProvider>().updateStore(_storeId!, {
+                'settingsPin': newPin,
+              });
+              if (mounted) setState(() => _settingsPin = newPin);
+              return true;
+            } catch (e) {
+              return false;
+            }
+          }
+          // verify mode — just check equality
+          return newPin == _settingsPin;
+        },
+      ),
+    );
+  }
+
+  Future<void> _removePin() async {
+    if (_storeId == null) return;
+    // Ask user to verify current PIN before removing.
+    final verified = await _showPinDialog(mode: _PinMode.verify);
+    if (!mounted || verified != true) return;
+    try {
+      await context.read<StoreProvider>().updateStore(_storeId!, {
+        'settingsPin': null,
+      });
+      if (mounted) {
+        setState(() => _settingsPin = null);
+        _showSnackBar('PIN removed', success: true);
+      }
+    } catch (e) {
+      if (mounted) _showSnackBar('Failed to remove PIN', success: false);
+    }
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -285,7 +330,9 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = _SettingsTheme.of(context);
-    final user = context.watch<AuthProvider>().user;
+    final auth = context.watch<AuthProvider>();
+    final user = auth.user;
+    final isAdmin = auth.isAdmin;
     final staffProvider = context.watch<StaffProvider>();
     final themeProvider = context.watch<ThemeProvider>();
 
@@ -308,6 +355,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                   _SettingsBody(
                     theme: theme,
                     user: user,
+                    isAdmin: isAdmin,
                     nameCtrl: _nameCtrl,
                     taglineCtrl: _taglineCtrl,
                     deliveryTimeCtrl: _deliveryTimeCtrl,
@@ -328,6 +376,13 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                     onAddCharge: _addCharge,
                     onEditCharge: _editCharge,
                     onRemoveCharge: _removeCharge,
+                    settingsPin: _settingsPin,
+                    onSetPin: () => _showPinDialog(
+                      mode: _settingsPin == null
+                          ? _PinMode.set
+                          : _PinMode.change,
+                    ),
+                    onRemovePin: _removePin,
                     onLogout: _showLogoutDialog,
                   ),
                   if (_isRefreshing)
@@ -467,6 +522,7 @@ class _SettingsBody extends StatelessWidget {
   const _SettingsBody({
     required this.theme,
     required this.user,
+    required this.isAdmin,
     required this.nameCtrl,
     required this.taglineCtrl,
     required this.deliveryTimeCtrl,
@@ -483,11 +539,15 @@ class _SettingsBody extends StatelessWidget {
     required this.onAddCharge,
     required this.onEditCharge,
     required this.onRemoveCharge,
+    required this.settingsPin,
+    required this.onSetPin,
+    required this.onRemovePin,
     required this.onLogout,
   });
 
   final _SettingsTheme theme;
   final dynamic user;
+  final bool isAdmin;
   final TextEditingController nameCtrl;
   final TextEditingController taglineCtrl;
   final TextEditingController deliveryTimeCtrl;
@@ -504,6 +564,9 @@ class _SettingsBody extends StatelessWidget {
   final VoidCallback onAddCharge;
   final ValueChanged<int> onEditCharge;
   final ValueChanged<int> onRemoveCharge;
+  final String? settingsPin;
+  final VoidCallback onSetPin;
+  final VoidCallback onRemovePin;
   final VoidCallback onLogout;
 
   @override
@@ -555,6 +618,22 @@ class _SettingsBody extends StatelessWidget {
             isEnabled: isSoundEnabled,
             onChanged: onSoundToggle,
           ),
+          if (isAdmin) ...[
+            const SizedBox(height: 24),
+            _SectionLabel('Security', theme.textColor),
+            const SizedBox(height: 4),
+            Text(
+              'Settings PIN protects store settings from unauthorised changes. Only admins can set or change it.',
+              style: TextStyle(color: theme.muted, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            _PinSettingsCard(
+              theme: theme,
+              hasPin: settingsPin != null && settingsPin!.isNotEmpty,
+              onSetPin: onSetPin,
+              onRemovePin: onRemovePin,
+            ),
+          ],
           const SizedBox(height: 24),
           _SectionLabel('Account', theme.textColor),
           const SizedBox(height: 12),
@@ -1170,6 +1249,284 @@ class _LogoutDialog extends StatelessWidget {
   }
 }
 
+
+// ─── PIN Mode Enum ────────────────────────────────────────────────────────
+
+enum _PinMode { verify, set, change }
+
+// ─── PIN Settings Card ────────────────────────────────────────────────────
+
+class _PinSettingsCard extends StatelessWidget {
+  const _PinSettingsCard({
+    required this.theme,
+    required this.hasPin,
+    required this.onSetPin,
+    required this.onRemovePin,
+  });
+
+  final _SettingsTheme theme;
+  final bool hasPin;
+  final VoidCallback onSetPin;
+  final VoidCallback onRemovePin;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsSectionCard(
+      theme: theme,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Settings PIN',
+                      style: TextStyle(
+                        color: theme.textColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      hasPin ? 'PIN is set — required to save changes' : 'No PIN set',
+                      style: TextStyle(color: theme.muted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: hasPin
+                      ? Colors.green.withValues(alpha: 0.12)
+                      : Colors.orange.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  hasPin ? 'Active' : 'Off',
+                  style: TextStyle(
+                    color: hasPin ? Colors.green : Colors.orange,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: Icon(hasPin ? Icons.edit_rounded : Icons.add_rounded,
+                      size: 16),
+                  label: Text(hasPin ? 'Change PIN' : 'Set PIN'),
+                  onPressed: onSetPin,
+                ),
+              ),
+              if (hasPin) ...[
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.lock_open_rounded, size: 16),
+                    label: const Text('Remove PIN'),
+                    onPressed: onRemovePin,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── PIN Dialog ───────────────────────────────────────────────────────────
+
+class _PinDialog extends StatefulWidget {
+  const _PinDialog({
+    required this.mode,
+    required this.currentPin,
+    required this.onConfirm,
+  });
+
+  final _PinMode mode;
+  final String? currentPin;
+  final Future<bool> Function(String pin) onConfirm;
+
+  @override
+  State<_PinDialog> createState() => _PinDialogState();
+}
+
+class _PinDialogState extends State<_PinDialog> {
+  final _pinCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+  bool _obscure = true;
+  bool _loading = false;
+  String? _error;
+
+  String get _title => switch (widget.mode) {
+        _PinMode.verify => 'Enter Settings PIN',
+        _PinMode.set => 'Set Settings PIN',
+        _PinMode.change => 'Change Settings PIN',
+      };
+
+  bool get _needsConfirm =>
+      widget.mode == _PinMode.set || widget.mode == _PinMode.change;
+
+  @override
+  void dispose() {
+    _pinCtrl.dispose();
+    _confirmCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final pin = _pinCtrl.text.trim();
+    if (pin.length != 4 || int.tryParse(pin) == null) {
+      setState(() => _error = 'PIN must be exactly 4 digits');
+      return;
+    }
+    if (_needsConfirm && _confirmCtrl.text.trim() != pin) {
+      setState(() => _error = 'PINs do not match');
+      return;
+    }
+    setState(() { _loading = true; _error = null; });
+    final ok = await widget.onConfirm(pin);
+    if (!mounted) return;
+    if (ok) {
+      Navigator.of(context).pop(true);
+    } else {
+      setState(() {
+        _loading = false;
+        _error = widget.mode == _PinMode.verify
+            ? 'Incorrect PIN'
+            : 'Failed to save PIN. Try again.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(_title),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.mode == _PinMode.verify)
+            const Text(
+              'Enter the 4-digit PIN to continue.',
+              style: TextStyle(fontSize: 13),
+            )
+          else
+            const Text(
+              'Choose a 4-digit numeric PIN.',
+              style: TextStyle(fontSize: 13),
+            ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _pinCtrl,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            obscureText: _obscure,
+            maxLength: 4,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: InputDecoration(
+              labelText: widget.mode == _PinMode.verify ? 'PIN' : 'New PIN',
+              counterText: '',
+              suffixIcon: IconButton(
+                icon: Icon(
+                    _obscure ? Icons.visibility_off : Icons.visibility),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+            ),
+            onSubmitted: (_) => _needsConfirm ? null : _submit(),
+          ),
+          if (_needsConfirm) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _confirmCtrl,
+              keyboardType: TextInputType.number,
+              obscureText: _obscure,
+              maxLength: 4,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                labelText: 'Confirm PIN',
+                counterText: '',
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+          ],
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: _loading ? null : _submit,
+          child: _loading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text('Confirm'),
+        ),
+      ],
+    );
+  }
+}
 
 // ─── Order Charge Model ───────────────────────────────────────────────────
 

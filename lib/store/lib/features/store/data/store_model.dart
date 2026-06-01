@@ -12,6 +12,10 @@ class Store {
   final String image;
   final String? ownerId;
   final bool isApproved;
+  /// Extra per-order charges configured by the store owner.
+  final List<Map<String, dynamic>> charges;
+  /// 4-digit PIN required before saving settings. Null means no PIN is set.
+  final String? settingsPin;
 
   Store({
     required this.id,
@@ -25,6 +29,8 @@ class Store {
     required this.image,
     this.ownerId,
     this.isApproved = true,
+    this.charges = const [],
+    this.settingsPin,
   });
 
   Color get color => Color(int.parse(accentColor.replaceFirst('#', '0xFF')));
@@ -42,6 +48,11 @@ class Store {
       image: json['image']?.toString() ?? '',
       ownerId: json['ownerId']?.toString(),
       isApproved: json['isApproved'] ?? false,
+      charges: (json['charges'] as List?)
+              ?.map((e) => Map<String, dynamic>.from(e as Map))
+              .toList() ??
+          const [],
+      settingsPin: json['settingsPin']?.toString(),
     );
   }
 
@@ -58,6 +69,8 @@ class Store {
       'image': image,
       'ownerId': ownerId,
       'isApproved': isApproved,
+      'charges': charges,
+      'settingsPin': settingsPin,
     };
   }
 
@@ -73,6 +86,8 @@ class Store {
     String? image,
     String? ownerId,
     bool? isApproved,
+    List<Map<String, dynamic>>? charges,
+    Object? settingsPin = _sentinel,
   }) {
     return Store(
       id: id ?? this.id,
@@ -86,6 +101,13 @@ class Store {
       image: image ?? this.image,
       ownerId: ownerId ?? this.ownerId,
       isApproved: isApproved ?? this.isApproved,
+      charges: charges ?? this.charges,
+      settingsPin: identical(settingsPin, _sentinel)
+          ? this.settingsPin
+          : settingsPin as String?,
     );
   }
 }
+
+// Sentinel for copyWith null-passthrough on settingsPin.
+const Object _sentinel = Object();
