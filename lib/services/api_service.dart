@@ -62,24 +62,26 @@ class ApiService {
             options.headers['Authorization'] = 'Bearer $token';
           }
 
-          // 🛠️ Generate Postman-ready cURL command
-          final fullUrl = '${options.baseUrl}${options.path}';
-          String curl = 'curl -X ${options.method.toUpperCase()} "$fullUrl"';
+          if (kDebugMode) {
+            // 🛠️ Generate Postman-ready cURL command
+            final fullUrl = '${options.baseUrl}${options.path}';
+            String curl = 'curl -X ${options.method.toUpperCase()} "$fullUrl"';
 
-          options.headers.forEach((key, value) {
-            curl += ' -H "$key: $value"';
-          });
+            options.headers.forEach((key, value) {
+              curl += ' -H "$key: $value"';
+            });
 
-          if (options.data != null) {
-            try {
-              final payload = jsonEncode(options.data);
-              curl += " -d '$payload'";
-            } catch (e) {
-              curl += " -d '${options.data.toString()}'";
+            if (options.data != null) {
+              try {
+                final payload = jsonEncode(options.data);
+                curl += " -d '$payload'";
+              } catch (e) {
+                curl += " -d '${options.data.toString()}'";
+              }
             }
-          }
 
-          debugPrint('🚀 [POSTMAN/cURL]:\n$curl\n');
+            debugPrint('🚀 [POSTMAN/cURL]:\n$curl\n');
+          }
           return handler.next(options);
         },
         onResponse: (response, handler) {

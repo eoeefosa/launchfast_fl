@@ -29,6 +29,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
   late TextEditingController _nameCtrl;
   late TextEditingController _descCtrl;
   late TextEditingController _priceCtrl;
+  late TextEditingController _portionsCtrl; // FIX #5 — for swallow quantity
   String? _selectedImageStr; // Can be a URL (from edit) or a base64 string
   late String _selectedCat;
   late bool _isReady;
@@ -46,6 +47,9 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     _descCtrl = TextEditingController(text: item?.description ?? '');
     _priceCtrl = TextEditingController(
       text: item != null ? '${item.price}' : '',
+    );
+    _portionsCtrl = TextEditingController(
+      text: item?.portionsRemaining != null ? '${item!.portionsRemaining}' : '',
     );
     _selectedImageStr = item?.image;
     _selectedCat = item?.category ?? 'Rice & Pasta';
@@ -80,6 +84,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     _nameCtrl.dispose();
     _descCtrl.dispose();
     _priceCtrl.dispose();
+    _portionsCtrl.dispose(); // FIX #5
 
     for (var s in _sizes) {
       s['name']?.dispose();
@@ -97,6 +102,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     final name = _nameCtrl.text.trim();
     final desc = _descCtrl.text.trim();
     final price = double.tryParse(_priceCtrl.text.trim()) ?? 0;
+    final portions = int.tryParse(_portionsCtrl.text.trim()); // FIX #5
 
     if (name.isEmpty || price <= 0 || _selectedImageStr == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -183,6 +189,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
       'meatOptions': meatData,
       if (widget.item?.addonIds != null) 'addonIds': widget.item!.addonIds,
       if (widget.storeId != null && !isEdit) 'storeId': widget.storeId,
+      if (portions != null) 'portionsRemaining': portions, // FIX #5 — include portions
     };
 
     Navigator.pop(context);
@@ -190,6 +197,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
     if (isEdit) {
       await widget.provider.updateMenuItem(widget.item!.id, data);
       try {
+        if (!mounted) return;
         final appProvider = context.read<app_store_provider.StoreProvider>();
         await appProvider.updateMenuItem(widget.item!.id, data);
       } catch (e) {
@@ -204,13 +212,22 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
             menuItemId: widget.item!.id,
             price: price,
           );
+          // FIX #2 — Also publish portion update if portions changed
+          if (portions != null) {
+            await ablyService.publishPortionUpdate(
+              storeId: storeId,
+              menuItemId: widget.item!.id,
+              portionsRemaining: portions,
+            );
+          }
         }
       } catch (e) {
-        debugPrint('[AddEditMenuItemDialog] Failed to publish price update: $e');
+        debugPrint('[AddEditMenuItemDialog] Failed to publish price/portion update: $e');
       }
     } else {
       await widget.provider.addMenuItem(data);
       try {
+        if (!mounted) return;
         final appProvider = context.read<app_store_provider.StoreProvider>();
         await appProvider.addMenuItem(data);
       } catch (e) {
@@ -224,9 +241,17 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
             menuItemId: (data['id']?.toString() ?? ''),
             price: price,
           );
+          // FIX #2 — Also publish portion update on new item creation
+          if (portions != null) {
+            await ablyService.publishPortionUpdate(
+              storeId: storeId,
+              menuItemId: (data['id']?.toString() ?? ''),
+              portionsRemaining: portions,
+            );
+          }
         }
       } catch (e) {
-        debugPrint('[AddEditMenuItemDialog] Failed to publish new item price: $e');
+        debugPrint('[AddEditMenuItemDialog] Failed to publish new item price/portion: $e');
       }
     }
 
@@ -370,14 +395,34 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
                 maxLines: 2,
               ),
               const SizedBox(height: 14),
-              _buildField(
-                'Price (₦)',
-                _priceCtrl,
-                textColor,
-                muted,
-                border,
-                bg,
-                keyboardType: TextInputType.number,
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildField(
+                      'Price (₦)',
+                      _priceCtrl,
+                      textColor,
+                      muted,
+                      border,
+                      bg,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // FIX #5 — Add quantity field for swallow and other items
+                  Expanded(
+                    child: _buildField(
+                      'Portions Available',
+                      _portionsCtrl,
+                      textColor,
+                      muted,
+                      border,
+                      bg,
+                      keyboardType: TextInputType.number,
+                      hintText: 'e.g. 50',
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 14),
               // ── Image Picker ──

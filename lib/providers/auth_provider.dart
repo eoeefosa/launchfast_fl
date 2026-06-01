@@ -91,6 +91,18 @@ class AuthProvider extends ChangeNotifier {
   bool _tokenRefreshListenerAttached = false;
 
   // ─────────────────────────────────────────────────────────────
+  // Offline queue support — FIX #15: Delay login when offline
+  // ─────────────────────────────────────────────────────────────
+
+  StreamSubscription<bool>? _connectivitySubscription;
+  bool _isWaitingForConnectivity = false;
+  String? _queuedAuthType;
+  BuildContext? _queuedContext;
+  Map<String, dynamic> _queuedParams = {};
+
+  bool get isWaitingForConnectivity => _isWaitingForConnectivity;
+
+  // ─────────────────────────────────────────────────────────────
   // Getters
   // ─────────────────────────────────────────────────────────────
 
@@ -282,17 +294,25 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> login(BuildContext context, String email, String password) async {
     if (_authOperationInProgress) return;
+    
+    final online = await NetworkService().checkNow();
+    if (!online) {
+      // FIX #15 — Queue login and wait for connectivity instead of immediate error
+      _queueAuthOperation(context, 'login', {'email': email, 'password': password});
+      if (context.mounted) {
+        UIUtils.showErrorDialog(
+          context,
+          'No Internet Connection',
+          'Your login request is queued and will be processed once connectivity is restored.',
+        );
+      }
+      return;
+    }
+
     _authOperationInProgress = true;
     _setLoading(true);
 
     try {
-      final online = await NetworkService().checkNow();
-      if (!online) {
-        if (context.mounted) {
-          UIUtils.showErrorDialog(context, 'No Internet Connection', 'Please check your network and try again.');
-        }
-        return;
-      }
       final data = await locator<AuthRepository>().login(email, password);
       await _persistAuthResponse(data);
       _initializeAblySafely();
@@ -314,17 +334,25 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> register(BuildContext context, Map<String, dynamic> payload) async {
     if (_authOperationInProgress) return;
+    
+    final online = await NetworkService().checkNow();
+    if (!online) {
+      // FIX #15 — Queue register and wait for connectivity instead of immediate error
+      _queueAuthOperation(context, 'register', payload);
+      if (context.mounted) {
+        UIUtils.showErrorDialog(
+          context,
+          'No Internet Connection',
+          'Your registration request is queued and will be processed once connectivity is restored.',
+        );
+      }
+      return;
+    }
+
     _authOperationInProgress = true;
     _setLoading(true);
 
     try {
-      final online = await NetworkService().checkNow();
-      if (!online) {
-        if (context.mounted) {
-          UIUtils.showErrorDialog(context, 'No Internet Connection', 'Please check your network and try again.');
-        }
-        return;
-      }
       final data = await locator<AuthRepository>().register(payload);
       await _persistAuthResponse(data);
       _initializeAblySafely();
@@ -337,6 +365,102 @@ class AuthProvider extends ChangeNotifier {
     } finally {
       _authOperationInProgress = false;
       _setLoading(false);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // FIX #15 — Offline queue management
+  // ─────────────────────────────────────────────────────────────
+
+  /// Queue an auth operation to be retried when connectivity is restored.
+  void _queueAuthOperation(
+    BuildContext context,
+    String authType,
+    Map<String, dynamic> params,
+  ) {
+    _queuedAuthType = authType;
+    _queuedContext = context;
+    _queuedParams = params;
+    _isWaitingForConnectivity = true;
+
+    // Start monitoring connectivity changes if not already listening
+    if (context.mounted) {
+      _setupConnectivityListener();
+    }
+
+    if (kDebugMode) {
+      debugPrint('[AuthProvider] Auth operation queued: $authType');
+    }
+
+    _safeNotify();
+  }
+
+  /// Listen to connectivity changes and process queued operations.
+  void _setupConnectivityListener() {
+    if (_connectivitySubscription != null) return;
+
+    final networkService = NetworkService();
+    _connectivitySubscription = networkService.onConnectivityChanged.listen((isOnline) {
+      if (kDebugMode) {
+        debugPrint('[AuthProvider] Connectivity changed: ${isOnline ? 'ONLINE' : 'OFFLINE'}');
+      }
+
+      if (isOnline && _isWaitingForConnectivity && _queuedAuthType != null) {
+        if (kDebugMode) {
+          debugPrint('[AuthProvider] Processing queued auth operation: $_queuedAuthType');
+        }
+        _processQueuedAuthOperation();
+      }
+    });
+  }
+
+  /// Process the queued auth operation now that connectivity is restored.
+  Future<void> _processQueuedAuthOperation() async {
+    final authType = _queuedAuthType;
+    final context = _queuedContext;
+    final params = Map<String, dynamic>.from(_queuedParams);
+
+    // Clear queue immediately to avoid reprocessing
+    _isWaitingForConnectivity = false;
+    _queuedAuthType = null;
+    _queuedContext = null;
+    _queuedParams = {};
+
+    _safeNotify();
+
+    if (authType == null || context == null) return;
+
+    if (kDebugMode) {
+      debugPrint('[AuthProvider] Retrying queued $authType operation');
+    }
+
+    try {
+      switch (authType) {
+        case 'login':
+          final email = params['email'] as String?;
+          final password = params['password'] as String?;
+          if (email != null && password != null) {
+            if (context.mounted) {
+              await login(context, email, password);
+            }
+          }
+          break;
+
+        case 'register':
+          if (context.mounted) {
+            await register(context, params);
+          }
+          break;
+
+        default:
+          if (kDebugMode) {
+            debugPrint('[AuthProvider] Unknown queued auth type: $authType');
+          }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AuthProvider] Error processing queued auth operation: $e');
+      }
     }
   }
 
@@ -955,6 +1079,8 @@ class AuthProvider extends ChangeNotifier {
     // FIX #6 — use injected reference, not global
     _apiService.onUnauthorized = null;
     _ablyService.disconnect();
+    // FIX #15 — clean up connectivity listener
+    _connectivitySubscription?.cancel();
     super.dispose();
   }
 }

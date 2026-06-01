@@ -545,6 +545,64 @@ class AblyService {
     }
   }
 
+  /// Publishes a portion/stock update for a menu item.
+  /// FIX #2 — Instant out-of-stock notifications
+  /// Customers listening to the menu channel will receive real-time updates.
+  Future<void> publishPortionUpdate({
+    required String storeId,
+    required String menuItemId,
+    required int portionsRemaining,
+  }) async {
+    final rt = _realtime;
+    if (rt == null) {
+      debugPrint('[AblyService] publishPortionUpdate skipped: not connected');
+      return;
+    }
+
+    try {
+      final channel = rt.channels.get('public:menu');
+      final data = {
+        'storeId': storeId,
+        'menuItemId': menuItemId,
+        'portionsRemaining': portionsRemaining,
+      };
+      await channel.publish(name: 'portion-update', data: data);
+      if (kDebugMode) {
+        debugPrint('[AblyService] Published portion update: $data');
+      }
+    } catch (e) {
+      debugPrint('[AblyService] Failed to publish portion update: $e');
+    }
+  }
+
+  /// Publishes a store status update (open/close).
+  /// FIX #3 — Instant store close/open notifications
+  /// Customers listening to the stores channel will receive real-time updates.
+  Future<void> publishStoreStatusUpdate({
+    required String storeId,
+    required bool isOpen,
+  }) async {
+    final rt = _realtime;
+    if (rt == null) {
+      debugPrint('[AblyService] publishStoreStatusUpdate skipped: not connected');
+      return;
+    }
+
+    try {
+      final channel = rt.channels.get('public:stores');
+      final data = {
+        'storeId': storeId,
+        'isOpen': isOpen,
+      };
+      await channel.publish(name: 'store-toggle', data: data);
+      if (kDebugMode) {
+        debugPrint('[AblyService] Published store status update: $data');
+      }
+    } catch (e) {
+      debugPrint('[AblyService] Failed to publish store status update: $e');
+    }
+  }
+
   // ── Public subscription API ─────────────────────────────────────────────────
 
   Future<void> subscribeToRiderChannel(

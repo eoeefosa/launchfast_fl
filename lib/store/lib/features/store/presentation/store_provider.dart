@@ -347,12 +347,35 @@ class StoreProvider extends BaseProvider {
     notifyListeners();
   }
 
+  /// FIX #3 — Toggle store status and publish real-time update
   Future<void> toggleStoreStatus(bool value) async {
     if (_activeStore == null) return;
-    _activeStore = _activeStore!.copyWith(isOpen: !_activeStore!.isOpen);
+    
+    final newStatus = !_activeStore!.isOpen;
+    _activeStore = _activeStore!.copyWith(isOpen: newStatus);
     final i = _stores.indexWhere((s) => s.id == _activeStore!.id);
     if (i != -1) _stores[i] = _activeStore!;
     notifyListeners();
+    
+    // Persist to backend and publish real-time update
+    try {
+      await storeRepository.toggleStoreStatus(_activeStore!.id, newStatus);
+      // FIX #3 — Publish store status update so customers get instant notification
+      await ablyService.publishStoreStatusUpdate(
+        storeId: _activeStore!.id,
+        isOpen: newStatus,
+      );
+      if (kDebugMode) {
+        debugPrint('[StoreProvider] Published store status: ${_activeStore!.id} -> $newStatus');
+      }
+    } catch (e) {
+      debugPrint('[StoreProvider] Error toggling store status: $e');
+      // Revert optimistic update on error
+      _activeStore = _activeStore!.copyWith(isOpen: !newStatus);
+      _stores[i] = _activeStore!;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> deleteMenuItem(String id) async {
