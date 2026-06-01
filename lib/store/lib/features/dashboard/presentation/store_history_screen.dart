@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
@@ -226,8 +226,12 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
       );
       await file.writeAsBytes(bytes);
 
-      // Try native print first, fall back to share
-      await Printing.sharePdf(bytes: bytes, filename: file.path.split('/').last);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/pdf')],
+          subject: file.path.split('/').last,
+        ),
+      );
     } catch (e) {
       _showSnackBar('Failed to generate PDF: $e', isError: true);
     }
