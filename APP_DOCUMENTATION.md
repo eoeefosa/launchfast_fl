@@ -149,3 +149,8 @@ Run tests using: `flutter test`
 During `flutter build ipa`, warnings may appear stating that some plugins (`sign_in_with_apple`, `permission_handler_apple`, `flutter_secure_storage`, `ably_flutter`) do not support Swift Package Manager.
 *   **Status**: These warnings indicate a future deprecation of CocoaPods-only support.
 *   **Resolution**: No immediate action is required. The project currently relies on CocoaPods for iOS dependency management, and these plugins remain fully functional. This will be monitored for future updates to these plugins to facilitate a smooth migration when required.
+
+### iOS: App Store Review Rejection (Guideline 5.1.2(i) - Privacy)
+If the app is rejected for Guideline 5.1.2(i) regarding App Tracking Transparency (ATT), it is because the app is misconfigured as "tracking" users in App Store Connect.
+*   **Status**: The app **does not** collect data for advertising tracking purposes as defined by Apple.
+*   **Resolution**: Log into App Store Connect, go to **App Privacy**, and review the data collection declarations. Ensure that none of the collected data (Phone, Email, Name, Address) is marked for "Tracking" purposes. Update the questionnaire, save, and resubmit.

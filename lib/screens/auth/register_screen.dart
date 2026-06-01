@@ -24,7 +24,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -34,7 +33,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _addressController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -75,7 +73,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await authProvider.register(context, {
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
-        'address': _addressController.text.trim(),
         'phone': _phoneController.text.trim(),
         'password': _passwordController.text,
       });
@@ -145,13 +142,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     icon: Icons.mail_outline,
                     keyboardType: TextInputType.emailAddress,
                     validator: Validators.email,
-                  ),
-                  const SizedBox(height: 16),
-                  AppTextField(
-                    controller: _addressController,
-                    hint: 'Default Delivery Address',
-                    icon: Icons.location_on_outlined,
-                    validator: Validators.required('Delivery address'),
                   ),
                   const SizedBox(height: 16),
                   AppTextField(
