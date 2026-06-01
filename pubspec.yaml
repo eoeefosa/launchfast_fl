@@ -69,6 +69,8 @@ dependencies:
   hive_generator: ^2.0.1
   build_runner: ^2.4.13
   share_plus: ^12.0.2
+  pdf: ^3.11.1
+  printing: ^5.13.2
 
 dev_dependencies:
   flutter_test:

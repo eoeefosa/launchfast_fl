@@ -37,6 +37,7 @@ import 'screens/tabs/profile/cashback_winners_screen.dart';
 // ── Store-owner / worker screens ─────────────────────────────────────────────
 import 'package:campuschow/store/lib/features/dashboard/presentation/store_main_nav.dart';
 import 'package:campuschow/store/lib/features/dashboard/presentation/worker_main_nav.dart';
+import 'package:campuschow/store/lib/features/dashboard/presentation/admin_main_nav.dart';
 
 import 'package:campuschow/store/lib/features/auth/presentation/register_screen.dart'
     as store_register;
@@ -87,6 +88,9 @@ const routePaymentCallback = '/callback';
 const routeStoreDashboard = '/dashboard';
 const routeWorkerDashboard = '/worker';
 
+// Admin dashboard
+const routeAdminDashboard = '/admin';
+
 // Store registration
 const routeStoreRegister = '/store-register';
 
@@ -106,16 +110,8 @@ const _customerRoutes = {
   routeCheckout,
 };
 
-const _sharedRoutes = {
-  routeProfile,
-  routeTransactions,
-  routeTransfer,
-  routeRedeemGiftCard,
-  routeBuyGiftCard,
-  routeCashbackWinners,
-};
 
-const _protectedExactRoutes = {routeStoreDashboard, routeWorkerDashboard};
+const _protectedExactRoutes = {routeStoreDashboard, routeWorkerDashboard, routeAdminDashboard};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Router factory
@@ -195,7 +191,15 @@ role: ${auth.user?.role}
         return routeWorkerDashboard;
       }
 
-      if ((isStoreOwner || isAdmin) && loc == routeWorkerDashboard) {
+      if (isAdmin && loc == routeStoreDashboard) {
+        return routeAdminDashboard;
+      }
+
+      if (isStoreOwner && loc == routeAdminDashboard) {
+        return routeStoreDashboard;
+      }
+
+      if (isStoreOwner && loc == routeWorkerDashboard) {
         return routeStoreDashboard;
       }
 
@@ -207,7 +211,11 @@ role: ${auth.user?.role}
         return null;
       }
 
-      if ((isStoreOwner || isAdmin) && _customerRoutes.contains(loc)) {
+      if (isAdmin && _customerRoutes.contains(loc)) {
+        return routeAdminDashboard;
+      }
+
+      if (isStoreOwner && _customerRoutes.contains(loc)) {
         return routeStoreDashboard;
       }
 
@@ -431,6 +439,14 @@ role: ${auth.user?.role}
         path: routeWorkerDashboard,
         builder: (_, _) => const WorkerMainNav(),
       ),
+
+      // ───────────────────────────────────────────────────────────
+      // Admin dashboard
+      // ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: routeAdminDashboard,
+        builder: (_, _) => const AdminMainNav(),
+      ),
     ],
   );
 }
@@ -454,7 +470,7 @@ bool _isProtectedRoute(String loc) {
 
 String _roleHomePage(AuthProvider auth) {
   if (auth.isAdmin) {
-    return routeStoreDashboard;
+    return routeAdminDashboard;
   }
 
   if (auth.isStoreOwner) {

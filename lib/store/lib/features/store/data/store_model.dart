@@ -9,7 +9,6 @@ class Store {
   final double rating;
   final bool isOpen;
   final double deliveryFee;
-  final double priorityFee;
   final String image;
   final String? ownerId;
   final bool isApproved;
@@ -23,14 +22,11 @@ class Store {
     required this.rating,
     required this.isOpen,
     required this.deliveryFee,
-    this.priorityFee = 1000.0,
     required this.image,
     this.ownerId,
-    this.isApproved = true, // Default to true for backward compatibility with static data
+    this.isApproved = true,
   });
 
-  /// Parsed [Color] from the hex [accentColor] string.
-  /// The UI should use this getter instead of parsing the hex manually.
   Color get color => Color(int.parse(accentColor.replaceFirst('#', '0xFF')));
 
   factory Store.fromJson(Map<String, dynamic> json) {
@@ -43,7 +39,6 @@ class Store {
       rating: (json['rating'] as num?)?.toDouble() ?? 5.0,
       isOpen: json['isOpen'] ?? false,
       deliveryFee: (json['deliveryFee'] as num?)?.toDouble() ?? 0.0,
-      priorityFee: (json['priorityFee'] as num?)?.toDouble() ?? 1000.0,
       image: json['image']?.toString() ?? '',
       ownerId: json['ownerId']?.toString(),
       isApproved: json['isApproved'] ?? false,
@@ -60,7 +55,6 @@ class Store {
       'rating': rating,
       'isOpen': isOpen,
       'deliveryFee': deliveryFee,
-      'priorityFee': priorityFee,
       'image': image,
       'ownerId': ownerId,
       'isApproved': isApproved,
@@ -76,7 +70,6 @@ class Store {
     double? rating,
     bool? isOpen,
     double? deliveryFee,
-    double? priorityFee,
     String? image,
     String? ownerId,
     bool? isApproved,
@@ -90,7 +83,6 @@ class Store {
       rating: rating ?? this.rating,
       isOpen: isOpen ?? this.isOpen,
       deliveryFee: deliveryFee ?? this.deliveryFee,
-      priorityFee: priorityFee ?? this.priorityFee,
       image: image ?? this.image,
       ownerId: ownerId ?? this.ownerId,
       isApproved: isApproved ?? this.isApproved,

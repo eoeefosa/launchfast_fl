@@ -461,7 +461,13 @@ class NotificationService {
         debugPrint(
           '[FCM] App opened from background tap — id=${msg.messageId} data=${msg.data}',
         );
-        _onNotificationTap(msg);
+        // Defer to the next frame so the widget tree is fully mounted/resumed
+        // before we attempt navigation. Without this, calling push() during
+        // Activity resume on Android hits a partially-mounted Navigator and
+        // causes a crash or a GoRouter assertion.
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _onNotificationTap(msg),
+        );
       });
 
       final initial = await _fcm.getInitialMessage();
@@ -664,48 +670,98 @@ class NotificationService {
   }) {
     debugPrint('[Notification] Navigate — type=$type, id=$id');
 
+    // Drop reminder payloads entirely — they carry no orderId and routing them
+    // to /order-details produces a FormatException from GoRouter's Uri parser
+    // because the payload contains illegal characters (e.g. '|').
+    if (id != null && id.startsWith(_kReminderPayloadPrefix)) {
+      debugPrint('[Notification] Reminder payload — skipping navigation');
+      return;
+    }
+
+    final navigatorState = rootNavigatorKey.currentState;
     final context = rootNavigatorKey.currentContext;
-    if (context == null) {
-      if (attempt < 10) {
+
+    if (context == null || navigatorState == null) {
+      if (attempt < 15) {
         Future.delayed(const Duration(milliseconds: 200), () {
           _navigate(type: type, id: id, attempt: attempt + 1);
         });
         return;
       }
       debugPrint(
-        '[Notification] Navigation skipped after retries: context is null',
+        '[Notification] Navigation skipped after retries: navigator is null',
       );
       return;
     }
 
-    if (type == 'deposit' || id == 'wallet') {
+    // Resolve the clean order id from whatever format the payload uses.
+    String? cleanId = id;
+    bool isStoreOrder = false;
+    if (cleanId != null && cleanId.startsWith('store_order_')) {
+      cleanId = cleanId.replaceFirst('store_order_', '');
+      isStoreOrder = true;
+    } else if (cleanId != null && cleanId.startsWith('order_')) {
+      cleanId = cleanId.replaceFirst('order_', '');
+    }
+
+    // Determine whether this app instance is acting as a store/admin context.
+    // We detect this from the current GoRouter location rather than injecting
+    // the AuthProvider, which may not be available in all call paths.
+    final currentLocation =
+        GoRouter.of(context).routeInformationProvider.value.uri.path;
+    final isStoreContext =
+        currentLocation.startsWith(routeStoreDashboard) ||
+        currentLocation.startsWith(routeWorkerDashboard) ||
+        currentLocation.startsWith(routeAdminDashboard);
+
+    // ── Deposit / wallet ─────────────────────────────────────────────────────
+    if (type == 'deposit' || cleanId == 'wallet') {
+      if (isStoreContext) {
+        // Store owners are outside the tab shell; /profile/transactions is a
+        // shell sub-route and cannot be pushed from outside the shell.
+        // Use native Navigator to avoid GoRouter shell assertion.
+        debugPrint('[Notification] Store context — skipping wallet navigation');
+        return;
+      }
       context.push(routeTransactions);
       return;
     }
 
-    if (id != null && id.isNotEmpty) {
-      String cleanId = id;
-      if (cleanId.startsWith('store_order_')) {
-        cleanId = cleanId.replaceFirst('store_order_', '');
-        rootNavigatorKey.currentState?.push(
+    // ── Order-related ────────────────────────────────────────────────────────
+    if (cleanId != null && cleanId.isNotEmpty) {
+      if (isStoreOrder || type == 'new_order') {
+        // Always use the native Navigator for store order screens to avoid
+        // conflicts with GoRouter's shell routing.
+        navigatorState.push(
           MaterialPageRoute(
-            builder: (_) => StoreOrderDetailScreen(orderId: cleanId),
+            builder: (_) => StoreOrderDetailScreen(orderId: cleanId!),
           ),
         );
         return;
       }
-      if (cleanId.startsWith('order_')) {
-        cleanId = cleanId.replaceFirst('order_', '');
-      }
-      if (type == 'new_order') {
-        rootNavigatorKey.currentState?.push(
+
+      if (isStoreContext) {
+        // Store / worker / admin — open as a native overlay screen so we don't
+        // try to push a GoRouter customer shell route from outside the shell.
+        navigatorState.push(
           MaterialPageRoute(
-            builder: (_) => StoreOrderDetailScreen(orderId: cleanId),
+            builder: (_) => StoreOrderDetailScreen(orderId: cleanId!),
           ),
         );
         return;
       }
-      context.push('/order-details/$cleanId');
+
+      // Customer context — safe to use GoRouter.
+      try {
+        context.push('/order-details/$cleanId');
+      } catch (e) {
+        debugPrint('[Notification] context.push failed: $e — retrying with Navigator');
+        navigatorState.push(
+          MaterialPageRoute(
+            builder: (_) => StoreOrderDetailScreen(orderId: cleanId!),
+          ),
+        );
+      }
       return;
     }
   }

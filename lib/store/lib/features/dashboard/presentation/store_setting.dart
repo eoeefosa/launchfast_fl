@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,7 +25,6 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   final _taglineCtrl = TextEditingController();
   final _deliveryTimeCtrl = TextEditingController();
   final _deliveryFeeCtrl = TextEditingController();
-  final _priorityFeeCtrl = TextEditingController();
 
   // ─── State ────────────────────────────────────────────────────────────────
   String? _storeId;
@@ -31,6 +32,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   bool _isRefreshing = false;
   bool _isSaving = false;
   bool _isSoundEnabled = true;
+  List<_OrderCharge> _charges = [];
 
   @override
   void initState() {
@@ -48,7 +50,6 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
     _taglineCtrl.dispose();
     _deliveryTimeCtrl.dispose();
     _deliveryFeeCtrl.dispose();
-    _priorityFeeCtrl.dispose();
     super.dispose();
   }
 
@@ -78,11 +79,11 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
       _taglineCtrl.text = store.tagline;
       _deliveryTimeCtrl.text = store.deliveryTime;
       _deliveryFeeCtrl.text = store.deliveryFee.toInt().toString();
-      _priorityFeeCtrl.text = store.priorityFee.toInt().toString();
 
-      // Load sound preference
+      // Load sound preference and charges
       final prefs = await SharedPreferences.getInstance();
       _isSoundEnabled = prefs.getBool('order_notifications_sound') ?? true;
+      _charges = _loadChargesFromPrefs(prefs, store.id);
     } catch (e) {
       debugPrint('[StoreSettings] _loadStore error: $e');
       _showSnackBar('Failed to load store settings', success: false);
@@ -114,8 +115,6 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         'deliveryTime': _deliveryTimeCtrl.text.trim(),
         'deliveryFee':
             double.tryParse(_deliveryFeeCtrl.text.trim())?.toInt() ?? 0,
-        'priorityFee':
-            double.tryParse(_priorityFeeCtrl.text.trim())?.toInt() ?? 1000,
       });
       if (mounted) {
         _showSnackBar('Store updated successfully', success: true);
@@ -139,6 +138,110 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
     } catch (e) {
       _showSnackBar(e.toString().replaceAll('Exception: ', ''), success: false);
     }
+  }
+
+  // ─── Charges ──────────────────────────────────────────────────────────────
+
+  static List<_OrderCharge> _loadChargesFromPrefs(
+      SharedPreferences prefs, String storeId) {
+    final raw = prefs.getString('store_charges_$storeId');
+    if (raw == null) return [];
+    try {
+      final list = jsonDecode(raw) as List;
+      return list
+          .map((e) => _OrderCharge.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> _saveCharges() async {
+    if (_storeId == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      'store_charges_$_storeId',
+      jsonEncode(_charges.map((c) => c.toJson()).toList()),
+    );
+  }
+
+  void _addCharge() {
+    _showChargeDialog(null);
+  }
+
+  void _editCharge(int index) {
+    _showChargeDialog(_charges[index], index: index);
+  }
+
+  void _removeCharge(int index) {
+    setState(() => _charges.removeAt(index));
+    _saveCharges();
+  }
+
+  void _showChargeDialog(_OrderCharge? existing, {int? index}) {
+    final nameCtrl =
+        TextEditingController(text: existing?.name ?? '');
+    final amountCtrl = TextEditingController(
+        text: existing != null ? existing.amount.toInt().toString() : '');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(existing == null ? 'Add Charge' : 'Edit Charge'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Charge name',
+                hintText: 'e.g. Packaging fee',
+                prefixIcon: Icon(Icons.label_outline),
+              ),
+              textCapitalization: TextCapitalization.sentences,
+              autofocus: true,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: amountCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Amount (₦)',
+                prefixIcon: Icon(Icons.attach_money_rounded),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              final name = nameCtrl.text.trim();
+              final amount = double.tryParse(amountCtrl.text.trim());
+              if (name.isEmpty || amount == null || amount < 0) return;
+              Navigator.pop(ctx);
+              setState(() {
+                final charge = _OrderCharge(name: name, amount: amount);
+                if (index != null) {
+                  _charges[index] = charge;
+                } else {
+                  _charges.add(charge);
+                }
+              });
+              _saveCharges();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -209,7 +312,6 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                     taglineCtrl: _taglineCtrl,
                     deliveryTimeCtrl: _deliveryTimeCtrl,
                     deliveryFeeCtrl: _deliveryFeeCtrl,
-                    priorityFeeCtrl: _priorityFeeCtrl,
                     workers: staffProvider.staff,
                     isLoadingStaff: staffProvider.isLoading,
                     onAddStaff: _showAddStaffDialog,
@@ -222,6 +324,10 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setBool('order_notifications_sound', val);
                     },
+                    charges: _charges,
+                    onAddCharge: _addCharge,
+                    onEditCharge: _editCharge,
+                    onRemoveCharge: _removeCharge,
                     onLogout: _showLogoutDialog,
                   ),
                   if (_isRefreshing)
@@ -365,7 +471,6 @@ class _SettingsBody extends StatelessWidget {
     required this.taglineCtrl,
     required this.deliveryTimeCtrl,
     required this.deliveryFeeCtrl,
-    required this.priorityFeeCtrl,
     required this.workers,
     required this.isLoadingStaff,
     required this.onAddStaff,
@@ -374,6 +479,10 @@ class _SettingsBody extends StatelessWidget {
     required this.onThemeChanged,
     required this.isSoundEnabled,
     required this.onSoundToggle,
+    required this.charges,
+    required this.onAddCharge,
+    required this.onEditCharge,
+    required this.onRemoveCharge,
     required this.onLogout,
   });
 
@@ -383,7 +492,6 @@ class _SettingsBody extends StatelessWidget {
   final TextEditingController taglineCtrl;
   final TextEditingController deliveryTimeCtrl;
   final TextEditingController deliveryFeeCtrl;
-  final TextEditingController priorityFeeCtrl;
   final List<StaffMember> workers;
   final bool isLoadingStaff;
   final VoidCallback onAddStaff;
@@ -392,6 +500,10 @@ class _SettingsBody extends StatelessWidget {
   final ValueChanged<ThemeMode> onThemeChanged;
   final bool isSoundEnabled;
   final ValueChanged<bool> onSoundToggle;
+  final List<_OrderCharge> charges;
+  final VoidCallback onAddCharge;
+  final ValueChanged<int> onEditCharge;
+  final ValueChanged<int> onRemoveCharge;
   final VoidCallback onLogout;
 
   @override
@@ -411,17 +523,21 @@ class _SettingsBody extends StatelessWidget {
             taglineCtrl: taglineCtrl,
             deliveryTimeCtrl: deliveryTimeCtrl,
             deliveryFeeCtrl: deliveryFeeCtrl,
-            priorityFeeCtrl: priorityFeeCtrl,
           ),
           const SizedBox(height: 24),
-          _SectionLabel('Staff Management', theme.textColor),
+          _SectionLabel('Order Charges', theme.textColor),
+          const SizedBox(height: 4),
+          Text(
+            'Extra charges applied on every order. Customers see these at checkout.',
+            style: TextStyle(color: theme.muted, fontSize: 12),
+          ),
           const SizedBox(height: 12),
-          _StaffCard(
+          _OrderChargesCard(
             theme: theme,
-            workers: workers,
-            isLoading: isLoadingStaff,
-            onAdd: onAddStaff,
-            onRemove: onRemoveStaff,
+            charges: charges,
+            onAdd: onAddCharge,
+            onEdit: onEditCharge,
+            onRemove: onRemoveCharge,
           ),
           const SizedBox(height: 24),
           _SectionLabel('Appearance', theme.textColor),
@@ -733,7 +849,6 @@ class _StoreFieldsCard extends StatelessWidget {
     required this.taglineCtrl,
     required this.deliveryTimeCtrl,
     required this.deliveryFeeCtrl,
-    required this.priorityFeeCtrl,
   });
 
   final _SettingsTheme theme;
@@ -741,7 +856,6 @@ class _StoreFieldsCard extends StatelessWidget {
   final TextEditingController taglineCtrl;
   final TextEditingController deliveryTimeCtrl;
   final TextEditingController deliveryFeeCtrl;
-  final TextEditingController priorityFeeCtrl;
 
   @override
   Widget build(BuildContext context) {
@@ -770,161 +884,20 @@ class _StoreFieldsCard extends StatelessWidget {
             theme: theme,
           ),
           const SizedBox(height: 14),
-          // _SettingsInputField(
-          //   label: 'Delivery Fee (₦)',
-          //   controller: deliveryFeeCtrl,
-          //   icon: Icons.local_shipping_outlined,
-          //   theme: theme,
-          //   keyboardType: TextInputType.number,
-          // ),
-          const SizedBox(height: 14),
           _SettingsInputField(
             label: 'Delivery Fee (₦)',
-            controller: priorityFeeCtrl,
-            icon: Icons.flash_on_outlined,
+            controller: deliveryFeeCtrl,
+            icon: Icons.local_shipping_outlined,
             theme: theme,
             keyboardType: TextInputType.number,
           ),
+          const SizedBox(height: 12),
         ],
       ),
     );
   }
 }
 
-// ─── Staff Card ───────────────────────────────────────────────────────────
-
-class _StaffCard extends StatelessWidget {
-  const _StaffCard({
-    required this.theme,
-    required this.workers,
-    required this.isLoading,
-    required this.onAdd,
-    required this.onRemove,
-  });
-
-  final _SettingsTheme theme;
-  final List<StaffMember> workers;
-  final bool isLoading;
-  final VoidCallback onAdd;
-  final ValueChanged<String> onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SettingsSectionCard(
-      theme: theme,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isLoading)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Column(children: [
-                for (int i = 0; i < 3; i++) ...[
-                  Row(children: [
-                    ShimmerPlaceholder(width: 40, height: 40, borderRadius: 20),
-                    const SizedBox(width: 12),
-                    Expanded(child: ShimmerPlaceholder(width: double.infinity, height: 14, borderRadius: 6)),
-                  ]),
-                  const SizedBox(height: 10),
-                ],
-              ]),
-            )
-          else if (workers.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'No staff members added yet.',
-                style: TextStyle(color: theme.muted, fontSize: 13),
-              ),
-            )
-          else
-            ...workers.map(
-              (w) => _StaffMemberRow(
-                worker: w,
-                theme: theme,
-                onRemove: () => onRemove(w.id),
-              ),
-            ),
-          const Divider(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add Staff Member'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StaffMemberRow extends StatelessWidget {
-  const _StaffMemberRow({
-    required this.worker,
-    required this.theme,
-    required this.onRemove,
-  });
-
-  final StaffMember worker;
-  final _SettingsTheme theme;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-            child: Text(
-              worker.name[0].toUpperCase(),
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  worker.name,
-                  style: TextStyle(
-                    color: theme.textColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                Text(
-                  worker.email,
-                  style: TextStyle(color: theme.muted, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.remove_circle_outline,
-              color: Colors.red,
-              size: 20,
-            ),
-            onPressed: onRemove,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Notification Settings ────────────────────────────────────────────────
 
 class _NotificationSettingsCard extends StatelessWidget {
   const _NotificationSettingsCard({
@@ -1196,6 +1169,166 @@ class _LogoutDialog extends StatelessWidget {
     );
   }
 }
+
+
+// ─── Order Charge Model ───────────────────────────────────────────────────
+
+class _OrderCharge {
+  final String name;
+  final double amount;
+
+  const _OrderCharge({required this.name, required this.amount});
+
+  factory _OrderCharge.fromJson(Map<String, dynamic> json) => _OrderCharge(
+        name: json['name']?.toString() ?? '',
+        amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+      );
+
+  Map<String, dynamic> toJson() => {'name': name, 'amount': amount};
+}
+
+// ─── Order Charges Card ───────────────────────────────────────────────────
+
+class _OrderChargesCard extends StatelessWidget {
+  const _OrderChargesCard({
+    required this.theme,
+    required this.charges,
+    required this.onAdd,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  final _SettingsTheme theme;
+  final List<_OrderCharge> charges;
+  final VoidCallback onAdd;
+  final ValueChanged<int> onEdit;
+  final ValueChanged<int> onRemove;
+
+  double get _total => charges.fold(0, (s, c) => s + c.amount);
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsSectionCard(
+      theme: theme,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (charges.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No charges added yet.',
+                style: TextStyle(color: theme.muted, fontSize: 13),
+              ),
+            )
+          else ...[
+            ...List.generate(charges.length, (i) {
+              final c = charges[i];
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.receipt_long_outlined,
+                        color: AppColors.primary,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        c.name,
+                        style: TextStyle(
+                          color: theme.textColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '₦${c.amount.toInt()}',
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      color: theme.muted,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      onPressed: () => onEdit(i),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.remove_circle_outline,
+                        size: 18,
+                        color: Colors.red,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      onPressed: () => onRemove(i),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const Divider(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Total per order',
+                  style: TextStyle(
+                    color: theme.textColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  '₦${_total.toInt()}',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          const Divider(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add Charge'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _SettingsSkeleton extends StatelessWidget {
   const _SettingsSkeleton();

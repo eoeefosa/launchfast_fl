@@ -177,7 +177,6 @@ class Order {
             rating: 5.0,
             isOpen: true,
             deliveryFee: 0,
-            priorityFee: 1000,
             image: '',
           );
         }).toList(),

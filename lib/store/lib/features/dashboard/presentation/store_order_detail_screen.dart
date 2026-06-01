@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:campuschow/store/lib/core/network/api_client.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
@@ -33,18 +34,40 @@ class _StoreOrderDetailScreenState extends State<StoreOrderDetailScreen> {
   Future<void> _loadOrder({bool showSkeleton = false}) async {
     if (showSkeleton) setState(() => _loading = true);
     try {
-      final orders = await context.read<StoreProvider>().fetchStoreOrders();
-      final match = orders.where((o) => o.id == widget.orderId).toList();
+      Order? found;
+
+      // 1. Try via provider (fast when store is already initialised).
+      final provider = context.read<StoreProvider>();
+      if (provider.ownedStoreId != null) {
+        final orders = await provider.fetchStoreOrders();
+        found = orders.cast<Order?>().firstWhere(
+          (o) => o!.id == widget.orderId,
+          orElse: () => null,
+        );
+      }
+
+      // 2. Fallback: direct API call — handles cold-launch where setOwner()
+      //    hasn't run yet, or admin/notification taps outside the store shell.
+      if (found == null) {
+        try {
+          final response =
+              await apiService.dio.get('/orders/${widget.orderId}');
+          found = Order.fromJson(response.data as Map<String, dynamic>);
+        } catch (_) {}
+      }
+
       if (!mounted) return;
-      if (match.isNotEmpty) {
+      if (found != null) {
         setState(() {
-          _order = match.first;
+          _order = found;
           _loading = false;
         });
       } else {
         setState(() {
-          _error =
-              'Order #...${widget.orderId.substring(widget.orderId.length > 6 ? widget.orderId.length - 6 : 0)} not found.';
+          final shortId = widget.orderId.length > 6
+              ? widget.orderId.substring(widget.orderId.length - 6)
+              : widget.orderId;
+          _error = 'Order #...$shortId not found.';
           _loading = false;
         });
       }
@@ -69,11 +92,11 @@ class _StoreOrderDetailScreenState extends State<StoreOrderDetailScreen> {
         status.backendName,
         rejectionReason: rejectionReason,
       );
-      final updated = await provider.fetchStoreOrders();
       if (!mounted) return;
-      final match = updated.where((o) => o.id == orderId).toList();
-      if (match.isNotEmpty) {
-        setState(() => _order = match.first);
+      // Reload via same resilient path used during initial load.
+      await _loadOrder();
+      if (!mounted) return;
+      if (_order != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Order updated to ${status.displayLabel}')),
         );
