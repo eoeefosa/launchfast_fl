@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:campuschow/repositories/wallet_repository.dart';
 import 'package:campuschow/screens/auth/widgets/apptextfield.dart';
 import 'package:campuschow/screens/auth/widgets/custom_button.dart';
+import 'package:campuschow/services/api_service.dart';
 import 'package:campuschow/utils/ui_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/providers/auth_provider.dart';
@@ -92,7 +93,7 @@ class _TransferSheetState extends State<TransferSheet> {
       Navigator.pop(context);
       UIUtils.showSuccessDialog(context, 'Success', 'Transfer successful');
     } catch (e) {
-      UIUtils.showErrorDialog(context, 'Transfer Failed', e.toString());
+      UIUtils.showErrorDialog(context, 'Transfer Failed', ApiService.getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

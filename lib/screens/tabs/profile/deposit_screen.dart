@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../repositories/wallet_repository.dart';
+import '../../../services/api_service.dart';
 import '../../../utils/ui_utils.dart';
 import '../../auth/widgets/apptextfield.dart';
 import '../../auth/widgets/custom_button.dart';
@@ -34,7 +35,7 @@ class _DepositScreenState extends State<DepositScreen> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      if (mounted) UIUtils.showErrorDialog(context, 'Deposit Failed', e.toString());
+      if (mounted) UIUtils.showErrorDialog(context, 'Deposit Failed', ApiService.getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

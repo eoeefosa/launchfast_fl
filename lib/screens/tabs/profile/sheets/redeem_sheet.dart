@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:campuschow/repositories/wallet_repository.dart';
 import 'package:campuschow/screens/auth/widgets/apptextfield.dart';
 import 'package:campuschow/screens/auth/widgets/custom_button.dart';
+import 'package:campuschow/services/api_service.dart';
 import 'package:campuschow/utils/ui_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/providers/auth_provider.dart';
@@ -66,7 +67,7 @@ class _RedeemSheetState extends State<RedeemSheet> {
       Navigator.pop(context);
       UIUtils.showSuccessDialog(context, 'Success', 'Gift card redeemed');
     } catch (e) {
-      UIUtils.showErrorDialog(context, 'Redemption Failed', e.toString());
+      UIUtils.showErrorDialog(context, 'Redemption Failed', ApiService.getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

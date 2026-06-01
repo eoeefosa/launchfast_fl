@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../repositories/wallet_repository.dart';
+import '../../../../services/api_service.dart';
 import '../../../../utils/ui_utils.dart';
 import '../../../auth/widgets/apptextfield.dart';
 import '../../../auth/widgets/custom_button.dart';
@@ -51,7 +52,7 @@ class _BuyGiftCardSheetState extends State<BuyGiftCardSheet> {
         'Gift card purchased successfully! The code has been sent to your email.',
       );
     } catch (e) {
-      UIUtils.showErrorDialog(context, 'Purchase Failed', e.toString());
+      UIUtils.showErrorDialog(context, 'Purchase Failed', ApiService.getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -93,7 +93,7 @@ class _TopUpSheetState extends State<TopUpSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Payment failed: ${e.toString().replaceAll('Exception: ', '')}',
+              'Payment failed: ${ApiService.getErrorMessage(e)}',
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,

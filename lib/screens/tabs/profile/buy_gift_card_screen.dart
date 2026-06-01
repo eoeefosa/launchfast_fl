@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../repositories/wallet_repository.dart';
+import '../../../../services/api_service.dart';
 import '../../../../utils/ui_utils.dart';
 
 class BuyGiftCardScreen extends StatefulWidget {
@@ -50,7 +51,7 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
       );
       _amountController.clear();
     } catch (e) {
-      UIUtils.showErrorDialog(context, 'Purchase Failed', e.toString());
+      UIUtils.showErrorDialog(context, 'Purchase Failed', ApiService.getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
