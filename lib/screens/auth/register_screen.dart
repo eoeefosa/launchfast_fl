@@ -62,7 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _postAuthRoute(AuthProvider auth) {
     if (auth.isAdmin || auth.isStoreOwner) return '/dashboard';
     if (auth.isWorker) return '/worker';
-    return '/home';
+    return '/profile';
   }
 
   Future<void> _submit() async {

@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String _postAuthRoute(AuthProvider auth) {
     if (auth.isAdmin || auth.isStoreOwner) return '/dashboard';
     if (auth.isWorker) return '/worker';
-    return '/home';
+    return '/profile';
   }
 
   @override

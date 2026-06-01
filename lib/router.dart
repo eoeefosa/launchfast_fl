@@ -428,5 +428,5 @@ String _roleHomePage(AuthProvider auth) {
     return routeWorkerDashboard;
   }
 
-  return routeHome;
+  return routeProfile;
 }
