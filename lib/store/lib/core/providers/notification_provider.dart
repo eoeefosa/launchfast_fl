@@ -102,7 +102,10 @@ class NotificationProvider with ChangeNotifier {
         }).toList();
 
         _notifications = backendEntities;
-        notifyListeners();
+          notifyListeners();
+          try {
+            await notificationService.setAppBadgeCount(unreadCount);
+          } catch (_) {}
       }
     } catch (e) {
       debugPrint('Error loading store notifications from backend: $e');
@@ -115,6 +118,9 @@ class NotificationProvider with ChangeNotifier {
   Future<void> addNotification(NotificationItem item) async {
     _notifications.insert(0, item);
     notifyListeners();
+    try {
+      await notificationService.setAppBadgeCount(unreadCount);
+    } catch (_) {}
   }
 
   Future<void> markAsRead(String id) async {
@@ -122,9 +128,17 @@ class NotificationProvider with ChangeNotifier {
     if (index != -1) {
       _notifications[index] = _notifications[index].copyWith(isRead: true);
       notifyListeners();
+      try {
+        await notificationService.setAppBadgeCount(unreadCount);
+      } catch (_) {}
     }
     try {
       await apiService.dio.patch('/notifications', data: {'notificationId': id});
+      // Cancel the matching local notification (if any) and update badge
+      try {
+        await notificationService.cancelLocalForRemote(id);
+        await notificationService.setAppBadgeCount(unreadCount);
+      } catch (_) {}
     } catch (e) {
       debugPrint('Backend markAsRead failed: $e');
     }
@@ -139,6 +153,10 @@ class NotificationProvider with ChangeNotifier {
     notifyListeners();
     try {
       await apiService.dio.patch('/notifications');
+      try {
+        await notificationService.clearDeliveredNotifications(all: true);
+        await notificationService.setAppBadgeCount(unreadCount);
+      } catch (_) {}
     } catch (e) {
       debugPrint('Backend markAllAsRead failed: $e');
     }
@@ -148,9 +166,16 @@ class NotificationProvider with ChangeNotifier {
     _notifications.removeWhere((n) => n.id == id);
     notifyListeners();
     try {
+      await notificationService.setAppBadgeCount(unreadCount);
+    } catch (_) {}
+    try {
       if (!id.startsWith('temp_')) {
         await apiService.dio.delete('/notifications?notificationId=$id');
       }
+      try {
+        await notificationService.cancelLocalForRemote(id);
+        await notificationService.setAppBadgeCount(unreadCount);
+      } catch (_) {}
     } catch (e) {
       debugPrint('Backend removeNotification failed: $e');
     }
@@ -161,6 +186,10 @@ class NotificationProvider with ChangeNotifier {
     notifyListeners();
     try {
       await apiService.dio.delete('/notifications');
+      try {
+        await notificationService.clearDeliveredNotifications(all: true);
+        await notificationService.setAppBadgeCount(unreadCount);
+      } catch (_) {}
     } catch (e) {
       debugPrint('Backend clearAll failed: $e');
     }

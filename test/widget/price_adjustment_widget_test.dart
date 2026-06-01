@@ -108,6 +108,18 @@ class MockAblyService implements AblyService {
     required String? menuItemId,
     required double price,
   }) async {}
+  
+  @override
+  Future<void> publishPortionUpdate({required String storeId, required String menuItemId, required int portionsRemaining}) {
+    // TODO: implement publishPortionUpdate
+    throw UnimplementedError();
+  }
+  
+  @override
+  Future<void> publishStoreStatusUpdate({required String storeId, required bool isOpen}) {
+    // TODO: implement publishStoreStatusUpdate
+    throw UnimplementedError();
+  }
 }
 
 void main() {

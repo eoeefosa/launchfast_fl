@@ -40,6 +40,17 @@ class AuthProvider extends ChangeNotifier {
     _apiService.onUnauthorized = _handleUnauthorized;
   }
 
+  /// Cancel any queued authentication intent.
+  void cancelQueuedAuth() {
+    _queuedAuthType = null;
+    _queuedContext = null;
+    _queuedParams = {};
+    _isWaitingForConnectivity = false;
+    _clearPersistedQueuedAuth();
+    _safeNotify();
+    if (kDebugMode) debugPrint('[AuthProvider] Queued auth cancelled by user');
+  }
+
   // ─────────────────────────────────────────────────────────────
   // Storage key constants
   // FIX: centralise keys so a typo is a compile error, not a runtime bug
@@ -153,6 +164,8 @@ class AuthProvider extends ChangeNotifier {
         _setupTokenRefreshListener();
         _syncFCMTokenSafely();
       }
+      // Restore any queued auth intent from previous runs
+      await _restoreQueuedAuth();
     } catch (e, stack) {
       // FIX #3 — sensitive details behind kDebugMode guard
       if (kDebugMode) {
@@ -162,6 +175,48 @@ class AuthProvider extends ChangeNotifier {
     } finally {
       _initialized = true;
       _setLoading(false);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Persist queued auth across restarts
+  // ─────────────────────────────────────────────────────────────
+
+  static const _kQueuedAuthKey = 'launch-fast-queued-auth';
+
+  Future<void> _persistQueuedAuth() async {
+    try {
+      final jsonStr = jsonEncode(_queuedParams);
+      await _storage.write(key: _kQueuedAuthKey, value: jsonStr);
+      if (kDebugMode) debugPrint('[AuthProvider] persisted queued auth');
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AuthProvider] persistQueuedAuth error: $e');
+    }
+  }
+
+  Future<void> _clearPersistedQueuedAuth() async {
+    try {
+      await _storage.delete(key: _kQueuedAuthKey);
+      if (kDebugMode) debugPrint('[AuthProvider] cleared persisted queued auth');
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AuthProvider] clearPersistedQueuedAuth error: $e');
+    }
+  }
+
+  Future<void> _restoreQueuedAuth() async {
+    try {
+      final s = await _storage.read(key: _kQueuedAuthKey);
+      if (s == null || s.isEmpty) return;
+      final params = jsonDecode(s) as Map<String, dynamic>;
+      // If a queued auth exists, set local state. We don't set context across restarts.
+      _queuedParams = Map<String, dynamic>.from(params);
+      _isWaitingForConnectivity = true;
+      _queuedAuthType ??= _queuedParams['type'] as String?;
+      if (kDebugMode) debugPrint('[AuthProvider] restored queued auth from storage');
+      _setupConnectivityListener();
+      _safeNotify();
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AuthProvider] restoreQueuedAuth error: $e');
     }
   }
 
@@ -380,13 +435,20 @@ class AuthProvider extends ChangeNotifier {
   ) {
     _queuedAuthType = authType;
     _queuedContext = context;
-    _queuedParams = params;
+    // Initialise retry metadata for exponential backoff
+    _queuedParams = Map<String, dynamic>.from(params);
+    _queuedParams['_retryCount'] = 0;
+    _queuedParams['_maxRetries'] = _queuedParams['_maxRetries'] ?? 3;
     _isWaitingForConnectivity = true;
 
     // Start monitoring connectivity changes if not already listening
     if (context.mounted) {
       _setupConnectivityListener();
     }
+
+    // persist queued intent so it survives app restarts
+    _queuedParams['type'] = authType;
+    _persistQueuedAuth();
 
     if (kDebugMode) {
       debugPrint('[AuthProvider] Auth operation queued: $authType');
@@ -409,6 +471,17 @@ class AuthProvider extends ChangeNotifier {
         if (kDebugMode) {
           debugPrint('[AuthProvider] Processing queued auth operation: $_queuedAuthType');
         }
+        // If it's a social sign-in queued without a native context, notify user
+        if ((_queuedAuthType == 'google' || _queuedAuthType == 'apple') && (_queuedContext == null || !_queuedContext!.mounted)) {
+          try {
+            notificationService.showNotification(
+              title: 'Sign-In Ready',
+              body: 'Your ${_queuedAuthType == 'google' ? 'Google' : 'Apple'} Sign-In can be retried now. Open the app to continue.',
+            );
+          } catch (e) {
+            if (kDebugMode) debugPrint('[AuthProvider] showNotification error: $e');
+          }
+        }
         _processQueuedAuthOperation();
       }
     });
@@ -425,6 +498,8 @@ class AuthProvider extends ChangeNotifier {
     _queuedAuthType = null;
     _queuedContext = null;
     _queuedParams = {};
+    // clear persisted queued auth
+    _clearPersistedQueuedAuth();
 
     _safeNotify();
 
@@ -452,6 +527,41 @@ class AuthProvider extends ChangeNotifier {
           }
           break;
 
+        case 'google':
+          // Cannot automatically complete native OAuth flows — notify user to retry
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Google Sign-In is pending. Tap to retry.'),
+                action: SnackBarAction(
+                  label: 'Retry',
+                  onPressed: () {
+                    unawaited(signInWithGoogle(context));
+                  },
+                ),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          break;
+
+        case 'apple':
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Apple Sign-In is pending. Tap to retry.'),
+                action: SnackBarAction(
+                  label: 'Retry',
+                  onPressed: () {
+                    unawaited(signInWithApple(context));
+                  },
+                ),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          break;
+
         default:
           if (kDebugMode) {
             debugPrint('[AuthProvider] Unknown queued auth type: $authType');
@@ -460,6 +570,39 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[AuthProvider] Error processing queued auth operation: $e');
+      }
+
+      // Exponential backoff retry
+      try {
+        final retryCount = (params['_retryCount'] ?? 0) as int;
+        final maxRetries = (params['_maxRetries'] ?? 3) as int;
+        if (retryCount < maxRetries) {
+          final nextRetry = retryCount + 1;
+          final delaySeconds = (1 << retryCount);
+
+          // Re-queue
+          _queuedAuthType = authType;
+          _queuedContext = context;
+          _queuedParams = Map<String, dynamic>.from(params)..['_retryCount'] = nextRetry;
+          _isWaitingForConnectivity = true;
+          _safeNotify();
+
+          if (kDebugMode) debugPrint('[AuthProvider] Requeued auth op ($authType) — retry #$nextRetry in ${delaySeconds}s');
+
+          Future.delayed(Duration(seconds: delaySeconds), () async {
+            if (NetworkService().isOnline) {
+              await _processQueuedAuthOperation();
+            }
+          });
+        } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Failed to complete queued authentication. Please try again.')),
+            );
+          }
+        }
+      } catch (_) {
+        // Swallow secondary errors
       }
     }
   }
@@ -724,8 +867,16 @@ class AuthProvider extends ChangeNotifier {
     try {
       final online = await NetworkService().checkNow();
       if (!online) {
+        // Queue intent — native OAuth requires user interaction and cannot be
+        // completed automatically while offline. Notify user that the intent
+        // is queued and provide retry when online.
+        _queueAuthOperation(context, 'google', {});
         if (context.mounted) {
-          UIUtils.showErrorDialog(context, 'No Internet Connection', 'Please check your network and try again.');
+          UIUtils.showErrorDialog(
+            context,
+            'No Internet Connection',
+            'Google Sign-In cannot start while offline. A retry prompt has been queued for when you are back online.',
+          );
         }
         return;
       }
@@ -764,8 +915,13 @@ class AuthProvider extends ChangeNotifier {
     try {
       final online = await NetworkService().checkNow();
       if (!online) {
+        _queueAuthOperation(context, 'apple', {});
         if (context.mounted) {
-          UIUtils.showErrorDialog(context, 'No Internet Connection', 'Please check your network and try again.');
+          UIUtils.showErrorDialog(
+            context,
+            'No Internet Connection',
+            'Apple Sign-In cannot start while offline. A retry prompt has been queued for when you are back online.',
+          );
         }
         return;
       }

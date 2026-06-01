@@ -252,6 +252,65 @@ class _NetworkStatusOverlayState extends State<NetworkStatusOverlay> {
     return Stack(
       children: [
         widget.child,
+        // Queued auth indicator
+        if (authProvider.isWaitingForConnectivity)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8 + 56,
+            left: 16,
+            right: 16,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.schedule_rounded, color: Colors.white, size: 18),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Authentication queued — will retry when online',
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () async {
+                        // Cancel queued auth
+                        if (context.mounted) {
+                          context.read<AuthProvider>().cancelQueuedAuth();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Queued authentication cancelled.')),
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text('Cancel', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ).animate().slideY(begin: -0.6, end: 0, duration: 350.ms),
         if (!_isOnline)
           Positioned(
                 top: MediaQuery.of(context).padding.top + 8,

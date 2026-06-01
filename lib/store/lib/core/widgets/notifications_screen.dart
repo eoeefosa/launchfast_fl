@@ -3,10 +3,31 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:campuschow/store/lib/core/models/notification_model.dart';
 import 'package:campuschow/store/lib/core/providers/notification_provider.dart';
+import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:campuschow/store/lib/features/dashboard/presentation/store_order_detail_screen.dart';
 
-class NotificationsScreen extends StatelessWidget {
+class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
+
+  @override
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends State<NotificationsScreen> {
+  bool _clearedDelivered = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_clearedDelivered) {
+      // Clear OS-delivered notifications when the notifications screen is shown
+      try {
+        notificationService.clearDeliveredNotifications(all: true);
+        notificationService.clearAppBadge();
+      } catch (_) {}
+      _clearedDelivered = true;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
