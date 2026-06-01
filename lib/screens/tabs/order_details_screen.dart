@@ -709,7 +709,7 @@ class _UpgradeToDeliveryPanelState extends State<UpgradeToDeliveryPanel> {
     setState(() => _submitting = true);
     try {
       HapticFeedback.mediumImpact();
-      final res = await OrderRepository().changeToDelivery(widget.order.id, 'Wallet');
+      await OrderRepository().changeToDelivery(widget.order.id, 'Wallet');
 
       if (mounted) {
         final auth = context.read<AuthProvider>();

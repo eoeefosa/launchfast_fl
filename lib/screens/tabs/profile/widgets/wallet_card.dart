@@ -5,6 +5,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import '../../../../providers/auth_provider.dart';
 import '../sheets/top_up_sheet.dart';
+import '../sheets/transfer_sheet.dart';
+import '../sheets/redeem_sheet.dart';
 
 class WalletCard extends StatelessWidget {
   const WalletCard({super.key, required this.auth});
@@ -141,36 +143,54 @@ class WalletCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 // Deposit button
-                SizedBox(
-                      width: double.infinity,
+                Row(
+                  children: [
+                    Expanded(
                       child: ElevatedButton(
                         onPressed: () => _showTopUpModal(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: primary,
                           elevation: 0,
-                          padding: EdgeInsets.symmetric(
-                            vertical: 12.h,
-                          ), // 14 → 12
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              14.r,
-                            ), // 16 → 14
-                          ),
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
                         ),
-                        child: Text(
-                          'Deposit Funds',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 13.sp, // 14 → 13
-                            letterSpacing: 0.4,
-                          ),
-                        ),
+                        child: Text('Deposit', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13.sp, letterSpacing: 0.4)),
                       ),
-                    )
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => TransferSheet.show(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+                        ),
+                        child: Text('Transfer', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13.sp, letterSpacing: 0.4)),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => RedeemSheet.show(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+                        ),
+                        child: Text('Redeem', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13.sp, letterSpacing: 0.4)),
+                      ),
+                    ),
+                  ],
+                )
                     .animate()
                     .fadeIn(delay: 600.ms)
-                    .slideY(begin: 0.15), // slightly smaller slide
+                    .slideY(begin: 0.15),
               ],
             ),
           ),
