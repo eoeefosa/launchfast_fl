@@ -603,6 +603,32 @@ class AblyService {
     }
   }
 
+  Future<void> publishFeedback({
+    required String storeId,
+    required String orderId,
+    required String feedback,
+    required int rating,
+  }) async {
+    final rt = _realtime;
+    if (rt == null) {
+      debugPrint('[AblyService] publishFeedback skipped: not connected');
+      return;
+    }
+
+    try {
+      final channel = rt.channels.get('store:$storeId:orders');
+      final data = {
+        'orderId': orderId,
+        'feedback': feedback,
+        'rating': rating,
+      };
+      await channel.publish(name: 'order-feedback', data: data);
+      debugPrint('[AblyService] Published feedback: $data');
+    } catch (e) {
+      debugPrint('[AblyService] Failed to publish feedback: $e');
+    }
+  }
+
   // ── Public subscription API ─────────────────────────────────────────────────
 
   Future<void> subscribeToRiderChannel(

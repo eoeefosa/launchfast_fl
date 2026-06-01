@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../providers/auth_provider.dart';
-import '../../../../services/api_service.dart';
+import '../../../../repositories/wallet_repository.dart';
 import '../../../auth/widgets/custom_button.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,12 +59,7 @@ class _TopUpSheetState extends State<TopUpSheet> {
 
     setState(() => _isLoading = true);
     try {
-      final response = await apiService.dio.post<Map<String, dynamic>>(
-        '/payments/topup',
-        data: {'amount': _parsedAmount, 'source': 'mobile'},
-      );
-      final authorizationUrl = (response.data?['data'] as Map?)?['authorization_url'] as String?;
-      if (authorizationUrl == null) throw Exception('Payment initiation failed');
+      final authorizationUrl = await WalletRepository().topUp(_parsedAmount!);
       
       final uri = Uri.parse(authorizationUrl);
       if (await canLaunchUrl(uri)) {

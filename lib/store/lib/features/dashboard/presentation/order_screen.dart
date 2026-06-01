@@ -268,6 +268,12 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
     if (index == -1) return;
 
     final previousOrder = _orders[index];
+    
+    // Idempotency check: Don't allow re-marking as delivered
+    if (previousOrder.status == OrderStatus.delivered && newStatus == OrderStatus.delivered) {
+      debugPrint('[StoreOrdersScreen] Ignoring duplicate delivered status update for order: $orderId');
+      return;
+    }
 
     setState(() {
       _updatingOrderIds.add(orderId);

@@ -80,6 +80,7 @@ class ItemDetailFooter extends StatelessWidget {
             quantity: quantity,
             accentColor: accentColor,
             isDark: isDark,
+            isSwallow: item.category == 'Swallow' || item.type == 'swallow',
             onDecrement: () {
               if (quantity > 1) onQuantityChanged(quantity - 1);
             },
@@ -107,6 +108,7 @@ class ItemDetailQuantityStepper extends StatelessWidget {
   final int quantity;
   final Color accentColor;
   final bool isDark;
+  final bool isSwallow;
   final VoidCallback onDecrement;
   final VoidCallback onIncrement;
 
@@ -115,6 +117,7 @@ class ItemDetailQuantityStepper extends StatelessWidget {
     required this.quantity,
     required this.accentColor,
     required this.isDark,
+    this.isSwallow = false,
     required this.onDecrement,
     required this.onIncrement,
   });
@@ -126,6 +129,7 @@ class ItemDetailQuantityStepper extends StatelessWidget {
         : AppColors.lightSurface;
 
     return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(14.r),
@@ -141,19 +145,31 @@ class ItemDetailQuantityStepper extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 4.w),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              transitionBuilder: (child, anim) =>
-                  ScaleTransition(scale: anim, child: child),
-              child: Text(
-                '$quantity',
-                key: ValueKey(quantity),
-                style: TextStyle(
-                  fontSize: 17.sp,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? AppColors.darkText : AppColors.lightText,
+            child: Column(
+              children: [
+                if (isSwallow)
+                  Text(
+                    'Qty',
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: isDark ? Colors.white70 : Colors.black54,
+                    ),
+                  ),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  transitionBuilder: (child, anim) =>
+                      ScaleTransition(scale: anim, child: child),
+                  child: Text(
+                    '$quantity',
+                    key: ValueKey(quantity),
+                    style: TextStyle(
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? AppColors.darkText : AppColors.lightText,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
           ItemDetailFooterStepButton(

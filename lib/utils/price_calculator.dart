@@ -19,16 +19,16 @@ abstract final class PriceCalculator {
       }
     }
 
-    double price = basePrice;
+    double extrasTotal = 0.0;
 
     if (item.selectedMeats != null) {
       item.selectedMeats!.forEach((key, count) {
         // Try finding by ID first
         final meatItem = allMenuItems.firstWhereOrNull((m) => m.id == key);
         if (meatItem != null) {
-          price += meatItem.price * count;
+          extrasTotal += meatItem.price * count;
         } else {
-          price += (meatPrices[key] ?? 0) * count;
+          extrasTotal += (meatPrices[key] ?? 0) * count;
         }
       });
     }
@@ -37,10 +37,10 @@ abstract final class PriceCalculator {
       item.selectedSides!.forEach((key, count) {
         final sideItem = allMenuItems.firstWhereOrNull((m) => m.id == key);
         if (sideItem != null) {
-          price += sideItem.price * count;
+          extrasTotal += sideItem.price * count;
         } else {
           // Fallback if needed, though usually sides are in allMenuItems
-          price += saladPrice * count;
+          extrasTotal += saladPrice * count;
         }
       });
     }
@@ -49,7 +49,7 @@ abstract final class PriceCalculator {
       item.selectedDrinks!.forEach((key, count) {
         final drinkItem = allMenuItems.firstWhereOrNull((m) => m.id == key);
         if (drinkItem != null) {
-          price += drinkItem.price * count;
+          extrasTotal += drinkItem.price * count;
         }
       });
     }
@@ -58,7 +58,7 @@ abstract final class PriceCalculator {
       item.selectedAddons!.forEach((addonId, count) {
         final addonItem = allMenuItems.firstWhereOrNull((m) => m.id == addonId);
         if (addonItem != null) {
-          price += addonItem.price * count;
+          extrasTotal += addonItem.price * count;
         }
       });
     }
@@ -66,10 +66,10 @@ abstract final class PriceCalculator {
     // Add soup price (0 if free, otherwise the stored price)
     if (item.selectedSoup != null) {
       final soupPrice = (item.selectedSoup!['price'] as num?)?.toDouble() ?? 0.0;
-      price += soupPrice;
+      extrasTotal += soupPrice;
     }
 
-    return price * item.quantity;
+    return (basePrice * item.quantity) + extrasTotal;
   }
 
   static double computeTotal({
@@ -101,48 +101,48 @@ abstract final class PriceCalculator {
       basePrice = item.sizes.first.price;
     }
 
-    var total = basePrice;
+    double extrasTotal = 0.0;
     
     selectedMeats.forEach((key, count) {
       final meatItem = availableMeats.firstWhereOrNull((m) => m.id == key);
       if (meatItem != null) {
-        total += meatItem.price * count;
+        extrasTotal += meatItem.price * count;
       } else {
-        total += (meatPrices[key] ?? 0) * count;
+        extrasTotal += (meatPrices[key] ?? 0) * count;
       }
     });
     
     selectedSides.forEach((key, count) {
       final sideItem = availableSides.firstWhereOrNull((m) => m.id == key);
       if (sideItem != null) {
-        total += sideItem.price * count;
+        extrasTotal += sideItem.price * count;
       } else {
-        total += saladPrice * count;
+        extrasTotal += saladPrice * count;
       }
     });
 
     selectedDrinks.forEach((key, count) {
       final drinkItem = availableDrinks.firstWhereOrNull((m) => m.id == key);
       if (drinkItem != null) {
-        total += drinkItem.price * count;
+        extrasTotal += drinkItem.price * count;
       }
     });
     
     if (selectedSoupId != null) {
       final soup = availableSoups.firstWhereOrNull((s) => s.id == selectedSoupId);
       if (soup != null && !soup.isFreeWithSwallow) {
-        total += soup.price;
+        extrasTotal += soup.price;
       }
     }
     
     selectedAddons.forEach((id, count) {
       final addon = availableAddons.firstWhereOrNull((m) => m.id == id);
       if (addon != null) {
-        total += addon.price * count;
+        extrasTotal += addon.price * count;
       }
     });
     
-    return total * quantity;
+    return (basePrice * quantity) + extrasTotal;
   }
 
   static String getCustomizationSummary(

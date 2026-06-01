@@ -29,6 +29,7 @@ import 'screens/notifications_screen.dart';
 import 'screens/payment_callback_screen.dart';
 import 'screens/tabs/profile/transactions_screen.dart';
 import 'screens/tabs/profile/transfer_screen.dart';
+import 'screens/tabs/profile/deposit_screen.dart';
 import 'screens/tabs/profile/redeem_gift_card_screen.dart';
 import 'screens/tabs/profile/buy_gift_card_screen.dart';
 import 'screens/tabs/profile/cashback_winners_screen.dart';
@@ -69,6 +70,7 @@ const routeNotifications = '/notifications';
 const routeStores = '/stores';
 const routeCheckout = '/checkout';
 const routeTransactions = '/profile/transactions';
+const routeDeposit = '/profile/deposit';
 const routeTransfer = '/profile/transfer';
 const routeRedeemGiftCard = '/profile/redeem-gift-card';
 const routeBuyGiftCard = '/profile/buy-gift-card';
@@ -316,6 +318,10 @@ role: ${auth.user?.role}
                   GoRoute(
                     path: 'transactions',
                     builder: (_, _) => const TransactionsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'deposit',
+                    builder: (_, _) => const DepositScreen(),
                   ),
                   GoRoute(
                     path: 'transfer',

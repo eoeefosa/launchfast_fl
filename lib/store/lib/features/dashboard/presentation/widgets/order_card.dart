@@ -1029,49 +1029,58 @@ class _ActionButton extends StatelessWidget {
                     'Select a reason so the customer is notified clearly.',
                   ),
                   const SizedBox(height: 12),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      selectedReason == 'Out of stock'
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
+                  Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        selectedReason == 'Out of stock'
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                      ),
+                      title: const Text('Out of stock'),
+                      onTap: () {
+                        setDialogState(() {
+                          selectedReason = 'Out of stock';
+                          customError = null;
+                        });
+                      },
                     ),
-                    title: const Text('Out of stock'),
-                    onTap: () {
-                      setDialogState(() {
-                        selectedReason = 'Out of stock';
-                        customError = null;
-                      });
-                    },
                   ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      selectedReason == 'Not taking orders'
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
+                  Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        selectedReason == 'Not taking orders'
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                      ),
+                      title: const Text('Not taking orders'),
+                      onTap: () {
+                        setDialogState(() {
+                          selectedReason = 'Not taking orders';
+                          customError = null;
+                        });
+                      },
                     ),
-                    title: const Text('Not taking orders'),
-                    onTap: () {
-                      setDialogState(() {
-                        selectedReason = 'Not taking orders';
-                        customError = null;
-                      });
-                    },
                   ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      selectedReason == customReason
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
+                  Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        selectedReason == customReason
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                      ),
+                      title: const Text('Custom'),
+                      onTap: () {
+                        setDialogState(() {
+                          selectedReason = customReason;
+                        });
+                      },
                     ),
-                    title: const Text('Custom'),
-                    onTap: () {
-                      setDialogState(() {
-                        selectedReason = customReason;
-                      });
-                    },
                   ),
                   if (selectedReason == customReason) ...[
                     const SizedBox(height: 8),
@@ -1280,7 +1289,7 @@ class _ActionButton extends StatelessWidget {
       onPressed: () async {
         if (config.status == OrderStatus.cancelled) {
           await _showRejectionDialog(context);
-        } else if (config.status == OrderStatus.priceAdjusted) {
+        } else if (config.status == OrderStatus.priceAdjusted && order.status != OrderStatus.delivered) {
           await _showPriceAdjustmentDialog(context);
         } else {
           await onTap(order.id, config.status);

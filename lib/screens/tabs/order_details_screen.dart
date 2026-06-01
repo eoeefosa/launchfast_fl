@@ -1,4 +1,5 @@
 import 'package:campuschow/constants/app_colors.dart';
+import 'package:campuschow/store/lib/core/services/ably_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +15,7 @@ import '../../providers/auth_provider.dart';
 import '../../screens/checkout/widgets/payment_sheet.dart';
 import 'components/order_details_app_bar.dart';
 import 'components/order_details_error.dart';
+import 'components/order_details_skeleton.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
   const OrderDetailsScreen({super.key, this.order, this.orderId})
@@ -101,9 +103,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       return Scaffold(
         backgroundColor: scaffoldBg,
         appBar: const OrderDetailsAppBar(),
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
+        body: const OrderDetailsSkeleton(),
       );
     }
 
@@ -117,6 +117,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
     // Use the provider's order if available, otherwise fallback to local _order state
     final order = providerOrder ?? _order;
+    
+    // Debug log to investigate why panel might still be visible
+    if (order != null) {
+      debugPrint('[OrderDetails] Debug: ID=${order.id}, Status=${order.status}, isDelivered=${order.status == OrderStatus.delivered}');
+    }
 
     // Error / not-found state
     if (_error != null || order == null) {
@@ -132,6 +137,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
     final isPendingPayment = order.status == OrderStatus.pendingPayment;
     final isActive = order.status != OrderStatus.delivered && order.status != OrderStatus.cancelled;
+    
+    // Strict restriction
+    final showPriceAdjustment = order.status == OrderStatus.priceAdjusted && order.status != OrderStatus.delivered;
 
     return Scaffold(
       backgroundColor: scaffoldBg,
@@ -149,7 +157,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (order.status == OrderStatus.priceAdjusted)
+            if (showPriceAdjustment)
               PriceAdjustmentPanel(order: order, onUpdated: _fetchOrder),
             if (order.status == OrderStatus.delivered)
               RateOrderPanel(order: order),
@@ -199,6 +207,7 @@ class RateOrderPanel extends StatefulWidget {
 
 class _RateOrderPanelState extends State<RateOrderPanel> {
   int _rating = 0;
+  final _feedbackController = TextEditingController();
   bool _submitting = false;
   bool _submitted = false;
 
@@ -206,20 +215,37 @@ class _RateOrderPanelState extends State<RateOrderPanel> {
     if (_rating == 0) return;
     setState(() => _submitting = true);
     
-    // Simulate API call for now since rating endpoint is not yet available
-    await Future.delayed(const Duration(seconds: 1));
-    
-    if (mounted) {
-      setState(() {
-        _submitting = false;
-        _submitted = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Thank you for your feedback!'),
-          backgroundColor: Colors.green,
-        ),
+    try {
+      // 1. Send Ably notification to store
+      await ablyService.publishFeedback(
+        storeId: widget.order.items.first.menuItem.storeId,
+        orderId: widget.order.id,
+        feedback: _feedbackController.text.trim(),
+        rating: _rating,
       );
+      
+      // Simulate/Trigger rating API here...
+      await Future.delayed(const Duration(seconds: 1));
+      
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+          _submitted = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Thank you for your feedback!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _submitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to send feedback.')),
+        );
+      }
     }
   }
 
@@ -255,15 +281,6 @@ class _RateOrderPanelState extends State<RateOrderPanel> {
             ),
           ),
           SizedBox(height: 8.h),
-          Text(
-            'Your feedback helps us improve the campus experience.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightMuted,
-            ),
-          ),
-          SizedBox(height: 20.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(5, (index) {
@@ -279,6 +296,15 @@ class _RateOrderPanelState extends State<RateOrderPanel> {
             }),
           ),
           if (_rating > 0) ...[
+            SizedBox(height: 12.h),
+            TextField(
+              controller: _feedbackController,
+              decoration: const InputDecoration(
+                hintText: 'Any comments for the store?',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
             SizedBox(height: 20.h),
             SizedBox(
               width: double.infinity,
@@ -337,6 +363,13 @@ class _PriceAdjustmentPanelState extends State<PriceAdjustmentPanel> {
   bool _submitting = false;
 
   Future<void> _respond(String action) async {
+    debugPrint('[PriceAdjustmentPanel] Responding with: $action for orderId=${widget.order.id}, CurrentStatus=${widget.order.status}');
+    if (widget.order.status == OrderStatus.delivered) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot adjust price on completed order.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
     setState(() => _submitting = true);
     try {
       await OrderRepository().respondToPriceAdjustment(widget.order.id, action);

@@ -26,4 +26,14 @@ class WalletRepository {
       'amount': amount,
     });
   }
+
+  Future<String> topUp(double amount) async {
+    final response = await apiService.dio.post('/payments/topup', data: {
+      'amount': amount,
+      'source': 'mobile',
+    });
+    final authorizationUrl = (response.data?['data'] as Map?)?['authorization_url'] as String?;
+    if (authorizationUrl == null) throw Exception('Payment initiation failed');
+    return authorizationUrl;
+  }
 }

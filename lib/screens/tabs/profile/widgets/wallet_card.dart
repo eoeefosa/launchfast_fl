@@ -5,16 +5,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../providers/auth_provider.dart';
-import '../sheets/top_up_sheet.dart';
 
 class WalletCard extends StatelessWidget {
   const WalletCard({super.key, required this.auth});
 
   final AuthProvider auth;
-
-  void _showTopUpModal(BuildContext context) {
-    TopUpSheet.show(context, auth);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +141,7 @@ class WalletCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _showTopUpModal(context),
+                        onPressed: () => context.push('/profile/deposit'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: primary,
