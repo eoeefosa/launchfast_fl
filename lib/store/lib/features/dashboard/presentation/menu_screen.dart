@@ -61,10 +61,9 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
     final storeId = storeProvider.activeStoreId;
 
     if (storeId == null) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
+      return Scaffold(
+        backgroundColor: bg,
+        body: _MenuListSkeleton(isDark: isDark),
       );
     }
 
@@ -198,9 +197,7 @@ class _StoreMenuScreenState extends State<StoreMenuScreen> {
           // ── Menu Items ──
           Expanded(
             child: storeProvider.isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  )
+                ? _MenuListSkeleton(isDark: isDark)
                 : filtered.isEmpty
                 ? Center(
                     child: Column(
@@ -619,6 +616,50 @@ class _MenuItemCard extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _MenuListSkeleton extends StatelessWidget {
+  final bool isDark;
+  const _MenuListSkeleton({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 6,
+      itemBuilder: (_, i) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: border),
+        ),
+        child: Row(
+          children: [
+            ShimmerPlaceholder(width: 64, height: 64, borderRadius: 12),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ShimmerPlaceholder(width: double.infinity, height: 14, borderRadius: 6),
+                  const SizedBox(height: 8),
+                  ShimmerPlaceholder(width: 120, height: 12, borderRadius: 6),
+                  const SizedBox(height: 8),
+                  ShimmerPlaceholder(width: 70, height: 16, borderRadius: 6),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            ShimmerPlaceholder(width: 32, height: 32, borderRadius: 8),
+          ],
+        ),
       ),
     );
   }

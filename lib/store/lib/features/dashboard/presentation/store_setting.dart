@@ -7,6 +7,7 @@ import 'package:campuschow/store/lib/features/dashboard/data/staff_member_model.
 import 'package:campuschow/store/lib/features/auth/presentation/auth_provider.dart';
 import 'package:campuschow/store/lib/features/dashboard/presentation/staff_provider.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
+import 'package:campuschow/store/lib/core/widgets/shimmer_placeholder.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class StoreSettingsScreen extends StatefulWidget {
@@ -195,9 +196,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         onRefresh: _refreshStore,
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
+          ? const _SettingsSkeleton()
           : RefreshIndicator(
               color: AppColors.primary,
               onRefresh: _refreshStore,
@@ -817,9 +816,18 @@ class _StaffCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (isLoading)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(children: [
+                for (int i = 0; i < 3; i++) ...[
+                  Row(children: [
+                    ShimmerPlaceholder(width: 40, height: 40, borderRadius: 20),
+                    const SizedBox(width: 12),
+                    Expanded(child: ShimmerPlaceholder(width: double.infinity, height: 14, borderRadius: 6)),
+                  ]),
+                  const SizedBox(height: 10),
+                ],
+              ]),
             )
           else if (workers.isEmpty)
             Padding(
@@ -1185,6 +1193,64 @@ class _LogoutDialog extends StatelessWidget {
           child: const Text('Logout'),
         ),
       ],
+    );
+  }
+}
+
+class _SettingsSkeleton extends StatelessWidget {
+  const _SettingsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+
+    Widget card(List<Widget> children) => Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+        );
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Store image placeholder
+          Center(child: ShimmerPlaceholder(width: 100, height: 100, borderRadius: 50)),
+          const SizedBox(height: 24),
+          card([
+            ShimmerPlaceholder(width: 100, height: 12, borderRadius: 6),
+            const SizedBox(height: 8),
+            ShimmerPlaceholder(width: double.infinity, height: 44, borderRadius: 12),
+            const SizedBox(height: 16),
+            ShimmerPlaceholder(width: 100, height: 12, borderRadius: 6),
+            const SizedBox(height: 8),
+            ShimmerPlaceholder(width: double.infinity, height: 44, borderRadius: 12),
+          ]),
+          card([
+            ShimmerPlaceholder(width: 120, height: 12, borderRadius: 6),
+            const SizedBox(height: 8),
+            ShimmerPlaceholder(width: double.infinity, height: 44, borderRadius: 12),
+            const SizedBox(height: 16),
+            ShimmerPlaceholder(width: 100, height: 12, borderRadius: 6),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: ShimmerPlaceholder(width: double.infinity, height: 44, borderRadius: 12)),
+              const SizedBox(width: 12),
+              Expanded(child: ShimmerPlaceholder(width: double.infinity, height: 44, borderRadius: 12)),
+            ]),
+          ]),
+          card([
+            ShimmerPlaceholder(width: 80, height: 12, borderRadius: 6),
+            const SizedBox(height: 8),
+            ShimmerPlaceholder(width: double.infinity, height: 44, borderRadius: 12),
+          ]),
+        ],
+      ),
     );
   }
 }

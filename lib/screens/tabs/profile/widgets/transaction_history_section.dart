@@ -82,10 +82,10 @@ class _TransactionHistorySectionState extends State<TransactionHistorySection> {
 
         // Transactions List
         if (payment.isLoading && payment.transactions.isEmpty)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(40.0),
-              child: CircularProgressIndicator(),
+          Column(
+            children: List.generate(
+              5,
+              (i) => _TransactionSkeleton(isDark: isDark, delay: i * 60),
             ),
           )
         else if (payment.transactions.isEmpty)
@@ -292,4 +292,75 @@ class _StatusBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TransactionSkeleton extends StatelessWidget {
+  final bool isDark;
+  final int delay;
+  const _TransactionSkeleton({required this.isDark, required this.delay});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final base = isDark ? Colors.white10 : Colors.black12;
+    final highlight = isDark ? Colors.white24 : Colors.white70;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark
+              ? scheme.outlineVariant.withValues(alpha: 0.5)
+              : Colors.grey[100]!,
+        ),
+      ),
+      child: Row(
+        children: [
+          _Bone(44, 44, 22, base),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Bone(double.infinity, 14, 6, base),
+                const SizedBox(height: 6),
+                _Bone(120, 12, 6, base),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _Bone(60, 16, 6, base),
+              const SizedBox(height: 6),
+              _Bone(48, 18, 6, base),
+            ],
+          ),
+        ],
+      ),
+    )
+        .animate(delay: Duration(milliseconds: delay))
+        .shimmer(duration: 1200.ms, color: highlight)
+        .fadeIn(duration: 250.ms);
+  }
+}
+
+class _Bone extends StatelessWidget {
+  final double w, h, r;
+  final Color color;
+  const _Bone(this.w, this.h, this.r, this.color);
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: w,
+        height: h,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(r),
+        ),
+      );
 }

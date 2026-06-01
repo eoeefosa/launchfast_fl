@@ -12,6 +12,7 @@ import 'package:campuschow/store/lib/core/services/ably_service.dart';
 import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'widgets/pickup_scanner_sheet.dart';
 import 'widgets/order_card.dart';
+import 'widgets/order_card_skeleton.dart';
 import 'widgets/order_screen_component.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -852,9 +853,7 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
           ),
           Expanded(
             child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  )
+                ? OrderListSkeleton(isDark: isDark)
                 : RefreshIndicator(
                     color: AppColors.primary,
                     onRefresh: () => _loadOrders(showLoading: false),

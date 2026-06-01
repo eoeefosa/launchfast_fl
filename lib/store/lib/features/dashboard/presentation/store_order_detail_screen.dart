@@ -5,6 +5,7 @@ import 'package:campuschow/store/lib/core/theme/app_colors.dart';
 import 'package:campuschow/store/lib/features/orders/data/order_model.dart';
 import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart';
 import 'widgets/order_card.dart';
+import 'widgets/order_card_skeleton.dart';
 
 /// A full-page order detail screen for the store owner, reachable from
 /// notification taps. Accepts an [orderId] and fetches the matching order
@@ -26,10 +27,11 @@ class _StoreOrderDetailScreenState extends State<StoreOrderDetailScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadOrder());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadOrder(showSkeleton: true));
   }
 
-  Future<void> _loadOrder() async {
+  Future<void> _loadOrder({bool showSkeleton = false}) async {
+    if (showSkeleton) setState(() => _loading = true);
     try {
       final orders = await context.read<StoreProvider>().fetchStoreOrders();
       final match = orders.where((o) => o.id == widget.orderId).toList();
@@ -107,61 +109,53 @@ class _StoreOrderDetailScreenState extends State<StoreOrderDetailScreen> {
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: () {
-        if (_loading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (_error != null) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.receipt_long_outlined, size: 64, color: muted),
-                  const SizedBox(height: 16),
-                  Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: textColor, fontSize: 16),
+      body: _loading
+          ? OrderDetailSkeleton(isDark: isDark)
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.receipt_long_outlined, size: 64, color: muted),
+                        const SizedBox(height: 16),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: textColor, fontSize: 16),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() { _loading = true; _error = null; });
+                            _loadOrder();
+                          },
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _loading = true;
-                        _error = null;
-                      });
-                      _loadOrder();
-                    },
-                    child: const Text('Retry'),
+                )
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  // Keep content visible on refresh — no full-page spinner
+                  onRefresh: _loadOrder,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      OrderCard(
+                        order: _order!,
+                        isUpdating: false,
+                        textColor: textColor,
+                        muted: muted,
+                        surface: surface,
+                        border: border,
+                        onUpdateStatus: _updateStatus,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          );
-        }
-        return RefreshIndicator(
-          onRefresh: () async {
-            setState(() => _loading = true);
-            await _loadOrder();
-          },
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              OrderCard(
-                order: _order!,
-                isUpdating: false,
-                textColor: textColor,
-                muted: muted,
-                surface: surface,
-                border: border,
-                onUpdateStatus: _updateStatus,
-              ),
-            ],
-          ),
-        );
-      }(),
+                ),
     );
   }
 }

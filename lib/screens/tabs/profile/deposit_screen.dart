@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:provider/provider.dart';
-import '../../../providers/auth_provider.dart';
 import '../../../repositories/wallet_repository.dart';
 import '../../../services/api_service.dart';
 import '../../../utils/ui_utils.dart';

@@ -120,6 +120,12 @@ class MockAblyService implements AblyService {
     // TODO: implement publishStoreStatusUpdate
     throw UnimplementedError();
   }
+  
+  @override
+  Future<void> publishFeedback({required String storeId, required String orderId, required String feedback, required int rating}) {
+    // TODO: implement publishFeedback
+    throw UnimplementedError();
+  }
 }
 
 void main() {

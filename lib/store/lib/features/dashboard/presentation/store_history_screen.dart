@@ -9,6 +9,7 @@ import 'package:campuschow/store/lib/features/store/presentation/store_provider.
 import 'package:campuschow/store/lib/core/services/ably_service.dart';
 import 'widgets/pickup_scanner_sheet.dart';
 import 'widgets/order_card.dart';
+import 'widgets/order_card_skeleton.dart';
 import 'widgets/order_screen_component.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -92,7 +93,7 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
 
     _searchController = TextEditingController();
 
-    _loadOrders();
+    _loadOrders(showSkeleton: true);
     _subscribeAbly();
   }
 
@@ -113,9 +114,9 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
 
   // ── Data ───────────────────────────────────────────────────────────────────
 
-  Future<void> _loadOrders() async {
+  Future<void> _loadOrders({bool showSkeleton = false}) async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+    if (showSkeleton) setState(() => _isLoading = true);
 
     try {
       final orders = await context.read<StoreProvider>().fetchStoreOrders();
@@ -307,9 +308,7 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
           ),
           Expanded(
             child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  )
+                ? OrderListSkeleton(isDark: isDark)
                 : RefreshIndicator(
                     color: AppColors.primary,
                     onRefresh: _loadOrders,
