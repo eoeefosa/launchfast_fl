@@ -687,7 +687,7 @@ class NotificationService {
       String cleanId = id;
       if (cleanId.startsWith('store_order_')) {
         cleanId = cleanId.replaceFirst('store_order_', '');
-        Navigator.of(context, rootNavigator: true).push(
+        rootNavigatorKey.currentState?.push(
           MaterialPageRoute(
             builder: (_) => StoreOrderDetailScreen(orderId: cleanId),
           ),
@@ -698,7 +698,7 @@ class NotificationService {
         cleanId = cleanId.replaceFirst('order_', '');
       }
       if (type == 'new_order') {
-        Navigator.of(context, rootNavigator: true).push(
+        rootNavigatorKey.currentState?.push(
           MaterialPageRoute(
             builder: (_) => StoreOrderDetailScreen(orderId: cleanId),
           ),

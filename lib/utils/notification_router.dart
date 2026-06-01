@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:campuschow/models/notification_item.dart';
 import 'package:campuschow/widgets/notifications/notification_detail_sheet.dart';
 import 'package:campuschow/store/lib/features/dashboard/presentation/store_order_detail_screen.dart';
+import 'package:campuschow/router.dart';
 
 /// Routes notifications to the correct application flow.
 /// Handles Rider, Store, and User navigation roles.
@@ -51,7 +52,7 @@ class NotificationRouter {
         case 'new_order':
           // Store owner — push a native screen since the store dashboard
           // is outside the GoRouter shell.
-          Navigator.of(context, rootNavigator: true).push(
+          rootNavigatorKey.currentState?.push(
             MaterialPageRoute(
               builder: (_) => StoreOrderDetailScreen(orderId: orderId),
             ),
@@ -71,7 +72,7 @@ class NotificationRouter {
 
         default:
           if (isStoreOrderPayload) {
-            Navigator.of(context, rootNavigator: true).push(
+            rootNavigatorKey.currentState?.push(
               MaterialPageRoute(
                 builder: (_) => StoreOrderDetailScreen(orderId: orderId),
               ),
@@ -94,7 +95,7 @@ class NotificationRouter {
         break;
       case 'store':
         // Use native Navigator for store — no GoRouter shell route exists.
-        Navigator.of(context, rootNavigator: true).push(
+        rootNavigatorKey.currentState?.push(
           MaterialPageRoute(
             builder: (_) => StoreOrderDetailScreen(orderId: orderId),
           ),

@@ -151,6 +151,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           children: [
             if (order.status == OrderStatus.priceAdjusted)
               PriceAdjustmentPanel(order: order, onUpdated: _fetchOrder),
+            if (order.status == OrderStatus.delivered)
+              RateOrderPanel(order: order),
             if (isActive) ...[
               ActiveOrderTracker(order: order),
               if (order.status == OrderStatus.readyForPickup &&
@@ -178,6 +180,137 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               },
             )
           : null,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// RateOrderPanel
+// ---------------------------------------------------------------------------
+
+class RateOrderPanel extends StatefulWidget {
+  final Order order;
+
+  const RateOrderPanel({super.key, required this.order});
+
+  @override
+  State<RateOrderPanel> createState() => _RateOrderPanelState();
+}
+
+class _RateOrderPanelState extends State<RateOrderPanel> {
+  int _rating = 0;
+  bool _submitting = false;
+  bool _submitted = false;
+
+  Future<void> _submitRating() async {
+    if (_rating == 0) return;
+    setState(() => _submitting = true);
+    
+    // Simulate API call for now since rating endpoint is not yet available
+    await Future.delayed(const Duration(seconds: 1));
+    
+    if (mounted) {
+      setState(() {
+        _submitting = false;
+        _submitted = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Thank you for your feedback!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_submitted) return const SizedBox.shrink();
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = AppColors.primary;
+    
+    final bg = isDark
+        ? AppColors.primary.withValues(alpha: 0.1)
+        : AppColors.primary.withValues(alpha: 0.05);
+    final border = AppColors.primary.withValues(alpha: 0.3);
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 24.h),
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border.all(color: border, width: 1.5),
+        borderRadius: BorderRadius.circular(24.r),
+      ),
+      child: Column(
+        children: [
+          Text(
+            'How was your meal?',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'Your feedback helps us improve the campus experience.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightMuted,
+            ),
+          ),
+          SizedBox(height: 20.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              final starValue = index + 1;
+              return IconButton(
+                onPressed: _submitting ? null : () => setState(() => _rating = starValue),
+                icon: Icon(
+                  starValue <= _rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: starValue <= _rating ? Colors.amber : (isDark ? Colors.grey.shade600 : Colors.grey.shade400),
+                  size: 40.sp,
+                ),
+              );
+            }),
+          ),
+          if (_rating > 0) ...[
+            SizedBox(height: 20.h),
+            SizedBox(
+              width: double.infinity,
+              height: 48.h,
+              child: ElevatedButton(
+                onPressed: _submitting ? null : _submitRating,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  elevation: 0,
+                ),
+                child: _submitting
+                    ? SizedBox(
+                        height: 20.sp,
+                        width: 20.sp,
+                        child: const CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Submit Rating',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

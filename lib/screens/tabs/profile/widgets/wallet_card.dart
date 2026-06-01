@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../providers/auth_provider.dart';
 import '../sheets/top_up_sheet.dart';
-import '../sheets/transfer_sheet.dart';
-import '../sheets/redeem_sheet.dart';
 
 class WalletCard extends StatelessWidget {
   const WalletCard({super.key, required this.auth});
@@ -14,7 +13,7 @@ class WalletCard extends StatelessWidget {
   final AuthProvider auth;
 
   void _showTopUpModal(BuildContext context) {
-    TopUpDialog.show(context, auth);
+    TopUpSheet.show(context, auth);
   }
 
   @override
@@ -161,7 +160,7 @@ class WalletCard extends StatelessWidget {
                     SizedBox(width: 8.w),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => TransferSheet.show(context),
+                        onPressed: () => context.push('/profile/transfer'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white.withValues(alpha: 0.2),
                           foregroundColor: Colors.white,
@@ -175,7 +174,7 @@ class WalletCard extends StatelessWidget {
                     SizedBox(width: 8.w),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => RedeemSheet.show(context),
+                        onPressed: () => context.push('/profile/redeem-gift-card'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white.withValues(alpha: 0.2),
                           foregroundColor: Colors.white,

@@ -28,6 +28,10 @@ import 'screens/stores_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/payment_callback_screen.dart';
 import 'screens/tabs/profile/transactions_screen.dart';
+import 'screens/tabs/profile/transfer_screen.dart';
+import 'screens/tabs/profile/redeem_gift_card_screen.dart';
+import 'screens/tabs/profile/buy_gift_card_screen.dart';
+import 'screens/tabs/profile/cashback_winners_screen.dart';
 
 // ── Store-owner / worker screens ─────────────────────────────────────────────
 import 'package:campuschow/store/lib/features/dashboard/presentation/store_main_nav.dart';
@@ -64,7 +68,11 @@ const routeSearch = '/search';
 const routeNotifications = '/notifications';
 const routeStores = '/stores';
 const routeCheckout = '/checkout';
-const routeTransactions = '/transactions';
+const routeTransactions = '/profile/transactions';
+const routeTransfer = '/profile/transfer';
+const routeRedeemGiftCard = '/profile/redeem-gift-card';
+const routeBuyGiftCard = '/profile/buy-gift-card';
+const routeCashbackWinners = '/profile/cashback-winners';
 
 // Dynamic customer routes
 const routeStoreDetails = '/store/:id';
@@ -90,12 +98,19 @@ const _customerRoutes = {
   routeHome,
   routeCart,
   routeOrders,
-  routeProfile,
   routeSearch,
   routeNotifications,
   routeStores,
   routeCheckout,
+};
+
+const _sharedRoutes = {
+  routeProfile,
   routeTransactions,
+  routeTransfer,
+  routeRedeemGiftCard,
+  routeBuyGiftCard,
+  routeCashbackWinners,
 };
 
 const _protectedExactRoutes = {routeStoreDashboard, routeWorkerDashboard};
@@ -301,6 +316,22 @@ role: ${auth.user?.role}
                   GoRoute(
                     path: 'transactions',
                     builder: (_, _) => const TransactionsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'transfer',
+                    builder: (_, _) => const TransferScreen(),
+                  ),
+                  GoRoute(
+                    path: 'redeem-gift-card',
+                    builder: (_, _) => const RedeemGiftCardScreen(),
+                  ),
+                  GoRoute(
+                    path: 'buy-gift-card',
+                    builder: (_, _) => const BuyGiftCardScreen(),
+                  ),
+                  GoRoute(
+                    path: 'cashback-winners',
+                    builder: (_, _) => const CashbackWinnersScreen(),
                   ),
                 ],
               ),

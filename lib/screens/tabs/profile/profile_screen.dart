@@ -84,6 +84,22 @@ class ProfileScreen extends StatelessWidget {
                 subtitle: 'View your deposits and spending',
                 onTap: () => context.push('/profile/transactions'),
               ),
+              ProfileSettingsTile(
+                icon: isIOS
+                    ? CupertinoIcons.gift
+                    : Icons.card_giftcard,
+                title: 'Buy Gift Card',
+                subtitle: 'Purchase a gift card for yourself or a friend',
+                onTap: () => context.push('/profile/buy-gift-card'),
+              ),
+              ProfileSettingsTile(
+                icon: isIOS
+                    ? CupertinoIcons.star
+                    : Icons.emoji_events_outlined,
+                title: 'Cashback Winners',
+                subtitle: 'See who won recently!',
+                onTap: () => context.push('/profile/cashback-winners'),
+              ),
 
               const SectionHeader(title: 'Account Verification'),
               VerificationTile(

@@ -213,14 +213,14 @@ class _HeaderActions extends StatelessWidget {
                             border: Border.all(color: surfaceColor, width: 2),
                           ),
                           constraints: BoxConstraints(
-                            minWidth: 18.w, // 20 → 18
-                            minHeight: 18.h, // 20 → 18
+                            minWidth: 18.w,
+                            minHeight: 18.h,
                           ),
                           child: Text(
                             '${provider.unreadCount}',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 9.sp, // 10 → 9
+                              fontSize: 9.sp,
                               fontWeight: FontWeight.w900,
                             ),
                             textAlign: TextAlign.center,
@@ -234,7 +234,40 @@ class _HeaderActions extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(width: 10.w), // 12 → 10
+        SizedBox(width: 10.w),
+        // Cashback winners icon
+        Semantics(
+          label: 'Cashback Winners',
+          button: true,
+          child: GestureDetector(
+            onTap: () => context.push('/profile/cashback-winners'),
+            child: Tooltip(
+              message: 'Cashback Winners',
+              child: Container(
+                width: 44.w,
+                height: 44.h,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.darkSurface2.withValues(alpha: 0.5)
+                      : AppColors.lightSurface.withValues(alpha: 0.6),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.darkBorder.withValues(alpha: 0.3)
+                        : AppColors.lightBorder.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  Icons.emoji_events_outlined,
+                  size: 22.sp,
+                  color: Colors.amber,
+                ),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 10.w),
         // Profile avatar
         Semantics(
           label: 'View Profile',

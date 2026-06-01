@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:campuschow/repositories/wallet_repository.dart';
 import 'package:campuschow/screens/auth/widgets/apptextfield.dart';
@@ -25,6 +26,57 @@ class _TransferSheetState extends State<TransferSheet> {
   final _emailController = TextEditingController();
   final _amountController = TextEditingController();
   bool _isLoading = false;
+  String? _recipientName;
+  bool _isLookingUp = false;
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_onEmailChanged);
+  }
+
+  @override
+  void dispose() {
+    _emailController.removeListener(_onEmailChanged);
+    _emailController.dispose();
+    _amountController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onEmailChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      final email = _emailController.text.trim();
+      if (email.contains('@') && email.contains('.')) {
+        _lookupUser(email);
+      } else {
+        if (mounted) setState(() => _recipientName = null);
+      }
+    });
+  }
+
+  Future<void> _lookupUser(String email) async {
+    if (_isLookingUp) return;
+    setState(() => _isLookingUp = true);
+    try {
+      final user = await WalletRepository().lookupUser(email);
+      if (mounted) {
+        setState(() {
+          _recipientName = user['name'];
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _recipientName = null;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _isLookingUp = false);
+    }
+  }
 
   Future<void> _transfer() async {
     if (_emailController.text.isEmpty || _amountController.text.isEmpty) return;
@@ -55,10 +107,24 @@ class _TransferSheetState extends State<TransferSheet> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Transfer Funds', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const Center(child: Text('Transfer Funds', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
           const SizedBox(height: 20),
           AppTextField(controller: _emailController, hint: 'Recipient Email', icon: Icons.email_outlined),
+          if (_isLookingUp)
+            const Padding(
+              padding: EdgeInsets.only(top: 8.0, left: 12.0),
+              child: SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else if (_recipientName != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0, left: 12.0),
+              child: Text(
+                'Recipient: $_recipientName',
+                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+              ),
+            ),
           const SizedBox(height: 10),
           AppTextField(controller: _amountController, hint: 'Amount', keyboardType: TextInputType.number, icon: Icons.money),
           const SizedBox(height: 20),
