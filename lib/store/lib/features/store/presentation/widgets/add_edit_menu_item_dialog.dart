@@ -189,7 +189,7 @@ class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
       'meatOptions': meatData,
       if (widget.item?.addonIds != null) 'addonIds': widget.item!.addonIds,
       if (widget.storeId != null && !isEdit) 'storeId': widget.storeId,
-      if (portions != null) 'portionsRemaining': portions, // FIX #5 — include portions
+      'portionsRemaining': ?portions, // FIX #5 — include portions
     };
 
     Navigator.pop(context);

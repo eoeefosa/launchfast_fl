@@ -1021,7 +1021,7 @@ class NotificationService {
       final tmplIdx = _reminderTemplates.indexOf(chosen);
       final finalTitle = chosen['title'] as String;
       final finalBody = chosen['body'] as String;
-      final finalPayload = '${_kReminderPayloadPrefix}|t$tmplIdx';
+      final finalPayload = '$_kReminderPayloadPrefix|t$tmplIdx';
 
       final androidDetails = AndroidNotificationDetails(
         kGentleChannelId,
