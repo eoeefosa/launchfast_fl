@@ -4,7 +4,10 @@ import 'package:campuschow/repositories/wallet_repository.dart';
 import 'package:campuschow/screens/auth/widgets/apptextfield.dart';
 import 'package:campuschow/screens/auth/widgets/custom_button.dart';
 import 'package:campuschow/services/api_service.dart';
+import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:campuschow/utils/ui_utils.dart';
+import 'package:campuschow/widgets/pin_entry_sheet.dart';
+import 'package:campuschow/widgets/set_pin_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/providers/auth_provider.dart';
 
@@ -82,21 +85,54 @@ class _TransferSheetState extends State<TransferSheet> {
     }
   }
 
-  Future<void> _transfer() async {
+  Future<void> _onTransferPressed() async {
     if (_emailController.text.isEmpty || _amountController.text.isEmpty) return;
-    
+
+    final auth = context.read<AuthProvider>();
+
+    // Ensure PIN is set first
+    if (!(auth.user?.hasTransactionPin ?? false)) {
+      final pinSet = await SetPinSheet.show(context);
+      if (!mounted || !pinSet) return;
+    }
+
+    // Verify PIN before proceeding
+    final confirmed = await PinEntrySheet.show(
+      context,
+      title: 'Enter Transaction PIN',
+      onSubmit: (pin) => WalletRepository().verifyTransactionPin(pin),
+    );
+    if (!mounted || !confirmed) return;
+
+    _transfer(auth);
+  }
+
+  Future<void> _transfer(AuthProvider auth) async {
     setState(() => _isLoading = true);
+    final amount = double.parse(_amountController.text);
+    final recipient = _emailController.text.trim();
     try {
-      await WalletRepository().transferFunds(
-        _emailController.text.trim(),
-        double.parse(_amountController.text),
-      );
+      final newBalance = await WalletRepository().transferFunds(recipient, amount);
       if (!mounted) return;
-      context.read<AuthProvider>().refreshUser();
+
+      // Update balance in real time
+      if (newBalance != null) {
+        auth.updateWalletBalance(newBalance);
+      } else {
+        auth.refreshUser();
+      }
+
+      // Local notification
+      notificationService.showNotification(
+        title: 'Transfer Successful',
+        body: 'You sent ₦${amount.toStringAsFixed(2)} to ${_recipientName ?? recipient}.',
+        payload: 'wallet_transfer',
+      );
+
       Navigator.pop(context);
       UIUtils.showSuccessDialog(context, 'Success', 'Transfer successful');
     } catch (e) {
-      UIUtils.showErrorDialog(context, 'Transfer Failed', ApiService.getErrorMessage(e));
+      if (mounted) UIUtils.showErrorDialog(context, 'Transfer Failed', ApiService.getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -132,10 +168,7 @@ class _TransferSheetState extends State<TransferSheet> {
           else if (_lookupError != null)
             Padding(
               padding: const EdgeInsets.only(top: 8.0, left: 12.0),
-              child: Text(
-                _lookupError!,
-                style: const TextStyle(color: Colors.red),
-              ),
+              child: Text(_lookupError!, style: const TextStyle(color: Colors.red)),
             ),
           const SizedBox(height: 10),
           AppTextField(controller: _amountController, hint: 'Amount', keyboardType: TextInputType.number, icon: Icons.money),
@@ -143,7 +176,7 @@ class _TransferSheetState extends State<TransferSheet> {
           CustomButton(
             label: 'Transfer',
             isLoading: _isLoading,
-            onPressed: _transfer,
+            onPressed: _onTransferPressed,
             primaryColor: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 20),

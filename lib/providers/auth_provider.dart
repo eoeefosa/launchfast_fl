@@ -1206,6 +1206,14 @@ class AuthProvider extends ChangeNotifier {
     _safeNotify();
   }
 
+  /// Updates wallet balance locally without a full profile re-fetch.
+  void updateWalletBalance(double newBalance) {
+    if (_user == null) return;
+    _user = UserProfile.fromJson({..._user!.toJson(), 'walletBalance': newBalance});
+    _storage.write(key: _kUser, value: jsonEncode(_user!.toJson()));
+    _safeNotify();
+  }
+
   // ─────────────────────────────────────────────────────────────
   // Loading
   // ─────────────────────────────────────────────────────────────

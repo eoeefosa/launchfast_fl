@@ -8,23 +8,37 @@ class WalletRepository {
     return response.data as Map<String, dynamic>;
   }
 
-  Future<void> transferFunds(String email, double amount) async {
-    await apiService.dio.post('/wallet/transfer', data: {
+  /// Returns the sender's new wallet balance after transfer.
+  Future<double?> transferFunds(String email, double amount) async {
+    final res = await apiService.dio.post('/wallet/transfer', data: {
       'recipientEmail': email,
       'amount': amount,
     });
+    return (res.data?['newBalance'] as num?)?.toDouble();
   }
 
-  Future<void> redeemGiftCard(String code) async {
-    await apiService.dio.post('/wallet/redeem-gift-card', data: {
+  /// Returns the user's new wallet balance after redemption.
+  Future<double?> redeemGiftCard(String code) async {
+    final res = await apiService.dio.post('/wallet/redeem-gift-card', data: {
       'giftCardCode': code,
     });
+    return (res.data?['newBalance'] as num?)?.toDouble();
   }
 
-  Future<void> buyGiftCard(double amount) async {
-    await apiService.dio.post('/wallet/buy-gift-card', data: {
+  /// Returns the user's new wallet balance after purchase.
+  Future<double?> buyGiftCard(double amount) async {
+    final res = await apiService.dio.post('/wallet/buy-gift-card', data: {
       'amount': amount,
     });
+    return (res.data?['newBalance'] as num?)?.toDouble();
+  }
+
+  Future<void> setTransactionPin(String pin) async {
+    await apiService.dio.post('/wallet/set-pin', data: {'pin': pin});
+  }
+
+  Future<void> verifyTransactionPin(String pin) async {
+    await apiService.dio.post('/wallet/verify-pin', data: {'pin': pin});
   }
 
   Future<String> topUp(double amount) async {

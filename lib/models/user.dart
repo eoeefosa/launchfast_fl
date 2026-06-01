@@ -14,6 +14,7 @@ class UserProfile {
   final bool phoneVerified;
   final bool isOnline;
   final List<String> favoriteStores;
+  final bool hasTransactionPin;
 
   UserProfile({
     required this.id,
@@ -29,6 +30,7 @@ class UserProfile {
     this.phoneVerified = false,
     this.isOnline = false,
     this.favoriteStores = const [],
+    this.hasTransactionPin = false,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,7 @@ class UserProfile {
       phoneVerified: json['phoneVerified'] ?? false,
       isOnline: json['isOnline'] ?? false,
       favoriteStores: List<String>.from(json['favoriteStores'] ?? []),
+      hasTransactionPin: json['hasTransactionPin'] ?? false,
     );
   }
 
@@ -64,6 +67,7 @@ class UserProfile {
       'phoneVerified': phoneVerified,
       'isOnline': isOnline,
       'favoriteStores': favoriteStores,
+      'hasTransactionPin': hasTransactionPin,
     };
   }
 }

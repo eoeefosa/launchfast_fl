@@ -22,6 +22,7 @@ import 'widgets/logout_button.dart';
 import 'widgets/theme_switcher.dart';
 import 'widgets/unauthenticated_view.dart';
 import 'sheets/verification_sheet.dart';
+import '../../../widgets/set_pin_sheet.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -91,6 +92,14 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Buy Gift Card',
                 subtitle: 'Purchase a gift card for yourself or a friend',
                 onTap: () => context.push('/profile/buy-gift-card'),
+              ),
+              ProfileSettingsTile(
+                icon: isIOS ? CupertinoIcons.lock : Icons.lock_outline,
+                title: user.hasTransactionPin ? 'Change Transaction PIN' : 'Set Transaction PIN',
+                subtitle: user.hasTransactionPin
+                    ? 'Update your 4-digit transaction PIN'
+                    : 'Secure your transfers and payments with a PIN',
+                onTap: () => SetPinSheet.show(context),
               ),
               ProfileSettingsTile(
                 icon: isIOS

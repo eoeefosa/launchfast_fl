@@ -3,10 +3,12 @@ import 'package:campuschow/repositories/wallet_repository.dart';
 import 'package:campuschow/screens/auth/widgets/apptextfield.dart';
 import 'package:campuschow/screens/auth/widgets/custom_button.dart';
 import 'package:campuschow/services/api_service.dart';
+import 'package:campuschow/store/lib/core/services/notification_service.dart';
 import 'package:campuschow/utils/ui_utils.dart';
+import 'package:campuschow/widgets/pin_entry_sheet.dart';
+import 'package:campuschow/widgets/set_pin_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/providers/auth_provider.dart';
-import 'package:campuschow/store/lib/core/services/notification_service.dart';
 
 class RedeemSheet extends StatefulWidget {
   const RedeemSheet({super.key});
@@ -56,18 +58,48 @@ class _RedeemSheetState extends State<RedeemSheet> {
     } catch (_) {}
   }
 
-  Future<void> _redeem() async {
+  Future<void> _onRedeemPressed() async {
     if (_codeController.text.isEmpty) return;
-    
+
+    final auth = context.read<AuthProvider>();
+
+    if (!(auth.user?.hasTransactionPin ?? false)) {
+      final pinSet = await SetPinSheet.show(context);
+      if (!mounted || !pinSet) return;
+    }
+
+    final confirmed = await PinEntrySheet.show(
+      context,
+      title: 'Enter Transaction PIN',
+      onSubmit: (pin) => WalletRepository().verifyTransactionPin(pin),
+    );
+    if (!mounted || !confirmed) return;
+
+    _redeem(auth);
+  }
+
+  Future<void> _redeem(AuthProvider auth) async {
     setState(() => _isLoading = true);
     try {
-      await WalletRepository().redeemGiftCard(_codeController.text.trim());
+      final newBalance = await WalletRepository().redeemGiftCard(_codeController.text.trim());
       if (!mounted) return;
-      context.read<AuthProvider>().refreshUser();
+
+      if (newBalance != null) {
+        auth.updateWalletBalance(newBalance);
+      } else {
+        auth.refreshUser();
+      }
+
+      notificationService.showNotification(
+        title: 'Gift Card Redeemed',
+        body: 'Your gift card has been redeemed and your wallet has been credited.',
+        payload: 'gift_card_redeem',
+      );
+
       Navigator.pop(context);
-      UIUtils.showSuccessDialog(context, 'Success', 'Gift card redeemed');
+      UIUtils.showSuccessDialog(context, 'Success', 'Gift card redeemed successfully');
     } catch (e) {
-      UIUtils.showErrorDialog(context, 'Redemption Failed', ApiService.getErrorMessage(e));
+      if (mounted) UIUtils.showErrorDialog(context, 'Redemption Failed', ApiService.getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -90,7 +122,7 @@ class _RedeemSheetState extends State<RedeemSheet> {
           CustomButton(
             label: 'Redeem',
             isLoading: _isLoading,
-            onPressed: _redeem,
+            onPressed: _onRedeemPressed,
             primaryColor: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 20),

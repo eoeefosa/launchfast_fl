@@ -4,7 +4,10 @@ import 'package:provider/provider.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../repositories/wallet_repository.dart';
 import '../../../../services/api_service.dart';
+import '../../../../store/lib/core/services/notification_service.dart';
 import '../../../../utils/ui_utils.dart';
+import '../../../../widgets/pin_entry_sheet.dart';
+import '../../../../widgets/set_pin_sheet.dart';
 import '../../../auth/widgets/apptextfield.dart';
 import '../../../auth/widgets/custom_button.dart';
 
@@ -27,10 +30,9 @@ class _BuyGiftCardSheetState extends State<BuyGiftCardSheet> {
   final _amountController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _buyGiftCard() async {
+  Future<void> _onPurchasePressed() async {
     final amountText = _amountController.text.trim();
     if (amountText.isEmpty) return;
-
     final amount = double.tryParse(amountText);
     if (amount == null || amount <= 0) return;
 
@@ -40,11 +42,39 @@ class _BuyGiftCardSheetState extends State<BuyGiftCardSheet> {
       return;
     }
 
+    if (!(auth.user?.hasTransactionPin ?? false)) {
+      final pinSet = await SetPinSheet.show(context);
+      if (!mounted || !pinSet) return;
+    }
+
+    final confirmed = await PinEntrySheet.show(
+      context,
+      title: 'Enter Transaction PIN',
+      onSubmit: (pin) => WalletRepository().verifyTransactionPin(pin),
+    );
+    if (!mounted || !confirmed) return;
+
+    _buyGiftCard(auth, amount);
+  }
+
+  Future<void> _buyGiftCard(AuthProvider auth, double amount) async {
     setState(() => _isLoading = true);
     try {
-      await WalletRepository().buyGiftCard(amount);
+      final newBalance = await WalletRepository().buyGiftCard(amount);
       if (!mounted) return;
-      await auth.refreshUser();
+
+      if (newBalance != null) {
+        auth.updateWalletBalance(newBalance);
+      } else {
+        auth.refreshUser();
+      }
+
+      notificationService.showNotification(
+        title: 'Gift Card Purchased',
+        body: 'Your ₦${amount.toStringAsFixed(2)} gift card code has been sent to your email.',
+        payload: 'gift_card_buy',
+      );
+
       Navigator.pop(context);
       UIUtils.showSuccessDialog(
         context,
@@ -52,7 +82,7 @@ class _BuyGiftCardSheetState extends State<BuyGiftCardSheet> {
         'Gift card purchased successfully! The code has been sent to your email.',
       );
     } catch (e) {
-      UIUtils.showErrorDialog(context, 'Purchase Failed', ApiService.getErrorMessage(e));
+      if (mounted) UIUtils.showErrorDialog(context, 'Purchase Failed', ApiService.getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -83,7 +113,7 @@ class _BuyGiftCardSheetState extends State<BuyGiftCardSheet> {
           CustomButton(
             label: 'Purchase',
             isLoading: _isLoading,
-            onPressed: _buyGiftCard,
+            onPressed: _onPurchasePressed,
             primaryColor: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 24),
