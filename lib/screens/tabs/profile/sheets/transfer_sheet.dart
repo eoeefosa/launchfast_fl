@@ -28,6 +28,7 @@ class _TransferSheetState extends State<TransferSheet> {
   final _amountController = TextEditingController();
   bool _isLoading = false;
   String? _recipientName;
+  String? _lookupError;
   bool _isLookingUp = false;
   Timer? _debounce;
 
@@ -53,7 +54,7 @@ class _TransferSheetState extends State<TransferSheet> {
       if (email.contains('@') && email.contains('.')) {
         _lookupUser(email);
       } else {
-        if (mounted) setState(() => _recipientName = null);
+        if (mounted) setState(() { _recipientName = null; _lookupError = null; });
       }
     });
   }
@@ -66,12 +67,14 @@ class _TransferSheetState extends State<TransferSheet> {
       if (mounted) {
         setState(() {
           _recipientName = user['name'];
+          _lookupError = null;
         });
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() {
           _recipientName = null;
+          _lookupError = ApiService.getErrorMessage(e);
         });
       }
     } finally {
@@ -124,6 +127,14 @@ class _TransferSheetState extends State<TransferSheet> {
               child: Text(
                 'Recipient: $_recipientName',
                 style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+              ),
+            )
+          else if (_lookupError != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0, left: 12.0),
+              child: Text(
+                _lookupError!,
+                style: const TextStyle(color: Colors.red),
               ),
             ),
           const SizedBox(height: 10),
