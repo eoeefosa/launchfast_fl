@@ -257,7 +257,7 @@ class _AdminStoresScreenState extends State<AdminStoresScreen> {
                         child: ListView.separated(
                           padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                           itemCount: _filtered.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const SizedBox(height: 10),
                           itemBuilder: (context, i) {
                             final store = _filtered[i];

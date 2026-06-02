@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart' show PdfGoogleFonts;
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:campuschow/store/lib/core/theme/app_colors.dart';
@@ -242,6 +243,10 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
     String label,
     String storeName,
   ) async {
+    // Load a font that includes the ₦ (Naira) glyph
+    final font = await PdfGoogleFonts.notoSansRegular();
+    final fontBold = await PdfGoogleFonts.notoSansBold();
+
     final pdf = pw.Document();
 
     // Group orders by day for the PDF
@@ -263,12 +268,13 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(32),
-        header: (ctx) => _pdfHeader(storeName, label),
+        theme: pw.ThemeData.withFont(base: font, bold: fontBold),
+        header: (ctx) => _pdfHeader(storeName, label, font, fontBold),
         footer: (ctx) => pw.Align(
           alignment: pw.Alignment.centerRight,
           child: pw.Text(
             'Page ${ctx.pageNumber} of ${ctx.pagesCount}',
-            style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+            style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.grey600),
           ),
         ),
         build: (ctx) => [
@@ -283,9 +289,9 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                _summaryItem('Total Orders', '${orders.length}'),
-                _summaryItem('Delivered', '$deliveredCount'),
-                _summaryItem('Total Revenue', '₦${_fmt(totalRevenue)}'),
+                _summaryItem('Total Orders', '${orders.length}', font, fontBold),
+                _summaryItem('Delivered', '$deliveredCount', font, fontBold),
+                _summaryItem('Total Revenue', '₦${_fmt(totalRevenue)}', font, fontBold),
               ],
             ),
           ),
@@ -293,9 +299,9 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
 
           // Per-day sections
           for (final day in sortedDays) ...[
-            _pdfDayHeader(day, grouped[day]!),
+            _pdfDayHeader(day, grouped[day]!, font, fontBold),
             pw.SizedBox(height: 6),
-            _pdfOrdersTable(grouped[day]!),
+            _pdfOrdersTable(grouped[day]!, font, fontBold),
             pw.SizedBox(height: 16),
           ],
         ],
@@ -305,7 +311,7 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
     return pdf.save();
   }
 
-  pw.Widget _pdfHeader(String storeName, String label) {
+  pw.Widget _pdfHeader(String storeName, String label, pw.Font font, pw.Font fontBold) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -315,6 +321,7 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
             pw.Text(
               storeName,
               style: pw.TextStyle(
+                font: fontBold,
                 fontSize: 20,
                 fontWeight: pw.FontWeight.bold,
                 color: const PdfColor.fromInt(0xFFFF6B2C),
@@ -322,7 +329,7 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
             ),
             pw.Text(
               'Order Report — $label',
-              style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
+              style: pw.TextStyle(font: font, fontSize: 11, color: PdfColors.grey700),
             ),
           ],
         ),
@@ -332,7 +339,7 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
     );
   }
 
-  pw.Widget _pdfDayHeader(String day, List<Order> orders) {
+  pw.Widget _pdfDayHeader(String day, List<Order> orders, pw.Font font, pw.Font fontBold) {
     final date = DateTime.parse(day);
     final label = DateFormat('EEEE, dd MMMM yyyy').format(date);
     final dayTotal = orders.fold<double>(0, (s, o) => s + o.total);
@@ -343,17 +350,17 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(label,
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+              style: pw.TextStyle(font: fontBold, fontWeight: pw.FontWeight.bold, fontSize: 11)),
           pw.Text(
             '${orders.length} order${orders.length == 1 ? '' : 's'} · ₦${_fmt(dayTotal)}',
-            style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+            style: pw.TextStyle(font: font, fontSize: 10, color: PdfColors.grey700),
           ),
         ],
       ),
     );
   }
 
-  pw.Widget _pdfOrdersTable(List<Order> orders) {
+  pw.Widget _pdfOrdersTable(List<Order> orders, pw.Font font, pw.Font fontBold) {
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
       columnWidths: {
@@ -374,7 +381,7 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
                   padding: const pw.EdgeInsets.all(5),
                   child: pw.Text(h,
                       style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                          font: fontBold, fontWeight: pw.FontWeight.bold, fontSize: 9)),
                 ),
               )
               .toList(),
@@ -383,38 +390,39 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
         for (final o in orders)
           pw.TableRow(
             children: [
-              _cell('#${_shortId(o.id).toUpperCase()}'),
-              _cell(o.resolvedCustomerName),
-              _cell(o.items.map((i) => '${i.quantity}x ${i.menuItem.name}').join(', ')),
-              _cell(o.deliveryType),
-              _cell(o.status.displayLabel),
-              _cell('₦${_fmt(o.total)}'),
+              _cell('#${_shortId(o.id).toUpperCase()}', font),
+              _cell(o.resolvedCustomerName, font),
+              _cell(o.items.map((i) => '${i.quantity}x ${i.menuItem.name}').join(', '), font),
+              _cell(o.deliveryType, font),
+              _cell(o.status.displayLabel, font),
+              _cell('₦${_fmt(o.total)}', font),
             ],
           ),
       ],
     );
   }
 
-  pw.Widget _cell(String text) => pw.Padding(
+  pw.Widget _cell(String text, pw.Font font) => pw.Padding(
         padding: const pw.EdgeInsets.all(4),
         child: pw.Text(text,
-            style: const pw.TextStyle(fontSize: 8),
+            style: pw.TextStyle(font: font, fontSize: 8),
             maxLines: 2,
             overflow: pw.TextOverflow.clip),
       );
 
-  pw.Widget _summaryItem(String label, String value) {
+  pw.Widget _summaryItem(String label, String value, pw.Font font, pw.Font fontBold) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
         pw.Text(value,
             style: pw.TextStyle(
+              font: fontBold,
               fontWeight: pw.FontWeight.bold,
               fontSize: 16,
               color: const PdfColor.fromInt(0xFFFF6B2C),
             )),
         pw.Text(label,
-            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+            style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.grey700)),
       ],
     );
   }
