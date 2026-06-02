@@ -1,0 +1,782 @@
+import 'dart:convert';
+import 'package:campuschow/store/pages/core/services/ably_service.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:campuschow/store/pages/core/theme/app_colors.dart';
+import 'package:campuschow/store/pages/features/store/data/menu_item_model.dart';
+import 'package:campuschow/store/pages/features/store/presentation/store_provider.dart';
+import 'package:campuschow/providers/store_provider.dart' as app_store_provider;
+import 'package:campuschow/widgets/common/universal_image.dart';
+import 'package:provider/provider.dart';
+
+class AddEditMenuItemDialog extends StatefulWidget {
+  final StoreProvider provider;
+  final String? storeId;
+  final MenuItem? item;
+
+  const AddEditMenuItemDialog({
+    super.key,
+    required this.provider,
+    required this.storeId,
+    this.item,
+  });
+
+  @override
+  State<AddEditMenuItemDialog> createState() => _AddEditMenuItemDialogState();
+}
+
+class _AddEditMenuItemDialogState extends State<AddEditMenuItemDialog> {
+  late TextEditingController _nameCtrl;
+  late TextEditingController _descCtrl;
+  late TextEditingController _priceCtrl;
+  late TextEditingController _portionsCtrl; // FIX #5 — for swallow quantity
+  String? _selectedImageStr; // Can be a URL (from edit) or a base64 string
+  late String _selectedCat;
+  late bool _isReady;
+  late bool _popular;
+  bool _isFreeWithSwallow = false;
+  bool _requiresSoupSelection = false;
+  List<Map<String, TextEditingController>> _sizes = [];
+  List<Map<String, TextEditingController>> _meatOptions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    final item = widget.item;
+    _nameCtrl = TextEditingController(text: item?.name ?? '');
+    _descCtrl = TextEditingController(text: item?.description ?? '');
+    _priceCtrl = TextEditingController(
+      text: item != null ? '${item.price}' : '',
+    );
+    _portionsCtrl = TextEditingController(
+      text: item?.portionsRemaining != null ? '${item!.portionsRemaining}' : '',
+    );
+    _selectedImageStr = item?.image;
+    _selectedCat = item?.category ?? 'Rice & Pasta';
+    _isReady = item?.isReady ?? true;
+    _popular = item?.popular ?? false;
+    _isFreeWithSwallow = item?.isFreeWithSwallow ?? false;
+    _requiresSoupSelection = item?.requiresSoupSelection ?? false;
+    if (item?.sizes != null) {
+      _sizes = item!.sizes!
+          .map(
+            (e) => {
+              'name': TextEditingController(text: e.name),
+              'price': TextEditingController(text: e.price.toString()),
+            },
+          )
+          .toList();
+    }
+    if (item?.meatOptions != null) {
+      _meatOptions = item!.meatOptions!
+          .map(
+            (e) => {
+              'name': TextEditingController(text: e.name),
+              'price': TextEditingController(text: e.price.toString()),
+            },
+          )
+          .toList();
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _descCtrl.dispose();
+    _priceCtrl.dispose();
+    _portionsCtrl.dispose(); // FIX #5
+
+    for (var s in _sizes) {
+      s['name']?.dispose();
+      s['price']?.dispose();
+    }
+    for (var m in _meatOptions) {
+      m['name']?.dispose();
+      m['price']?.dispose();
+    }
+
+    super.dispose();
+  }
+
+  void _saveItem() async {
+    final name = _nameCtrl.text.trim();
+    final desc = _descCtrl.text.trim();
+    final price = double.tryParse(_priceCtrl.text.trim()) ?? 0;
+    final portions = int.tryParse(_portionsCtrl.text.trim()); // FIX #5
+
+    if (name.isEmpty || price <= 0 || _selectedImageStr == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please provide a name, price, and image'),
+        ),
+      );
+      return;
+    }
+
+    final isEdit = widget.item != null;
+
+    final sizesData = _sizes
+        .where((s) => s['name']!.text.isNotEmpty)
+        .map(
+          (s) => {
+            'name': s['name']!.text.trim(),
+            'price': double.tryParse(s['price']!.text.trim()) ?? 0.0,
+          },
+        )
+        .toList();
+
+    final meatData = _meatOptions
+        .where((m) => m['name']!.text.isNotEmpty)
+        .map(
+          (m) => {
+            'name': m['name']!.text.trim(),
+            'price': double.tryParse(m['price']!.text.trim()) ?? 0.0,
+          },
+        )
+        .toList();
+
+    String type = 'main';
+    List<String> compatibleWith = [];
+
+    switch (_selectedCat) {
+      case 'Rice & Pasta':
+        type = 'main';
+        compatibleWith = ['protein', 'side', 'drink'];
+        break;
+      case 'Swallow & Soup':
+        type = 'swallow';
+        compatibleWith = ['soup', 'protein', 'drink'];
+        break;
+      case 'Soup':
+        type = 'soup';
+        compatibleWith = [];
+        break;
+      case 'Drinks':
+        type = 'drink';
+        compatibleWith = [];
+        break;
+      case 'Side':
+        type = 'side';
+        compatibleWith = [];
+        break;
+      case 'Protein':
+        type = 'protein';
+        compatibleWith = [];
+        break;
+      case 'Snacks & Pastries':
+        type = 'snack';
+        compatibleWith = ['drink'];
+        break;
+      default:
+        type = 'main';
+        compatibleWith = [];
+        break;
+    }
+
+    final data = {
+      'name': name,
+      'description': desc,
+      'price': price,
+      'category': _selectedCat,
+      'type': type,
+      'compatibleWith': compatibleWith,
+      'image': _selectedImageStr,
+      'isReady': _isReady,
+      'popular': _popular,
+      'isFreeWithSwallow': _isFreeWithSwallow,
+      'requiresSoupSelection': _requiresSoupSelection,
+      'sizes': sizesData,
+      'meatOptions': meatData,
+      if (widget.item?.addonIds != null) 'addonIds': widget.item!.addonIds,
+      if (widget.storeId != null && !isEdit) 'storeId': widget.storeId,
+      'portionsRemaining': ?portions, // FIX #5 — include portions
+    };
+
+    Navigator.pop(context);
+
+    if (isEdit) {
+      await widget.provider.updateMenuItem(widget.item!.id, data);
+      try {
+        if (!mounted) return;
+        final appProvider = context.read<app_store_provider.StoreProvider>();
+        await appProvider.updateMenuItem(widget.item!.id, data);
+      } catch (e) {
+        // Non-fatal: if updating the public provider fails, ignore.
+      }
+      // Publish real-time price update so customers receive it immediately.
+      try {
+        final storeId = widget.storeId ?? widget.item?.storeId;
+        if (storeId != null) {
+          await ablyService.publishMenuPriceUpdate(
+            storeId: storeId,
+            menuItemId: widget.item!.id,
+            price: price,
+          );
+          // FIX #2 — Also publish portion update if portions changed
+          if (portions != null) {
+            await ablyService.publishPortionUpdate(
+              storeId: storeId,
+              menuItemId: widget.item!.id,
+              portionsRemaining: portions,
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('[AddEditMenuItemDialog] Failed to publish price/portion update: $e');
+      }
+    } else {
+      await widget.provider.addMenuItem(data);
+      try {
+        if (!mounted) return;
+        final appProvider = context.read<app_store_provider.StoreProvider>();
+        await appProvider.addMenuItem(data);
+      } catch (e) {
+        // Non-fatal
+      }
+      try {
+        final storeId = widget.storeId;
+        if (storeId != null && data['price'] != null) {
+          await ablyService.publishMenuPriceUpdate(
+            storeId: storeId,
+            menuItemId: (data['id']?.toString() ?? ''),
+            price: price,
+          );
+          // FIX #2 — Also publish portion update on new item creation
+          if (portions != null) {
+            await ablyService.publishPortionUpdate(
+              storeId: storeId,
+              menuItemId: (data['id']?.toString() ?? ''),
+              portionsRemaining: portions,
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('[AddEditMenuItemDialog] Failed to publish new item price/portion: $e');
+      }
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isEdit ? 'Item updated successfully' : 'Item added successfully',
+          ),
+          backgroundColor: Colors.green.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        imageQuality: 80,
+      );
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _selectedImageStr = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to pick image')));
+      }
+    }
+  }
+
+  void _showImageSourceActionSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final bg = isDark ? AppColors.darkSurface : AppColors.lightBackground;
+        final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+        return Container(
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+                title: Text('Take a Photo', style: TextStyle(color: textColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: AppColors.primary,
+                ),
+                title: Text(
+                  'Choose from Gallery',
+                  style: TextStyle(color: textColor),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.darkSurface : AppColors.lightBackground;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final muted = isDark ? AppColors.darkMuted : AppColors.lightMuted;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final isEdit = widget.item != null;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.88,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (_, scrollCtrl) {
+        return Container(
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: ListView(
+            controller: scrollCtrl,
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: 8, bottom: 20),
+                  decoration: BoxDecoration(
+                    color: border,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              Text(
+                isEdit ? 'Edit Menu Item' : 'Add Menu Item',
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildField('Item Name', _nameCtrl, textColor, muted, border, bg),
+              const SizedBox(height: 14),
+              _buildField(
+                'Description',
+                _descCtrl,
+                textColor,
+                muted,
+                border,
+                bg,
+                maxLines: 2,
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildField(
+                      'Price (₦)',
+                      _priceCtrl,
+                      textColor,
+                      muted,
+                      border,
+                      bg,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // FIX #5 — Add quantity field for swallow and other items
+                  Expanded(
+                    child: _buildField(
+                      'Portions Available',
+                      _portionsCtrl,
+                      textColor,
+                      muted,
+                      border,
+                      bg,
+                      keyboardType: TextInputType.number,
+                      hintText: 'e.g. 50',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              // ── Image Picker ──
+              GestureDetector(
+                onTap: _showImageSourceActionSheet,
+                child: Container(
+                  height: 160,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: bg,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: border),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: _selectedImageStr != null
+                      ? UniversalImage(
+                          imageUrl: _selectedImageStr!,
+                          fit: BoxFit.cover,
+                          errorWidget: const Center(
+                            child: Icon(Icons.error_outline, color: Colors.red),
+                          ),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.camera_alt_outlined,
+                              size: 40,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Tap to add photo',
+                              style: TextStyle(color: muted, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('Category', style: TextStyle(color: muted, fontSize: 13)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children:
+                    [
+                          'Rice & Pasta',
+                          'Swallow & Soup',
+                          'Soup',
+                          'Drinks',
+                          'Side',
+                          'Protein',
+                          'Snacks & Pastries',
+                          'Others',
+                        ]
+                        .map(
+                          (c) => GestureDetector(
+                            onTap: () => setState(() => _selectedCat = c),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _selectedCat == c
+                                    ? AppColors.primary
+                                    : bg,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: _selectedCat == c
+                                      ? AppColors.primary
+                                      : border,
+                                ),
+                              ),
+                              child: Text(
+                                c,
+                                style: TextStyle(
+                                  color: _selectedCat == c
+                                      ? Colors.white
+                                      : muted,
+                                  fontWeight: _selectedCat == c
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+              ),
+              if (_selectedCat == 'Swallow & Soup') ...[
+                const SizedBox(height: 16),
+                _toggleRow(
+                  'Requires Soup Selection',
+                  _requiresSoupSelection,
+                  muted,
+                  textColor,
+                  border,
+                  (v) => setState(() => _requiresSoupSelection = v),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Customers must choose a soup when ordering this swallow.',
+                  style: TextStyle(color: muted, fontSize: 12),
+                ),
+              ],
+              if (_selectedCat == 'Soup') ...[
+                const SizedBox(height: 16),
+                _toggleRow(
+                  'Free with Swallow',
+                  _isFreeWithSwallow,
+                  muted,
+                  textColor,
+                  border,
+                  (v) => setState(() => _isFreeWithSwallow = v),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'This soup will be ₦0 when paired with a swallow.',
+                  style: TextStyle(color: muted, fontSize: 12),
+                ),
+              ],
+              const SizedBox(height: 20),
+              _buildDynamicList(
+                'Meat / Portion Options',
+                'e.g. Small, Big, Half',
+                _meatOptions,
+                textColor,
+                muted,
+                border,
+                bg,
+              ),
+              const SizedBox(height: 20),
+              _buildDynamicList(
+                'Sizes / Portions (Optional)',
+                'e.g. 1.5 Portion',
+                _sizes,
+                textColor,
+                muted,
+                border,
+                bg,
+              ),
+              const SizedBox(height: 16),
+              _toggleRow(
+                'Available Now',
+                _isReady,
+                muted,
+                textColor,
+                border,
+                (v) => setState(() => _isReady = v),
+              ),
+              const SizedBox(height: 8),
+              _toggleRow(
+                'Mark as Popular',
+                _popular,
+                muted,
+                textColor,
+                border,
+                (v) => setState(() => _popular = v),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _saveItem,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  isEdit ? 'Save Changes' : 'Add Item',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildField(
+    String label,
+    TextEditingController ctrl,
+    Color textColor,
+    Color muted,
+    Color border,
+    Color fillColor, {
+    int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
+    String? hintText,
+  }) {
+    return TextField(
+      controller: ctrl,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      style: TextStyle(color: textColor),
+      decoration: InputDecoration(
+        labelText: label.isEmpty ? null : label,
+        hintText: hintText,
+        hintStyle: TextStyle(color: muted.withValues(alpha: 0.5)),
+        labelStyle: TextStyle(color: muted),
+        filled: true,
+        fillColor: fillColor,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.primary),
+        ),
+      ),
+    );
+  }
+
+  Widget _toggleRow(
+    String label,
+    bool value,
+    Color muted,
+    Color textColor,
+    Color border,
+    ValueChanged<bool> onChanged,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: textColor, fontSize: 14)),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppColors.primary,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDynamicList(
+    String title,
+    String placeholder,
+    List<Map<String, TextEditingController>> list,
+    Color textColor,
+    Color muted,
+    Color border,
+    Color fillColor,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+            ),
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  list.add({
+                    'name': TextEditingController(),
+                    'price': TextEditingController(),
+                  });
+                });
+              },
+              icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
+              label: const Text(
+                'Add',
+                style: TextStyle(color: AppColors.primary),
+              ),
+            ),
+          ],
+        ),
+        ...list.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final item = entry.value;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _buildField(
+                    '',
+                    item['name']!,
+                    textColor,
+                    muted,
+                    border,
+                    fillColor,
+                    hintText: placeholder,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: _buildField(
+                    '',
+                    item['price']!,
+                    textColor,
+                    muted,
+                    border,
+                    fillColor,
+                    keyboardType: TextInputType.number,
+                    hintText: 'Price',
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      item['name']?.dispose();
+                      item['price']?.dispose();
+                      list.removeAt(idx);
+                    });
+                  },
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+void showAddEditMenuItemDialog(
+  BuildContext context,
+  StoreProvider provider,
+  String? storeId,
+  MenuItem? item,
+) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) =>
+        AddEditMenuItemDialog(provider: provider, storeId: storeId, item: item),
+  );
+}

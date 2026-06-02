@@ -43,7 +43,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _submitGoogleLogin() async {
     final auth = context.read<AuthProvider>();
-    await auth.signInWithGoogle(context);
+    try {
+      await auth.signInWithGoogle();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating),
+        );
+      }
+      return;
+    }
     if (mounted && auth.isAuthenticated) {
       context.go(_postAuthRoute(auth));
     }
@@ -51,7 +60,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _submitAppleLogin() async {
     final auth = context.read<AuthProvider>();
-    await auth.signInWithApple(context);
+    try {
+      await auth.signInWithApple();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating),
+        );
+      }
+      return;
+    }
     if (mounted && auth.isAuthenticated) {
       context.go(_postAuthRoute(auth));
     }
@@ -70,7 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final orderProvider = context.read<OrderProvider>();
 
     try {
-      await authProvider.register(context, {
+      await authProvider.register({
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'phone': _phoneController.text.trim(),

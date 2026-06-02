@@ -38,11 +38,19 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final auth = context.read<AuthProvider>();
-    await auth.login(
-      context,
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
+    try {
+      await auth.login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating),
+        );
+      }
+      return;
+    }
     if (mounted && auth.isAuthenticated) {
       context.go(_postAuthRoute(auth));
     }
@@ -50,7 +58,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _submitGoogleLogin() async {
     final auth = context.read<AuthProvider>();
-    await auth.signInWithGoogle(context);
+    try {
+      await auth.signInWithGoogle();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating),
+        );
+      }
+      return;
+    }
     if (mounted && auth.isAuthenticated) {
       context.go(_postAuthRoute(auth));
     }
@@ -58,7 +75,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _submitAppleLogin() async {
     final auth = context.read<AuthProvider>();
-    await auth.signInWithApple(context);
+    try {
+      await auth.signInWithApple();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating),
+        );
+      }
+      return;
+    }
     if (mounted && auth.isAuthenticated) {
       context.go(_postAuthRoute(auth));
     }

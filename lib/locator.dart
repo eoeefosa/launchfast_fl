@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 // The store's locator registers ALL the shared services (AblyService,
 // repositories). The main app just calls it and adds the app-level repos.
-import 'package:campuschow/store/lib/locator.dart' as store_locator;
+import 'package:campuschow/store/pages/locator.dart' as store_locator;
 
 // Main-app–only repositories (not needed by the store screens).
 import 'repositories/auth_repository.dart';

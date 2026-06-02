@@ -35,11 +35,11 @@ import 'screens/tabs/profile/buy_gift_card_screen.dart';
 import 'screens/tabs/profile/cashback_winners_screen.dart';
 
 // ── Store-owner / worker screens ─────────────────────────────────────────────
-import 'package:campuschow/store/lib/features/dashboard/presentation/store_main_nav.dart';
-import 'package:campuschow/store/lib/features/dashboard/presentation/worker_main_nav.dart';
-import 'package:campuschow/store/lib/features/dashboard/presentation/admin_main_nav.dart';
+import 'package:campuschow/store/pages/features/dashboard/presentation/store_main_nav.dart';
+import 'package:campuschow/store/pages/features/dashboard/presentation/worker_main_nav.dart';
+import 'package:campuschow/store/pages/features/dashboard/presentation/admin_main_nav.dart';
 
-import 'package:campuschow/store/lib/features/auth/presentation/register_screen.dart'
+import 'package:campuschow/store/pages/features/auth/presentation/register_screen.dart'
     as store_register;
 
 /// Root navigator key exposed to the router and services for navigation without context.

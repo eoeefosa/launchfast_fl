@@ -1,59 +1,75 @@
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/material.dart';
-import 'package:campuschow/utils/ui_utils.dart';
-import 'package:crypto/crypto.dart';
-import 'package:campuschow/store/lib/core/services/notification_service.dart';
-import 'package:flutter/foundation.dart';
-import 'package:campuschow/repositories/location_repository.dart';
-import 'package:campuschow/services/network_service.dart';
 
-import '../locator.dart';
-import '../services/ably_service.dart';
-import '../services/api_service.dart';
+import 'package:crypto/crypto.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+
+import '../locator.dart';
 import '../models/user.dart';
 import '../repositories/auth_repository.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import '../repositories/location_repository.dart';
+import '../services/ably_service.dart';
+import '../services/api_service.dart';
+import '../services/network_service.dart';
+import '../store/pages/core/services/notification_service.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pending social sign-in event — emitted on the [AuthProvider.authEvents]
+// stream so the UI layer can react without storing a [BuildContext] in state.
+// ─────────────────────────────────────────────────────────────────────────────
+enum _SocialProvider { google, apple }
+
+/// Signals emitted by [AuthProvider] that require a UI response.
+sealed class AuthEvent {}
+
+/// The user was offline when they attempted a social sign-in.  The UI should
+/// show a snackbar / prompt that lets the user retry.
+class SocialSignInRetryEvent extends AuthEvent {
+  SocialSignInRetryEvent(this.provider);
+  final _SocialProvider provider;
+}
+
+/// A queued login/register succeeded after connectivity was restored.
+class QueuedAuthSuccessEvent extends AuthEvent {}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class AuthProvider extends ChangeNotifier {
-
   AuthProvider({
     FlutterSecureStorage? storage,
     GoogleSignIn? googleSignIn,
-    // FIX #6 — inject services instead of using globals
     ApiService? apiService,
     AblyService? ablyService,
+    AuthRepository? authRepository,
+    LocationRepository? locationRepository,
+    NetworkService? networkService,
+    NotificationService? notificationSvc,
   })  : _storage = storage ?? const FlutterSecureStorage(),
         _apiService = apiService ?? locator<ApiService>(),
         _ablyService = ablyService ?? locator<AblyService>(),
-        _googleSignIn = googleSignIn ?? GoogleSignIn(
-          serverClientId: const String.fromEnvironment(
-            'SERVER_CLIENT_ID',
-            defaultValue: '471745302305-tts3kroutn6jofuvcldfckjk4j7et6l2.apps.googleusercontent.com',
-          ),
-        ) {
+        _authRepository = authRepository ?? locator<AuthRepository>(),
+        _locationRepository = locationRepository ?? locator<LocationRepository>(),
+        _networkService = networkService ?? NetworkService(),
+        _notificationService = notificationSvc ?? notificationService,
+        _googleSignIn = googleSignIn ??
+            GoogleSignIn(
+              serverClientId: const String.fromEnvironment(
+                'SERVER_CLIENT_ID',
+                defaultValue:
+                    '471745302305-tts3kroutn6jofuvcldfckjk4j7et6l2.apps.googleusercontent.com',
+              ),
+            ) {
     _apiService.onUnauthorized = _handleUnauthorized;
-  }
-
-  /// Cancel any queued authentication intent.
-  void cancelQueuedAuth() {
-    _queuedAuthType = null;
-    _queuedContext = null;
-    _queuedParams = {};
-    _isWaitingForConnectivity = false;
-    _clearPersistedQueuedAuth();
-    _safeNotify();
-    if (kDebugMode) debugPrint('[AuthProvider] Queued auth cancelled by user');
   }
 
   // ─────────────────────────────────────────────────────────────
   // Storage key constants
-  // FIX: centralise keys so a typo is a compile error, not a runtime bug
   // ─────────────────────────────────────────────────────────────
 
   static const _kToken           = 'launch-fast-token';
@@ -63,16 +79,34 @@ class AuthProvider extends ChangeNotifier {
   static const _kGuestName       = 'launch-fast-guest-name';
   static const _kGuestPhone      = 'launch-fast-guest-phone';
   static const _kSelectedAddress = 'launch-fast-selected-address';
+  static const _kQueuedAuthKey   = 'launch-fast-queued-auth';
 
   // ─────────────────────────────────────────────────────────────
-  // Dependencies
+  // Dependencies — all injected, none resolved lazily from globals
   // ─────────────────────────────────────────────────────────────
 
-  final FlutterSecureStorage _storage;
-  final GoogleSignIn         _googleSignIn;
-  // FIX #6 — injected, not global
-  final ApiService  _apiService;
-  final AblyService _ablyService;
+  final FlutterSecureStorage  _storage;
+  final GoogleSignIn           _googleSignIn;
+  final ApiService             _apiService;
+  final AblyService            _ablyService;
+  final AuthRepository         _authRepository;
+  final LocationRepository     _locationRepository;
+  final NetworkService         _networkService;
+  final NotificationService    _notificationService;
+
+  // ─────────────────────────────────────────────────────────────
+  // UI event stream
+  // Consumers: listen inside initState / didChangeDependencies with a
+  // StreamSubscription and cancel it in dispose().  Never store a
+  // BuildContext here — emit an event and let the widget react.
+  // ─────────────────────────────────────────────────────────────
+
+  final StreamController<AuthEvent> _eventController =
+      StreamController<AuthEvent>.broadcast();
+
+  /// Listen to this stream in the widget tree (never store [BuildContext] in
+  /// a provider).  Cancel the subscription in [State.dispose].
+  Stream<AuthEvent> get authEvents => _eventController.stream;
 
   // ─────────────────────────────────────────────────────────────
   // State
@@ -80,14 +114,13 @@ class AuthProvider extends ChangeNotifier {
 
   UserProfile? _user;
 
-  /// Backend JWT only.
-  /// NEVER assign an FCM / Firebase Messaging token to this field — they are
-  /// completely different tokens used for different purposes.
+  /// Backend JWT **only**.
+  /// NEVER assign an FCM / Firebase Messaging token here.
   String? _token;
 
-  bool _isLoading             = false;
-  bool _initialized           = false;
-  bool _disposed              = false;
+  bool _isLoading               = false;
+  bool _initialized             = false;
+  bool _disposed                = false;
   bool _authOperationInProgress = false;
 
   String? _adminStoreId;
@@ -98,18 +131,22 @@ class AuthProvider extends ChangeNotifier {
 
   List<String> _locations = [];
 
-  bool _ablyListenersAttached      = false;
+  bool _ablyListenersAttached        = false;
   bool _tokenRefreshListenerAttached = false;
 
   // ─────────────────────────────────────────────────────────────
-  // Offline queue support — FIX #15: Delay login when offline
+  // Offline-queue state
+  // NOTE: BuildContext is intentionally NOT stored.  For login/register,
+  // credentials are enough to retry silently.  For social sign-ins, an
+  // [AuthEvent] is emitted so the UI can prompt a manual retry.
   // ─────────────────────────────────────────────────────────────
 
-  StreamSubscription<bool>? _connectivitySubscription;
-  bool _isWaitingForConnectivity = false;
-  String? _queuedAuthType;
-  BuildContext? _queuedContext;
-  Map<String, dynamic> _queuedParams = {};
+  StreamSubscription<bool>?   _connectivitySubscription;
+  StreamSubscription<String>? _tokenRefreshSubscription;
+
+  bool                    _isWaitingForConnectivity = false;
+  String?                 _queuedAuthType;
+  Map<String, dynamic>    _queuedParams             = {};
 
   bool get isWaitingForConnectivity => _isWaitingForConnectivity;
 
@@ -144,33 +181,33 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      // Restore user session offline instantly (takes <10ms)
       await _restoreSession();
 
-      // Trigger location fetching in the background without blocking the boot sequence
-      fetchLocation().catchError((e) {
-        if (kDebugMode) {
-          debugPrint('[AuthProvider] Initial fetchLocation failed (non-fatal): $e');
-        }
-      });
+      // Non-blocking background work — failures are non-fatal.
+      unawaited(
+        fetchLocation().catchError((Object e) {
+          if (kDebugMode) {
+            debugPrint('[AuthProvider] Initial fetchLocation failed (non-fatal): $e');
+          }
+        }),
+      );
 
       if (isAuthenticated) {
-        // Initialize Ably real-time services asynchronously in the background
-        _initializeAbly().catchError((e) {
-          if (kDebugMode) {
-            debugPrint('[AuthProvider] Initial Ably initialization failed (non-fatal): $e');
-          }
-        });
+        unawaited(
+          _initializeAbly().catchError((Object e) {
+            if (kDebugMode) {
+              debugPrint('[AuthProvider] Initial Ably init failed (non-fatal): $e');
+            }
+          }),
+        );
         _setupTokenRefreshListener();
         _syncFCMTokenSafely();
       }
-      // Restore any queued auth intent from previous runs
+
       await _restoreQueuedAuth();
     } catch (e, stack) {
-      // FIX #3 — sensitive details behind kDebugMode guard
       if (kDebugMode) {
-        debugPrint('[AuthProvider] initialize error: $e');
-        debugPrint(stack.toString());
+        debugPrint('[AuthProvider] initialize error: $e\n$stack');
       }
     } finally {
       _initialized = true;
@@ -179,16 +216,15 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Persist queued auth across restarts
+  // Queued-auth persistence
   // ─────────────────────────────────────────────────────────────
-
-  static const _kQueuedAuthKey = 'launch-fast-queued-auth';
 
   Future<void> _persistQueuedAuth() async {
     try {
-      final jsonStr = jsonEncode(_queuedParams);
-      await _storage.write(key: _kQueuedAuthKey, value: jsonStr);
-      if (kDebugMode) debugPrint('[AuthProvider] persisted queued auth');
+      await _storage.write(
+        key:   _kQueuedAuthKey,
+        value: jsonEncode(_queuedParams),
+      );
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] persistQueuedAuth error: $e');
     }
@@ -197,7 +233,6 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _clearPersistedQueuedAuth() async {
     try {
       await _storage.delete(key: _kQueuedAuthKey);
-      if (kDebugMode) debugPrint('[AuthProvider] cleared persisted queued auth');
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] clearPersistedQueuedAuth error: $e');
     }
@@ -207,17 +242,28 @@ class AuthProvider extends ChangeNotifier {
     try {
       final s = await _storage.read(key: _kQueuedAuthKey);
       if (s == null || s.isEmpty) return;
+
       final params = jsonDecode(s) as Map<String, dynamic>;
-      // If a queued auth exists, set local state. We don't set context across restarts.
-      _queuedParams = Map<String, dynamic>.from(params);
+      _queuedParams             = Map<String, dynamic>.from(params);
+      _queuedAuthType           = _queuedParams['type'] as String?;
       _isWaitingForConnectivity = true;
-      _queuedAuthType ??= _queuedParams['type'] as String?;
-      if (kDebugMode) debugPrint('[AuthProvider] restored queued auth from storage');
+
+      if (kDebugMode) debugPrint('[AuthProvider] restored queued auth: $_queuedAuthType');
       _setupConnectivityListener();
       _safeNotify();
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] restoreQueuedAuth error: $e');
     }
+  }
+
+  /// Cancels any pending queued auth intent.
+  void cancelQueuedAuth() {
+    _queuedAuthType           = null;
+    _queuedParams             = {};
+    _isWaitingForConnectivity = false;
+    unawaited(_clearPersistedQueuedAuth());
+    _safeNotify();
+    if (kDebugMode) debugPrint('[AuthProvider] Queued auth cancelled by user');
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -236,31 +282,23 @@ class AuthProvider extends ChangeNotifier {
         return;
       }
 
-      // FIX #4 — validate token expiry before trusting stored credentials
       if (_isTokenExpired(token)) {
-        if (kDebugMode) {
-          debugPrint('[AuthProvider] Stored JWT is expired — clearing session');
-        }
+        if (kDebugMode) debugPrint('[AuthProvider] Stored JWT expired — clearing session');
         await _clearSession();
         return;
       }
 
       final decoded = jsonDecode(userJson) as Map<String, dynamic>;
-
-      // FIX #12 — validate required fields before constructing the model
       _assertRequiredUserFields(decoded);
 
-      final restoredUser = UserProfile.fromJson(decoded);
-
       _token           = token;
-      _user            = restoredUser;
+      _user            = UserProfile.fromJson(decoded);
       _adminStoreId    = values[_kAdmin];
       _guestAddress    = values[_kGuestAddress];
       _guestName       = values[_kGuestName];
       _guestPhone      = values[_kGuestPhone];
       _selectedAddress = values[_kSelectedAddress];
 
-      // FIX #3 — log only non-sensitive identifiers, and only in debug
       if (kDebugMode) {
         debugPrint(
           '[AuthProvider] Session restored — '
@@ -274,26 +312,25 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // FIX #4 — Token expiry validation
+  // Token expiry validation
   // ─────────────────────────────────────────────────────────────
 
-  /// Decodes the JWT payload and returns true if the token is expired or
-  /// malformed. A 60-second buffer avoids using a token that expires mid-request.
+  /// Returns true if [token] is expired or malformed.
+  /// Uses a 60-second buffer to avoid mid-request expiry.
   bool _isTokenExpired(String token) {
     try {
       final parts = token.split('.');
       if (parts.length != 3) return true;
 
       // Base64Url → base64 with padding
-      String payload = parts[1];
+      var payload = parts[1];
       payload += '=' * ((4 - payload.length % 4) % 4);
 
-      final decoded = utf8.decode(base64Url.decode(payload));
-      final map     = jsonDecode(decoded) as Map<String, dynamic>;
-      final exp     = map['exp'];
+      final json = jsonDecode(utf8.decode(base64Url.decode(payload)))
+          as Map<String, dynamic>;
+      final exp = json['exp'];
 
-      // No exp claim → treat as non-expiring (e.g. API keys)
-      if (exp == null) return false;
+      if (exp == null) return false; // No exp claim — treat as non-expiring
 
       final expiry = DateTime.fromMillisecondsSinceEpoch(
         (exp as int) * 1000,
@@ -301,25 +338,22 @@ class AuthProvider extends ChangeNotifier {
       );
 
       return DateTime.now().toUtc().isAfter(
-        expiry.subtract(const Duration(seconds: 60)),
-      );
+            expiry.subtract(const Duration(seconds: 60)),
+          );
     } catch (_) {
       return true; // Malformed token — reject
     }
   }
 
   // ─────────────────────────────────────────────────────────────
-  // FIX #12 — Required field validation
+  // Required field validation
   // ─────────────────────────────────────────────────────────────
 
   void _assertRequiredUserFields(Map<String, dynamic> data) {
-    // Backend might return 'id' or '_id'
     if (data['id'] == null && data['_id'] == null) {
       throw const FormatException('Auth response missing required field: id');
     }
-
-    const required = ['name', 'email', 'role'];
-    for (final field in required) {
+    for (final field in const ['name', 'email', 'role']) {
       if (data[field] == null) {
         throw FormatException('Auth response missing required field: $field');
       }
@@ -327,240 +361,149 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Error Helper
+  // Error helper
   // ─────────────────────────────────────────────────────────────
 
-  String _translateAuthError(dynamic error) {
+  String _translateAuthError(Object error) {
     if (error is FirebaseAuthException) {
-      switch (error.code) {
-        case 'user-not-found': return 'No user found for that email.';
-        case 'wrong-password': return 'Wrong password provided.';
-        case 'email-already-in-use': return 'An account already exists for that email.';
-        case 'invalid-credential': return 'Invalid email or password.';
-        case 'network-request-failed': return 'Network error. Please check your connection.';
-      }
+      return switch (error.code) {
+        'user-not-found'      => 'No user found for that email.',
+        'wrong-password'      => 'Wrong password provided.',
+        'email-already-in-use'=> 'An account already exists for that email.',
+        'invalid-credential'  => 'Invalid email or password.',
+        'network-request-failed' => 'Network error. Please check your connection.',
+        _ => error.message ?? error.toString(),
+      };
     }
-    return error.toString().replaceAll('Exception: ', '').replaceAll('Exception', '');
+    return error.toString()
+        .replaceAll('Exception: ', '')
+        .replaceAll('Exception', '');
   }
 
   // ─────────────────────────────────────────────────────────────
   // Login
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> login(BuildContext context, String email, String password) async {
-    if (_authOperationInProgress) return;
-    
-    final online = await NetworkService().checkNow();
+  /// Returns true on success so callers can navigate away.
+  Future<bool> login(String email, String password) async {
+    if (_authOperationInProgress) return false;
+
+    final online = await _networkService.checkNow();
     if (!online) {
-      // FIX #15 — Queue login and wait for connectivity instead of immediate error
-      _queueAuthOperation(context, 'login', {'email': email, 'password': password});
-      if (context.mounted) {
-        UIUtils.showErrorDialog(
-          context,
-          'No Internet Connection',
-          'Your login request is queued and will be processed once connectivity is restored.',
-        );
-      }
-      return;
+      _queueAuthOperation('login', {'email': email, 'password': password});
+      return false;
     }
 
-    _authOperationInProgress = true;
-    _setLoading(true);
-
-    try {
-      final data = await locator<AuthRepository>().login(email, password);
+    return _runAuthOp(() async {
+      final data = await _authRepository.login(email, password);
       await _persistAuthResponse(data);
       _initializeAblySafely();
       _syncFCMTokenSafely();
-    } catch (e) {
-      if (kDebugMode) debugPrint('[AuthProvider] login error: $e');
-      if (context.mounted) {
-        UIUtils.showErrorDialog(context, 'Login Failed', _translateAuthError(e));
-      }
-    } finally {
-      _authOperationInProgress = false;
-      _setLoading(false);
-    }
+      return true;
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
   // Register
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> register(BuildContext context, Map<String, dynamic> payload) async {
-    if (_authOperationInProgress) return;
-    
-    final online = await NetworkService().checkNow();
+  /// Returns true on success.
+  Future<bool> register(Map<String, dynamic> payload) async {
+    if (_authOperationInProgress) return false;
+
+    final online = await _networkService.checkNow();
     if (!online) {
-      // FIX #15 — Queue register and wait for connectivity instead of immediate error
-      _queueAuthOperation(context, 'register', payload);
-      if (context.mounted) {
-        UIUtils.showErrorDialog(
-          context,
-          'No Internet Connection',
-          'Your registration request is queued and will be processed once connectivity is restored.',
-        );
-      }
-      return;
+      _queueAuthOperation('register', payload);
+      return false;
     }
 
-    _authOperationInProgress = true;
-    _setLoading(true);
-
-    try {
-      final data = await locator<AuthRepository>().register(payload);
+    return _runAuthOp(() async {
+      final data = await _authRepository.register(payload);
       await _persistAuthResponse(data);
       _initializeAblySafely();
       _syncFCMTokenSafely();
-    } catch (e) {
-      if (kDebugMode) debugPrint('[AuthProvider] register error: $e');
-      if (context.mounted) {
-        UIUtils.showErrorDialog(context, 'Registration Failed', _translateAuthError(e));
-      }
-    } finally {
-      _authOperationInProgress = false;
-      _setLoading(false);
-    }
+      return true;
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
-  // FIX #15 — Offline queue management
+  // Offline-queue management
   // ─────────────────────────────────────────────────────────────
 
-  /// Queue an auth operation to be retried when connectivity is restored.
-  void _queueAuthOperation(
-    BuildContext context,
-    String authType,
-    Map<String, dynamic> params,
-  ) {
-    _queuedAuthType = authType;
-    _queuedContext = context;
-    // Initialise retry metadata for exponential backoff
-    _queuedParams = Map<String, dynamic>.from(params);
-    _queuedParams['_retryCount'] = 0;
-    _queuedParams['_maxRetries'] = _queuedParams['_maxRetries'] ?? 3;
+  /// Queue [authType] with [params] and start monitoring connectivity.
+  void _queueAuthOperation(String authType, Map<String, dynamic> params) {
+    _queuedAuthType           = authType;
+    _queuedParams             = {
+      ...params,
+      'type':         authType,
+      '_retryCount':  0,
+      '_maxRetries':  3,
+    };
     _isWaitingForConnectivity = true;
 
-    // Start monitoring connectivity changes if not already listening
-    if (context.mounted) {
-      _setupConnectivityListener();
-    }
-
-    // persist queued intent so it survives app restarts
-    _queuedParams['type'] = authType;
-    _persistQueuedAuth();
-
-    if (kDebugMode) {
-      debugPrint('[AuthProvider] Auth operation queued: $authType');
-    }
-
+    _setupConnectivityListener();
+    unawaited(_persistQueuedAuth());
     _safeNotify();
+
+    if (kDebugMode) debugPrint('[AuthProvider] Queued auth operation: $authType');
   }
 
-  /// Listen to connectivity changes and process queued operations.
   void _setupConnectivityListener() {
-    if (_connectivitySubscription != null) return;
-
-    final networkService = NetworkService();
-    _connectivitySubscription = networkService.onConnectivityChanged.listen((isOnline) {
+    _connectivitySubscription ??=
+        _networkService.onConnectivityChanged.listen((isOnline) {
       if (kDebugMode) {
-        debugPrint('[AuthProvider] Connectivity changed: ${isOnline ? 'ONLINE' : 'OFFLINE'}');
+        debugPrint(
+          '[AuthProvider] Connectivity: ${isOnline ? 'ONLINE' : 'OFFLINE'}',
+        );
       }
-
       if (isOnline && _isWaitingForConnectivity && _queuedAuthType != null) {
-        if (kDebugMode) {
-          debugPrint('[AuthProvider] Processing queued auth operation: $_queuedAuthType');
-        }
-        // If it's a social sign-in queued without a native context, notify user
-        if ((_queuedAuthType == 'google' || _queuedAuthType == 'apple') && (_queuedContext == null || !_queuedContext!.mounted)) {
-          try {
-            notificationService.showNotification(
-              title: 'Sign-In Ready',
-              body: 'Your ${_queuedAuthType == 'google' ? 'Google' : 'Apple'} Sign-In can be retried now. Open the app to continue.',
-            );
-          } catch (e) {
-            if (kDebugMode) debugPrint('[AuthProvider] showNotification error: $e');
-          }
-        }
-        _processQueuedAuthOperation();
+        unawaited(_processQueuedAuthOperation());
       }
     });
   }
 
-  /// Process the queued auth operation now that connectivity is restored.
   Future<void> _processQueuedAuthOperation() async {
     final authType = _queuedAuthType;
-    final context = _queuedContext;
-    final params = Map<String, dynamic>.from(_queuedParams);
+    final params   = Map<String, dynamic>.from(_queuedParams);
 
-    // Clear queue immediately to avoid reprocessing
+    // Clear immediately to prevent double-processing.
     _isWaitingForConnectivity = false;
-    _queuedAuthType = null;
-    _queuedContext = null;
-    _queuedParams = {};
-    // clear persisted queued auth
-    _clearPersistedQueuedAuth();
-
+    _queuedAuthType           = null;
+    _queuedParams             = {};
+    unawaited(_clearPersistedQueuedAuth());
     _safeNotify();
 
-    if (authType == null || context == null) return;
+    if (authType == null) return;
 
-    if (kDebugMode) {
-      debugPrint('[AuthProvider] Retrying queued $authType operation');
-    }
+    if (kDebugMode) debugPrint('[AuthProvider] Retrying queued $authType operation');
 
     try {
       switch (authType) {
         case 'login':
-          final email = params['email'] as String?;
+          final email    = params['email']    as String?;
           final password = params['password'] as String?;
           if (email != null && password != null) {
-            if (context.mounted) {
-              await login(context, email, password);
-            }
+            await login(email, password);
+            _eventController.add(QueuedAuthSuccessEvent());
           }
-          break;
 
         case 'register':
-          if (context.mounted) {
-            await register(context, params);
-          }
-          break;
+          // Strip internal retry metadata before forwarding to repository.
+          final payload = Map<String, dynamic>.from(params)
+            ..remove('type')
+            ..remove('_retryCount')
+            ..remove('_maxRetries');
+          await register(payload);
+          _eventController.add(QueuedAuthSuccessEvent());
 
+        // Social sign-ins require live user interaction and cannot be
+        // completed silently in the background.  Emit an event so the UI
+        // can present a "Tap to retry" prompt without a stored BuildContext.
         case 'google':
-          // Cannot automatically complete native OAuth flows — notify user to retry
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Google Sign-In is pending. Tap to retry.'),
-                action: SnackBarAction(
-                  label: 'Retry',
-                  onPressed: () {
-                    unawaited(signInWithGoogle(context));
-                  },
-                ),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-          break;
+          _eventController.add(SocialSignInRetryEvent(_SocialProvider.google));
 
         case 'apple':
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Apple Sign-In is pending. Tap to retry.'),
-                action: SnackBarAction(
-                  label: 'Retry',
-                  onPressed: () {
-                    unawaited(signInWithApple(context));
-                  },
-                ),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-          break;
+          _eventController.add(SocialSignInRetryEvent(_SocialProvider.apple));
 
         default:
           if (kDebugMode) {
@@ -569,41 +512,57 @@ class AuthProvider extends ChangeNotifier {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[AuthProvider] Error processing queued auth operation: $e');
+        debugPrint('[AuthProvider] Error processing queued auth ($authType): $e');
       }
+      _scheduleRetry(authType, params);
+    }
+  }
 
-      // Exponential backoff retry
-      try {
-        final retryCount = (params['_retryCount'] ?? 0) as int;
-        final maxRetries = (params['_maxRetries'] ?? 3) as int;
-        if (retryCount < maxRetries) {
-          final nextRetry = retryCount + 1;
-          final delaySeconds = (1 << retryCount);
+  void _scheduleRetry(String authType, Map<String, dynamic> params) {
+    final retryCount = (params['_retryCount'] ?? 0) as int;
+    final maxRetries = (params['_maxRetries'] ?? 3) as int;
 
-          // Re-queue
-          _queuedAuthType = authType;
-          _queuedContext = context;
-          _queuedParams = Map<String, dynamic>.from(params)..['_retryCount'] = nextRetry;
-          _isWaitingForConnectivity = true;
-          _safeNotify();
-
-          if (kDebugMode) debugPrint('[AuthProvider] Requeued auth op ($authType) — retry #$nextRetry in ${delaySeconds}s');
-
-          Future.delayed(Duration(seconds: delaySeconds), () async {
-            if (NetworkService().isOnline) {
-              await _processQueuedAuthOperation();
-            }
-          });
-        } else {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Failed to complete queued authentication. Please try again.')),
-            );
-          }
-        }
-      } catch (_) {
-        // Swallow secondary errors
+    if (retryCount >= maxRetries) {
+      if (kDebugMode) {
+        debugPrint('[AuthProvider] Max retries reached for $authType — giving up');
       }
+      return;
+    }
+
+    final delaySeconds = 1 << retryCount; // Exponential back-off: 1s, 2s, 4s
+    _queuedAuthType           = authType;
+    _queuedParams             = {...params, '_retryCount': retryCount + 1};
+    _isWaitingForConnectivity = true;
+    _safeNotify();
+
+    if (kDebugMode) {
+      debugPrint(
+        '[AuthProvider] Re-queued $authType — retry #${retryCount + 1} in ${delaySeconds}s',
+      );
+    }
+
+    Future.delayed(Duration(seconds: delaySeconds), () {
+      if (_networkService.isOnline && _isWaitingForConnectivity) {
+        unawaited(_processQueuedAuthOperation());
+      }
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Auth operation runner — DRY wrapper
+  // ─────────────────────────────────────────────────────────────
+
+  Future<bool> _runAuthOp(Future<bool> Function() op) async {
+    _authOperationInProgress = true;
+    _setLoading(true);
+    try {
+      return await op();
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AuthProvider] auth op error: $e');
+      rethrow;
+    } finally {
+      _authOperationInProgress = false;
+      _setLoading(false);
     }
   }
 
@@ -611,26 +570,24 @@ class AuthProvider extends ChangeNotifier {
   // FCM Token Sync
   // ─────────────────────────────────────────────────────────────
 
-  /// Fire-and-forget wrapper with error handling.
-  /// FIX #8 — unawaited calls must carry a catchError.
   void _syncFCMTokenSafely() {
-    syncFCMToken().catchError((Object e) {
-      if (kDebugMode) debugPrint('[AuthProvider] FCM sync failed (non-fatal): $e');
-    });
+    unawaited(
+      syncFCMToken().catchError((Object e) {
+        if (kDebugMode) debugPrint('[AuthProvider] FCM sync failed (non-fatal): $e');
+      }),
+    );
   }
 
   Future<void> syncFCMToken() async {
     if (!isAuthenticated) return;
 
-    // FIX #2 — FCM token is obtained and forwarded to the server only.
-    // It is NEVER assigned to _token, which holds the backend JWT exclusively.
-    final fcmToken = await notificationService.getToken();
+    final fcmToken = await _notificationService.getToken();
     if (fcmToken == null) return;
 
     if (kDebugMode) debugPrint('[AuthProvider] Syncing FCM token with backend');
 
     await Future.wait([
-      locator<AuthRepository>().updateProfile({'fcmToken': fcmToken}),
+      _authRepository.updateProfile({'fcmToken': fcmToken}),
       _pushFcmTokenToBackend(fcmToken),
     ]);
   }
@@ -645,13 +602,13 @@ class AuthProvider extends ChangeNotifier {
         data: {'userId': userId, 'fcmToken': fcmToken},
       );
       if (kDebugMode) {
-        final ok = response.statusCode == 200 &&
-            response.data['success'] == true;
+        final ok =
+            response.statusCode == 200 && response.data['success'] == true;
         debugPrint('[AuthProvider] FCM token save: ${ok ? 'OK' : 'failed'}');
       }
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] _pushFcmTokenToBackend error: $e');
-      // Non-fatal — next app start will retry
+      // Non-fatal — next app start will retry.
     }
   }
 
@@ -660,39 +617,33 @@ class AuthProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────
 
   Future<void> _persistAuthResponse(Map<String, dynamic> data) async {
-    final userData = data['user'] ?? data;
-
-    if (userData is! Map) {
+    final rawUser = data['user'] ?? data;
+    if (rawUser is! Map) {
       throw const FormatException(
         'Invalid auth response: expected a user object',
       );
     }
 
-    final userMap = Map<String, dynamic>.from(userData);
-
-    // FIX #12 — validate before construction
+    final userMap = Map<String, dynamic>.from(rawUser);
     _assertRequiredUserFields(userMap);
 
-    final user  = UserProfile.fromJson(userMap);
     final token = data['token'] as String?;
-
     if (token == null || token.isEmpty) {
       throw const FormatException('Invalid auth response: missing token');
     }
 
-    _user  = user;
-    _token = token; // Backend JWT — never an FCM token
+    _user  = UserProfile.fromJson(userMap);
+    _token = token; // Backend JWT — never an FCM token.
 
     await Future.wait([
       _storage.write(key: _kToken, value: token),
-      _storage.write(key: _kUser,  value: jsonEncode(user.toJson())),
+      _storage.write(key: _kUser,  value: jsonEncode(_user!.toJson())),
     ]);
 
-    // FIX #3 — no full token or email in logs
     if (kDebugMode) {
       debugPrint(
         '[AuthProvider] Auth persisted — '
-        'User ID: ${user.id}, Role: ${user.role}',
+        'User ID: ${_user!.id}, Role: ${_user!.role}',
       );
     }
 
@@ -700,17 +651,16 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // FIX #2 — Token refresh listener
+  // FCM token-refresh listener
   // The FCM token rotates independently of the backend JWT.
-  // Refreshing the FCM token must NEVER touch _token (the JWT).
+  // Refreshing the FCM token MUST NOT touch _token (the JWT).
   // ─────────────────────────────────────────────────────────────
 
   void _setupTokenRefreshListener() {
     if (_tokenRefreshListenerAttached) return;
 
-    FirebaseMessaging.instance.onTokenRefresh.listen((_) {
-      // A new FCM token is available — sync it with the backend.
-      // Do NOT store it in _token or overwrite the JWT in secure storage.
+    _tokenRefreshSubscription =
+        FirebaseMessaging.instance.onTokenRefresh.listen((_) {
       if (kDebugMode) debugPrint('[AuthProvider] FCM token rotated — re-syncing');
       _syncFCMTokenSafely();
     });
@@ -722,17 +672,16 @@ class AuthProvider extends ChangeNotifier {
   // Ably
   // ─────────────────────────────────────────────────────────────
 
-  /// Fire-and-forget wrapper with error handling.
-  /// FIX #8 — unawaited calls must carry a catchError.
   void _initializeAblySafely() {
-    _initializeAbly().catchError((Object e) {
-      if (kDebugMode) debugPrint('[AuthProvider] Ably init failed (non-fatal): $e');
-    });
+    unawaited(
+      _initializeAbly().catchError((Object e) {
+        if (kDebugMode) debugPrint('[AuthProvider] Ably init failed (non-fatal): $e');
+      }),
+    );
   }
 
   Future<void> _initializeAbly() async {
     if (_ablyListenersAttached) return;
-
     final userId = _user?.id;
     if (userId == null) return;
 
@@ -741,10 +690,11 @@ class AuthProvider extends ChangeNotifier {
     _ablyService.addStoreApprovalListener(_handleStoreApproval);
     _ablyService.addWalletListener(refreshUser);
 
-    // FIX #8 — fire-and-forget with catchError
-    notificationService.subscribeToUserTopic(userId).catchError((Object e) {
-      if (kDebugMode) debugPrint('[AuthProvider] FCM topic subscribe failed: $e');
-    });
+    unawaited(
+      _notificationService.subscribeToUserTopic(userId).catchError((Object e) {
+        if (kDebugMode) debugPrint('[AuthProvider] FCM topic subscribe failed: $e');
+      }),
+    );
 
     _ablyListenersAttached = true;
   }
@@ -755,14 +705,14 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> fetchLocation() async {
     try {
-      final locs = await locator<LocationRepository>().getLocations();
-      _locations = locs;
+      _locations = await _locationRepository.getLocations();
       _safeNotify();
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] fetchLocation error: $e');
     }
   }
 
+  /// Alias kept for call-site compatibility.
   Future<void> fetchLocations() => fetchLocation();
 
   Future<void> setDeliveryAddress(String address) async {
@@ -784,7 +734,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> updateProfile(Map<String, dynamic> updates) async {
     _setLoading(true);
     try {
-      final data     = await locator<AuthRepository>().updateProfile(updates);
+      final data     = await _authRepository.updateProfile(updates);
       final userData = data['user'] ?? data;
       _user = UserProfile.fromJson(Map<String, dynamic>.from(userData));
       await _storage.write(key: _kUser, value: jsonEncode(_user!.toJson()));
@@ -799,7 +749,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> refreshUser() async {
     try {
-      final data     = await locator<AuthRepository>().getProfile();
+      final data     = await _authRepository.getProfile();
       final userData = data['user'] ?? data;
       _user = UserProfile.fromJson(Map<String, dynamic>.from(userData));
       await _storage.write(key: _kUser, value: jsonEncode(_user!.toJson()));
@@ -812,10 +762,8 @@ class AuthProvider extends ChangeNotifier {
   Future<void> toggleFavorite(String storeId) async {
     if (!isAuthenticated) return;
     try {
-      final data = await locator<AuthRepository>().toggleFavorite(storeId);
+      final data = await _authRepository.toggleFavorite(storeId);
       if (data['success'] == true) {
-        // FIX #13 — still a map-key update but with explicit cast to catch
-        // backend shape changes at runtime rather than silently storing junk.
         final favorites = List<String>.from(data['favoriteStores'] as List);
         await updateUser({'favoriteStores': favorites});
       }
@@ -831,26 +779,25 @@ class AuthProvider extends ChangeNotifier {
     if (!isAuthenticated || _user == null) return;
     if (name == null && phone == null) return;
 
+    // Build a map with only the fields that were actually provided.
     final updates = <String, dynamic>{
-      'name':  ?name,
-      'phone': ?phone,
+      if (name  != null) 'name':  name,
+      if (phone != null) 'phone': phone,
     };
 
-    await updateUser(updates); // Optimistic
+    await updateUser(updates); // Optimistic local update
 
     try {
-      await locator<AuthRepository>().updateProfile(updates);
+      await _authRepository.updateProfile(updates);
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] updateNameAndPhone error: $e');
-      // Non-fatal
+      // Non-fatal — local state is already updated.
     }
   }
 
-  // Added hasSufficientFunds back to AuthProvider for compatibility.
-  /// Returns true if the user's wallet balance is sufficient for the given total.
-  bool hasSufficientFunds(double total) {
-    return (user?.walletBalance ?? 0) >= total;
-  }
+  /// Returns true if the user's wallet balance covers [total].
+  bool hasSufficientFunds(double total) =>
+      (_user?.walletBalance ?? 0) >= total;
 
   void setGuestInfo({String? name, String? phone}) {
     if (name  != null) _guestName  = name;
@@ -862,26 +809,18 @@ class AuthProvider extends ChangeNotifier {
   // Social Sign-In
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> signInWithGoogle(BuildContext context) async {
+  /// Returns true on success.
+  Future<bool> signInWithGoogle() async {
     _setLoading(true);
     try {
-      final online = await NetworkService().checkNow();
+      final online = await _networkService.checkNow();
       if (!online) {
-        // Queue intent — native OAuth requires user interaction and cannot be
-        // completed automatically while offline. Notify user that the intent
-        // is queued and provide retry when online.
-        _queueAuthOperation(context, 'google', {});
-        if (context.mounted) {
-          UIUtils.showErrorDialog(
-            context,
-            'No Internet Connection',
-            'Google Sign-In cannot start while offline. A retry prompt has been queued for when you are back online.',
-          );
-        }
-        return;
+        _queueAuthOperation('google', {});
+        return false;
       }
+
       final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return;
+      if (googleUser == null) return false;
 
       final googleAuth = await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
@@ -889,48 +828,35 @@ class AuthProvider extends ChangeNotifier {
         idToken:     googleAuth.idToken,
       );
 
-      final userCredential   = await FirebaseAuth.instance.signInWithCredential(credential);
-      final firebaseIdToken  = await userCredential.user?.getIdToken();
+      final userCredential  = await FirebaseAuth.instance.signInWithCredential(credential);
+      final firebaseIdToken = await userCredential.user?.getIdToken();
+      if (firebaseIdToken == null) throw Exception('Failed to get Firebase ID token');
 
-      if (firebaseIdToken == null) {
-        throw Exception('Failed to get Firebase ID token');
-      }
-
-      final data = await locator<AuthRepository>().loginWithGoogle(firebaseIdToken);
+      final data = await _authRepository.loginWithGoogle(firebaseIdToken);
       await _persistAuthResponse(data);
       _initializeAblySafely();
       _syncFCMTokenSafely();
+      return true;
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] signInWithGoogle error: $e');
-      if (context.mounted) {
-        UIUtils.showErrorDialog(context, 'Google Sign-In Failed', _translateAuthError(e));
-      }
+      rethrow;
     } finally {
       _setLoading(false);
     }
   }
 
-  Future<void> signInWithApple(BuildContext context) async {
+  /// Returns true on success.
+  Future<bool> signInWithApple() async {
     _setLoading(true);
     try {
-      final online = await NetworkService().checkNow();
+      final online = await _networkService.checkNow();
       if (!online) {
-        _queueAuthOperation(context, 'apple', {});
-        if (context.mounted) {
-          UIUtils.showErrorDialog(
-            context,
-            'No Internet Connection',
-            'Apple Sign-In cannot start while offline. A retry prompt has been queued for when you are back online.',
-          );
-        }
-        return;
+        _queueAuthOperation('apple', {});
+        return false;
       }
+
       final rawNonce = _generateNonce();
       final nonce    = _sha256ofString(rawNonce);
-
-      if (kDebugMode) {
-        debugPrint('[AuthProvider] signInWithApple: rawNonce=$rawNonce, hashedNonce=$nonce');
-      }
 
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -951,62 +877,37 @@ class AuthProvider extends ChangeNotifier {
         throw Exception('Apple Sign-In failed: No identity token received');
       }
 
-      if (kDebugMode) {
-        debugPrint('[AuthProvider] Apple Credential received: email=${appleCredential.email}, '
-            'identityToken length=${idToken.length}');
-        try {
-          final parts = idToken.split('.');
-          if (parts.length > 1) {
-            String payload = parts[1];
-            while (payload.length % 4 != 0) {
-              payload += '=';
-            }
-            final decoded = utf8.decode(base64Url.decode(payload));
-            debugPrint('[AuthProvider] ID Token Payload: $decoded');
-          }
-        } catch (e) {
-          debugPrint('[AuthProvider] Could not decode ID Token: $e');
-        }
-      }
-
       final credential = OAuthProvider('apple.com').credential(
-        idToken:  idToken,
-        rawNonce: rawNonce,
+        idToken:     idToken,
+        rawNonce:    rawNonce,
         accessToken: appleCredential.authorizationCode,
       );
 
       final userCredential  = await FirebaseAuth.instance.signInWithCredential(credential);
       final firebaseIdToken = await userCredential.user?.getIdToken();
-
-      if (kDebugMode) {
-        debugPrint('[AuthProvider] Firebase Sign-In successful. ID Token length=${firebaseIdToken?.length}');
-      }
-
-      if (firebaseIdToken == null) {
-        throw Exception('Failed to get Firebase ID token');
-      }
+      if (firebaseIdToken == null) throw Exception('Failed to get Firebase ID token');
 
       String? fullName;
-      if (appleCredential.givenName != null || appleCredential.familyName != null) {
-        fullName = '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'.trim();
+      final given  = appleCredential.givenName;
+      final family = appleCredential.familyName;
+      if (given != null || family != null) {
+        fullName = '${given ?? ''} ${family ?? ''}'.trim();
         if (fullName.isEmpty) fullName = null;
       }
 
-      final data = await locator<AuthRepository>().loginWithApple(
+      final data = await _authRepository.loginWithApple(
         firebaseIdToken,
         name: fullName,
       );
       await _persistAuthResponse(data);
       _initializeAblySafely();
       _syncFCMTokenSafely();
+      return true;
     } catch (e, stack) {
       if (kDebugMode) {
-        debugPrint('[AuthProvider] signInWithApple error: $e');
-        debugPrint('[AuthProvider] Stack trace: $stack');
+        debugPrint('[AuthProvider] signInWithApple error: $e\n$stack');
       }
-      if (context.mounted) {
-        UIUtils.showErrorDialog(context, 'Apple Sign-In Failed', _translateAuthError(e));
-      }
+      rethrow;
     } finally {
       _setLoading(false);
     }
@@ -1023,7 +924,7 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       await _reauthenticateIfNeeded(firebaseUser);
-      await locator<AuthRepository>().deleteAccount();
+      await _authRepository.deleteAccount();
       await logout();
     } catch (e) {
       if (kDebugMode) debugPrint('[AuthProvider] deleteAccount error: $e');
@@ -1034,11 +935,12 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _reauthenticateIfNeeded(User user) async {
-    final providers = user.providerData.map((p) => p.providerId).toList();
+    final providers = user.providerData.map((p) => p.providerId).toSet();
 
     if (providers.contains('apple.com')) {
       final rawNonce = _generateNonce();
       final nonce    = _sha256ofString(rawNonce);
+
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [],
         webAuthenticationOptions: WebAuthenticationOptions(
@@ -1049,43 +951,31 @@ class AuthProvider extends ChangeNotifier {
         ),
         nonce: nonce,
       );
+
       final idToken = appleCredential.identityToken;
       if (idToken == null) {
         throw Exception('Apple re-authentication failed: No identity token received');
       }
-      final credential = OAuthProvider('apple.com').credential(
-        idToken:  idToken,
-        rawNonce: rawNonce,
-        accessToken: appleCredential.authorizationCode,
+
+      await user.reauthenticateWithCredential(
+        OAuthProvider('apple.com').credential(
+          idToken:     idToken,
+          rawNonce:    rawNonce,
+          accessToken: appleCredential.authorizationCode,
+        ),
       );
-      await user.reauthenticateWithCredential(credential);
     } else if (providers.contains('google.com')) {
       final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        throw Exception('Google re-authentication cancelled');
-      }
+      if (googleUser == null) throw Exception('Google re-authentication cancelled');
+
       final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken:     googleAuth.idToken,
+      await user.reauthenticateWithCredential(
+        GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken:     googleAuth.idToken,
+        ),
       );
-      await user.reauthenticateWithCredential(credential);
     }
-  }
-
-  String _generateNonce([int length = 32]) {
-    const chars =
-        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = Random.secure();
-    return List.generate(
-      length,
-      (_) => chars[random.nextInt(chars.length)],
-    ).join();
-  }
-
-  String _sha256ofString(String input) {
-    final bytes = utf8.encode(input);
-    return sha256.convert(bytes).toString();
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -1095,7 +985,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> applyForStore(Map<String, dynamic> data) async {
     _setLoading(true);
     try {
-      final response = await locator<AuthRepository>().applyForStore(data);
+      final response = await _authRepository.applyForStore(data);
       final userData = response['user'] ?? response;
       _user = UserProfile.fromJson(Map<String, dynamic>.from(userData));
       await _storage.write(key: _kUser, value: jsonEncode(_user!.toJson()));
@@ -1114,16 +1004,16 @@ class AuthProvider extends ChangeNotifier {
 
   void _handleRoleUpdate(String role) {
     if (_disposed || _user == null || _user!.role == role) return;
-    updateUser({'role': role});
+    unawaited(updateUser({'role': role}));
   }
 
   void _handleStoreApproval(String storeId) {
     if (_disposed || _user == null || _user!.isStoreApproved) return;
-    updateUser({'isStoreApproved': true});
+    unawaited(updateUser({'isStoreApproved': true}));
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Unauthorized
+  // 401 handler
   // ─────────────────────────────────────────────────────────────
 
   Future<void> _handleUnauthorized() async {
@@ -1142,32 +1032,34 @@ class AuthProvider extends ChangeNotifier {
     try {
       final userId = _user?.id;
       if (userId != null) {
-        // FIX #8 — fire-and-forget with catchError
-        notificationService.unsubscribeFromUserTopic(userId).catchError((Object e) {
-          if (kDebugMode) debugPrint('[AuthProvider] FCM unsubscribe failed: $e');
-        });
+        unawaited(
+          _notificationService.unsubscribeFromUserTopic(userId).catchError(
+            (Object e) {
+              if (kDebugMode) debugPrint('[AuthProvider] FCM unsubscribe failed: $e');
+            },
+          ),
+        );
       }
 
       await _clearSession();
-
       _ablyService.disconnect();
 
-      // FIX #10 — reset real-time flags so listeners re-attach on next login
-      _ablyListenersAttached       = false;
+      // Reset flags so listeners re-attach on next login.
+      _ablyListenersAttached        = false;
       _tokenRefreshListenerAttached = false;
 
-      if (disconnectGoogle) {
-        await _googleSignIn.signOut();
-      }
+      await _tokenRefreshSubscription?.cancel();
+      _tokenRefreshSubscription = null;
+
+      if (disconnectGoogle) await _googleSignIn.signOut();
     } finally {
       _authOperationInProgress = false;
     }
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Clear Session
-  // FIX #5 — targeted deletes instead of deleteAll() to avoid wiping
-  //           keys owned by other modules in the same app.
+  // Clear session
+  // Targeted deletes only — never wipe keys owned by other modules.
   // ─────────────────────────────────────────────────────────────
 
   Future<void> _clearSession() async {
@@ -1189,20 +1081,14 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Update User
+  // Update user
   // ─────────────────────────────────────────────────────────────
 
   Future<void> updateUser(Map<String, dynamic> updates) async {
-    final current = _user;
-    if (current == null) return;
+    if (_user == null) return;
 
-    final updated = UserProfile.fromJson({
-      ...current.toJson(),
-      ...updates,
-    });
-
-    _user = updated;
-    await _storage.write(key: _kUser, value: jsonEncode(updated.toJson()));
+    _user = UserProfile.fromJson({..._user!.toJson(), ...updates});
+    await _storage.write(key: _kUser, value: jsonEncode(_user!.toJson()));
     _safeNotify();
   }
 
@@ -1210,9 +1096,24 @@ class AuthProvider extends ChangeNotifier {
   void updateWalletBalance(double newBalance) {
     if (_user == null) return;
     _user = UserProfile.fromJson({..._user!.toJson(), 'walletBalance': newBalance});
-    _storage.write(key: _kUser, value: jsonEncode(_user!.toJson()));
+    unawaited(_storage.write(key: _kUser, value: jsonEncode(_user!.toJson())));
     _safeNotify();
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Nonce helpers (Apple Sign-In)
+  // ─────────────────────────────────────────────────────────────
+
+  String _generateNonce([int length = 32]) {
+    const chars =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random.secure();
+    return List.generate(length, (_) => chars[random.nextInt(chars.length)])
+        .join();
+  }
+
+  String _sha256ofString(String input) =>
+      sha256.convert(utf8.encode(input)).toString();
 
   // ─────────────────────────────────────────────────────────────
   // Loading
@@ -1225,7 +1126,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Safe notify
+  // Safe notify — guards against post-dispose calls
   // ─────────────────────────────────────────────────────────────
 
   void _safeNotify() {
@@ -1240,11 +1141,11 @@ class AuthProvider extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    // FIX #6 — use injected reference, not global
     _apiService.onUnauthorized = null;
     _ablyService.disconnect();
-    // FIX #15 — clean up connectivity listener
     _connectivitySubscription?.cancel();
+    _tokenRefreshSubscription?.cancel();
+    _eventController.close();
     super.dispose();
   }
 }

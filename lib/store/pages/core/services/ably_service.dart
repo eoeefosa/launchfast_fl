@@ -1,0 +1,963 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:ably_flutter/ably_flutter.dart' as ably;
+import 'package:campuschow/store/pages/core/network/api_client.dart';
+import 'package:campuschow/store/pages/features/orders/data/order_model.dart';
+
+/// A focused real-time messaging service backed by Ably.
+///
+/// Design decisions:
+/// - All [StreamSubscription]s are collected in a single [_subscriptions] list
+///   and cancelled atomically via [_cancelAllSubscriptions].
+/// - [_activeSubscriptionKeys] is cleared on every disconnection event (not just
+///   full [disconnect]) so that Ably's auto-reconnect cycle can re-register
+///   channel subscriptions correctly.
+/// - Auth uses [authCallback] instead of static [authHeaders] so that expired
+///   tokens are refreshed automatically during long sessions.
+/// - Push activation failures surface via [onPushActivationFailed] so callers
+///   can react (e.g. show a UI banner or retry).
+/// - Rider/store-order subscriptions are tracked in dedicated key sets so they
+///   can be cancelled independently without a full [disconnect].
+/// - Uses [debugPrint] so logs are silenced in release builds automatically.
+class AblyService {
+  bool get _isTesting =>
+      !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
+  // FIX: No public constructor — use the singleton accessor below.
+  // This prevents two parts of the app from creating separate Ably connections.
+  AblyService._();
+  static final AblyService instance = AblyService._();
+
+  ably.Realtime? _realtime;
+  bool _isConnecting = false;
+  String? _currentUserId;
+
+  // FIX: The connection-state subscription is stored separately so it can be
+  // cancelled cleanly before replacing _realtime on a userId switch. Previously
+  // it lived in _subscriptions and would fire events into the new instance.
+  StreamSubscription? _connectionSubscription;
+
+  /// All active channel subscriptions. Cancelled atomically by [_cancelAllSubscriptions].
+  final List<StreamSubscription> _subscriptions = [];
+
+  /// Subscription keys for rider-specific channels. Stored separately so
+  /// [cancelRiderSubscriptions] can revoke them without a full disconnect.
+  final Set<String> _riderSubscriptionKeys = {};
+  final List<StreamSubscription> _riderSubscriptions = [];
+
+  /// Track unique subscription keys to prevent duplicate channel listeners.
+  final Set<String> _activeSubscriptionKeys = {};
+
+  // ── Push failure callback ────────────────────────────────────────────────────
+
+  // FIX: Push failures were previously silent. Callers can now be notified.
+  void Function(Object error)? onPushActivationFailed;
+
+  // ── Listener registries ─────────────────────────────────────────────────────
+
+  final List<void Function(String orderId, OrderStatus status)>
+  _orderListeners = [];
+  final List<void Function()> _walletListeners = [];
+  final List<void Function(String storeId, bool isOpen)> _storeListeners = [];
+  final List<void Function(String newRole)> _roleListeners = [];
+  final List<void Function(String storeId)> _approvalListeners = [];
+  final List<void Function(Map<String, dynamic> payload)>
+  _notificationListeners = [];
+  final List<void Function(String storeId, String? menuItemId, bool? isReady, int? portionsRemaining)>
+  _menuListeners = [];
+
+  // ── Init ────────────────────────────────────────────────────────────────────
+
+  /// Initializes Ably for an unauthenticated user (guest).
+  Future<void> initAblyGuest() async {
+    final guestId = 'guest_${DateTime.now().millisecondsSinceEpoch}';
+    debugPrint('[AblyService] Initializing guest session: $guestId');
+    await initAbly(guestId);
+  }
+
+  Future<void> initAbly(String userId) async {
+    if (_isTesting) {
+      debugPrint('[AblyService] Skipping initAbly in test environment');
+      return;
+    }
+    debugPrint('--- [AblyService] Initializing for user: $userId ---');
+    if (_isConnecting) {
+      debugPrint('[AblyService] Already connecting, skipping...');
+      return;
+    }
+
+    if (_realtime != null && _currentUserId == userId) {
+      debugPrint('[AblyService] Already connected for this user.');
+      return;
+    }
+
+    if (_realtime != null && _currentUserId != userId) {
+      debugPrint(
+        '[AblyService] Switching user, disconnecting old connection...',
+      );
+      await _connectionSubscription?.cancel();
+      _connectionSubscription = null;
+      disconnect();
+    }
+
+    _isConnecting = true;
+    _currentUserId = userId;
+
+    // Fail fast if we don't even have a session token AND it is not a guest.
+    final token = await apiService.storage.read(key: 'launch-fast-token');
+    final isGuest = userId.startsWith('guest_');
+
+    if (token == null && !isGuest) {
+      debugPrint('[AblyService] No token found in storage, aborting initAbly');
+      _isConnecting = false;
+      _currentUserId = null;
+      throw Exception('[AblyService] No auth token in storage');
+    }
+
+    ably.Realtime? rt;
+
+    try {
+      debugPrint('[AblyService] Creating client options...');
+      final clientOptions = ably.ClientOptions()
+        ..autoConnect = false
+        ..authCallback = (ably.TokenParams params) async {
+          debugPrint('[AblyService] authCallback triggered');
+
+          if (_realtime == null && rt == null) {
+            throw Exception(
+              '[AblyService] authCallback fired after disconnect',
+            );
+          }
+
+          try {
+            debugPrint('[AblyService] Fetching Ably token from backend...');
+            final response = await apiService.dio.get(
+              '/ably/auth',
+              options: Options(
+                sendTimeout: const Duration(seconds: 20),
+                receiveTimeout: const Duration(seconds: 20),
+              ),
+            );
+            debugPrint(
+              '[AblyService] Ably auth raw response: ${response.statusCode} ${response.data}',
+            );
+
+            final data = response.data;
+
+            if (data is String) return data;
+
+            if (data is Map<String, dynamic>) {
+              if (data.containsKey('keyName')) {
+                return ably.TokenRequest.fromMap(data);
+              }
+              if (data.containsKey('token')) {
+                final tokenVal = data['token'];
+                if (tokenVal is String) return tokenVal;
+                return ably.TokenDetails.fromMap(data);
+              }
+              return ably.TokenRequest.fromMap(data);
+            }
+            return data;
+          } on DioException catch (e) {
+            debugPrint(
+              '[AblyService] authCallback Dio error: ${e.type} — ${e.message} — status: ${e.response?.statusCode}',
+            );
+            rethrow;
+          } catch (e) {
+            debugPrint('[AblyService] authCallback failed: $e');
+            rethrow;
+          }
+        }
+        ..clientId = userId;
+
+      debugPrint('[AblyService] Initializing Realtime instance...');
+      rt = ably.Realtime(options: clientOptions);
+
+      _connectionSubscription = rt.connection.on().listen((
+        ably.ConnectionStateChange change,
+      ) async {
+        final current = _realtime;
+        if (current == null) return;
+
+        debugPrint(
+          '[AblyService] Connection state change: ${change.previous} -> ${change.current}',
+        );
+
+        if (change.current == ably.ConnectionState.connected) {
+          debugPrint('[AblyService] Connected successfully');
+          _activeSubscriptionKeys.clear();
+
+          _subscribeUserChannel(userId);
+          unawaited(
+            _subscribeStoresChannel().catchError((Object e) {
+              debugPrint('[AblyService] _subscribeStoresChannel failed: $e');
+            }),
+          );
+          unawaited(
+            _subscribeMenuChannel().catchError((Object e) {
+              debugPrint('[AblyService] _subscribeMenuChannel failed: $e');
+            }),
+          );
+
+          // Ably push activation is disabled to prevent conflict and ANRs.
+        }
+
+        if (change.current == ably.ConnectionState.disconnected ||
+            change.current == ably.ConnectionState.suspended) {
+          debugPrint(
+            '[AblyService] Connection ${change.current} — clearing subscription keys for re-subscribe on reconnect.',
+          );
+          _activeSubscriptionKeys.clear();
+        }
+
+        if (change.current == ably.ConnectionState.failed) {
+          debugPrint('[AblyService] Connection failed: ${change.reason}');
+        }
+      });
+
+      _realtime = rt;
+
+      debugPrint('[AblyService] Connecting...');
+      rt.connect();
+
+      // Wait for connected or failed rather than fire-and-forget
+      final completer = Completer<void>();
+      late StreamSubscription<ably.ConnectionStateChange> waitSub;
+      waitSub = rt.connection.on().listen((ably.ConnectionStateChange change) {
+        if (change.current == ably.ConnectionState.connected) {
+          waitSub.cancel();
+          if (!completer.isCompleted) completer.complete();
+        } else if (change.current == ably.ConnectionState.failed) {
+          waitSub.cancel();
+          if (!completer.isCompleted) {
+            completer.completeError(
+              Exception('Ably connection failed: ${change.reason}'),
+            );
+          }
+        }
+      });
+
+      await completer.future.timeout(
+        const Duration(seconds: 20),
+        onTimeout: () {
+          waitSub.cancel();
+          throw TimeoutException(
+            '[AblyService] Connection timed out after 20s',
+          );
+        },
+      );
+
+      debugPrint('[AblyService] initAbly complete for $userId');
+    } catch (e) {
+      debugPrint('[AblyService] initAbly failed: $e');
+      if (_realtime == null && rt != null) {
+        try {
+          rt.close();
+        } catch (_) {}
+      }
+      _isConnecting = false;
+      _currentUserId = null;
+      rethrow;
+    } finally {
+      _isConnecting = false;
+    }
+  }
+
+  void _subscribeUserChannel(String userId) async {
+    // FIX: Snapshot to guard against disconnect() nulling _realtime across the
+    // async boundary below (_attachPush is awaited).
+    final rt = _realtime;
+    if (rt == null) return;
+
+    final channelName = 'user:$userId';
+    final channel = rt.channels.get(channelName);
+
+    // FIX: Push and message subscriptions are now separated so a push failure
+    // doesn't silently block the message listener registration below.
+    await _attachPush(channel, channelName);
+
+    // FIX: Re-check after async gap to avoid attaching listeners if
+    // disconnect() was called while awaiting push registration.
+    if (_realtime != rt) return;
+
+    // 1. Order updates
+    _attachListener(
+      channel: channel,
+      channelName: channelName,
+      eventName: 'order-update',
+      onMessage: (data) {
+        final orderId = data['orderId'] as String;
+        final status = OrderStatusExtension.fromString(
+          data['status'] as String,
+        );
+        for (final cb in _orderListeners) {
+          cb(orderId, status);
+        }
+      },
+    );
+
+    // 2. Role updates
+    _attachListener(
+      channel: channel,
+      channelName: channelName,
+      eventName: 'role-update',
+      onMessage: (data) {
+        final newRole = data['newRole'] as String;
+        for (final cb in _roleListeners) {
+          cb(newRole);
+        }
+      },
+    );
+
+    // 3. General notifications
+    _attachListener(
+      channel: channel,
+      channelName: channelName,
+      eventName: 'general-notification',
+      onMessage: (data) {
+        // Forward to notification listeners for the bell/notification list
+        for (final cb in _notificationListeners) {
+          cb(data);
+        }
+        // If this is a wallet/deposit event, also trigger wallet listeners
+        // so the balance refreshes immediately without a manual pull-to-refresh.
+        final type = (data['type']?.toString() ?? '').toLowerCase();
+        if (type == 'deposit' ||
+            type == 'wallet_topup' ||
+            type == 'wallet_update') {
+          for (final cb in _walletListeners) {
+            cb();
+          }
+        }
+      },
+    );
+
+    // 4. Store approval
+    _attachListener(
+      channel: channel,
+      channelName: channelName,
+      eventName: 'store-approved',
+      onMessage: (data) {
+        final storeId = data['storeId'] as String;
+        for (final cb in _approvalListeners) {
+          cb(storeId);
+        }
+      },
+    );
+
+    // 5. Wallet updates
+    _attachListener(
+      channel: channel,
+      channelName: channelName,
+      eventName: 'wallet-update',
+      onMessage: (data) {
+        for (final cb in _walletListeners) {
+          cb();
+        }
+      },
+    );
+  }
+
+  Future<void> _subscribeStoresChannel() async {
+    // FIX: Snapshot to guard against disconnect() nulling _realtime across the
+    // async boundary below (_attachPush is awaited).
+    final rt = _realtime;
+    if (rt == null) return;
+
+    const channelName = 'public:stores';
+    // Accept both hyphen and underscore event names from backend
+    const eventNames = ['store-toggle', 'store_toggle'];
+
+    final channel = rt.channels.get(channelName);
+    await _attachPush(channel, channelName);
+
+    // FIX: Re-check after async gap.
+    if (_realtime != rt) return;
+
+    for (final eventName in eventNames) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: (data) {
+          final storeId = data['storeId'] as String;
+          final isOpen = data['isOpen'] as bool;
+          for (final cb in _storeListeners) {
+            cb(storeId, isOpen);
+          }
+        },
+      );
+    }
+  }
+
+  Future<void> _subscribeMenuChannel() async {
+    // FIX: Snapshot to guard against disconnect() nulling _realtime across the
+    // async boundary below (_attachPush is awaited).
+    final rt = _realtime;
+    if (rt == null) return;
+
+    const channelName = 'public:menu';
+    final channel = rt.channels.get(channelName);
+    await _attachPush(channel, channelName);
+
+    // FIX: Re-check after async gap.
+    if (_realtime != rt) return;
+
+    // 1. Specific menu item availability update — accept hyphen/underscore
+    for (final eventName in const ['menu-item-update', 'menu_item_update']) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: (data) {
+          final storeId = data['storeId'] as String;
+          final menuItemId = data['menuItemId'] as String;
+          final isReady = data['isReady'] as bool;
+          for (final cb in _menuListeners) {
+            cb(storeId, menuItemId, isReady, null);
+          }
+        },
+      );
+    }
+
+    // 2. Structural menu change — accept hyphen/underscore
+    for (final eventName in const ['menu-changed', 'menu_changed']) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: (data) {
+          final storeId = data['storeId'] as String;
+          for (final cb in _menuListeners) {
+            cb(storeId, null, null, null);
+          }
+        },
+      );
+    }
+
+    // 3. Portion/stock updates — trigger structural refresh to reflect counts
+    for (final eventName in const ['portion-update', 'portion_update', 'menu-portion-update', 'menu_portion_update']) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: (data) {
+          final storeId = data['storeId'] as String;
+          final menuItemId = data['menuItemId'] ?? data['itemId'] ?? data['id'];
+          final portionsVal = data['portionsRemaining'] ?? data['portions'] ?? data['remaining'];
+          int? portions;
+          if (portionsVal is int) portions = portionsVal;
+          if (portionsVal is String) portions = int.tryParse(portionsVal);
+
+          if (menuItemId != null && portions != null) {
+            final isReady = portions > 0;
+            for (final cb in _menuListeners) {
+              cb(storeId, menuItemId.toString(), isReady, portions);
+            }
+          } else {
+            // Fallback to structural refresh when payload is unexpected
+            for (final cb in _menuListeners) {
+              cb(storeId, null, null, null);
+            }
+          }
+        },
+      );
+    }
+  }
+
+  // FIX: Extracted push attachment as its own method. Push failure is now
+  // isolated — it logs and returns, never blocking message subscription.
+  Future<void> _attachPush(
+    ably.RealtimeChannel channel,
+    String channelName,
+  ) async {
+    // Ably push client subscription is disabled as Ably Push is unused in this app.
+    return;
+  }
+
+  // FIX: Extracted the duplicate-guard + listen pattern into a single helper.
+  // All channel subscriptions now go through here, eliminating the repeated
+  // key-check boilerplate across every subscribe method.
+  void _attachListener({
+    required ably.RealtimeChannel channel,
+    required String channelName,
+    required String eventName,
+    required void Function(Map<String, dynamic> data) onMessage,
+    Set<String>? keySet,
+    List<StreamSubscription>? subscriptionList,
+  }) {
+    final key = '$channelName:$eventName';
+    final target = keySet ?? _activeSubscriptionKeys;
+    if (target.contains(key)) return;
+    target.add(key);
+
+    debugPrint(
+      '[AblyService] Attaching listener for event: $eventName on channel: $channelName',
+    );
+
+    final sub = channel.subscribe(name: eventName).listen((ably.Message msg) {
+      debugPrint(
+        '[AblyService] EVENT RECEIVED: $eventName | Channel: $channelName | Data: ${msg.data}',
+      );
+      try {
+        final data = Map<String, dynamic>.from(msg.data as Map);
+        onMessage(data);
+      } catch (e) {
+        debugPrint('[AblyService] Parse error on $key: $e');
+      }
+    });
+
+    if (subscriptionList != null) {
+      subscriptionList.add(sub);
+    } else {
+      _subscriptions.add(sub);
+    }
+  }
+
+  /// Publishes a price update for a menu item to the public menu channel.
+  /// This is safe to call when the app is connected; if not connected the
+  /// method logs and returns without throwing.
+  Future<void> publishMenuPriceUpdate({
+    required String storeId,
+    required String menuItemId,
+    required double price,
+  }) async {
+    final rt = _realtime;
+    if (rt == null) {
+      debugPrint('[AblyService] publishMenuPriceUpdate skipped: not connected');
+      return;
+    }
+
+    try {
+      final channel = rt.channels.get('public:menu');
+      final data = {
+        'storeId': storeId,
+        'menuItemId': menuItemId,
+        'price': price,
+      };
+      // Use a consistent event name accepted by listeners.
+      await channel.publish(name: 'menu-item-update', data: data);
+      debugPrint('[AblyService] Published price update: $data');
+    } catch (e) {
+      debugPrint('[AblyService] Failed to publish menu price update: $e');
+    }
+  }
+
+  /// Publishes a portion/stock update for a menu item.
+  /// FIX #2 — Instant out-of-stock notifications
+  /// Customers listening to the menu channel will receive real-time updates.
+  Future<void> publishPortionUpdate({
+    required String storeId,
+    required String menuItemId,
+    required int portionsRemaining,
+  }) async {
+    final rt = _realtime;
+    if (rt == null) {
+      debugPrint('[AblyService] publishPortionUpdate skipped: not connected');
+      return;
+    }
+
+    try {
+      final channel = rt.channels.get('public:menu');
+      final data = {
+        'storeId': storeId,
+        'menuItemId': menuItemId,
+        'portionsRemaining': portionsRemaining,
+      };
+      await channel.publish(name: 'portion-update', data: data);
+      if (kDebugMode) {
+        debugPrint('[AblyService] Published portion update: $data');
+      }
+    } catch (e) {
+      debugPrint('[AblyService] Failed to publish portion update: $e');
+    }
+  }
+
+  /// Publishes a store status update (open/close).
+  /// FIX #3 — Instant store close/open notifications
+  /// Customers listening to the stores channel will receive real-time updates.
+  Future<void> publishStoreStatusUpdate({
+    required String storeId,
+    required bool isOpen,
+  }) async {
+    final rt = _realtime;
+    if (rt == null) {
+      debugPrint('[AblyService] publishStoreStatusUpdate skipped: not connected');
+      return;
+    }
+
+    try {
+      final channel = rt.channels.get('public:stores');
+      final data = {
+        'storeId': storeId,
+        'isOpen': isOpen,
+      };
+      await channel.publish(name: 'store-toggle', data: data);
+      if (kDebugMode) {
+        debugPrint('[AblyService] Published store status update: $data');
+      }
+    } catch (e) {
+      debugPrint('[AblyService] Failed to publish store status update: $e');
+    }
+  }
+
+  Future<void> publishFeedback({
+    required String storeId,
+    required String orderId,
+    required String feedback,
+    required int rating,
+  }) async {
+    final rt = _realtime;
+    if (rt == null) {
+      debugPrint('[AblyService] publishFeedback skipped: not connected');
+      return;
+    }
+
+    try {
+      final channel = rt.channels.get('store:$storeId:orders');
+      final data = {
+        'orderId': orderId,
+        'feedback': feedback,
+        'rating': rating,
+      };
+      await channel.publish(name: 'order-feedback', data: data);
+      debugPrint('[AblyService] Published feedback: $data');
+    } catch (e) {
+      debugPrint('[AblyService] Failed to publish feedback: $e');
+    }
+  }
+
+  // ── Public subscription API ─────────────────────────────────────────────────
+
+  Future<void> subscribeToRiderChannel(
+    String riderId, {
+    void Function(Map<String, dynamic> data)? onOrderUpdate,
+    void Function(Map<String, dynamic> data)? onNewJob,
+  }) async {
+    // FIX: Snapshot _realtime so a concurrent disconnect() can't null it
+    // between the guard and subsequent accesses (two await gaps in this method).
+    final rt = _realtime;
+    if (rt == null) return;
+
+    final riderChannelName = 'rider:$riderId';
+    final riderChannel = rt.channels.get(riderChannelName);
+    await _attachPush(riderChannel, riderChannelName);
+
+    // FIX: Re-check after async gap.
+    if (_realtime != rt) return;
+
+    // FIX: Rider subscriptions use _riderSubscriptionKeys so they can be
+    // cancelled independently via cancelRiderSubscriptions().
+    _attachListener(
+      channel: riderChannel,
+      channelName: riderChannelName,
+      eventName: 'order-update',
+      keySet: _riderSubscriptionKeys,
+      subscriptionList: _riderSubscriptions,
+      onMessage: (data) => onOrderUpdate?.call(data),
+    );
+
+    // FIX: Previously used _realtime! here — second force-unwrap after an
+    // await, so the same race applied. Now uses the captured rt.
+    const jobsChannelName = 'riders:available';
+    final jobsChannel = rt.channels.get(jobsChannelName);
+    await _attachPush(jobsChannel, jobsChannelName);
+
+    // FIX: Re-check after second async gap in this method.
+    if (_realtime != rt) return;
+
+    _attachListener(
+      channel: jobsChannel,
+      channelName: jobsChannelName,
+      eventName: 'new-job',
+      keySet: _riderSubscriptionKeys,
+      subscriptionList: _riderSubscriptions,
+      onMessage: (data) => onNewJob?.call(data),
+    );
+  }
+
+  // FIX: New method — cancels rider-specific subscriptions when a rider's role
+  // is revoked mid-session, without requiring a full disconnect.
+  void cancelRiderSubscriptions() {
+    _riderSubscriptionKeys.clear();
+    for (final sub in _riderSubscriptions) {
+      sub.cancel();
+    }
+    _riderSubscriptions.clear();
+    debugPrint('[AblyService] Rider subscriptions cancelled and keys cleared.');
+  }
+
+  Future<void> subscribeToStoreOrders(String storeId) async {
+    // FIX: Snapshot _realtime so a concurrent disconnect() can't null it
+    // between the guard and the force-unwrap after the await _attachPush gap.
+    final rt = _realtime;
+    if (rt == null) return;
+
+    final channelName = 'store:$storeId:orders';
+    final channel = rt.channels.get(channelName);
+    await _attachPush(channel, channelName);
+
+    // FIX: Re-check after async gap.
+    if (_realtime != rt) return;
+
+    void handleNewOrder(Map<String, dynamic> data) {
+      final orderId = _readOrderId(data);
+      if (orderId == null) {
+        debugPrint('[AblyService] new-order missing order id: $data');
+        return;
+      }
+      _emitOrderUpdate(orderId, OrderStatus.pending);
+    }
+
+    void handleOrderUpdate(Map<String, dynamic> data) {
+      final orderId = _readOrderId(data);
+      final status = _readOrderStatus(data);
+      if (orderId == null || status == null) {
+        debugPrint('[AblyService] order-update missing id/status: $data');
+        return;
+      }
+      _emitOrderUpdate(orderId, status);
+    }
+
+    for (final eventName in const ['new-order', 'new_order']) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: handleNewOrder,
+      );
+    }
+
+    for (final eventName in const ['order-update', 'order_update']) {
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: eventName,
+        onMessage: handleOrderUpdate,
+      );
+    }
+  }
+
+  // FIX: subscribeToUserOrders now warns if called before initAbly rather than
+  // silently registering a listener that will never fire.
+  void subscribeToUserOrders(
+    String userId,
+    void Function(String orderId, OrderStatus status) onUpdate,
+  ) {
+    addOrderListener(onUpdate);
+    if (_realtime != null) {
+      _subscribeUserChannel(userId);
+    } else {
+      debugPrint(
+        '[AblyService] subscribeToUserOrders called before initAbly — '
+        'listener registered but channel subscription deferred until connected.',
+      );
+    }
+  }
+
+  /// Allows guest users to subscribe to a specific order's updates.
+  void subscribeToSingleOrder(
+    String orderId,
+    void Function(String orderId, OrderStatus status) onUpdate,
+  ) {
+    addOrderListener(onUpdate);
+    final rt = _realtime;
+    if (rt != null) {
+      final channelName = 'order:$orderId';
+      final channel = rt.channels.get(channelName);
+
+      _attachListener(
+        channel: channel,
+        channelName: channelName,
+        eventName: 'order-update',
+        onMessage: (data) {
+          final status = _readOrderStatus(data);
+          if (status == null) {
+            debugPrint(
+              '[AblyService] single order update missing status: $data',
+            );
+            return;
+          }
+          _emitOrderUpdate(orderId, status);
+        },
+      );
+    }
+  }
+
+  String? _readOrderId(Map<String, dynamic> data) {
+    final direct =
+        data['orderId'] ?? data['order_id'] ?? data['id'] ?? data['_id'];
+    if (direct != null && direct.toString().isNotEmpty) {
+      return direct.toString();
+    }
+
+    final order = data['order'];
+    if (order is Map) {
+      final nested = order['orderId'] ?? order['id'] ?? order['_id'];
+      if (nested != null && nested.toString().isNotEmpty) {
+        return nested.toString();
+      }
+    }
+
+    return null;
+  }
+
+  OrderStatus? _readOrderStatus(Map<String, dynamic> data) {
+    final raw = data['status'] ?? data['orderStatus'];
+    if (raw != null && raw.toString().isNotEmpty) {
+      return OrderStatusExtension.fromString(raw.toString());
+    }
+
+    final order = data['order'];
+    if (order is Map) {
+      final nested = order['status'] ?? order['orderStatus'];
+      if (nested != null && nested.toString().isNotEmpty) {
+        return OrderStatusExtension.fromString(nested.toString());
+      }
+    }
+
+    return null;
+  }
+
+  void _emitOrderUpdate(String orderId, OrderStatus status) {
+    for (final cb in List.of(_orderListeners)) {
+      cb(orderId, status);
+    }
+  }
+
+  // ── Listener management ─────────────────────────────────────────────────────
+  //
+  // FIX: Document the function-reference constraint prominently. Dart's closure
+  // equality is identity-based, so callers MUST pass a stable reference (a named
+  // method or a stored closure) — not an inline lambda — or duplicates will accumulate.
+
+  /// Adds [l] to the order listener registry.
+  ///
+  /// IMPORTANT: Pass a stable function reference (a named method or a stored
+  /// closure), never an inline lambda. Dart compares closures by identity, so a
+  /// new lambda on every call will not be deduplicated and will accumulate.
+  void addOrderListener(void Function(String orderId, OrderStatus status) l) {
+    if (!_orderListeners.contains(l)) _orderListeners.add(l);
+  }
+
+  void removeOrderListener(
+    void Function(String orderId, OrderStatus status) l,
+  ) => _orderListeners.remove(l);
+
+  void addWalletListener(void Function() l) {
+    if (!_walletListeners.contains(l)) _walletListeners.add(l);
+  }
+
+  void removeWalletListener(void Function() l) => _walletListeners.remove(l);
+
+  /// Manually triggers all wallet update listeners.
+  /// Useful for refreshing the UI when a deposit is detected via FCM.
+  void notifyWalletUpdate() {
+    debugPrint('[AblyService] Manually triggering wallet update listeners');
+    for (final cb in _walletListeners) {
+      cb();
+    }
+  }
+
+  /// See [addOrderListener] for the stable-reference requirement.
+  void addMenuListener(
+    void Function(String storeId, String? menuItemId, bool? isReady, int? portionsRemaining) l,
+  ) {
+    if (!_menuListeners.contains(l)) _menuListeners.add(l);
+  }
+
+  void removeMenuListener(
+    void Function(String storeId, String? menuItemId, bool? isReady, int? portionsRemaining) l,
+  ) => _menuListeners.remove(l);
+
+  /// See [addOrderListener] for the stable-reference requirement.
+  void addStoreListener(void Function(String storeId, bool isOpen) l) {
+    if (!_storeListeners.contains(l)) _storeListeners.add(l);
+  }
+
+  void removeStoreListener(void Function(String storeId, bool isOpen) l) =>
+      _storeListeners.remove(l);
+
+  /// See [addOrderListener] for the stable-reference requirement.
+  void addRoleListener(void Function(String newRole) l) {
+    if (!_roleListeners.contains(l)) _roleListeners.add(l);
+  }
+
+  void removeRoleListener(void Function(String newRole) l) =>
+      _roleListeners.remove(l);
+
+  /// See [addOrderListener] for the stable-reference requirement.
+  void addNotificationListener(void Function(Map<String, dynamic> payload) l) {
+    if (!_notificationListeners.contains(l)) _notificationListeners.add(l);
+  }
+
+  void removeNotificationListener(
+    void Function(Map<String, dynamic> payload) l,
+  ) => _notificationListeners.remove(l);
+
+  /// See [addOrderListener] for the stable-reference requirement.
+  void addStoreApprovalListener(void Function(String storeId) l) {
+    if (!_approvalListeners.contains(l)) _approvalListeners.add(l);
+  }
+
+  void removeStoreApprovalListener(void Function(String storeId) l) =>
+      _approvalListeners.remove(l);
+
+  /// Removes a subscription key from the active set, allowing a channel/event
+  /// to be re-subscribed. Use this when you need to force a fresh subscription
+  /// (e.g. after reconnection where the key exists but no listener is active).
+  void removeSubscriptionKey(String key) {
+    _activeSubscriptionKeys.remove(key);
+    debugPrint('[AblyService] Removed subscription key: $key');
+  }
+
+  // ── Teardown ────────────────────────────────────────────────────────────────
+
+  /// Cancels every subscription atomically, then closes the Ably connection.
+  Future<void> disconnect() async {
+    // FIX: Cancel the connection subscription first to prevent re-connect events.
+    await _connectionSubscription?.cancel();
+    _connectionSubscription = null;
+
+    _cancelAllSubscriptions();
+
+    if (_realtime != null) {
+      try {
+        await _realtime!.close();
+      } catch (e) {
+        debugPrint('[AblyService] Error during disconnect: $e');
+      }
+    }
+
+    _realtime = null;
+    _currentUserId = null;
+    _orderListeners.clear();
+    _storeListeners.clear();
+    _roleListeners.clear();
+    _approvalListeners.clear();
+    _notificationListeners.clear();
+    _menuListeners.clear();
+    _riderSubscriptionKeys.clear();
+    _riderSubscriptions.clear();
+    _isConnecting = false;
+    debugPrint('[AblyService] Disconnected and listeners cleared.');
+  }
+
+  void _cancelAllSubscriptions() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    _subscriptions.clear();
+    _activeSubscriptionKeys.clear();
+
+    for (final sub in _riderSubscriptions) {
+      sub.cancel();
+    }
+    _riderSubscriptions.clear();
+    _riderSubscriptionKeys.clear();
+  }
+}
+
+final ablyService = AblyService.instance;

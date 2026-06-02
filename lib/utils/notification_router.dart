@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:campuschow/models/notification_item.dart';
 import 'package:campuschow/widgets/notifications/notification_detail_sheet.dart';
-import 'package:campuschow/store/lib/features/dashboard/presentation/store_order_detail_screen.dart';
+import 'package:campuschow/store/pages/features/dashboard/presentation/store_order_detail_screen.dart';
 import 'package:campuschow/router.dart';
 
 /// Routes notifications to the correct application flow.

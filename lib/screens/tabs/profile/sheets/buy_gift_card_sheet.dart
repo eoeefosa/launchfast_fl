@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:campuschow/providers/auth_provider.dart';
 import 'package:campuschow/repositories/wallet_repository.dart';
 import 'package:campuschow/services/api_service.dart';
-import 'package:campuschow/store/lib/core/services/notification_service.dart';
+import 'package:campuschow/store/pages/core/services/notification_service.dart';
 import 'package:campuschow/utils/ui_utils.dart';
 import 'package:campuschow/widgets/pin_entry_sheet.dart';
 import 'package:campuschow/widgets/set_pin_sheet.dart';

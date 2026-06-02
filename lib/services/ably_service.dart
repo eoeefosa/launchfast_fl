@@ -11,5 +11,5 @@
 //   lib/store/lib/core/services/ably_service.dart
 // ─────────────────────────────────────────────────────────────────────────────
 
-export 'package:campuschow/store/lib/core/services/ably_service.dart'
+export 'package:campuschow/store/pages/core/services/ably_service.dart'
     show AblyService, ablyService;

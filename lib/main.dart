@@ -28,16 +28,16 @@ import 'package:campuschow/providers/store_provider.dart';
 import 'package:campuschow/providers/theme_provider.dart';
 import 'package:campuschow/services/ably_service.dart';
 
-import 'package:campuschow/store/lib/core/providers/notification_provider.dart'
+import 'package:campuschow/store/pages/core/providers/notification_provider.dart'
     as dashboard_notifications;
-import 'package:campuschow/store/lib/core/services/notification_service.dart';
-import 'package:campuschow/store/lib/features/dashboard/presentation/staff_provider.dart'
+import 'package:campuschow/store/pages/core/services/notification_service.dart';
+import 'package:campuschow/store/pages/features/dashboard/presentation/staff_provider.dart'
     as dashboard_staff;
-import 'package:campuschow/store/lib/features/orders/presentation/cart_provider.dart'
+import 'package:campuschow/store/pages/features/orders/presentation/cart_provider.dart'
     as dashboard_cart;
-import 'package:campuschow/store/lib/features/orders/presentation/order_provider.dart'
+import 'package:campuschow/store/pages/features/orders/presentation/order_provider.dart'
     as dashboard_orders;
-import 'package:campuschow/store/lib/features/store/presentation/store_provider.dart'
+import 'package:campuschow/store/pages/features/store/presentation/store_provider.dart'
     as dashboard_store;
 
 // ─────────────────────────────────────────────────────────────────────────────

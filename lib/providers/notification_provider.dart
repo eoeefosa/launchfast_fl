@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:campuschow/services/api_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:campuschow/store/lib/core/services/notification_service.dart';
+import 'package:campuschow/store/pages/core/services/notification_service.dart';
 import 'package:campuschow/models/notification_entity.dart';
 import '../locator.dart';
 import '../models/notification_item.dart';
