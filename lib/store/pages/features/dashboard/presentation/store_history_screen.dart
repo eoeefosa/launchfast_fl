@@ -49,6 +49,8 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
   bool _isLoading = true;
   String _searchQuery = '';
   bool _groupByDay = true;
+  // FIX (listener hygiene): tracked so dispose() can remove cleanly.
+  bool _ablyListenerAttached = false;
 
   late final TabController _tabController;
   late final TextEditingController _searchController;
@@ -121,6 +123,11 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
       ..removeListener(_onTabChanged)
       ..dispose();
     _searchController.dispose();
+    // FIX: removeOrderListener so the global registry doesn't leak when this
+    // history tab is rebuilt across account switches.
+    if (_ablyListenerAttached) {
+      ablyService.removeOrderListener(_onAnyOrderUpdate);
+    }
     super.dispose();
   }
 
@@ -163,7 +170,13 @@ class _StoreHistoryScreenState extends State<StoreHistoryScreen>
   }
 
   void _subscribeAbly() {
-    ablyService.addOrderListener((orderId, status) => _loadOrders());
+    // FIX (listener hygiene): stable function ref instead of inline lambda.
+    ablyService.addOrderListener(_onAnyOrderUpdate);
+    _ablyListenerAttached = true;
+  }
+
+  void _onAnyOrderUpdate(String orderId, OrderStatus status) {
+    _loadOrders();
   }
 
   Future<void> _openPickupScanner() async {

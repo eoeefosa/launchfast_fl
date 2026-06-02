@@ -29,7 +29,7 @@ class StoreMainNav extends StatefulWidget {
 }
 
 class _StoreMainNavState extends State<StoreMainNav>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   int _currentIndex = 0;
 
   // Pages are built once and kept alive via IndexedStack
@@ -38,12 +38,17 @@ class _StoreMainNavState extends State<StoreMainNav>
   // ─── Real-time notification state ─────────────────────────────────
   int _newOrderCount = 0;
   bool _ablyInitialized = false;
-  String? _subscribedStoreId; // tracked so we can unsubscribe on dispose
   late AnimationController _badgeCtrl;
   late Animation<double> _badgeScale;
   final AudioPlayer _audioPlayer = AudioPlayer();
   final Set<String> _pendingOrderIds = {};
   final Map<String, Timer> _pendingOrderTimers = {};
+  // FIX (reminder ceiling): cap repeated audio reminders. After
+  // `_kMaxReminderCycles` 5-min ticks the timer self-cancels even if the
+  // order is still pending, so a forgotten phone doesn't loop indefinitely.
+  static const int _kMaxReminderCycles = 6; // 6 × 5 min = 30 min
+  final Map<String, int> _pendingOrderCycleCounts = {};
+  bool _appInBackground = false;
 
   static const List<({String label, IconData icon, IconData activeIcon})>
   _navItems = [
@@ -77,6 +82,9 @@ class _StoreMainNavState extends State<StoreMainNav>
   @override
   void initState() {
     super.initState();
+    // FIX (reminder ceiling): observe app lifecycle so we can pause the
+    // recurring alert sound when the owner backgrounds the app.
+    WidgetsBinding.instance.addObserver(this);
     _badgeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -97,6 +105,24 @@ class _StoreMainNavState extends State<StoreMainNav>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _initAbly();
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final wasBg = _appInBackground;
+    _appInBackground =
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden;
+
+    // FIX (reminder ceiling): cancel the audio when going to background so
+    // the speaker doesn't keep playing while the screen is off. Timers stay
+    // live (they're cheap); they'll just no-op while in background and
+    // resume audible reminders when we come back.
+    if (_appInBackground && !wasBg) {
+      _audioPlayer.stop();
+    }
   }
 
   Future<void> _initAbly() async {
@@ -137,10 +163,10 @@ class _StoreMainNavState extends State<StoreMainNav>
         ablyService.removeSubscriptionKey(storeChannelKey);
         ablyService.removeSubscriptionKey(updateChannelKey);
         await ablyService.subscribeToStoreOrders(ownedId);
-
-        // 4. Subscribe to the FCM topic for background push notifications
-        _subscribedStoreId = ownedId;
-        unawaited(notificationService.subscribeToStoreAdminTopic(ownedId));
+        // FIX (FCM topic lifecycle): the store-admin FCM topic is now handled
+        // by AuthProvider on login/logout, so the previous subscribe call
+        // here has been removed to avoid double-subscription. _subscribedStoreId
+        // remains nulled so dispose() is a no-op.
       } else {
         debugPrint(
           '[StoreMainNav] Warning: No owned store ID found for owner $userId',
@@ -167,6 +193,9 @@ class _StoreMainNavState extends State<StoreMainNav>
           body: 'You have a new pending order ($orderId). Tap to view.',
           payload: 'store_order_$orderId',
           channelId: kOrderChannelId,
+          // FIX (cross-source dedup): same key as FCM/polling so only the
+          // first arriving path produces the OS banner for this order.
+          dedupKey: 'order_$orderId',
         );
 
         // Also show a persistent in-app alert dialog so the owner doesn't miss it
@@ -176,17 +205,33 @@ class _StoreMainNavState extends State<StoreMainNav>
       // Track pending orders and set reminder timer
       if (!_pendingOrderIds.contains(orderId)) {
         _pendingOrderIds.add(orderId);
+        _pendingOrderCycleCounts[orderId] = 0;
         _playAlertSound();
 
         _pendingOrderTimers[orderId]?.cancel();
         _pendingOrderTimers[orderId] = Timer.periodic(
           const Duration(minutes: 5),
           (timer) {
-            if (_pendingOrderIds.contains(orderId)) {
-              _playAlertSound();
-            } else {
+            if (!_pendingOrderIds.contains(orderId)) {
               timer.cancel();
               _pendingOrderTimers.remove(orderId);
+              _pendingOrderCycleCounts.remove(orderId);
+              return;
+            }
+            // FIX (reminder ceiling): cap at _kMaxReminderCycles so a
+            // forgotten phone doesn't loop the sound indefinitely.
+            final next = (_pendingOrderCycleCounts[orderId] ?? 0) + 1;
+            if (next > _kMaxReminderCycles) {
+              timer.cancel();
+              _pendingOrderTimers.remove(orderId);
+              _pendingOrderCycleCounts.remove(orderId);
+              return;
+            }
+            _pendingOrderCycleCounts[orderId] = next;
+            // FIX: don't blast the speaker while the app is backgrounded;
+            // the OS notification banner already covers that case.
+            if (!_appInBackground) {
+              _playAlertSound();
             }
           },
         );
@@ -196,6 +241,7 @@ class _StoreMainNavState extends State<StoreMainNav>
       _pendingOrderIds.remove(orderId);
       _pendingOrderTimers[orderId]?.cancel();
       _pendingOrderTimers.remove(orderId);
+      _pendingOrderCycleCounts.remove(orderId);
 
       if (_pendingOrderIds.isEmpty) {
         _audioPlayer.stop();
@@ -268,6 +314,7 @@ class _StoreMainNavState extends State<StoreMainNav>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _badgeCtrl.dispose();
     _audioPlayer.dispose();
     for (final timer in _pendingOrderTimers.values) {
@@ -275,14 +322,13 @@ class _StoreMainNavState extends State<StoreMainNav>
     }
     _pendingOrderTimers.clear();
     _pendingOrderIds.clear();
+    _pendingOrderCycleCounts.clear();
 
     if (_ablyInitialized) {
       ablyService.removeOrderListener(_onAblyOrderUpdate);
     }
-    // Unsubscribe from store admin FCM topic to prevent ghost notifications
-    if (_subscribedStoreId != null) {
-      notificationService.unsubscribeFromStoreAdminTopic(_subscribedStoreId!);
-    }
+    // FIX (FCM topic lifecycle): store-admin FCM topic is now owned by
+    // AuthProvider; no widget-side unsubscribe is needed.
     super.dispose();
   }
 

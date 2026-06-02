@@ -50,6 +50,23 @@ class AblyService {
   /// Track unique subscription keys to prevent duplicate channel listeners.
   final Set<String> _activeSubscriptionKeys = {};
 
+  // FIX (reconnect resub): Track explicit subscriptions so the connection-state
+  // handler can replay them after a transparent disconnect/reconnect cycle.
+  // Auto-channels (user/stores/menu) are already replayed; these are the ones
+  // that were previously attached only once at app start and silently went
+  // dead on a network blip.
+  final Set<String> _activeStoreOrderIds = {};
+  final Map<
+    String,
+    ({
+      void Function(Map<String, dynamic> data)? onOrderUpdate,
+      void Function(Map<String, dynamic> data)? onNewJob,
+    })
+  >
+  _activeRiderSubs = {};
+  final Map<String, void Function(String orderId, OrderStatus status)>
+  _activeSingleOrderCallbacks = {};
+
   // ── Push failure callback ────────────────────────────────────────────────────
 
   // FIX: Push failures were previously silent. Callers can now be notified.
@@ -201,6 +218,37 @@ class AblyService {
             }),
           );
 
+          // FIX (reconnect resub): replay the explicit per-store / per-rider /
+          // per-order subscriptions. Without this, owners silently stopped
+          // receiving `new-order` events after any network blip.
+          for (final storeId in _activeStoreOrderIds.toList()) {
+            unawaited(
+              subscribeToStoreOrders(storeId).catchError((Object e) {
+                debugPrint(
+                  '[AblyService] replay subscribeToStoreOrders($storeId) failed: $e',
+                );
+              }),
+            );
+          }
+          for (final entry in _activeRiderSubs.entries.toList()) {
+            unawaited(
+              subscribeToRiderChannel(
+                entry.key,
+                onOrderUpdate: entry.value.onOrderUpdate,
+                onNewJob: entry.value.onNewJob,
+              ).catchError((Object e) {
+                debugPrint(
+                  '[AblyService] replay subscribeToRiderChannel(${entry.key}) failed: $e',
+                );
+              }),
+            );
+          }
+          for (final entry in _activeSingleOrderCallbacks.entries.toList()) {
+            // Safe to re-call: addOrderListener is idempotent on identical refs,
+            // and the channel-key guard prevents duplicate channel listeners.
+            subscribeToSingleOrder(entry.key, entry.value);
+          }
+
           // Ably push activation is disabled to prevent conflict and ANRs.
         }
 
@@ -210,6 +258,10 @@ class AblyService {
             '[AblyService] Connection ${change.current} — clearing subscription keys for re-subscribe on reconnect.',
           );
           _activeSubscriptionKeys.clear();
+          // FIX (reconnect resub): the rider key set lives on its own and was
+          // never cleared on transparent disconnects, so the channel-key guard
+          // refused to re-attach on reconnect. Clear it here too.
+          _riderSubscriptionKeys.clear();
         }
 
         if (change.current == ably.ConnectionState.failed) {
@@ -636,6 +688,13 @@ class AblyService {
     void Function(Map<String, dynamic> data)? onOrderUpdate,
     void Function(Map<String, dynamic> data)? onNewJob,
   }) async {
+    // FIX (reconnect resub): record before attaching so a disconnect mid-attach
+    // is still replayed on next connected event.
+    _activeRiderSubs[riderId] = (
+      onOrderUpdate: onOrderUpdate,
+      onNewJob: onNewJob,
+    );
+
     // FIX: Snapshot _realtime so a concurrent disconnect() can't null it
     // between the guard and subsequent accesses (two await gaps in this method).
     final rt = _realtime;
@@ -686,10 +745,17 @@ class AblyService {
       sub.cancel();
     }
     _riderSubscriptions.clear();
+    // FIX (reconnect resub): also forget the replay state so reconnects don't
+    // resurrect a subscription the caller explicitly cancelled.
+    _activeRiderSubs.clear();
     debugPrint('[AblyService] Rider subscriptions cancelled and keys cleared.');
   }
 
   Future<void> subscribeToStoreOrders(String storeId) async {
+    // FIX (reconnect resub): record before attaching so a disconnect mid-attach
+    // is still replayed on next connected event.
+    _activeStoreOrderIds.add(storeId);
+
     // FIX: Snapshot _realtime so a concurrent disconnect() can't null it
     // between the guard and the force-unwrap after the await _attachPush gap.
     final rt = _realtime;
@@ -762,6 +828,11 @@ class AblyService {
     String orderId,
     void Function(String orderId, OrderStatus status) onUpdate,
   ) {
+    // FIX (reconnect resub): record the callback so the channel can be
+    // re-attached after a transparent disconnect. `addOrderListener` itself is
+    // identity-deduplicated, so replay is safe.
+    _activeSingleOrderCallbacks[orderId] = onUpdate;
+
     addOrderListener(onUpdate);
     final rt = _realtime;
     if (rt != null) {
@@ -833,6 +904,24 @@ class AblyService {
   // equality is identity-based, so callers MUST pass a stable reference (a named
   // method or a stored closure) — not an inline lambda — or duplicates will accumulate.
 
+  // FIX (debug leak warning): in debug builds, if a listener registry grows
+  // past this threshold it almost always means a caller is registering inline
+  // lambdas (which Dart treats as unique closures every rebuild) and never
+  // removing them. Emits one debug line per add over the threshold.
+  static const int _kListenerLeakThreshold = 8;
+  void _warnIfLeaking(String registryName, int size) {
+    assert(() {
+      if (size > _kListenerLeakThreshold) {
+        debugPrint(
+          '[AblyService] WARN: $registryName has $size listeners — likely '
+          'an inline-lambda leak. Pass a stable function reference and '
+          'remove it in dispose(). Stack: ${StackTrace.current}',
+        );
+      }
+      return true;
+    }());
+  }
+
   /// Adds [l] to the order listener registry.
   ///
   /// IMPORTANT: Pass a stable function reference (a named method or a stored
@@ -840,6 +929,7 @@ class AblyService {
   /// new lambda on every call will not be deduplicated and will accumulate.
   void addOrderListener(void Function(String orderId, OrderStatus status) l) {
     if (!_orderListeners.contains(l)) _orderListeners.add(l);
+    _warnIfLeaking('_orderListeners', _orderListeners.length);
   }
 
   void removeOrderListener(
@@ -848,6 +938,7 @@ class AblyService {
 
   void addWalletListener(void Function() l) {
     if (!_walletListeners.contains(l)) _walletListeners.add(l);
+    _warnIfLeaking('_walletListeners', _walletListeners.length);
   }
 
   void removeWalletListener(void Function() l) => _walletListeners.remove(l);
@@ -866,6 +957,7 @@ class AblyService {
     void Function(String storeId, String? menuItemId, bool? isReady, int? portionsRemaining) l,
   ) {
     if (!_menuListeners.contains(l)) _menuListeners.add(l);
+    _warnIfLeaking('_menuListeners', _menuListeners.length);
   }
 
   void removeMenuListener(
@@ -875,6 +967,7 @@ class AblyService {
   /// See [addOrderListener] for the stable-reference requirement.
   void addStoreListener(void Function(String storeId, bool isOpen) l) {
     if (!_storeListeners.contains(l)) _storeListeners.add(l);
+    _warnIfLeaking('_storeListeners', _storeListeners.length);
   }
 
   void removeStoreListener(void Function(String storeId, bool isOpen) l) =>
@@ -883,6 +976,7 @@ class AblyService {
   /// See [addOrderListener] for the stable-reference requirement.
   void addRoleListener(void Function(String newRole) l) {
     if (!_roleListeners.contains(l)) _roleListeners.add(l);
+    _warnIfLeaking('_roleListeners', _roleListeners.length);
   }
 
   void removeRoleListener(void Function(String newRole) l) =>
@@ -891,6 +985,7 @@ class AblyService {
   /// See [addOrderListener] for the stable-reference requirement.
   void addNotificationListener(void Function(Map<String, dynamic> payload) l) {
     if (!_notificationListeners.contains(l)) _notificationListeners.add(l);
+    _warnIfLeaking('_notificationListeners', _notificationListeners.length);
   }
 
   void removeNotificationListener(
@@ -900,6 +995,7 @@ class AblyService {
   /// See [addOrderListener] for the stable-reference requirement.
   void addStoreApprovalListener(void Function(String storeId) l) {
     if (!_approvalListeners.contains(l)) _approvalListeners.add(l);
+    _warnIfLeaking('_approvalListeners', _approvalListeners.length);
   }
 
   void removeStoreApprovalListener(void Function(String storeId) l) =>
@@ -916,6 +1012,14 @@ class AblyService {
   // ── Teardown ────────────────────────────────────────────────────────────────
 
   /// Cancels every subscription atomically, then closes the Ably connection.
+  ///
+  /// IMPORTANT: this method clears every listener registry (orders, store,
+  /// role, wallet, menu, approval, notifications) and tears the socket down.
+  /// It is only safe to call from the root auth lifecycle (e.g.
+  /// `AuthProvider.logout`). Screens and feature-providers must remove their
+  /// own listeners with the matching `removeXxxListener` API in `dispose()`
+  /// and must never call `disconnect()` — doing so silently kills every other
+  /// screen's real-time updates.
   Future<void> disconnect() async {
     // FIX: Cancel the connection subscription first to prevent re-connect events.
     await _connectionSubscription?.cancel();
@@ -939,8 +1043,14 @@ class AblyService {
     _approvalListeners.clear();
     _notificationListeners.clear();
     _menuListeners.clear();
+    _walletListeners.clear();
     _riderSubscriptionKeys.clear();
     _riderSubscriptions.clear();
+    // FIX (reconnect resub): forget replay state on full disconnect; callers
+    // must re-subscribe explicitly after the next initAbly().
+    _activeStoreOrderIds.clear();
+    _activeRiderSubs.clear();
+    _activeSingleOrderCallbacks.clear();
     _isConnecting = false;
     debugPrint('[AblyService] Disconnected and listeners cleared.');
   }

@@ -21,8 +21,24 @@ class NotificationProvider with ChangeNotifier {
 
   void _initListeners() {
     notificationService.addListener((payload) {
+      // FIX (temp-id reconciliation): when the backend supplies a stable id in
+      // the payload, prefix the temp item with it so the next /notifications
+      // refresh can swap by id (`temp_<backendId>` -> `<backendId>`) instead
+      // of relying on fragile title/body string matching.
+      // FIX (§5.5): publishGeneralNotification uses `notifId` as the key for
+      // the persisted Notification document; legacy paths use `id` / `_id`.
+      final backendId =
+          (payload['notifId'] ??
+                  payload['id'] ??
+                  payload['notificationId'] ??
+                  payload['_id'] ??
+                  '')
+              .toString();
+      final tempId = backendId.isNotEmpty
+          ? 'temp_$backendId'
+          : 'temp_${DateTime.now().millisecondsSinceEpoch}';
       final notification = NotificationItem(
-        id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+        id: tempId,
         title: payload['title'] ?? 'New Update',
         message: payload['body'] ?? payload['message'] ?? '',
         type: _parseNotificationType(payload['type']?.toString()),
@@ -76,18 +92,31 @@ class NotificationProvider with ChangeNotifier {
           final backendTitle = item['title'] ?? '';
           final backendBody = item['body'] ?? '';
 
-          final isLocallyRead = _notifications.any((n) => 
-               n.isRead && (n.id == backendId || (n.id.startsWith('temp_') && n.title == backendTitle && n.message == backendBody))
-          );
-          
+          // FIX (temp-id reconciliation): match by id (and the `temp_<id>`
+          // variant emitted by _initListeners) instead of fragile string
+          // comparison on title/body. The legacy fallback is kept for items
+          // that landed before the backend started attaching a stable id.
+          final isLocallyRead = _notifications.any((n) {
+            if (!n.isRead) return false;
+            if (n.id == backendId) return true;
+            if (backendId.isNotEmpty && n.id == 'temp_$backendId') return true;
+            // Legacy fallback for items missing a backend id.
+            return n.id.startsWith('temp_') &&
+                n.title == backendTitle &&
+                n.message == backendBody;
+          });
+
           final bool finalIsRead = (item['isRead'] == true) || isLocallyRead;
-          
+
           if (isLocallyRead && item['isRead'] != true && backendId.isNotEmpty) {
-             () async {
-               try {
-                 await apiService.dio.patch('/notifications', data: {'notificationId': backendId});
-               } catch (_) {}
-             }();
+            () async {
+              try {
+                await apiService.dio.patch(
+                  '/notifications',
+                  data: {'notificationId': backendId},
+                );
+              } catch (_) {}
+            }();
           }
 
           return NotificationItem(

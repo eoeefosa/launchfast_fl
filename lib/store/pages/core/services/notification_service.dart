@@ -129,6 +129,26 @@ class NotificationService {
   static const int _kMaxHandledIds = 100;
   final Set<String> _handledMessageIds = {};
 
+  // FIX (cross-source dedup): a single new order can arrive via three paths in
+  // parallel (Ably channel push, FCM data message, 30 s order poll). The
+  // existing `_handledMessageIds` only catches FCM-vs-FCM. This map dedupes
+  // OS-level notifications by an arbitrary key (e.g. `order_<id>`) within a
+  // short window so the owner gets one banner, not three.
+  static const Duration _kDedupWindow = Duration(seconds: 90);
+  final Map<String, DateTime> _dedupKeyTimestamps = {};
+  final Map<String, int> _dedupKeyLocalIds = {};
+
+  bool _shouldSuppressDup(String dedupKey) {
+    final ts = _dedupKeyTimestamps[dedupKey];
+    if (ts == null) return false;
+    if (DateTime.now().difference(ts) > _kDedupWindow) {
+      _dedupKeyTimestamps.remove(dedupKey);
+      _dedupKeyLocalIds.remove(dedupKey);
+      return false;
+    }
+    return true;
+  }
+
   // Map of remote notification keys (backend IDs or FCM messageIds) to the
   // local integer notification IDs created by the plugin. Used to cancel
   // specific delivered notifications when the user views them in-app.
@@ -630,6 +650,9 @@ class NotificationService {
           payload: orderId == null ? null : 'store_order_$orderId',
           remoteId: message.data['id']?.toString() ?? message.messageId,
           channelId: kOrderChannelId,
+          // FIX (cross-source dedup): the same order may already have produced
+          // a banner via Ably; collapse them to one.
+          dedupKey: orderId == null ? null : 'order_$orderId',
         );
 
       case 'payment_success':
@@ -875,10 +898,21 @@ class NotificationService {
     String? payload,
     String? remoteId,
     String channelId = kHighImportanceChannelId,
+    String? dedupKey,
   }) async {
     debugPrint(
-      '[NotificationService] showNotification title=$title body=$body payload=$payload channelId=$channelId',
+      '[NotificationService] showNotification title=$title body=$body payload=$payload channelId=$channelId dedupKey=$dedupKey',
     );
+    // FIX (cross-source dedup): if we've already posted a notification for
+    // this dedupKey within the window, return the previous localId without
+    // emitting another OS banner.
+    if (dedupKey != null && _shouldSuppressDup(dedupKey)) {
+      final existing = _dedupKeyLocalIds[dedupKey];
+      debugPrint(
+        '[NotificationService] suppressed duplicate for dedupKey=$dedupKey (existing localId=$existing)',
+      );
+      return existing ?? -1;
+    }
     final prefs = await SharedPreferences.getInstance();
     final soundEnabled = prefs.getBool(_kSoundPrefKey) ?? true;
     final soundFile = soundEnabled ? 'order_sound' : null;
@@ -923,6 +957,12 @@ class NotificationService {
         _remoteToLocal[remoteId] = localId;
         await _saveRemoteToLocal();
       } catch (_) {}
+    }
+    // FIX (cross-source dedup): record the timestamp + localId so subsequent
+    // calls within the window are suppressed and can be cancelled together.
+    if (dedupKey != null) {
+      _dedupKeyTimestamps[dedupKey] = DateTime.now();
+      _dedupKeyLocalIds[dedupKey] = localId;
     }
     // Analytics: count impression for gentle reminders
     if (channelId == kGentleChannelId) {

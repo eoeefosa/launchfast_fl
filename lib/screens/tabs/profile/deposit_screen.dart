@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../repositories/wallet_repository.dart';
 import '../../../services/api_service.dart';
@@ -42,7 +43,12 @@ class _DepositScreenState extends State<DepositScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Deposit Funds')),
+      appBar: AppBar(
+        title: const Text('Deposit Funds'),
+        systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
+      ),
       body: Padding(
         padding: EdgeInsets.all(20.r),
         child: Column(

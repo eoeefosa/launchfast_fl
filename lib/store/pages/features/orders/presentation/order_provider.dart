@@ -9,6 +9,12 @@ import 'package:campuschow/store/pages/core/services/ably_service.dart';
 class OrderProvider with ChangeNotifier {
   List<Order> _orders = [];
   bool _isLoading = false;
+  // FIX (listener hygiene): a stable function reference so addOrderListener
+  // is identity-deduplicated across reconnects and reinitialisations. An
+  // inline lambda would register a new closure every call → leaks.
+  late final void Function(String orderId, OrderStatus status)
+  _onAblyOrderUpdate = updateOrderStatus;
+  bool _ablyListenerAttached = false;
 
   List<Order> get orders => _orders;
   bool get isLoading => _isLoading;
@@ -19,9 +25,9 @@ class OrderProvider with ChangeNotifier {
 
   void initializeAbly(String userId) {
     ablyService.initAbly(userId).then((_) {
-      ablyService.subscribeToUserOrders(userId, (orderId, status) {
-        updateOrderStatus(orderId, status);
-      });
+      // FIX: pass the stored stable callback (was inline lambda).
+      ablyService.subscribeToUserOrders(userId, _onAblyOrderUpdate);
+      _ablyListenerAttached = true;
     });
   }
 
@@ -145,7 +151,24 @@ class OrderProvider with ChangeNotifier {
     _orders = [];
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('launch-fast-orders');
-    ablyService.disconnect();
+    // FIX: never call ablyService.disconnect() from a feature provider — it
+    // tears down every other screen's listeners. Removing only our own
+    // listener is the correct teardown here.
+    if (_ablyListenerAttached) {
+      ablyService.removeOrderListener(_onAblyOrderUpdate);
+      _ablyListenerAttached = false;
+    }
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    // FIX: mirror the cleanup on widget-tree teardown so listeners don't leak
+    // across provider lifetimes.
+    if (_ablyListenerAttached) {
+      ablyService.removeOrderListener(_onAblyOrderUpdate);
+      _ablyListenerAttached = false;
+    }
+    super.dispose();
   }
 }

@@ -696,6 +696,24 @@ class AuthProvider extends ChangeNotifier {
       }),
     );
 
+    // FIX (FCM topic lifecycle): subscribe the store-admin FCM topic at the
+    // auth layer rather than from StoreMainNav.initState. Previously the
+    // topic only got cleaned up if the widget reached dispose, so logouts
+    // that simply rebuilt the route tree (rather than popping) left the
+    // previous owner's topic active for the next account.
+    final storeId = _user?.adminStore;
+    if (storeId != null && storeId.isNotEmpty) {
+      unawaited(
+        _notificationService.subscribeToStoreAdminTopic(storeId).catchError((
+          Object e,
+        ) {
+          if (kDebugMode) {
+            debugPrint('[AuthProvider] FCM store-admin subscribe failed: $e');
+          }
+        }),
+      );
+    }
+
     _ablyListenersAttached = true;
   }
 
@@ -1031,6 +1049,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final userId = _user?.id;
+      final storeId = _user?.adminStore;
       if (userId != null) {
         unawaited(
           _notificationService.unsubscribeFromUserTopic(userId).catchError(
@@ -1038,6 +1057,21 @@ class AuthProvider extends ChangeNotifier {
               if (kDebugMode) debugPrint('[AuthProvider] FCM unsubscribe failed: $e');
             },
           ),
+        );
+      }
+      // FIX (FCM topic lifecycle): mirror the subscribe in _initializeAbly so
+      // an owner's store topic is dropped before the next account logs in.
+      if (storeId != null && storeId.isNotEmpty) {
+        unawaited(
+          _notificationService
+              .unsubscribeFromStoreAdminTopic(storeId)
+              .catchError((Object e) {
+            if (kDebugMode) {
+              debugPrint(
+                '[AuthProvider] FCM store-admin unsubscribe failed: $e',
+              );
+            }
+          }),
         );
       }
 

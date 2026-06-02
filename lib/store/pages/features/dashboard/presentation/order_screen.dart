@@ -253,6 +253,9 @@ class _StoreOrdersScreenState extends State<StoreOrdersScreen>
         body: 'You have a new pending order. Tap to view.',
         payload: 'store_order_${order.id}',
         channelId: kOrderChannelId,
+        // FIX (cross-source dedup): same key as Ably/FCM so polling can't
+        // race with the realtime path and produce a second banner.
+        dedupKey: 'order_${order.id}',
       );
       if (mounted) {
         setState(() => _hasNewOrder = true);

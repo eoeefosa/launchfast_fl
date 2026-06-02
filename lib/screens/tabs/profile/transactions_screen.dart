@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'widgets/transaction_history_section.dart';
@@ -18,6 +19,9 @@ class TransactionsScreen extends StatelessWidget {
         scrolledUnderElevation: 0,
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         leading: IconButton(
           onPressed: () => context.pop(),
           icon: Icon(

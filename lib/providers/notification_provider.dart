@@ -105,8 +105,23 @@ class NotificationProvider with ChangeNotifier {
       debugPrint('[NotificationProvider] Real-time payload received');
     }
 
+    // FIX (§5.5): prefer the backend's stable id so the next /notifications
+    // refresh can reconcile by id instead of fragile title/body matching.
+    // The backend's publishGeneralNotification emits `notifId`; some legacy
+    // paths emit `id` / `notificationId` / `_id`. Check them all.
+    final backendId =
+        (payload['notifId'] ??
+                payload['id'] ??
+                payload['notificationId'] ??
+                payload['_id'] ??
+                '')
+            .toString();
+    final tempId = backendId.isNotEmpty
+        ? 'temp_$backendId'
+        : 'temp_${DateTime.now().millisecondsSinceEpoch}';
+
     final notification = NotificationItem(
-      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      id: tempId,
       title: payload['title'] ?? 'New Update',
       message: payload['body'] ?? payload['message'] ?? '',
       type: _parseNotificationType(payload['type']?.toString()),
@@ -180,14 +195,18 @@ class NotificationProvider with ChangeNotifier {
 
           // Preserve read state for entries that were marked locally
           // before the backend confirmed the update.
-          final isLocallyRead = _notifications.any(
-            (n) =>
-                n.isRead &&
-                (n.id == backendId ||
-                    (n.id.startsWith('temp_') &&
-                        n.title == backendTitle &&
-                        n.message == backendBody)),
-          );
+          // FIX (§5.5): match by id and the `temp_<id>` prefix added in
+          // _processPayload, instead of relying solely on fragile title/body
+          // comparison. The legacy string fallback is kept for older items
+          // that landed before the backend started attaching `notifId`.
+          final isLocallyRead = _notifications.any((n) {
+            if (!n.isRead) return false;
+            if (n.id == backendId) return true;
+            if (backendId.isNotEmpty && n.id == 'temp_$backendId') return true;
+            return n.id.startsWith('temp_') &&
+                n.title == backendTitle &&
+                n.message == backendBody;
+          });
 
           final bool finalIsRead = (item['isRead'] == true) || isLocallyRead;
 

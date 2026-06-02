@@ -30,11 +30,22 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
   String? _storeId;
   String? _storeName;
   bool _isOpen = false;
+  // FIX (listener hygiene): tracked so dispose() can remove cleanly.
+  bool _ablyListenersAttached = false;
 
   @override
   void initState() {
     super.initState();
     _init();
+  }
+
+  @override
+  void dispose() {
+    if (_ablyListenersAttached) {
+      ablyService.removeOrderListener(_onAblyOrderUpdate);
+      ablyService.removeStoreListener(_onStoreToggle);
+    }
+    super.dispose();
   }
 
   Future<void> _init() async {
@@ -114,26 +125,32 @@ class _WorkerDashboardHomeState extends State<WorkerDashboardHome>
   }
 
   void _subscribeAbly() {
-    ablyService.addOrderListener((orderId, status) {
-      _loadStats();
-      if (!mounted) return;
+    // FIX (listener hygiene): stable function refs instead of inline lambdas
+    // so addXxxListener identity-dedup actually works.
+    ablyService.addOrderListener(_onAblyOrderUpdate);
+    ablyService.addStoreListener(_onStoreToggle);
+    _ablyListenersAttached = true;
+  }
 
-      final index = _recentOrders.indexWhere((order) => order.id == orderId);
-      if (index != -1) {
-        setState(() {
-          _recentOrders[index] = _recentOrders[index].copyWith(status: status);
-        });
-        return;
-      }
+  void _onAblyOrderUpdate(String orderId, OrderStatus status) {
+    _loadStats();
+    if (!mounted) return;
 
-      _loadRecentOrders(showLoading: false);
-    });
+    final index = _recentOrders.indexWhere((order) => order.id == orderId);
+    if (index != -1) {
+      setState(() {
+        _recentOrders[index] = _recentOrders[index].copyWith(status: status);
+      });
+      return;
+    }
 
-    ablyService.addStoreListener((storeId, isOpen) {
-      if (storeId == _storeId && mounted) {
-        setState(() => _isOpen = isOpen);
-      }
-    });
+    _loadRecentOrders(showLoading: false);
+  }
+
+  void _onStoreToggle(String storeId, bool isOpen) {
+    if (storeId == _storeId && mounted) {
+      setState(() => _isOpen = isOpen);
+    }
   }
 
   @override

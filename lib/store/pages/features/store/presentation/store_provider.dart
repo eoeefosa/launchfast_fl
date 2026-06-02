@@ -73,48 +73,68 @@ class StoreProvider extends BaseProvider {
   }
 
   void _initStoreListener() {
-    ablyService.addStoreListener((id, isOpen) {
-      final i = _stores.indexWhere((s) => s.id == id);
-      if (i != -1) {
-        final oldStatus = _stores[i].isOpen;
-        _stores[i] = _stores[i].copyWith(isOpen: isOpen);
-        if (_stores[i].id == _activeStoreId) _activeStore = _stores[i];
-        notifyListeners();
+    // FIX (listener hygiene): stable function refs instead of inline lambdas.
+    // addXxxListener identity-dedups, so multiple provider instances or hot
+    // reloads won't accumulate duplicate registrations.
+    ablyService.addStoreListener(_onAblyStoreToggle);
+    ablyService.addMenuListener(_onAblyMenuUpdate);
+  }
 
-        if (oldStatus && !isOpen) {
-          _alertController.add('STORE_CLOSED:$id');
-        }
+  void _onAblyStoreToggle(String id, bool isOpen) {
+    final i = _stores.indexWhere((s) => s.id == id);
+    if (i != -1) {
+      final oldStatus = _stores[i].isOpen;
+      _stores[i] = _stores[i].copyWith(isOpen: isOpen);
+      if (_stores[i].id == _activeStoreId) _activeStore = _stores[i];
+      notifyListeners();
+
+      if (oldStatus && !isOpen) {
+        _alertController.add('STORE_CLOSED:$id');
       }
-    });
+    }
+  }
 
-    ablyService.addMenuListener((storeId, menuItemId, isReady, portionsRemaining) {
-      if (menuItemId != null && (isReady != null || portionsRemaining != null)) {
-        bool updatedAny = false;
-        for (int i = 0; i < _menuItems.length; i++) {
-          if (_menuItems[i].id == menuItemId ||
-              _menuItems[i].id == '${menuItemId}_turkey') {
-            final oldReady = _menuItems[i].isReady;
-            final newReady = isReady ?? (_menuItems[i].portionsRemaining != null ? (_menuItems[i].portionsRemaining! > 0) : _menuItems[i].isReady);
-            final newPortions = portionsRemaining ?? _menuItems[i].portionsRemaining;
-            _menuItems[i] = _menuItems[i].copyWith(isReady: newReady, portionsRemaining: newPortions);
-            updatedAny = true;
-            if (oldReady && !newReady) {
-              _alertController.add('ITEM_UNAVAILABLE:${_menuItems[i].id}');
-            }
+  void _onAblyMenuUpdate(
+    String storeId,
+    String? menuItemId,
+    bool? isReady,
+    int? portionsRemaining,
+  ) {
+    if (menuItemId != null && (isReady != null || portionsRemaining != null)) {
+      bool updatedAny = false;
+      for (int i = 0; i < _menuItems.length; i++) {
+        if (_menuItems[i].id == menuItemId ||
+            _menuItems[i].id == '${menuItemId}_turkey') {
+          final oldReady = _menuItems[i].isReady;
+          final newReady = isReady ??
+              (_menuItems[i].portionsRemaining != null
+                  ? (_menuItems[i].portionsRemaining! > 0)
+                  : _menuItems[i].isReady);
+          final newPortions = portionsRemaining ?? _menuItems[i].portionsRemaining;
+          _menuItems[i] = _menuItems[i]
+              .copyWith(isReady: newReady, portionsRemaining: newPortions);
+          updatedAny = true;
+          if (oldReady && !newReady) {
+            _alertController.add('ITEM_UNAVAILABLE:${_menuItems[i].id}');
           }
         }
-        if (updatedAny) {
-          notifyListeners();
-        }
-      } else {
-        // structural change
-        refreshData();
       }
-    });
+      if (updatedAny) {
+        notifyListeners();
+      }
+    } else {
+      // structural change
+      refreshData();
+    }
   }
 
   @override
   void dispose() {
+    // FIX: remove our own Ably listeners on teardown. Previously this provider
+    // never unregistered, so reloading the provider (e.g. account switch)
+    // appended new copies and the old ones kept firing on stale state.
+    ablyService.removeStoreListener(_onAblyStoreToggle);
+    ablyService.removeMenuListener(_onAblyMenuUpdate);
     _alertController.close();
     super.dispose();
   }

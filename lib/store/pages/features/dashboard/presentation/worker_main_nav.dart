@@ -24,6 +24,8 @@ class _WorkerMainNavState extends State<WorkerMainNav>
   int _currentIndex = 0;
   int _newOrderCount = 0;
   bool _ablyInitialized = false;
+  // FIX (listener hygiene): tracked so dispose() can remove it cleanly.
+  bool _orderListenerAttached = false;
 
   late AnimationController _badgeCtrl;
   late Animation<double> _badgeScale;
@@ -86,13 +88,11 @@ class _WorkerMainNavState extends State<WorkerMainNav>
       await ablyService.initAbly(userId);
       if (!mounted) return;
 
-      // Listen for orders
-      ablyService.addOrderListener((orderId, status) {
-        if (status == OrderStatus.pending && mounted) {
-          setState(() => _newOrderCount++);
-          _badgeCtrl.repeat(reverse: true);
-        }
-      });
+      // FIX (listener hygiene): stable function reference instead of inline
+      // lambda. addOrderListener dedupes by identity, so repeated _initAbly
+      // attempts won't accumulate listeners.
+      ablyService.addOrderListener(_onAblyOrderUpdate);
+      _orderListenerAttached = true;
 
       // Find the store assigned to this worker and subscribe
       if (storeProvider.stores.isEmpty) {
@@ -110,9 +110,21 @@ class _WorkerMainNavState extends State<WorkerMainNav>
     } catch (_) {}
   }
 
+  void _onAblyOrderUpdate(String orderId, OrderStatus status) {
+    if (status == OrderStatus.pending && mounted) {
+      setState(() => _newOrderCount++);
+      _badgeCtrl.repeat(reverse: true);
+    }
+  }
+
   @override
   void dispose() {
     _badgeCtrl.dispose();
+    // FIX: removeOrderListener so the global registry doesn't leak when this
+    // widget is torn down (e.g. account switch).
+    if (_orderListenerAttached) {
+      ablyService.removeOrderListener(_onAblyOrderUpdate);
+    }
     super.dispose();
   }
 
