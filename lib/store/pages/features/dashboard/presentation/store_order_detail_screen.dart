@@ -37,17 +37,26 @@ class _StoreOrderDetailScreenState extends State<StoreOrderDetailScreen> {
       Order? found;
 
       // 1. Try via provider (fast when store is already initialised).
-      final provider = context.read<StoreProvider>();
-      if (provider.ownedStoreId != null) {
-        final orders = await provider.fetchStoreOrders();
-        found = orders.cast<Order?>().firstWhere(
-          (o) => o!.id == widget.orderId,
-          orElse: () => null,
-        );
+      //    Wrapped in try-catch because the screen can be pushed from a
+      //    notification tap via rootNavigatorKey, which is outside the
+      //    provider scope — context.read<StoreProvider>() would throw
+      //    ProviderNotFoundException and crash the app.
+      try {
+        final provider = context.read<StoreProvider>();
+        if (provider.ownedStoreId != null) {
+          final orders = await provider.fetchStoreOrders();
+          found = orders.cast<Order?>().firstWhere(
+            (o) => o!.id == widget.orderId,
+            orElse: () => null,
+          );
+        }
+      } catch (_) {
+        // Provider not in scope (notification cold-launch) — fall through to
+        // the direct API call below.
       }
 
-      // 2. Fallback: direct API call — handles cold-launch where setOwner()
-      //    hasn't run yet, or admin/notification taps outside the store shell.
+      // 2. Direct API call — always used when provider lookup fails or returns
+      //    null (notification taps, cold launches, admin context, etc.)
       if (found == null) {
         try {
           final response =
@@ -86,14 +95,33 @@ class _StoreOrderDetailScreenState extends State<StoreOrderDetailScreen> {
     String? rejectionReason,
   }) async {
     try {
-      final provider = context.read<StoreProvider>();
-      await provider.updateOrderStatus(
-        orderId,
-        status.backendName,
-        rejectionReason: rejectionReason,
-      );
+      // Try provider first (fastest path, in-memory state update).
+      // Falls back to a direct API call when provider is out of scope
+      // (notification-launched screen lives outside the provider tree).
+      bool updatedViaProvider = false;
+      try {
+        final provider = context.read<StoreProvider>();
+        await provider.updateOrderStatus(
+          orderId,
+          status.backendName,
+          rejectionReason: rejectionReason,
+        );
+        updatedViaProvider = true;
+      } catch (_) {
+        // Provider not available — use direct API call.
+      }
+
+      if (!updatedViaProvider) {
+        await apiService.dio.patch(
+          '/orders/$orderId/status',
+          data: {
+            'status': status.backendName,
+            'rejectionReason': rejectionReason,
+          },
+        );
+      }
+
       if (!mounted) return;
-      // Reload via same resilient path used during initial load.
       await _loadOrder();
       if (!mounted) return;
       if (_order != null) {

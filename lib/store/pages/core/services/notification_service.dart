@@ -730,12 +730,26 @@ class NotificationService {
     // Determine whether this app instance is acting as a store/admin context.
     // We detect this from the current GoRouter location rather than injecting
     // the AuthProvider, which may not be available in all call paths.
-    final currentLocation =
-        GoRouter.of(context).routeInformationProvider.value.uri.path;
-    final isStoreContext =
-        currentLocation.startsWith(routeStoreDashboard) ||
-        currentLocation.startsWith(routeWorkerDashboard) ||
-        currentLocation.startsWith(routeAdminDashboard);
+    //
+    // IMPORTANT: Use maybeOf (not of) — on iOS cold-launch from a notification
+    // tap, GoRouter's InheritedGoRouter widget may not have mounted yet even
+    // after the navigator is ready.  GoRouter.of() in release mode throws a
+    // null-check crash in that window.  We default to false (customer context)
+    // so the fallback StoreOrderDetailScreen path still handles store orders.
+    bool isStoreContext = false;
+    try {
+      final router = GoRouter.maybeOf(context);
+      if (router != null) {
+        final currentLocation =
+            router.routeInformationProvider.value.uri.path;
+        isStoreContext =
+            currentLocation.startsWith(routeStoreDashboard) ||
+            currentLocation.startsWith(routeWorkerDashboard) ||
+            currentLocation.startsWith(routeAdminDashboard);
+      }
+    } catch (_) {
+      // GoRouter not yet reachable — treat as customer context.
+    }
 
     // ── Deposit / wallet ─────────────────────────────────────────────────────
     if (type == 'deposit' || cleanId == 'wallet') {
