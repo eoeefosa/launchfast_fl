@@ -94,6 +94,14 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () => context.push('/profile/buy-gift-card'),
               ),
               ProfileSettingsTile(
+                icon: isIOS
+                    ? CupertinoIcons.gift_alt
+                    : Icons.wallet_giftcard,
+                title: 'My Gift Cards',
+                subtitle: 'View, share and track your gift cards',
+                onTap: () => context.push('/profile/gift-cards'),
+              ),
+              ProfileSettingsTile(
                 icon: isIOS ? CupertinoIcons.lock : Icons.lock_outline,
                 title: user.hasTransactionPin ? 'Change Transaction PIN' : 'Set Transaction PIN',
                 subtitle: user.hasTransactionPin

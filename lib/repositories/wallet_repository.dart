@@ -1,3 +1,4 @@
+import '../models/gift_card.dart';
 import '../services/api_service.dart';
 
 class WalletRepository {
@@ -39,6 +40,15 @@ class WalletRepository {
 
   Future<void> verifyTransactionPin(String pin) async {
     await apiService.dio.post('/wallet/verify-pin', data: {'pin': pin});
+  }
+
+  /// Returns the authenticated user's gift cards (active + used).
+  Future<List<GiftCard>> fetchGiftCards() async {
+    final res = await apiService.dio.get('/wallet/gift-cards');
+    final list = (res.data?['giftCards'] ?? res.data) as List<dynamic>? ?? [];
+    return list
+        .map((e) => GiftCard.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<String> topUp(double amount) async {

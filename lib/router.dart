@@ -33,6 +33,7 @@ import 'screens/tabs/profile/transfer_screen.dart';
 import 'screens/tabs/profile/deposit_screen.dart';
 import 'screens/tabs/profile/redeem_gift_card_screen.dart';
 import 'screens/tabs/profile/buy_gift_card_screen.dart';
+import 'screens/tabs/profile/gift_cards_screen.dart';
 import 'screens/tabs/profile/cashback_winners_screen.dart';
 
 // ── Store-owner / worker screens ─────────────────────────────────────────────
@@ -76,6 +77,7 @@ const routeDeposit = '/profile/deposit';
 const routeTransfer = '/profile/transfer';
 const routeRedeemGiftCard = '/profile/redeem-gift-card';
 const routeBuyGiftCard = '/profile/buy-gift-card';
+const routeGiftCards = '/profile/gift-cards';
 const routeCashbackWinners = '/profile/cashback-winners';
 
 // Dynamic customer routes
@@ -346,6 +348,10 @@ role: ${auth.user?.role}
                   GoRoute(
                     path: 'buy-gift-card',
                     builder: (_, _) => const BuyGiftCardScreen(),
+                  ),
+                  GoRoute(
+                    path: 'gift-cards',
+                    builder: (_, _) => const GiftCardsScreen(),
                   ),
                   GoRoute(
                     path: 'cashback-winners',

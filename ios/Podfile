@@ -44,6 +44,24 @@ post_install do |installer|
       config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = ''
       config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
       config.build_settings['GENERATE_INFOPLIST_FILE'] = 'NO'
+
+      # FIX (msgpack VerifyModule): msgpack's public headers use double-quoted
+      # includes ("Foo.h") which Xcode 26's modules-verifier rejects in
+      # framework headers. Setting DEFINES_MODULE=NO prevents CocoaPods from
+      # generating a module map and skips the VerifyModule build phase
+      # entirely. The pod still compiles fine as a static library.
+      if target.name == 'msgpack'
+        config.build_settings['DEFINES_MODULE'] = 'NO'
+      end
+
+      # FIX (flutter_app_badger internal inconsistency): the "never received
+      # target ended" Xcode build-system error is a cascade from the msgpack
+      # VerifyModule crash orphaning a parallel build slot. Applying the same
+      # DEFINES_MODULE=NO guard here prevents flutter_app_badger from being
+      # caught in that failure and keeps the archive build deterministic.
+      if target.name == 'flutter_app_badger'
+        config.build_settings['DEFINES_MODULE'] = 'NO'
+      end
     end
   end
 
