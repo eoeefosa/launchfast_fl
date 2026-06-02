@@ -781,8 +781,8 @@ class AuthProvider extends ChangeNotifier {
 
     // Build a map with only the fields that were actually provided.
     final updates = <String, dynamic>{
-      if (name  != null) 'name':  name,
-      if (phone != null) 'phone': phone,
+      'name':  ?name,
+      'phone': ?phone,
     };
 
     await updateUser(updates); // Optimistic local update
