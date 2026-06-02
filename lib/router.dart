@@ -27,6 +27,7 @@ import 'screens/search_screen.dart';
 import 'screens/stores_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/payment_callback_screen.dart';
+import 'screens/verify_payment_screen.dart';
 import 'screens/tabs/profile/transactions_screen.dart';
 import 'screens/tabs/profile/transfer_screen.dart';
 import 'screens/tabs/profile/deposit_screen.dart';
@@ -83,6 +84,9 @@ const routeItemDetails = '/item/:id';
 
 // Payment callback (Paystack deep link)
 const routePaymentCallback = '/callback';
+
+// Manual payment verification
+const routeVerifyPayment = '/verify-payment';
 
 // Store owner / worker dashboards
 const routeStoreDashboard = '/dashboard';
@@ -367,6 +371,11 @@ role: ${auth.user?.role}
       GoRoute(path: routeSearch, builder: (_, _) => const SearchScreen()),
 
       GoRoute(path: routeCheckout, builder: (_, _) => const CheckoutScreen()),
+
+      GoRoute(
+        path: routeVerifyPayment,
+        builder: (_, _) => const VerifyPaymentScreen(),
+      ),
 
       // ───────────────────────────────────────────────────────────
       // Payment callback — called by Paystack via deep link

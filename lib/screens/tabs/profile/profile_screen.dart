@@ -109,6 +109,12 @@ class ProfileScreen extends StatelessWidget {
                 subtitle: 'See who won recently!',
                 onTap: () => context.push('/profile/cashback-winners'),
               ),
+              ProfileSettingsTile(
+                icon: Icons.receipt_long_rounded,
+                title: 'Verify Payment',
+                subtitle: 'Payment failed but you were debited? Fix it here.',
+                onTap: () => context.push('/verify-payment'),
+              ),
 
               const SectionHeader(title: 'Account Verification'),
               VerificationTile(
