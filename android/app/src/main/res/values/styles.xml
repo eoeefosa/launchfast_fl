@@ -7,7 +7,10 @@
         <item name="android:windowBackground">@drawable/launch_background</item>
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+        <!-- shortEdges is supported from API 27+; "always" (value 3) requires API 30+
+             and crashes on Android 9 devices. The values-v31/styles.xml overrides
+             this with "always" for Android 12+ where it is fully supported. -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
     <!-- Theme applied to the Android Window as soon as the process has started.
          This theme determines the color of the Android Window while your

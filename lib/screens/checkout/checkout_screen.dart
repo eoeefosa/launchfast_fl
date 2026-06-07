@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../services/device_id_service.dart';
 import '../../widgets/responsive_layout.dart';
 
 import '../../models/order.dart';
@@ -271,7 +272,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       HapticFeedback.mediumImpact();
 
-      final orderPayload = _buildOrderPayload(
+      final orderPayload = await _buildOrderPayload(
         cart: cart,
         auth: auth,
         confirmedName: contact.name,
@@ -345,17 +346,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  Map<String, dynamic> _buildOrderPayload({
+  Future<Map<String, dynamic>> _buildOrderPayload({
     required CartProvider cart,
     required AuthProvider auth,
     required String confirmedName,
     required String confirmedPhone,
-  }) {
+  }) async {
     final storeIds =
         cart.items.map((i) => i.menuItem.storeId).toSet().toList();
     final email = auth.isAuthenticated
         ? (auth.user?.email ?? 'user@campuschow.com')
         : 'guest@campuschow.com';
+
+    // Always include deviceId so the backend can send push notifications
+    // to guest users (no account) when a payment reminder is needed.
+    final deviceId = await DeviceIdService.getDeviceId();
 
     return {
       'items': [
@@ -382,6 +387,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       'paymentMethod':
           _paymentMethod == CheckoutPaymentMethod.wallet ? 'Wallet' : 'Paystack',
       'userId': auth.user?.id,
+      'deviceId': deviceId,
       'customerDetails': {
         'name': confirmedName,
         'phone': confirmedPhone,

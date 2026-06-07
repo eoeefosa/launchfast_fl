@@ -16,6 +16,7 @@ import '../repositories/auth_repository.dart';
 import '../repositories/location_repository.dart';
 import '../services/ably_service.dart';
 import '../services/api_service.dart';
+import '../services/device_id_service.dart';
 import '../services/network_service.dart';
 import '../store/pages/core/services/notification_service.dart';
 
@@ -192,6 +193,10 @@ class AuthProvider extends ChangeNotifier {
         }),
       );
 
+      // Always register FCM token — works for both logged-in users and guests.
+      // Guests need this so payment-reminder notifications can reach them.
+      _syncFCMTokenSafely();
+
       if (isAuthenticated) {
         unawaited(
           _initializeAbly().catchError((Object e) {
@@ -201,7 +206,6 @@ class AuthProvider extends ChangeNotifier {
           }),
         );
         _setupTokenRefreshListener();
-        _syncFCMTokenSafely();
       }
 
       await _restoreQueuedAuth();
@@ -579,17 +583,39 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> syncFCMToken() async {
-    if (!isAuthenticated) return;
-
     final fcmToken = await _notificationService.getToken();
     if (fcmToken == null) return;
 
     if (kDebugMode) debugPrint('[AuthProvider] Syncing FCM token with backend');
 
-    await Future.wait([
-      _authRepository.updateProfile({'fcmToken': fcmToken}),
-      _pushFcmTokenToBackend(fcmToken),
-    ]);
+    if (isAuthenticated) {
+      // Logged-in: update user profile record AND register the device
+      await Future.wait([
+        _authRepository.updateProfile({'fcmToken': fcmToken}),
+        _pushFcmTokenToBackend(fcmToken),
+      ]);
+    } else {
+      // Guest: register device token anonymously so guest orders can be notified
+      await _registerGuestDevice(fcmToken);
+    }
+  }
+
+  /// Register the FCM token for a guest (no user account).
+  /// The backend stores it against the deviceId; when a guest places an order
+  /// their phone is linked to this deviceId, enabling payment-reminder pushes.
+  Future<void> _registerGuestDevice(String fcmToken) async {
+    try {
+      final deviceId = await DeviceIdService.getDeviceId();
+      await _apiService.dio.post('/devices', data: {
+        'deviceId': deviceId,
+        'token': fcmToken,
+        'platform': defaultTargetPlatform.name.toLowerCase(),
+      });
+      if (kDebugMode) debugPrint('[AuthProvider] Guest device registered: $deviceId');
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AuthProvider] _registerGuestDevice error: $e');
+      // Non-fatal — will retry on next app launch.
+    }
   }
 
   Future<void> _pushFcmTokenToBackend(String fcmToken) async {
